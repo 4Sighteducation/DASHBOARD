@@ -38,14 +38,17 @@ function initializeDashboardApp() {
     // These will typically use your Heroku app as a proxy to securely call the Knack API.
     // Example:
     async function fetchDataFromKnack(objectKey, filters = []) {
-        const url = `${herokuAppUrl}/api/knack-data?objectKey=${objectKey}&filters=${encodeURIComponent(JSON.stringify(filters))}`;
+        const url = `${config.herokuAppUrl}/api/knack-data?objectKey=${objectKey}&filters=${encodeURIComponent(JSON.stringify(filters))}`;
+        log("Fetching from backend URL:", url); // Added for debugging
         // Add appropriate headers if your Heroku app requires them (e.g., API key for your Heroku app itself)
         try {
             const response = await fetch(url);
             if (!response.ok) {
-                throw new Error(`Knack API request failed with status ${response.status}`);
+                const errorData = await response.json().catch(() => ({ message: `Knack API request via backend failed with status ${response.status}` }));
+                throw new Error(errorData.message || `Knack API request via backend failed with status ${response.status}`);
             }
-            return await response.json();
+            const data = await response.json();
+            return data.records; // The backend now wraps records in a 'records' key
         } catch (error) {
             errorLog(`Failed to fetch data for ${objectKey}`, error);
             throw error; // Re-throw to be handled by the caller
@@ -100,73 +103,82 @@ function initializeDashboardApp() {
     async function loadOverviewData() {
         log("Loading overview data...");
         try {
-            // 1. Fetch all VESPA Results (object_10) for the logged-in user's customer group
-            //    This requires knowing how to filter by "Customer". You might need another call
-            //    to get the current user's details first, or pass customer ID in config.
-            //    For now, assuming you can filter directly or get all and filter client-side (less ideal for large datasets).
-            const allVespaResults = await fetchDataFromKnack(objectKeys.vespaResults); // May need filters
+            // 1. Fetch VESPA Results for the logged-in user's Staff Admin group (User School Data)
+            let schoolVespaResults = [];
+            if (config.loggedInUserStaffAdminId) { // Ensure this ID is passed in DASHBOARD_CONFIG
+                const staffAdminFilter = [{
+                    field: 'field_439', // field_439 in object_10 connects to Staff Admin (object_5)
+                    operator: 'is',
+                    value: config.loggedInUserStaffAdminId
+                }];
+                schoolVespaResults = await fetchDataFromKnack(config.objectKeys.vespaResults, staffAdminFilter);
+                log("Fetched School VESPA Results (filtered by Staff Admin ID):");
+            } else {
+                log("No Staff Admin ID (loggedInUserStaffAdminId) found in config. Cannot filter school-specific data for overview.");
+                // Fetch all if no specific filtering is possible, or show an error.
+                // For now, we expect a staff admin ID to correctly scope the data.
+            }
 
-            // 2. Fetch *ALL* data for national benchmarking (if your Heroku app can provide this)
-            //    Alternatively, your Heroku app could pre-calculate national averages.
-            const nationalBenchmarkData = {}; // Placeholder - this needs to come from somewhere
+            // 2. Fetch *ALL* data for national benchmarking (all entries in object_10)
+            const allVespaResultsForBenchmark = await fetchDataFromKnack(config.objectKeys.vespaResults);
+            log("Fetched All VESPA Results for Benchmark:", allVespaResultsForBenchmark.length);
+
 
             // 3. Calculate Averages for User's School
-            const schoolAverages = calculateVespaAverages(allVespaResults, 'current'); // 'current' uses field_146 to get latest
+            const schoolAverages = calculateVespaAverages(schoolVespaResults);
             log("School Averages:", schoolAverages);
 
-            // 4. Render Averages Comparison Chart (e.g., using Chart.js or similar)
-            renderAveragesChart(schoolAverages, nationalBenchmarkData);
+            // 4. Calculate Averages for ALL Data (Benchmark)
+            const nationalAverages = calculateVespaAverages(allVespaResultsForBenchmark);
+            log("National Averages (Benchmark):", nationalAverages);
 
-            // 5. Calculate and Render Distribution Charts for each component
-            renderDistributionCharts(allVespaResults, themeColors);
+            // 5. Render Averages Comparison Chart
+            renderAveragesChart(schoolAverages, nationalAverages);
+
+            // 6. Calculate and Render Distribution Charts for each component (using school data)
+            renderDistributionCharts(schoolVespaResults, config.themeColors);
 
         } catch (error) {
             errorLog("Failed to load overview data", error);
             // Display error to user in the UI
+            const overviewSection = document.getElementById('overview-section');
+            if(overviewSection) overviewSection.innerHTML = "<p>Error loading overview data. Please check console.</p>";
         }
     }
 
-    function calculateVespaAverages(results, cycleType = 'current') {
-        // results: array of records from object_10
-        // cycleType: 'current', 'cycle1', 'cycle2', 'cycle3'
+    function calculateVespaAverages(results) {
         const averages = { vision: 0, effort: 0, systems: 0, practice: 0, attitude: 0, overall: 0 };
-        let count = 0;
-        if (!results || results.length === 0) return averages;
+        let validRecordsCount = 0;
+
+        if (!Array.isArray(results) || results.length === 0) {
+            log("calculateVespaAverages: Input is not a valid array or is empty", results);
+            return averages; // Return default averages if no valid results
+        }
 
         results.forEach(record => {
-            let v, e, s, p, a, o;
-            const currentMCycle = record.field_146_raw; // Assuming this is the numeric cycle number
+            // Current VESPA scores are in field_147 to field_152 as per README
+            const v = parseFloat(record.field_147_raw);
+            const e = parseFloat(record.field_148_raw);
+            const s = parseFloat(record.field_149_raw);
+            const p = parseFloat(record.field_150_raw);
+            const a = parseFloat(record.field_151_raw);
+            const o = parseFloat(record.field_152_raw);
 
-            if (cycleType === 'current' && currentMCycle) {
-                v = parseFloat(record[`field_${146 + currentMCycle}_raw`]); // e.g., field_147_raw if currentMCycle is 1 (Vision)
-                e = parseFloat(record[`field_${147 + currentMCycle}_raw`]);
-                s = parseFloat(record[`field_${148 + currentMCycle}_raw`]);
-                p = parseFloat(record[`field_${149 + currentMCycle}_raw`]);
-                a = parseFloat(record[`field_${150 + currentMCycle}_raw`]);
-                o = parseFloat(record[`field_${151 + currentMCycle}_raw`]);
-             } else if (cycleType === 'cycle1') {
-                v = parseFloat(record.field_155_raw); e = parseFloat(record.field_156_raw);
-                s = parseFloat(record.field_157_raw); p = parseFloat(record.field_158_raw);
-                a = parseFloat(record.field_159_raw); o = parseFloat(record.field_160_raw);
-            } // ... add for cycle2 and cycle3 similarly based on README
-             else { // Fallback or if cycleType is specific and currentMCycle doesn't match
-                v = parseFloat(record.field_147_raw); e = parseFloat(record.field_148_raw);
-                s = parseFloat(record.field_149_raw); p = parseFloat(record.field_150_raw);
-                a = parseFloat(record.field_151_raw); o = parseFloat(record.field_152_raw);
+            // Check if overall score is a valid number to consider the record
+            if (!isNaN(o)) {
+                if (!isNaN(v)) averages.vision += v;
+                if (!isNaN(e)) averages.effort += e;
+                if (!isNaN(s)) averages.systems += s;
+                if (!isNaN(p)) averages.practice += p;
+                if (!isNaN(a)) averages.attitude += a;
+                averages.overall += o; // Already checked o for NaN
+                validRecordsCount++;
             }
-
-
-            if (!isNaN(v)) { averages.vision += v; }
-            if (!isNaN(e)) { averages.effort += e; }
-            if (!isNaN(s)) { averages.systems += s; }
-            if (!isNaN(p)) { averages.practice += p; }
-            if (!isNaN(a)) { averages.attitude += a; }
-            if (!isNaN(o)) { averages.overall += o; count++;} // Assuming overall score presence means valid record
         });
 
-        if (count > 0) {
+        if (validRecordsCount > 0) {
             for (const key in averages) {
-                averages[key] = parseFloat((averages[key] / count).toFixed(2));
+                averages[key] = parseFloat((averages[key] / validRecordsCount).toFixed(2));
             }
         }
         return averages;
@@ -200,40 +212,60 @@ function initializeDashboardApp() {
 
     // --- Section 2: Question Level Analysis (QLA) ---
     let allQuestionResponses = []; // Cache for QLA data
+    let questionMappings = { id_to_text: {}, psychometric_details: {} }; // Cache for mappings
 
     async function loadQLAData() {
         log("Loading QLA data...");
         try {
+            // Fetch question mappings first
+            try {
+                const mappingResponse = await fetch(`${config.herokuAppUrl}/api/question-mappings`);
+                if (!mappingResponse.ok) {
+                    const errorData = await mappingResponse.json().catch(() => ({}));
+                    throw new Error(errorData.message || `Failed to fetch question mappings: ${mappingResponse.status}`);
+                }
+                questionMappings = await mappingResponse.json();
+                log("Question mappings loaded:", questionMappings);
+            } catch (mapError) {
+                errorLog("Failed to load question mappings", mapError);
+                // Proceeding without mappings might make QLA less user-friendly
+                // but some parts might still work if IDs are used.
+            }
+
+
             // Fetch all records from Object_29 (Questionnaire Qs)
-            // Again, filtering by customer/school might be needed via Heroku.
-            allQuestionResponses = await fetchDataFromKnack(objectKeys.questionnaireResponses);
-            log("QLA data loaded:", allQuestionResponses.length, "responses");
+            // Filter by the logged-in Staff Admin ID
+            let qlaFilters = [];
+            if (config.loggedInUserStaffAdminId) {
+                 // field_2069 in object_29 connects to Staff Admin (object_5) - this is an array connection
+                qlaFilters.push({
+                    field: 'field_2069', 
+                    operator: 'is', // For array connections, 'is' often works like 'contains this ID' in Knack.
+                                   // If specific 'is_any_of' or 'contains' is needed and not working, backend might need adjustment.
+                    value: config.loggedInUserStaffAdminId
+                });
+                 allQuestionResponses = await fetchDataFromKnack(config.objectKeys.questionnaireResponses, qlaFilters);
+                 log("Fetched QLA Responses (filtered by Staff Admin ID):");
+            } else {
+                log("No Staff Admin ID (loggedInUserStaffAdminId) found in config. Cannot filter QLA data.");
+                // Fetch all if no specific filtering is possible, or show an error.
+            }
+            // log("QLA data loaded:", allQuestionResponses.length, "responses"); // Already logged above if filtered
 
-            // Populate dropdown with questions from the text file.
-            // Your Heroku app could serve the question list, or you can embed a summarized version.
             populateQLAQuestionDropdown();
-
-            // Calculate and display Top 5 / Bottom 5 questions
             displayTopBottomQuestions(allQuestionResponses);
-
-            // Display other stats
             displayQLAStats(allQuestionResponses);
 
         } catch (error) {
             errorLog("Failed to load QLA data", error);
+            const qlaSection = document.getElementById('qla-section');
+            if(qlaSection) qlaSection.innerHTML = "<p>Error loading Question Level Analysis data. Please check console.</p>";
         }
     }
     
     async function getQuestionTextMapping() {
-        // In a real app, this might come from a JSON file served by your Heroku app
-        // or could be fetched from another Knack object if you store it there.
-        // For now, returning a placeholder.
-        // This mapping is crucial for making sense of field_XXX to actual question text.
-        // Refer to your AIVESPACoach/question_id_to_text_mapping.json and AIVESPACoach/psychometric_question_details.json
-        return {
-            // Example: 'field_794': "I have a clear vision for my future.",
-            // ... populate this extensively based on your JSON files
-        };
+        // Now uses the ached mappings from the backend
+        return questionMappings.id_to_text || {};
     }
 
 
@@ -241,18 +273,19 @@ function initializeDashboardApp() {
         const dropdown = document.getElementById('qla-question-dropdown');
         if (!dropdown) return;
 
-        // Fetch questions from your "Question Level Analysis - Interrogation Questions.txt"
-        // This could be done by having your Heroku app serve this file's content as JSON
-        // or by pre-processing it.
         try {
-            const response = await fetch(`${herokuAppUrl}/api/interrogation-questions`); // Endpoint on your Heroku app
-            if (!response.ok) throw new Error('Failed to fetch interrogation questions');
-            const questions = await response.json(); // Assuming Heroku serves it as JSON array
+            const response = await fetch(`${config.herokuAppUrl}/api/interrogation-questions`); 
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to fetch interrogation questions');
+            }
+            const questions = await response.json(); 
 
-            questions.forEach(q => {
+            dropdown.innerHTML = '<option value="">Select a question...</option>'; // Clear previous/add default
+            questions.forEach(qObj => { // Assuming backend sends array of {id, question}
                 const option = document.createElement('option');
-                option.value = q; // Or an ID if you have one
-                option.textContent = q;
+                option.value = qObj.question; // Use the question text itself as value, or qObj.id if you prefer
+                option.textContent = qObj.question;
                 dropdown.appendChild(option);
             });
             log("Populated QLA question dropdown.");
@@ -265,21 +298,25 @@ function initializeDashboardApp() {
     function calculateAverageScoresForQuestions(responses) {
         const questionScores = {};
         const questionCounts = {};
-        const questionFieldToText = getQuestionTextMapping(); // You'll need this mapping
+        const currentQuestionTextMapping = questionMappings.id_to_text || {};
+
+        if (!Array.isArray(responses) || responses.length === 0) {
+            log("calculateAverageScoresForQuestions: Input is not a valid array or is empty", responses);
+            return {}; // Return empty object if no valid responses
+        }
 
         responses.forEach(record => {
-            // Iterate over fields that represent question answers (field_794 - field_821, etc.)
-            // This needs to align with your Object_29 structure and question_id_to_text_mapping.json
-            for (const fieldKey in record) {
-                if (fieldKey.startsWith('field_') && fieldKey.endsWith('_raw')) { // Generic way to find potential question fields
-                    const questionId = fieldKey.replace('_raw', ''); // e.g., field_794
-                    // Check if this field is actually a question field you care about
-                    // based on question_id_to_text_mapping.json or psychometric_question_details.json
-                    if (questionFieldToText[questionId]) { // Or some other validation
-                        const score = parseInt(record[fieldKey], 10);
-                        if (!isNaN(score)) {
-                            questionScores[questionId] = (questionScores[questionId] || 0) + score;
-                            questionCounts[questionId] = (questionCounts[questionId] || 0) + 1;
+            for (const fieldKeyInRecord in record) {
+                // fieldKeyInRecord is like 'field_794_raw'
+                if (fieldKeyInRecord.startsWith('field_') && fieldKeyInRecord.endsWith('_raw')) {
+                    const baseFieldId = fieldKeyInRecord.replace('_raw', ''); // e.g., field_794
+                    
+                    // Check if this field is a known question from our mapping
+                    if (currentQuestionTextMapping[baseFieldId] || (questionMappings.psychometric_details && isFieldInPsychometricDetails(baseFieldId, questionMappings.psychometric_details))) {
+                        const score = parseInt(record[fieldKeyInRecord], 10);
+                        if (!isNaN(score) && score >= 1 && score <= 5) { // Assuming 1-5 scale from README for Object_29
+                            questionScores[baseFieldId] = (questionScores[baseFieldId] || 0) + score;
+                            questionCounts[baseFieldId] = (questionCounts[baseFieldId] || 0) + 1;
                         }
                     }
                 }
@@ -288,10 +325,21 @@ function initializeDashboardApp() {
 
         const averageScores = {};
         for (const qId in questionScores) {
-            averageScores[qId] = parseFloat((questionScores[qId] / questionCounts[qId]).toFixed(2));
+            if (questionCounts[qId] > 0) {
+                averageScores[qId] = parseFloat((questionScores[qId] / questionCounts[qId]).toFixed(2));
+            }
         }
-        return averageScores; // { field_XXX: average_score, ... }
+        return averageScores; 
     }
+
+    // Helper to check if a fieldId is part of the psychometric question details
+    function isFieldInPsychometricDetails(fieldId, psychometricDetailsArray) {
+        if (!psychometricDetailsArray || !Array.isArray(psychometricDetailsArray)) return false;
+        // psychometric_question_details.json is an array of objects,
+        // each object has a 'currentCycleFieldId' property.
+        return psychometricDetailsArray.some(qDetail => qDetail.currentCycleFieldId === fieldId);
+    }
+
 
     async function displayTopBottomQuestions(responses) {
         if (!responses || responses.length === 0) return;
@@ -359,7 +407,7 @@ function initializeDashboardApp() {
         try {
             // This is where you'd make a call to your Heroku backend
             // The backend would then use the OpenAI API with the relevant question data context.
-            const aiResponse = await fetch(`${herokuAppUrl}/api/qla-chat`, {
+            const aiResponse = await fetch(`${config.herokuAppUrl}/api/qla-chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 // Send the query AND relevant context (e.g., data for the specific question or all QLA data)
@@ -387,19 +435,35 @@ function initializeDashboardApp() {
     async function loadStudentCommentInsights() {
         log("Loading student comment insights...");
         try {
-            // Fetch VESPA Results (object_10) which contains comment fields
-            const vespaResults = await fetchDataFromKnack(objectKeys.vespaResults);
+            let vespaResults = []; // Initialize as empty array
+            if (config.loggedInUserStaffAdminId) {
+                const staffAdminFilter = [{
+                    field: 'field_439', 
+                    operator: 'is',
+                    value: config.loggedInUserStaffAdminId
+                }];
+                vespaResults = await fetchDataFromKnack(config.objectKeys.vespaResults, staffAdminFilter);
+                log("Fetched VESPA Results for comments (filtered by Staff Admin ID):");
+            } else {
+                 log("No Staff Admin ID (loggedInUserStaffAdminId) found in config. Cannot filter comments.");
+            }
+            
+            if (!Array.isArray(vespaResults)) {
+                errorLog("loadStudentCommentInsights: vespaResults is not an array after fetch.", vespaResults);
+                vespaResults = []; // Ensure it's an array to prevent further errors
+            }
 
-            // Extract comments (RRC1, RRC2, RRC3, GOAL1, GOAL2, GOAL3 from README)
             const allComments = [];
-            vespaResults.forEach(record => {
-                if (record.field_2302_raw) allComments.push(record.field_2302_raw); // RRC1
-                if (record.field_2303_raw) allComments.push(record.field_2303_raw); // RRC2
-                if (record.field_2304_raw) allComments.push(record.field_2304_raw); // RRC3
-                if (record.field_2499_raw) allComments.push(record.field_2499_raw); // GOAL1
-                if (record.field_2493_raw) allComments.push(record.field_2493_raw); // GOAL2
-                if (record.field_2494_raw) allComments.push(record.field_2494_raw); // GOAL3
-            });
+            if (vespaResults.length > 0) { // Only proceed if we have results
+                vespaResults.forEach(record => {
+                    if (record.field_2302_raw) allComments.push(record.field_2302_raw); // RRC1
+                    if (record.field_2303_raw) allComments.push(record.field_2303_raw); // RRC2
+                    if (record.field_2304_raw) allComments.push(record.field_2304_raw); // RRC3
+                    if (record.field_2499_raw) allComments.push(record.field_2499_raw); // GOAL1
+                    if (record.field_2493_raw) allComments.push(record.field_2493_raw); // GOAL2
+                    if (record.field_2494_raw) allComments.push(record.field_2494_raw); // GOAL3
+                });
+            }
 
             log("Total comments extracted:", allComments.length);
 
@@ -463,3 +527,8 @@ if (document.readyState === 'loading') {
 } else {
     // initializeDashboardApp(); // Or call if DOM is already ready, though WorkingBridge is preferred.
 }
+
+// Make sure initializeDashboardApp is globally accessible if WorkingBridge.js calls it.
+// If it's not already, you might need:
+// window.initializeDashboardApp = initializeDashboardApp;
+// However, since it's a top-level function in the script, it should be.
