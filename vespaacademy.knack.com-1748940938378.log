@@ -1,0 +1,141 @@
+main.js?1748940913156&_=1748940913156:107 [Knack Builder Loader v3.16] Script start.
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] DOM ready. Attaching Knack event listeners. 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] jQuery confirmed available. 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] Knack render event listeners attached. 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] Loader setup complete. Waiting for render events. 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] Knack Builder Loader setup registered. Waiting for DOM ready. 
+vespa-academy#dashboard3/:1  <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
+        Don't show again
+index2.4.0.js:118 Developed byKsense Technology Group LLCPRODUCTION MODE - Branch: main
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] View rendered: Storing view key 'view_3058' 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] tryLoadApp: Checking load conditions. Effective Scene: null, Last Rendered View: view_3058 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] findAppToLoad: No app configuration found for Scene 'null', View 'view_3058'. 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] tryLoadApp: No app matches current scene/view with effectiveSceneKey. 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] tryLoadApp: No scene key available to attempt loading. 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] Scene rendered: Storing scene key 'scene_1225' 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] tryLoadApp: Checking load conditions. Effective Scene: scene_1225, Last Rendered View: view_3058 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] findAppToLoad: Standard Search: Searching for app matching Scene Key: scene_1225, View Key: view_3058 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] findAppToLoad: Standard Match found for app 'dashboard'. 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] findAppToLoad: Apps identified for loading: dashboard 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] tryLoadApp: Using sceneKey 'scene_1225' and viewKey 'view_3058' for dashboard config. 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] tryLoadApp: Built instance config for dashboard {knackAppId: '5ee90912c38ae7001510c1a9', knackApiKey: '8f733aa5-dd35-4464-8348-64824d1f5f0d', sendGrid: {…}, appType: 'dashboard', debugMode: true, …}
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] tryLoadApp: Attempting to load script for dashboard from URL: https://cdn.jsdelivr.net/gh/4Sighteducation/FlashcardLoader@main/integrations/vespa-dashboard/dashboard1c.js 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] loadScript: Attempting to load script via jQuery: https://cdn.jsdelivr.net/gh/4Sighteducation/FlashcardLoader@main/integrations/vespa-dashboard/dashboard1c.js
+any.js:13 --webpack updated--
+
+                
+          
+          
+          
+         Microsoft Edge is moving towards a new experience that allows users to choose to browse without third-party cookies.
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] loadScript: Script loaded successfully via getScript: https://cdn.jsdelivr.net/gh/4Sighteducation/FlashcardLoader@main/integrations/vespa-dashboard/dashboard1c.js
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] tryLoadApp: Script successfully loaded for app 'dashboard'. 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] tryLoadApp: Set global config variable 'DASHBOARD_CONFIG' for dashboard 
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] tryLoadApp: Calling initializer function: initializeDashboardApp for dashboard 
+dashboard1c.js?_=1748940914667:12 Initializing Dashboard App with config: {knackAppId: '5ee90912c38ae7001510c1a9', knackApiKey: '8f733aa5-dd35-4464-8348-64824d1f5f0d', sendGrid: {…}, appType: 'dashboard', debugMode: true, …}
+dashboard1c.js?_=1748940914667:29 [Dashboard App] Rendering Dashboard UI into: <div class=​"kn-rich_text kn-view view_3058" id=​"view_3058">​…​</div>​
+dashboard1c.js?_=1748940914667:34  [Dashboard App ERROR] No loggedInUserEmail found in config. Cannot fetch Staff Admin ID or dependent data. undefined
+errorLog @ dashboard1c.js?_=1748940914667:34
+initializeFullDashboard @ dashboard1c.js?_=1748940914667:533
+initializeDashboardApp @ dashboard1c.js?_=1748940914667:558
+tryLoadApp @ main.js?1748940913156&_=1748940913156:554
+await in tryLoadApp
+(anonymous) @ main.js?1748940913156&_=1748940913156:604
+dispatch @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+s @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+trigger @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+each @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+each @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+trigger @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+renderCompletedScene @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+handleViewRendered @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+r @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+dispatch @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+s @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+trigger @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+each @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+each @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+trigger @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+triggerReady @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+render @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+o @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+renderViews @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+await in (anonymous)
+checkPageRules @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+render @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+viewScene @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+execute @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+o @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+loadUrl @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+start @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+handleInjection @ index2.4.0.js:137
+await in handleInjection
+ksenseKnackFramework @ index2.4.0.js:251
+await in ksenseKnackFramework
+(anonymous) @ main.js?1748940913156&_=1748940913156:70
+n @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+y @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+script
+t @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+i @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+js @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+KnackInitAsync @ main.js?1748940913156&_=1748940913156:10
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+u @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+fireWith @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+_ @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+t.onload.t.onreadystatechange @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+script
+send @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+ajax @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+v.each.v.<computed> @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+getScript @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+renderApp @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+n @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+a @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+setTimeout
+a @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+setTimeout
+a @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+setTimeout
+a @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+setTimeout
+a @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+setTimeout
+a @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+setTimeout
+a @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+i @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+css @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+loadStyles @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+loadJS @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+handleLoadApp @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+u @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+fireWith @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+_ @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+t.onload.t.onreadystatechange @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+script
+send @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+ajax @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+loadApp @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+init @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+Promise.then
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+(anonymous) @ k_babfd48f5d48cacd8d287c051a0f6e37c1a6ad79.js:2
+main.js?1748940913156&_=1748940913156:357 [Loader v3.16] tryLoadApp: Initializer function initializeDashboardApp called successfully for dashboard. 

@@ -1,4 +1,4 @@
-// dashboard.js
+// dashboard1c.js
 
 // Ensure this matches the initializerFunctionName in WorkingBridge.js
 function initializeDashboardApp() {
@@ -19,7 +19,8 @@ function initializeDashboardApp() {
         elementSelector,
         herokuAppUrl, // Your Heroku backend URL
         objectKeys,
-        themeColors
+        themeColors,
+        loggedInUserEmail
     } = config;
 
     // --- Helper Functions (General) ---
@@ -52,6 +53,42 @@ function initializeDashboardApp() {
         } catch (error) {
             errorLog(`Failed to fetch data for ${objectKey}`, error);
             throw error; // Re-throw to be handled by the caller
+        }
+    }
+
+    // New function to get Staff Admin Record ID (from object_5) by User Email
+    async function getStaffAdminRecordIdByEmail(userEmail) {
+        if (!userEmail) {
+            errorLog("User email not provided to getStaffAdminRecordIdByEmail.");
+            return null;
+        }
+        if (!objectKeys.staffAdminRoles) {
+            errorLog("staffAdminRoles object key not configured in DASHBOARD_CONFIG.objectKeys");
+            return null;
+        }
+
+        const filters = [{
+            field: 'field_86', // Email field in object_5 (Staff Admin Roles object)
+            operator: 'is',
+            value: userEmail
+        }];
+
+        try {
+            log(`Fetching Staff Admin record from ${objectKeys.staffAdminRoles} for email: ${userEmail}`);
+            const staffAdminRecords = await fetchDataFromKnack(objectKeys.staffAdminRoles, filters);
+            if (staffAdminRecords && staffAdminRecords.length > 0) {
+                if (staffAdminRecords.length > 1) {
+                    log("Warning: Multiple Staff Admin records found for email:", userEmail, "Using the first one.");
+                }
+                log("Found Staff Admin record:", staffAdminRecords[0]);
+                return staffAdminRecords[0].id; // Return the Record ID of the object_5 record
+            } else {
+                errorLog(`No Staff Admin record found in ${objectKeys.staffAdminRoles} for email: ${userEmail}`);
+                return null;
+            }
+        } catch (error) {
+            errorLog(`Error fetching Staff Admin record for email ${userEmail}:`, error);
+            return null;
         }
     }
 
@@ -100,47 +137,36 @@ function initializeDashboardApp() {
     }
 
     // --- Section 1: Overview and Benchmarking ---
-    async function loadOverviewData() {
-        log("Loading overview data...");
+    async function loadOverviewData(staffAdminId) {
+        log("Loading overview data with Staff Admin ID:", staffAdminId);
         try {
-            // 1. Fetch VESPA Results for the logged-in user's Staff Admin group (User School Data)
             let schoolVespaResults = [];
-            if (config.loggedInUserStaffAdminId) { // Ensure this ID is passed in DASHBOARD_CONFIG
+            if (staffAdminId) {
                 const staffAdminFilter = [{
-                    field: 'field_439', // field_439 in object_10 connects to Staff Admin (object_5)
+                    field: 'field_439', 
                     operator: 'is',
-                    value: config.loggedInUserStaffAdminId
+                    value: staffAdminId
                 }];
-                schoolVespaResults = await fetchDataFromKnack(config.objectKeys.vespaResults, staffAdminFilter);
+                schoolVespaResults = await fetchDataFromKnack(objectKeys.vespaResults, staffAdminFilter);
                 log("Fetched School VESPA Results (filtered by Staff Admin ID):");
             } else {
-                log("No Staff Admin ID (loggedInUserStaffAdminId) found in config. Cannot filter school-specific data for overview.");
-                // Fetch all if no specific filtering is possible, or show an error.
-                // For now, we expect a staff admin ID to correctly scope the data.
+                log("No Staff Admin ID provided to loadOverviewData. Cannot filter school-specific data.");
             }
 
-            // 2. Fetch *ALL* data for national benchmarking (all entries in object_10)
-            const allVespaResultsForBenchmark = await fetchDataFromKnack(config.objectKeys.vespaResults);
-            log("Fetched All VESPA Results for Benchmark:", allVespaResultsForBenchmark.length);
+            const allVespaResultsForBenchmark = await fetchDataFromKnack(objectKeys.vespaResults); // Unfiltered
+            log("Fetched All VESPA Results for Benchmark:", allVespaResultsForBenchmark ? allVespaResultsForBenchmark.length : 0);
 
-
-            // 3. Calculate Averages for User's School
             const schoolAverages = calculateVespaAverages(schoolVespaResults);
             log("School Averages:", schoolAverages);
 
-            // 4. Calculate Averages for ALL Data (Benchmark)
             const nationalAverages = calculateVespaAverages(allVespaResultsForBenchmark);
             log("National Averages (Benchmark):", nationalAverages);
 
-            // 5. Render Averages Comparison Chart
             renderAveragesChart(schoolAverages, nationalAverages);
-
-            // 6. Calculate and Render Distribution Charts for each component (using school data)
-            renderDistributionCharts(schoolVespaResults, config.themeColors);
+            renderDistributionCharts(schoolVespaResults, themeColors);
 
         } catch (error) {
             errorLog("Failed to load overview data", error);
-            // Display error to user in the UI
             const overviewSection = document.getElementById('overview-section');
             if(overviewSection) overviewSection.innerHTML = "<p>Error loading overview data. Please check console.</p>";
         }
@@ -188,24 +214,13 @@ function initializeDashboardApp() {
         const container = document.getElementById('averages-chart-container');
         if (!container) return;
         log("Rendering averages chart with School:", schoolData, "National:", nationalData);
-        // Use a charting library like Chart.js, D3, etc.
-        // Example: container.innerHTML = `<p>School Vision: ${schoolData.vision}, National Vision: ${nationalData.vision || 'N/A'}</p>`;
-        // You'll want a bar chart comparing school vs national for V, E, S, P, A.
+        container.innerHTML = `<p>School Vision: ${schoolData.vision}, National Vision: ${nationalData.vision || 'N/A'}</p>`; // Placeholder
     }
 
     function renderDistributionCharts(results, colors) {
         const container = document.getElementById('distribution-charts-container');
         if (!container) return;
         log("Rendering distribution charts.");
-        // For each component (Vision, Effort, etc.):
-        // 1. Extract all scores for that component from results.
-        // 2. Create a histogram/distribution (e.g., how many students scored 1, 2, ..., 10).
-        // 3. Render using a charting library. Apply themeColors.
-        // Example:
-        // const visionScores = results.map(r => parseFloat(r.field_147_raw)).filter(s => !isNaN(s));
-        // const effortScores = results.map(r => parseFloat(r.field_148_raw)).filter(s => !isNaN(s));
-        // ... and so on for all components
-        // Then render a chart for each set of scores.
         container.innerHTML = "<p>Distribution charts will go here.</p>";
     }
 
@@ -214,8 +229,8 @@ function initializeDashboardApp() {
     let allQuestionResponses = []; // Cache for QLA data
     let questionMappings = { id_to_text: {}, psychometric_details: {} }; // Cache for mappings
 
-    async function loadQLAData() {
-        log("Loading QLA data...");
+    async function loadQLAData(staffAdminId) {
+        log("Loading QLA data with Staff Admin ID:", staffAdminId);
         try {
             // Fetch question mappings first
             try {
@@ -236,18 +251,18 @@ function initializeDashboardApp() {
             // Fetch all records from Object_29 (Questionnaire Qs)
             // Filter by the logged-in Staff Admin ID
             let qlaFilters = [];
-            if (config.loggedInUserStaffAdminId) {
+            if (staffAdminId) {
                  // field_2069 in object_29 connects to Staff Admin (object_5) - this is an array connection
                 qlaFilters.push({
                     field: 'field_2069', 
                     operator: 'is', // For array connections, 'is' often works like 'contains this ID' in Knack.
                                    // If specific 'is_any_of' or 'contains' is needed and not working, backend might need adjustment.
-                    value: config.loggedInUserStaffAdminId
+                    value: staffAdminId
                 });
-                 allQuestionResponses = await fetchDataFromKnack(config.objectKeys.questionnaireResponses, qlaFilters);
+                 allQuestionResponses = await fetchDataFromKnack(objectKeys.questionnaireResponses, qlaFilters);
                  log("Fetched QLA Responses (filtered by Staff Admin ID):");
             } else {
-                log("No Staff Admin ID (loggedInUserStaffAdminId) found in config. Cannot filter QLA data.");
+                log("No Staff Admin ID provided to loadQLAData. Cannot filter QLA data.");
                 // Fetch all if no specific filtering is possible, or show an error.
             }
             // log("QLA data loaded:", allQuestionResponses.length, "responses"); // Already logged above if filtered
@@ -432,20 +447,20 @@ function initializeDashboardApp() {
 
 
     // --- Section 3: Student Comment Insights ---
-    async function loadStudentCommentInsights() {
-        log("Loading student comment insights...");
+    async function loadStudentCommentInsights(staffAdminId) {
+        log("Loading student comment insights with Staff Admin ID:", staffAdminId);
         try {
             let vespaResults = []; // Initialize as empty array
-            if (config.loggedInUserStaffAdminId) {
+            if (staffAdminId) {
                 const staffAdminFilter = [{
                     field: 'field_439', 
                     operator: 'is',
-                    value: config.loggedInUserStaffAdminId
+                    value: staffAdminId
                 }];
-                vespaResults = await fetchDataFromKnack(config.objectKeys.vespaResults, staffAdminFilter);
+                vespaResults = await fetchDataFromKnack(objectKeys.vespaResults, staffAdminFilter);
                 log("Fetched VESPA Results for comments (filtered by Staff Admin ID):");
             } else {
-                 log("No Staff Admin ID (loggedInUserStaffAdminId) found in config. Cannot filter comments.");
+                 log("No Staff Admin ID provided to loadStudentCommentInsights. Cannot filter comments.");
             }
             
             if (!Array.isArray(vespaResults)) {
@@ -505,16 +520,42 @@ function initializeDashboardApp() {
     }
 
     // --- Initialization ---
-    const targetElement = document.querySelector(elementSelector);
-    if (targetElement) {
+    async function initializeFullDashboard() {
+        const targetElement = document.querySelector(elementSelector);
+        if (!targetElement) {
+            errorLog(`Target element "${elementSelector}" not found for dashboard.`);
+            return;
+        }
+
         renderDashboardUI(targetElement);
-        // Load data for each section
-        loadOverviewData();
-        loadQLAData();
-        loadStudentCommentInsights();
-    } else {
-        errorLog(`Target element "${elementSelector}" not found for dashboard.`);
+
+        if (!loggedInUserEmail) {
+            errorLog("No loggedInUserEmail found in config. Cannot fetch Staff Admin ID or dependent data.");
+            // Display a message in the UI sections that data cannot be loaded
+            document.getElementById('overview-section').innerHTML = "<p>Cannot load dashboard: User email not found.</p>";
+            document.getElementById('qla-section').innerHTML = "<p>Cannot load dashboard: User email not found.</p>";
+            document.getElementById('student-insights-section').innerHTML = "<p>Cannot load dashboard: User email not found.</p>";
+            return;
+        }
+
+        const staffAdminRecordId = await getStaffAdminRecordIdByEmail(loggedInUserEmail);
+
+        if (staffAdminRecordId) {
+            log("Successfully obtained Staff Admin Record ID (from object_5):", staffAdminRecordId);
+            // Load data for each section using the obtained staffAdminRecordId
+            loadOverviewData(staffAdminRecordId);
+            loadQLAData(staffAdminRecordId);
+            loadStudentCommentInsights(staffAdminRecordId);
+        } else {
+            errorLog("Failed to obtain Staff Admin Record ID. Dependent data will not be loaded.");
+            // Display a message in the UI sections that data cannot be loaded due to missing Staff Admin link
+            document.getElementById('overview-section').innerHTML = "<p>Cannot load dashboard: Staff Admin role not found for your account email.</p>";
+            document.getElementById('qla-section').innerHTML = "<p>Cannot load dashboard: Staff Admin role not found for your account email.</p>";
+            document.getElementById('student-insights-section').innerHTML = "<p>Cannot load dashboard: Staff Admin role not found for your account email.</p>";
+        }
     }
+
+    initializeFullDashboard(); // Call the main async initialization function
 }
 
 // Defensive check: If jQuery is used by Knack/other scripts, ensure this script runs after.

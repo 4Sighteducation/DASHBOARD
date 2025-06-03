@@ -1,2 +1,5 @@
 # Knack specific files
-WorkingBridge.js 
+WorkingBridge.js
+
+# Backend (managed as a separate Git repo or for Heroku)
+heroku_backend/ 
