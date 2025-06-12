@@ -1,0 +1,2457 @@
+import os
+import json
+import requests
+from datetime import datetime, timedelta
+from flask import Flask, request, jsonify, send_file
+from dotenv import load_dotenv
+from flask_cors import CORS # Import CORS
+import logging # Import Python's standard logging
+from functools import wraps
+import hashlib
+import redis
+import pickle
+import pandas as pd
+from scipy.stats import pearsonr
+import gzip  # Add gzip for compression
+from threading import Thread
+import time
+
+# Add PDF generation imports
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+from io import BytesIO
+import base64
+
+# Download NLTK data at startup
+import nltk
+import ssl
+
+# Configure logging first
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+logger = logging.getLogger(__name__)
+
+# Handle SSL certificate issues
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
+
+# Download required NLTK data with error handling
+import os
+nltk_data_dir = os.path.join(os.path.expanduser('~'), 'nltk_data')
+if not os.path.exists(nltk_data_dir):
+    os.makedirs(nltk_data_dir)
+
+# Set NLTK data path
+nltk.data.path.append('/app/nltk_data')
+
+# Download punkt tokenizer if not already present
+try:
+    nltk.data.find('tokenizers/punkt')
+    logger.info("NLTK punkt tokenizer already downloaded")
+except LookupError:
+    logger.info("Downloading NLTK punkt tokenizer...")
+    try:
+        nltk.download('punkt', download_dir='/app/nltk_data')
+    except Exception as e:
+        logger.warning(f"Failed to download punkt: {e}")
+        # Try to use existing data if download fails
+        pass
+
+# Download stopwords if not already present
+try:
+    nltk.data.find('corpora/stopwords')
+    logger.info("NLTK stopwords already downloaded")
+except LookupError:
+    logger.info("Downloading NLTK stopwords...")
+    try:
+        nltk.download('stopwords', download_dir='/app/nltk_data')
+    except Exception as e:
+        logger.warning(f"Failed to download stopwords: {e}")
+        pass
+
+# Download brown corpus if not already present
+try:
+    nltk.data.find('corpora/brown')
+    logger.info("NLTK brown corpus already downloaded")
+except LookupError:
+    logger.info("Downloading NLTK brown corpus...")
+    try:
+        nltk.download('brown', download_dir='/app/nltk_data')
+    except Exception as e:
+        logger.warning(f"Failed to download brown: {e}")
+        pass
+
+load_dotenv() # Load environment variables from .env for local development
+
+app = Flask(__name__)
+
+# --- Redis Cache Setup ---
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
+try:
+    # Handle SSL connections for Heroku Redis
+    if REDIS_URL.startswith('rediss://'):
+        # For SSL connections, we need to configure SSL settings
+        import ssl as ssl_lib
+        redis_client = redis.from_url(
+            REDIS_URL, 
+            decode_responses=False,
+            ssl_cert_reqs=None,
+            ssl_ca_certs=None,
+            ssl_check_hostname=False
+        )
+    else:
+        # For non-SSL connections
+        redis_client = redis.from_url(REDIS_URL, decode_responses=False)
+    
+    # Test the connection
+    redis_client.ping()
+    CACHE_ENABLED = True
+    app.logger.info("Redis cache connected successfully")
+except Exception as e:
+    redis_client = None
+    CACHE_ENABLED = False
+    app.logger.warning(f"Redis cache not available - caching disabled. Error: {str(e)}")
+
+# Cache TTL settings (in seconds)
+CACHE_TTL = {
+    'vespa_results': 300,  # 5 minutes for VESPA results
+    'national_data': 3600,  # 1 hour for national benchmarks
+    'filter_options': 600,  # 10 minutes for filter options
+    'establishments': 3600,  # 1 hour for establishments
+    'question_mappings': 86400,  # 24 hours for static mappings
+    'dashboard_data': 600,  # 10 minutes for dashboard batch data
+}
+
+# --- Explicit CORS Configuration ---
+# Allow requests from your specific Knack domain and potentially localhost for development
+# Updated CORS configuration with explicit settings
+CORS(app, 
+     resources={r"/api/*": {"origins": ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]}},
+     supports_credentials=True,
+     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+
+# Add explicit CORS headers to all responses (belt and suspenders approach)
+@app.after_request
+def after_request(response):
+    origin = request.headers.get('Origin')
+    app.logger.info(f"Request Origin: {origin}")
+    
+    # List of allowed origins
+    allowed_origins = ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]  # Added "null" for file:// testing
+    
+    if origin in allowed_origins:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Max-Age'] = '3600'
+    
+    # Log the response headers for debugging
+    app.logger.info(f"Response headers: {dict(response.headers)}")
+    
+    return response
+
+# --- Explicitly configure logging ---
+# Remove any default handlers Flask might have added that Gunicorn might ignore
+if app.logger.hasHandlers():
+    app.logger.handlers.clear()
+
+# Configure the root logger or Flask's logger to be more verbose
+# and ensure it outputs to stdout/stderr which Heroku/Gunicorn capture.
+gunicorn_logger = logging.getLogger('gunicorn.error') # Gunicorn's error logger often captures app output
+app.logger.handlers.extend(gunicorn_logger.handlers)
+app.logger.setLevel(logging.INFO)
+
+# If the above doesn't work, try a more direct basicConfig:
+# logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+# app.logger = logging.getLogger(__name__) # then use app.logger as before
+
+app.logger.info("Flask logger has been configured explicitly.") # Test message
+
+# --- Configuration ---
+KNACK_APP_ID = os.getenv('KNACK_APP_ID')
+KNACK_API_KEY = os.getenv('KNACK_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY') # We'll use this later
+
+# Log configuration status (without revealing actual keys)
+app.logger.info(f"KNACK_APP_ID configured: {'Yes' if KNACK_APP_ID else 'No'}")
+app.logger.info(f"KNACK_API_KEY configured: {'Yes' if KNACK_API_KEY else 'No'}")
+app.logger.info(f"OPENAI_API_KEY configured: {'Yes' if OPENAI_API_KEY else 'No'}")
+
+# --- Error Handling ---
+class ApiError(Exception):
+    def __init__(self, message, status_code=400):
+        super().__init__(message)
+        self.status_code = status_code
+
+@app.errorhandler(ApiError)
+def handle_api_error(error):
+    response = jsonify({'message': error.args[0]})
+    response.status_code = error.status_code
+    # Ensure CORS headers are added to error responses
+    origin = request.headers.get('Origin')
+    if origin in ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
+
+@app.errorhandler(Exception)
+def handle_generic_error(error):
+    app.logger.error(f"An unexpected error occurred: {error}")
+    response = jsonify({'message': "An internal server error occurred."})
+    response.status_code = 500
+    # Ensure CORS headers are added to error responses
+    origin = request.headers.get('Origin')
+    if origin in ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
+
+@app.errorhandler(503)
+def handle_service_unavailable(error):
+    app.logger.error(f"Service unavailable (503): {error}")
+    response = jsonify({'message': "Request timeout - please try again with a smaller dataset or contact support."})
+    response.status_code = 503
+    # Ensure CORS headers are added to 503 responses
+    origin = request.headers.get('Origin')
+    if origin in ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
+
+# --- Knack API Proxy ---
+BASE_KNACK_URL = f"https://api.knack.com/v1/objects"
+
+# --- Caching Decorator ---
+def cache_key(*args, **kwargs):
+    """Generate a cache key from function arguments"""
+    key_parts = []
+    for arg in args:
+        if isinstance(arg, (list, dict)):
+            key_parts.append(json.dumps(arg, sort_keys=True))
+        else:
+            key_parts.append(str(arg))
+    for k, v in sorted(kwargs.items()):
+        if isinstance(v, (list, dict)):
+            key_parts.append(f"{k}:{json.dumps(v, sort_keys=True)}")
+        else:
+            key_parts.append(f"{k}:{v}")
+    
+    key_string = ":".join(key_parts)
+    return hashlib.md5(key_string.encode()).hexdigest()
+
+def cached(ttl_key='default', ttl_seconds=300):
+    """Decorator to cache function results in Redis with compression"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if not CACHE_ENABLED:
+                return func(*args, **kwargs)
+            
+            # Generate cache key
+            cache_key_str = f"{func.__name__}:{cache_key(*args, **kwargs)}"
+            
+            # Try to get from cache
+            try:
+                cached_value = redis_client.get(cache_key_str)
+                if cached_value:
+                    app.logger.info(f"Cache hit for {cache_key_str}")
+                    # Decompress and unpickle
+                    return pickle.loads(gzip.decompress(cached_value))
+            except Exception as e:
+                app.logger.error(f"Cache get error: {e}")
+            
+            # Call function and cache result
+            result = func(*args, **kwargs)
+            
+            try:
+                ttl = CACHE_TTL.get(ttl_key, ttl_seconds)
+                # Compress before caching
+                compressed_data = gzip.compress(pickle.dumps(result))
+                redis_client.setex(cache_key_str, ttl, compressed_data)
+                app.logger.info(f"Cached {cache_key_str} for {ttl} seconds (compressed)")
+            except Exception as e:
+                app.logger.error(f"Cache set error: {e}")
+            
+            return result
+        
+        return wrapper
+    return decorator
+
+# --- Optimized Knack API Functions ---
+@cached(ttl_key='vespa_results')
+def make_knack_request(object_key, filters=None, method='GET', data=None, record_id=None, page=1, rows_per_page=1000, sort_field=None, sort_order=None, fields=None):
+    # Check if credentials are configured
+    if not KNACK_APP_ID or not KNACK_API_KEY:
+        raise ApiError("Knack API credentials not configured. Please set KNACK_APP_ID and KNACK_API_KEY environment variables.", 500)
+    
+    headers = {
+        'X-Knack-Application-Id': KNACK_APP_ID,
+        'X-Knack-REST-API-Key': KNACK_API_KEY,
+        'Content-Type': 'application/json'
+    }
+    url = f"{BASE_KNACK_URL}/{object_key}/records"
+    if record_id:
+        url = f"{BASE_KNACK_URL}/{object_key}/records/{record_id}"
+
+    params = {'page': page, 'rows_per_page': rows_per_page}
+    if filters:
+        params['filters'] = json.dumps(filters)
+    if sort_field:
+        params['sort_field'] = sort_field
+    if sort_order:
+        params['sort_order'] = sort_order
+
+    # Add field filtering to reduce payload size
+    if fields:
+        params['fields'] = json.dumps(fields)
+
+    app.logger.info(f"Making Knack API request to URL: {url} with params: {params}")
+
+    try:
+        # Add timeout to prevent hanging requests
+        timeout = 20  # 20 seconds timeout for individual Knack requests
+        
+        if method == 'GET':
+            response = requests.get(url, headers=headers, params=params, timeout=timeout)
+        elif method == 'POST':
+            response = requests.post(url, headers=headers, json=data, params=params, timeout=timeout)
+        elif method == 'PUT':
+            response = requests.put(url, headers=headers, json=data, params=params, timeout=timeout)
+        else:
+            raise ApiError("Unsupported HTTP method for Knack API", 405)
+        
+        app.logger.info(f"Knack API response status: {response.status_code}") # Log status code
+        app.logger.info(f"Knack API response headers: {response.headers}") # Log response headers
+        # Log first 500 chars of text response to see what Knack is sending
+        app.logger.info(f"Knack API response text (first 500 chars): {response.text[:500]}") 
+
+        response.raise_for_status()  # Raises HTTPError for bad responses (4XX or 5XX)
+        
+        knack_data = response.json() # Try to parse JSON
+        app.logger.info(f"Successfully parsed Knack API JSON response.")
+        return knack_data
+
+    except requests.exceptions.Timeout:
+        app.logger.error(f"Knack API timeout after {timeout} seconds")
+        raise ApiError(f"Knack API request timed out after {timeout} seconds", 504)
+    except requests.exceptions.HTTPError as e:
+        app.logger.error(f"Knack API HTTPError: {e.response.status_code} - {e.response.text}")
+        raise ApiError(f"Knack API request failed: {e.response.status_code} - {e.response.text}", e.response.status_code)
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Knack API RequestException: {e}")
+        raise ApiError(f"Knack API request failed: {e}", 500)
+
+@app.route('/api/knack-data', methods=['GET'])
+def get_knack_data():
+    object_key = request.args.get('objectKey')
+    filters_str = request.args.get('filters')
+    page = request.args.get('page', 1, type=int)
+    rows_per_page = request.args.get('rows_per_page', 1000, type=int)
+    sort_field = request.args.get('sort_field')
+    sort_order = request.args.get('sort_order')
+    fields_str = request.args.get('fields')  # New parameter for field selection
+
+    if not object_key:
+        raise ApiError("Missing 'objectKey' parameter")
+
+    filters = []
+    if filters_str:
+        try:
+            filters = json.loads(filters_str)
+        except json.JSONDecodeError:
+            raise ApiError("Invalid 'filters' JSON format")
+    
+    fields = []
+    if fields_str:
+        try:
+            fields = json.loads(fields_str)
+        except json.JSONDecodeError:
+            raise ApiError("Invalid 'fields' JSON format")
+
+    all_records = []
+    current_page = page
+    
+    # Initial fetch
+    data = make_knack_request(object_key, filters=filters, page=current_page, rows_per_page=rows_per_page, 
+                            sort_field=sort_field, sort_order=sort_order, fields=fields)
+    records = data.get('records', [])
+    all_records.extend(records)
+        
+    # Pagination logic: Continue fetching if more pages exist AND we didn't specifically ask for a small number of rows (e.g. 1 with sorting)
+    # This avoids unnecessary pagination if the client intended to get only the first page (e.g., rows_per_page=1, sort_field provided).
+    if not (rows_per_page == 1 and sort_field):
+        while True:
+            current_page += 1 # Increment page for the next fetch
+            total_pages = data.get('total_pages') 
+            
+            if total_pages is None or current_page > total_pages or not records: # Check if we should stop
+                break
+            
+            # Allow caller to override the default 5-page safety cap by passing ?max_pages=<N> (0 = unlimited)
+            max_pages_param = request.args.get('max_pages', type=int)
+            if max_pages_param is None:
+                page_cap = 0 if filters else 5  # unlimited pages when client supplied filters (targeted fetch)
+            else:
+                page_cap = max_pages_param
+
+            if page_cap != 0 and current_page > page_cap:
+                app.logger.warning(
+                    f"Stopped fetching for {object_key} after {current_page - 1} pages (page cap = {page_cap}).")
+                break
+
+            data = make_knack_request(object_key, filters=filters, page=current_page, rows_per_page=rows_per_page, 
+                                    sort_field=sort_field, sort_order=sort_order, fields=fields)
+            records = data.get('records', []) # Get records from the new fetch
+            if not records: # No more records returned, stop.
+                break
+            all_records.extend(records)
+            
+    return jsonify({'records': all_records})
+
+
+# --- New Batch Data Endpoint ---
+@app.route('/api/dashboard-initial-data', methods=['POST'])
+def get_dashboard_initial_data():
+    """
+    Batch endpoint to fetch all initial dashboard data in one request.
+    This reduces multiple round trips and allows better caching.
+    """
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    staff_admin_id = data.get('staffAdminId')
+    establishment_id = data.get('establishmentId')
+    cycle = data.get('cycle', 1)
+    page = data.get('page', 1)  # Support pagination
+    rows_per_page = data.get('rowsPerPage', 1000)  # Reduced default from 3000
+    
+    if not staff_admin_id and not establishment_id:
+        raise ApiError("Either staffAdminId or establishmentId must be provided")
+    
+    # Generate cache key for this specific request
+    cache_key = f"dashboard_data:{staff_admin_id or 'none'}:{establishment_id or 'none'}:{cycle}:{page}:{rows_per_page}"
+    
+    # Try to get from cache first
+    if CACHE_ENABLED:
+        try:
+            cached_data = redis_client.get(cache_key)
+            if cached_data:
+                app.logger.info(f"Returning cached dashboard data for key: {cache_key}")
+                # Decompress and unpickle
+                return jsonify(pickle.loads(gzip.decompress(cached_data)))
+        except Exception as e:
+            app.logger.error(f"Cache retrieval error: {e}")
+    
+    app.logger.info(f"Fetching dashboard initial data for staffAdminId: {staff_admin_id}, establishmentId: {establishment_id}, cycle: {cycle}, page: {page}")
+    
+    results = {}
+    
+    # Build base filters
+    base_filters = []
+    if establishment_id:
+        base_filters.append({
+            'field': 'field_133',
+            'operator': 'is',
+            'value': establishment_id
+        })
+    elif staff_admin_id:
+        base_filters.append({
+            'field': 'field_439',
+            'operator': 'is',
+            'value': staff_admin_id
+        })
+    
+    # Define minimal field set for VESPA results (object_10)
+    cycle_offset = (cycle - 1) * 6
+    score_fields = [f'field_{154 + cycle_offset + i}_raw' for i in range(6)]
+    
+    vespa_fields = [
+        'id',
+        'field_133',
+        'field_133_raw',
+        'field_439_raw',
+        'field_187_raw',
+        'field_223',
+        'field_223_raw',
+        'field_2299',
+        'field_2299_raw',
+        'field_144_raw',
+        'field_782_raw',
+        *score_fields,
+        'field_2302_raw',
+        'field_2303_raw',
+        'field_2304_raw',
+        'field_2499_raw',
+        'field_2493_raw',
+        'field_2494_raw',
+    ]
+    
+    try:
+        # Check cache first with exact key
+        if CACHE_ENABLED:
+            try:
+                cached_data = redis_client.get(cache_key)
+                if cached_data:
+                    app.logger.info(f"Returning cached dashboard data for key: {cache_key}")
+                    # Decompress and unpickle
+                    return jsonify(pickle.loads(gzip.decompress(cached_data)))
+            except Exception as e:
+                app.logger.error(f"Cache retrieval error: {e}")
+        
+        # For large establishments, implement a different strategy
+        # First, check the size of the dataset
+        size_check = make_knack_request(
+            'object_10',
+            filters=base_filters,
+            page=1,
+            rows_per_page=1,
+            fields=['id']
+        )
+        
+        total_records = size_check.get('total_records', 0)
+        total_pages = size_check.get('total_pages', 1)
+        
+        app.logger.info(f"Total records for establishment: {total_records}, Total pages: {total_pages}")
+        
+        # If it's a large dataset, fetch ALL records in batches
+        if total_records > 1500:
+            app.logger.info(f"Large dataset detected ({total_records} records). Fetching ALL records in batches.")
+            
+            vespa_records = []
+            import concurrent.futures
+            
+            # Calculate how many pages we need to fetch
+            pages_needed = (total_records + 999) // 1000  # Round up
+            app.logger.info(f"Need to fetch {pages_needed} pages for {total_records} records")
+            
+            # Fetch pages in parallel (but limit concurrent requests)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                futures = []
+                
+                for page_num in range(1, pages_needed + 1):
+                    future = executor.submit(
+                        make_knack_request,
+                        'object_10',
+                        filters=base_filters,
+                        page=page_num,
+                        rows_per_page=1000,
+                        fields=vespa_fields
+                    )
+                    futures.append((page_num, future))
+                
+                # Collect results with progress logging
+                for page_num, future in futures:
+                    try:
+                        page_data = future.result(timeout=30)  # 30 second timeout per page
+                        page_records = page_data.get('records', [])
+                        vespa_records.extend(page_records)
+                        app.logger.info(f"Fetched page {page_num}/{pages_needed} - {len(page_records)} records")
+                    except Exception as e:
+                        app.logger.error(f"Error fetching page {page_num}: {e}")
+            
+            app.logger.info(f"Fetched total of {len(vespa_records)} records")
+            
+            # Add metadata about the full dataset
+            results['isLimitedMode'] = False
+            results['totalRecords'] = total_records
+            results['loadedRecords'] = len(vespa_records)
+            
+        else:
+            # For smaller datasets, fetch ALL pages
+            import concurrent.futures
+            
+            with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+                futures = []
+                
+                # Fetch ALL pages in parallel
+                app.logger.info(f"Fetching all {total_pages} pages for {total_records} records")
+                
+                for page_num in range(1, total_pages + 1):
+                    future = executor.submit(
+                        make_knack_request,
+                        'object_10',
+                        filters=base_filters,
+                        page=page_num,
+                        rows_per_page=1000,
+                        fields=vespa_fields
+                    )
+                    futures.append(future)
+                
+                # Also fetch national benchmark in parallel
+                national_future = executor.submit(
+                    make_knack_request,
+                    'object_120',
+                    filters=[],
+                    rows_per_page=1,
+                    sort_field='field_3307',
+                    sort_order='desc'
+                )
+                
+                # Collect VESPA results
+                vespa_records = []
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        page_data = future.result(timeout=10)  # 10 second timeout per request
+                        vespa_records.extend(page_data.get('records', []))
+                    except Exception as e:
+                        app.logger.error(f"Error fetching page: {e}")
+                
+                # Get national benchmark result
+                try:
+                    national_data = national_future.result(timeout=5)
+                    results['nationalBenchmark'] = national_data.get('records', [{}])[0]
+                except Exception as e:
+                    app.logger.error(f"Error fetching national benchmark: {e}")
+                    results['nationalBenchmark'] = {}
+        
+        # For large datasets, fetch national benchmark separately
+        if total_records > 1500 and 'nationalBenchmark' not in results:
+            try:
+                national_data = make_knack_request(
+                    'object_120',
+                    filters=[],
+                    rows_per_page=1,
+                    sort_field='field_3307',
+                    sort_order='desc'
+                )
+                results['nationalBenchmark'] = national_data.get('records', [{}])[0]
+            except Exception as e:
+                app.logger.error(f"Error fetching national benchmark: {e}")
+                results['nationalBenchmark'] = {}
+        
+        results['vespaResults'] = vespa_records
+        app.logger.info(f"Fetched {len(vespa_records)} VESPA results")
+        
+        # Build filter options locally (quick)
+        filter_sets = {
+            'groups': set(),
+            'courses': set(),
+            'yearGroups': set(),
+            'faculties': set()
+        }
+
+        for rec in vespa_records:
+            grp = rec.get('field_223_raw') or rec.get('field_223')
+            if grp:
+                if isinstance(grp, list):
+                    filter_sets['groups'].update([str(g) for g in grp if g])
+                else:
+                    filter_sets['groups'].add(str(grp))
+
+            course = rec.get('field_2299_raw') or rec.get('field_2299')
+            if course:
+                if isinstance(course, list):
+                    filter_sets['courses'].update([str(c) for c in course if c])
+                else:
+                    filter_sets['courses'].add(str(course))
+
+            yg = rec.get('field_144_raw')
+            if yg:
+                filter_sets['yearGroups'].add(str(yg))
+
+            fac = rec.get('field_782_raw')
+            if fac:
+                filter_sets['faculties'].add(str(fac))
+
+        results['filterOptions'] = {k: sorted(list(v)) for k, v in filter_sets.items()}
+
+        # Always calculate ERI and psychometric data - no compromises on data accuracy
+        # Calculate school ERI
+        eri_field_map = {
+            1: 'field_2868',
+            2: 'field_2869',
+            3: 'field_2870'
+        }
+        # This would need the psychometric data - for now just placeholder
+        results['schoolERI'] = None
+        results['nationalERI'] = None
+        results['psychometricResponses'] = []
+
+        # Cache the results with consistent TTL
+        if CACHE_ENABLED:
+            try:
+                # Cache for 10 minutes for all datasets
+                cache_ttl = CACHE_TTL.get('dashboard_data', 600)
+                compressed_data = gzip.compress(pickle.dumps(results))
+                redis_client.setex(cache_key, cache_ttl, compressed_data)
+                app.logger.info(f"Cached dashboard data for key: {cache_key} (compressed, TTL: {cache_ttl}s, {len(vespa_records)} records)")
+            except Exception as e:
+                app.logger.error(f"Cache storage error: {e}")
+
+        app.logger.info(
+            f"Dashboard data prepared: {len(vespa_records)} VESPA rows, Filter opts G{len(results['filterOptions']['groups'])}/C{len(results['filterOptions']['courses'])}"
+        )
+
+        return jsonify(results)
+
+    except Exception as e:
+        app.logger.error(f"Error fetching dashboard initial data: {e}")
+        raise ApiError(f"Failed to fetch dashboard initial data: {str(e)}", 500)
+
+
+# --- Cache Management Endpoints ---
+@app.route('/api/cache/clear', methods=['POST'])
+def clear_cache():
+    """Clear all or specific cache entries"""
+    if not CACHE_ENABLED:
+        return jsonify({'message': 'Cache not enabled'}), 200
+    
+    data = request.get_json() or {}
+    pattern = data.get('pattern', '*')
+    
+    try:
+        if pattern == '*':
+            redis_client.flushdb()
+            message = 'All cache cleared'
+        else:
+            keys = redis_client.keys(f'*{pattern}*')
+            if keys:
+                redis_client.delete(*keys)
+                message = f'Cleared {len(keys)} cache entries matching pattern: {pattern}'
+            else:
+                message = f'No cache entries found matching pattern: {pattern}'
+        
+        app.logger.info(message)
+        return jsonify({'message': message})
+    except Exception as e:
+        app.logger.error(f"Error clearing cache: {e}")
+        raise ApiError(f"Failed to clear cache: {str(e)}", 500)
+
+# --- New Endpoint for Establishments ---
+
+@app.route('/api/establishments/search', methods=['GET'])
+def search_establishments():
+    """Quick search endpoint for establishments using Knack's search"""
+    try:
+        query = request.args.get('q', '').strip()
+        if not query or len(query) < 2:
+            return jsonify({'establishments': []})
+        
+        # Try to search in the establishment object directly if available
+        # This assumes you have an establishments object in Knack
+        # If not, we'll fall back to searching in VESPA results
+        
+        # First, try object_3 (Establishments) if it exists
+        try:
+            filters = [{
+                'field': 'field_8',  # Establishment name field in object_3
+                'operator': 'contains',
+                'value': query
+            }]
+            
+            establishments = make_knack_request(
+                'object_3',  # Establishments object
+                filters=filters,
+                rows_per_page=20,
+                page=1
+            )
+            
+            if establishments:
+                results = []
+                for est in establishments:
+                    results.append({
+                        'id': est['id'],
+                        'name': est.get('field_8', 'Unknown')
+                    })
+                return jsonify({'establishments': results})
+                
+        except Exception as e:
+            app.logger.warning(f"Could not search object_3: {str(e)}")
+        
+        # Fallback to searching in VESPA results
+        return get_establishments()
+        
+    except Exception as e:
+        app.logger.error(f"Error searching establishments: {str(e)}")
+        return jsonify({'establishments': [], 'error': str(e)}), 500
+
+# --- Serving Static JSON Files ---
+def load_json_file(file_path):
+    try:
+        with open(file_path, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        raise ApiError(f"File not found: {file_path}", 404)
+    except json.JSONDecodeError:
+        raise ApiError(f"Error decoding JSON from file: {file_path}", 500)
+
+@app.route('/api/interrogation-questions', methods=['GET'])
+def get_interrogation_questions():
+    questions = load_json_file('knowledge_base/data_analysis_questions.json')
+    return jsonify(questions)
+
+@app.route('/api/question-mappings', methods=['GET'])
+def get_question_mappings():
+    # Combine or serve them separately as needed by your frontend
+    id_to_text = load_json_file('AIVESPACoach/question_id_to_text_mapping.json')
+    psychometric_details = load_json_file('AIVESPACoach/psychometric_question_details.json')
+    return jsonify({
+        'id_to_text': id_to_text,
+        'psychometric_details': psychometric_details
+    })
+
+# === QLA DATAFRAME UTILS (new) ===
+def _get_psychometric_mapping(cycle=None):
+    mapping_path = 'AIVESPACoach/psychometric_question_details.json'
+    mapping_json = load_json_file(mapping_path)
+    id_map = {}
+    
+    # Create a comprehensive mapping that handles all variations
+    for item in mapping_json:
+        qid = item['questionId']
+        
+        # Determine which field to use based on cycle
+        if cycle:
+            # Use cycle-specific historical fields
+            cycle_field_map = {
+                1: 'fieldIdCycle1',
+                2: 'fieldIdCycle2', 
+                3: 'fieldIdCycle3'
+            }
+            field_key = cycle_field_map.get(int(cycle))
+            if field_key and field_key in item:
+                field_id = item[field_key]
+            else:
+                # Fallback to current cycle field if historical not available
+                field_id = item['currentCycleFieldId']
+        else:
+            # Use current cycle field as default
+            field_id = item['currentCycleFieldId']
+        
+        # Handle outcome questions
+        if qid.startswith('outcome_'):
+            # Map both uppercase and original case
+            id_map[qid.upper()] = field_id
+            id_map[qid] = field_id
+            # Also map without 'outcome_' prefix for flexibility
+            short_id = qid.replace('outcome_', '').upper()
+            id_map[f'OUTCOME_{short_id}'] = field_id
+        else:
+            # Regular questions (q1-q29)
+            # Map lowercase version
+            id_map[qid] = field_id
+            # Map uppercase version
+            id_map[qid.upper()] = field_id
+            # Map just the number with Q prefix
+            if qid.startswith('q'):
+                num = qid[1:]
+                id_map[f'Q{num}'] = field_id
+                id_map[f'q{num}'] = field_id
+    
+    app.logger.info(f"Psychometric mapping created with {len(id_map)} entries for cycle {cycle}")
+    app.logger.info(f"Sample mappings: {list(id_map.items())[:5]}")
+    
+    return id_map
+
+
+def _fetch_psychometric_records(question_field_ids, base_filters, cycle=None):
+    """Fetch records from object_29 containing the requested fields."""
+    # Build field list with _raw so we get numeric value directly
+    fields = []
+    for fid in question_field_ids:
+        fields.append(fid)
+        fields.append(fid + '_raw')
+    
+    # Add cycle field to ensure we can filter properly
+    fields.append('field_863')
+    fields.append('field_863_raw')
+    
+    # Add cycle filter if specified
+    filters = base_filters.copy()
+    if cycle:
+        filters.append({
+            'field': 'field_863',
+            'operator': 'is',
+            'value': str(cycle)
+        })
+        app.logger.info(f"Added cycle filter for cycle {cycle}")
+    
+    data = make_knack_request('object_29', filters=filters, fields=list(set(fields)))
+    records = data.get('records', [])
+    
+    app.logger.info(f"Fetched {len(records)} psychometric records for cycle {cycle}")
+    
+    return records
+
+
+def _build_dataframe(question_ids, base_filters, cycle=None):
+    """Return pandas dataframe with columns per question id (numeric 1-5)."""
+    # Try Redis cache first
+    cache_key_df = f"qla_df:{hashlib.md5(json.dumps({'q': question_ids, 'f': base_filters, 'c': cycle}).encode()).hexdigest()}"
+    if CACHE_ENABLED:
+        cached = redis_client.get(cache_key_df)
+        if cached:
+            try:
+                # Decompress and unpickle
+                return pickle.loads(gzip.decompress(cached))
+            except Exception:
+                pass
+    
+    mapping = _get_psychometric_mapping(cycle)
+    field_ids = []
+    
+    app.logger.info(f"_build_dataframe: Processing {len(question_ids)} question IDs for cycle {cycle}")
+    app.logger.info(f"_build_dataframe: First 5 question IDs: {question_ids[:5]}")
+    
+    for qid in question_ids:
+        # Try multiple variations of the question ID
+        field = None
+        for variant in [qid, qid.upper(), qid.lower()]:
+            field = mapping.get(variant)
+            if field:
+                break
+        
+        if field:
+            field_ids.append(field)
+        else:
+            app.logger.warning(f"_build_dataframe: No mapping found for question ID: {qid}")
+    
+    app.logger.info(f"_build_dataframe: Mapped to {len(field_ids)} field IDs")
+    
+    if not field_ids:
+        app.logger.warning("_build_dataframe: No field IDs to fetch")
+        return pd.DataFrame()
+    
+    records = _fetch_psychometric_records(field_ids, base_filters, cycle)
+    app.logger.info(f"_build_dataframe: Fetched {len(records)} records")
+    
+    if not records:
+        return pd.DataFrame()
+    
+    data_dict = {}
+    for qid in question_ids:
+        # Try multiple variations again
+        f_id = None
+        for variant in [qid, qid.upper(), qid.lower()]:
+            f_id = mapping.get(variant)
+            if f_id:
+                break
+        
+        if not f_id:
+            continue
+            
+        col_vals = []
+        for rec in records:
+            val = rec.get(f_id + '_raw')
+            try:
+                col_vals.append(float(val) if val is not None else None)
+            except ValueError:
+                col_vals.append(None)
+        data_dict[qid] = col_vals
+    
+    df = pd.DataFrame(data_dict)
+    app.logger.info(f"_build_dataframe: Created DataFrame with shape {df.shape}")
+    
+    # cache with compression
+    if CACHE_ENABLED:
+        try:
+            compressed_df = gzip.compress(pickle.dumps(df))
+            redis_client.setex(cache_key_df, 300, compressed_df)
+        except Exception:
+            pass
+    return df
+
+# === Analysis helpers ===
+
+def quick_percent_agree(question_ids, filters, cycle=None):
+    df = _build_dataframe(question_ids, filters, cycle)
+    if df.empty:
+        return {"percent": 0, "n": 0}
+    
+    # Handle multiple questions - calculate average percentage across all questions
+    if len(question_ids) > 1:
+        total_agree = 0
+        total_responses = 0
+        
+        for q in question_ids:
+            if q in df.columns:
+                series = df[q].dropna()
+                n = len(series)
+                if n > 0:
+                    agree_count = (series >= 4).sum()
+                    total_agree += agree_count
+                    total_responses += n
+        
+        if total_responses == 0:
+            return {"percent": 0, "n": 0}
+        
+        percent = float(total_agree * 100 / total_responses)
+        # For multiple questions, n represents average responses per question
+        avg_n = int(total_responses / len(question_ids))
+        return {"percent": round(percent, 1), "n": avg_n}
+    else:
+        # Single question - original logic
+        q = question_ids[0]
+        series = df[q].dropna()
+        n = len(series)
+        if n == 0:
+            return {"percent": 0, "n": 0}
+        percent = float((series >= 4).sum() * 100 / n)
+        return {"percent": round(percent, 1), "n": n}
+
+
+def quick_correlation(question_ids, filters, cycle=None):
+    df = _build_dataframe(question_ids[:2], filters, cycle)
+    if df.empty or df.shape[1] < 2:
+        return {"r": None, "p": None, "n": 0}
+    a, b = question_ids[:2]
+    sub = df[[a, b]].dropna()
+    if len(sub) < 3:
+        return {"r": None, "p": None, "n": len(sub)}
+    r, p = pearsonr(sub[a], sub[b])
+    return {"r": round(r,3), "p": round(p,4), "n": len(sub)}
+
+
+def quick_top_bottom(question_ids, filters, cycle=None):
+    # If questionIds empty => evaluate all from mapping
+    mapping = _get_psychometric_mapping(cycle)
+    
+    # Normalize question IDs to avoid duplicates
+    if question_ids:
+        qs = question_ids
+    else:
+        # Get unique questions by normalizing to lowercase base form
+        unique_questions = set()
+        for qid in mapping.keys():
+            # Normalize to base form (e.g., 'Q1', 'q1' -> 'q1')
+            normalized = qid.lower()
+            # Handle outcome questions
+            if normalized.startswith('outcome_'):
+                unique_questions.add(normalized)
+            # Handle regular questions
+            elif normalized.startswith('q') and len(normalized) > 1:
+                # Extract just the base question ID
+                if '_' in normalized:
+                    base = normalized.split('_')[0]
+                else:
+                    base = normalized
+                unique_questions.add(base)
+        qs = list(unique_questions)
+    
+    app.logger.info(f"quick_top_bottom: Processing {len(qs)} unique questions for cycle {cycle}")
+    app.logger.info(f"quick_top_bottom: Filters: {filters}")
+    
+    df = _build_dataframe(qs, filters, cycle)
+    
+    if df.empty:
+        app.logger.warning("quick_top_bottom: DataFrame is empty, no data found")
+        return {"top": {}, "bottom": {}}
+    
+    app.logger.info(f"quick_top_bottom: DataFrame shape: {df.shape}")
+    app.logger.info(f"quick_top_bottom: DataFrame columns: {list(df.columns)}")
+    
+    # Calculate means and counts for columns that have data
+    means = df.mean().dropna()
+    counts = df.count()
+    
+    if means.empty:
+        app.logger.warning("quick_top_bottom: No valid means calculated")
+        return {"top": {}, "bottom": {}}
+    
+    # Create combined data with means and counts
+    combined_data = {}
+    for qid in means.index:
+        combined_data[qid] = {
+            'score': round(means[qid], 2),
+            'n': int(counts.get(qid, 0))
+        }
+    
+    # Sort by score
+    sorted_questions = sorted(combined_data.items(), key=lambda x: x[1]['score'], reverse=True)
+    
+    # Get top and bottom 5 (or fewer if less data available)
+    top_count = min(5, len(sorted_questions))
+    bottom_count = min(5, len(sorted_questions))
+    
+    top = dict(sorted_questions[:top_count])
+    bottom = dict(sorted_questions[-bottom_count:])
+    
+    app.logger.info(f"quick_top_bottom: Found {len(top)} top questions and {len(bottom)} bottom questions")
+    
+    return {"top": top, "bottom": bottom}
+
+
+# Extend qla_analysis
+
+calc_dispatch = {
+    "percentAgree": quick_percent_agree,
+    "correlation": quick_correlation,
+    "topBottom": quick_top_bottom,
+    # themeMeans etc can be added later
+}
+
+# Modify existing qla_analysis wrapper
+@app.route('/api/qla-analysis', methods=['POST'])
+def qla_analysis():
+    """Perform statistical analysis based on query type"""
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    analysis_type = data.get('analysisType')
+    question_ids = data.get('questionIds', [])
+    filters_param = data.get('filters', {})
+    options = data.get('options', {})
+    cycle = data.get('cycle', 1)  # Default to cycle 1 if not specified
+    
+    if not analysis_type:
+        raise ApiError("Missing analysisType parameter")
+    
+    app.logger.info(f"QLA analysis requested: {analysis_type} for questions: {question_ids}, cycle: {cycle}")
+    
+    try:
+        # Convert filters_param into proper list for builder
+        base_filters = []
+        if isinstance(filters_param, list):
+            base_filters = filters_param
+        elif isinstance(filters_param, dict):
+            if 'establishmentId' in filters_param:
+                base_filters.append({
+                    'field': 'field_1821',
+                    'operator': 'is',
+                    'value': filters_param['establishmentId']
+                })
+            if 'staffAdminId' in filters_param:
+                base_filters.append({
+                    'field': 'field_2069',
+                    'operator': 'is',
+                    'value': filters_param['staffAdminId']
+                })
+        if analysis_type in calc_dispatch:
+            result = calc_dispatch[analysis_type](question_ids, base_filters, cycle)
+        else:
+            raise ApiError(f"Unknown analysis type: {analysis_type}")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"QLA analysis error: {e}")
+        raise ApiError(f"Analysis failed: {str(e)}", 500)
+
+@app.route('/api/qla-correlation', methods=['POST'])
+def qla_correlation():
+    """Calculate correlations between questions"""
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    # TODO: Implement correlation calculation
+    return jsonify({
+        'correlations': [],
+        'message': 'Correlation analysis will be implemented'
+    })
+
+@app.route('/api/qla-trends', methods=['POST'])
+def qla_trends():
+    """Analyze trends across cycles"""
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    # TODO: Implement trend analysis
+    return jsonify({
+        'trends': [],
+        'message': 'Trend analysis will be implemented'
+    })
+
+# --- New Batch QLA Analysis Endpoint ---
+@app.route('/api/qla-batch-analysis', methods=['POST'])
+def qla_batch_analysis():
+    """Perform multiple QLA analyses in a single request to improve performance"""
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    analyses = data.get('analyses', [])
+    filters_param = data.get('filters', {})
+    cycle = data.get('cycle', 1)  # Default to cycle 1 if not specified
+    
+    if not analyses:
+        raise ApiError("Missing analyses parameter")
+    
+    app.logger.info(f"QLA batch analysis requested for {len(analyses)} insights, cycle: {cycle}")
+    
+    try:
+        # Convert filters
+        base_filters = []
+        if isinstance(filters_param, dict):
+            if 'establishmentId' in filters_param:
+                base_filters.append({
+                    'field': 'field_1821',
+                    'operator': 'is',
+                    'value': filters_param['establishmentId']
+                })
+            if 'staffAdminId' in filters_param:
+                base_filters.append({
+                    'field': 'field_2069',
+                    'operator': 'is',
+                    'value': filters_param['staffAdminId']
+                })
+        
+        # Collect all unique question IDs
+        all_question_ids = set()
+        for analysis in analyses:
+            all_question_ids.update(analysis.get('questionIds', []))
+        
+        # Fetch data once for all questions
+        df = _build_dataframe(list(all_question_ids), base_filters, cycle)
+        
+        # Process each analysis using the same dataframe
+        results = {}
+        for analysis in analyses:
+            insight_id = analysis.get('id')
+            analysis_type = analysis.get('type', 'percentAgree')
+            question_ids = analysis.get('questionIds', [])
+            
+            if analysis_type == 'percentAgree':
+                # Calculate directly from the dataframe
+                if df.empty:
+                    results[insight_id] = {"percent": 0, "n": 0}
+                elif len(question_ids) > 1:
+                    # Multiple questions
+                    total_agree = 0
+                    total_responses = 0
+                    
+                    for q in question_ids:
+                        if q in df.columns:
+                            series = df[q].dropna()
+                            n = len(series)
+                            if n > 0:
+                                agree_count = (series >= 4).sum()
+                                total_agree += agree_count
+                                total_responses += n
+                    
+                    if total_responses == 0:
+                        results[insight_id] = {"percent": 0, "n": 0}
+                    else:
+                        percent = float(total_agree * 100 / total_responses)
+                        avg_n = int(total_responses / len(question_ids))
+                        results[insight_id] = {"percent": round(percent, 1), "n": avg_n}
+                else:
+                    # Single question
+                    q = question_ids[0]
+                    if q in df.columns:
+                        series = df[q].dropna()
+                        n = len(series)
+                        if n == 0:
+                            results[insight_id] = {"percent": 0, "n": 0}
+                        else:
+                            percent = float((series >= 4).sum() * 100 / n)
+                            results[insight_id] = {"percent": round(percent, 1), "n": n}
+                    else:
+                        results[insight_id] = {"percent": 0, "n": 0}
+            else:
+                # Other analysis types can be added here
+                results[insight_id] = {"error": f"Unsupported analysis type: {analysis_type}"}
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        app.logger.error(f"QLA batch analysis error: {e}")
+        raise ApiError(f"Batch analysis failed: {str(e)}", 500)
+
+# --- QLA AI Chat (Enhanced) ---
+@app.route('/api/qla-chat', methods=['POST'])
+def qla_chat():
+    data = request.get_json()
+    if not data or 'query' not in data:
+        raise ApiError("Missing 'query' in request body")
+    
+    user_query = data['query']
+    question_data = data.get('questionData', [])
+
+    # Check if OpenAI API key is configured
+    if not OPENAI_API_KEY:
+        app.logger.warning("OpenAI API key not configured - returning placeholder response")
+        return jsonify({'answer': f"AI analysis for '{user_query}' - OpenAI integration pending configuration."})
+
+    app.logger.info(f"Received QLA chat query: {user_query}")
+    
+    try:
+        import openai
+        openai.api_key = OPENAI_API_KEY
+        
+        # Prepare context from question data
+        context = prepare_question_context(question_data)
+        
+        # Construct prompt
+        prompt = f"""You are an educational data analyst helping to interpret questionnaire response data.
+        
+Context: {context}
+
+User Question: {user_query}
+
+Provide a clear, actionable analysis that helps improve student outcomes. Include specific recommendations where appropriate."""
+
+        # Call OpenAI API with new syntax
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an expert educational data analyst specializing in student questionnaire analysis."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=500
+        )
+        
+        answer = response.choices[0].message['content']
+        
+        return jsonify({'answer': answer})
+        
+    except Exception as e:
+        app.logger.error(f"OpenAI API error: {e}")
+        return jsonify({'answer': f"AI analysis temporarily unavailable. Error: {str(e)}"})
+
+def prepare_question_context(question_data):
+    """Prepare context from question data for AI analysis"""
+    if not question_data or len(question_data) == 0:
+        return "Limited question data available."
+    
+    # Summarize the data (this is a simplified version)
+    total_responses = len(question_data)
+    context = f"Analysis based on {total_responses} responses. "
+    
+    # Add more context as needed
+    return context
+
+# --- Comment Analysis Endpoints ---
+@app.route('/api/comment-wordcloud', methods=['POST'])
+def generate_wordcloud():
+    """Generate word cloud data from student comments"""
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    comment_fields = data.get('commentFields', [])
+    filters = data.get('filters', {})
+    
+    app.logger.info(f"Generating word cloud for fields: {comment_fields}")
+    
+    try:
+        # Import required libraries
+        import nltk
+        from textblob import TextBlob
+        from collections import Counter
+        import re
+        
+        # Download required NLTK data (do this once in production)
+        try:
+            nltk.data.find('corpora/stopwords')
+        except LookupError:
+            nltk.download('stopwords')
+        
+        # Ensure essential corpora for tokenisation & sentiment exist
+        try:
+            nltk.data.find('tokenizers/punkt')
+        except LookupError:
+            nltk.download('punkt')
+        try:
+            nltk.data.find('corpora/wordnet')
+        except LookupError:
+            nltk.download('wordnet')
+        # TextBlob additional corpora
+        try:
+            from textblob import download_corpora as _tb_dl
+            _tb_dl.download_all()
+        except Exception:
+            pass
+        
+        from nltk.corpus import stopwords
+        stop_words = set(stopwords.words('english'))
+        
+        # Add custom stop words for educational context
+        custom_stop_words = {
+            'need', 'needs', 'would', 'could', 'should', 'think', 'feel', 'feels',
+            'really', 'much', 'many', 'also', 'well', 'good', 'better', 'best',
+            'help', 'helps', 'make', 'makes', 'get', 'gets', 'know', 'knows',
+            'want', 'wants', 'like', 'likes', 'time', 'year', 'work', 'works'
+        }
+        stop_words.update(custom_stop_words)
+        
+        # Build filters for fetching VESPA results
+        knack_filters = []
+        if filters.get('establishmentId'):
+            knack_filters.append({
+                'field': 'field_133',
+                'operator': 'is',
+                'value': filters['establishmentId']
+            })
+        elif filters.get('staffAdminId'):
+            knack_filters.append({
+                'field': 'field_439',
+                'operator': 'is',
+                'value': filters['staffAdminId']
+            })
+        
+        # Fetch VESPA results with comment fields
+        fields_to_fetch = ['id'] + [f + '_raw' for f in comment_fields]
+        
+        all_comments = []
+        page = 1
+        max_pages = 5  # Limit to prevent timeout
+        
+        while page <= max_pages:
+            vespa_data = make_knack_request(
+                'object_10',
+                filters=knack_filters,
+                page=page,
+                rows_per_page=500,
+                fields=fields_to_fetch
+            )
+            
+            records = vespa_data.get('records', [])
+            if not records:
+                break
+            
+            # Extract comments from records
+            for record in records:
+                for field in comment_fields:
+                    comment = record.get(field + '_raw')
+                    if comment and isinstance(comment, str) and len(comment.strip()) > 0:
+                        all_comments.append(comment.strip())
+            
+            if len(records) < 500:
+                break
+            page += 1
+        
+        app.logger.info(f"Collected {len(all_comments)} comments")
+        
+        # If no comments found, return empty result
+        if not all_comments:
+            return jsonify({
+                'wordCloudData': [],
+                'totalComments': 0,
+                'uniqueWords': 0,
+                'topWord': None,
+                'message': 'No comments found for the selected filters'
+            })
+        
+        # Process comments
+        word_freq = Counter()
+        
+        for comment in all_comments:
+            # Clean and tokenize
+            # Remove URLs, email addresses, and special characters
+            comment = re.sub(r'http\S+|www.\S+|@\S+', '', comment)
+            comment = re.sub(r'[^\w\s]', ' ', comment)
+            
+            blob = TextBlob(comment.lower())
+            words = blob.words
+            
+            # Filter out stop words, short words, and numbers
+            filtered_words = [
+                word for word in words 
+                if word not in stop_words 
+                and len(word) > 3 
+                and not word.isdigit()
+                and word.isalpha()
+            ]
+            word_freq.update(filtered_words)
+        
+        # Get top 100 words
+        top_words = word_freq.most_common(100)
+        
+        # Calculate sentiment for top words (simplified)
+        word_sentiments = {}
+        for word, _ in top_words[:50]:  # Analyze top 50 for performance
+            try:
+                blob = TextBlob(word)
+                sentiment = blob.sentiment.polarity
+                word_sentiments[word] = sentiment
+            except:
+                word_sentiments[word] = 0
+        
+        # Format for word cloud with relative sizing
+        max_count = top_words[0][1] if top_words else 1
+        word_cloud_data = []
+        
+        for word, count in top_words:
+            # Scale size between 10 and 100 based on frequency
+            size = int(10 + (count / max_count) * 90)
+            sentiment = word_sentiments.get(word, 0)
+            
+            word_cloud_data.append({
+                'text': word,
+                'size': size,
+                'count': count,
+                'sentiment': round(sentiment, 2)
+            })
+        
+        return jsonify({
+            'wordCloudData': word_cloud_data,
+            'totalComments': len(all_comments),
+            'uniqueWords': len(word_freq),
+            'topWord': top_words[0] if top_words else None
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Word cloud generation error: {e}")
+        raise ApiError(f"Failed to generate word cloud: {str(e)}", 500)
+
+@app.route('/api/comment-themes', methods=['POST'])
+def analyze_themes():
+    """Extract themes from student comments using AI"""
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    comment_fields = data.get('commentFields', [])
+    filters = data.get('filters', {})
+    
+    app.logger.info(f"Analyzing themes for fields: {comment_fields}")
+    
+    try:
+        # Build filters for fetching VESPA results
+        knack_filters = []
+        if filters.get('establishmentId'):
+            knack_filters.append({
+                'field': 'field_133',
+                'operator': 'is',
+                'value': filters['establishmentId']
+            })
+        elif filters.get('staffAdminId'):
+            knack_filters.append({
+                'field': 'field_439',
+                'operator': 'is',
+                'value': filters['staffAdminId']
+            })
+        
+        # Fetch VESPA results with comment fields
+        fields_to_fetch = ['id'] + [f + '_raw' for f in comment_fields]
+        
+        all_comments = []
+        page = 1
+        max_pages = 3  # Limit to prevent timeout
+        
+        while page <= max_pages:
+            vespa_data = make_knack_request(
+                'object_10',
+                filters=knack_filters,
+                page=page,
+                rows_per_page=500,
+                fields=fields_to_fetch
+            )
+            
+            records = vespa_data.get('records', [])
+            if not records:
+                break
+            
+            # Extract comments from records
+            for record in records:
+                for field in comment_fields:
+                    comment = record.get(field + '_raw')
+                    if comment and isinstance(comment, str) and len(comment.strip()) > 0:
+                        all_comments.append(comment.strip())
+            
+            if len(records) < 500:
+                break
+            page += 1
+        
+        app.logger.info(f"Collected {len(all_comments)} comments for theme analysis")
+        
+        # If no comments found, return empty result
+        if not all_comments:
+            return jsonify({
+                'themes': [],
+                'totalThemes': 0,
+                'totalComments': 0,
+                'message': 'No comments found for theme analysis'
+            })
+        
+        # For now, return a simple message indicating themes will be analyzed
+        # In production, this would use OpenAI API to identify themes
+        return jsonify({
+            'themes': [],
+            'totalThemes': 0,
+            'totalComments': len(all_comments),
+            'message': 'Theme analysis feature coming soon. Found {} comments to analyze.'.format(len(all_comments))
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Theme analysis error: {e}")
+        raise ApiError(f"Failed to analyze themes: {str(e)}", 500)
+
+@app.route('/api/comment-sentiment', methods=['POST'])
+def analyze_sentiment():
+    """Analyze sentiment of student comments"""
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    try:
+        from textblob import TextBlob
+        
+        comments = data.get('comments', [])
+        
+        sentiment_results = {
+            'positive': 0,
+            'neutral': 0,
+            'negative': 0,
+            'overall_polarity': 0
+        }
+        
+        polarities = []
+        
+        for comment in comments:
+            if comment and isinstance(comment, str):
+                blob = TextBlob(comment)
+                polarity = blob.sentiment.polarity
+                polarities.append(polarity)
+                
+                if polarity > 0.1:
+                    sentiment_results['positive'] += 1
+                elif polarity < -0.1:
+                    sentiment_results['negative'] += 1
+                else:
+                    sentiment_results['neutral'] += 1
+        
+        if polarities:
+            sentiment_results['overall_polarity'] = sum(polarities) / len(polarities)
+        
+        return jsonify(sentiment_results)
+        
+    except Exception as e:
+        app.logger.error(f"Sentiment analysis error: {e}")
+        raise ApiError(f"Failed to analyze sentiment: {str(e)}", 500)
+
+# --- Test Endpoint for CORS and Connection Verification ---
+@app.route('/api/test', methods=['GET', 'OPTIONS'])
+def test_endpoint():
+    """Test endpoint to verify CORS and backend connectivity"""
+    return jsonify({
+        'status': 'ok',
+        'message': 'VESPA Dashboard Backend is accessible',
+        'cors_configured': True,
+        'knack_configured': bool(KNACK_APP_ID and KNACK_API_KEY),
+        'timestamp': str(datetime.now())
+    })
+
+# --- Health Check Endpoint ---
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for monitoring"""
+    health_status = {
+        'status': 'healthy',
+        'timestamp': str(datetime.now()),
+        'services': {
+            'knack_api': bool(KNACK_APP_ID and KNACK_API_KEY),
+            'openai_api': bool(OPENAI_API_KEY),
+            'redis_cache': CACHE_ENABLED
+        }
+    }
+    
+    # Test Redis connection if enabled
+    if CACHE_ENABLED:
+        try:
+            redis_client.ping()
+            health_status['services']['redis_status'] = 'connected'
+        except:
+            health_status['services']['redis_status'] = 'disconnected'
+            health_status['status'] = 'degraded'
+    
+    return jsonify(health_status)
+
+@app.route('/api/filter-options', methods=['GET'])
+def get_filter_options():
+    """Fetch unique values for filter dropdowns based on object and establishment."""
+    object_key = request.args.get('objectKey')
+    establishment_id = request.args.get('establishmentId')
+    filter_fields_str = request.args.get('fields') # Comma-separated list of field keys
+
+    if not object_key or not establishment_id or not filter_fields_str:
+        raise ApiError("Missing required parameters: objectKey, establishmentId, and fields")
+
+    filter_fields = [field.strip() for field in filter_fields_str.split(',')] # Split comma-separated fields
+
+    try:
+        app.logger.info(f"Fetching filter options for object {object_key}, establishment {establishment_id}, fields: {filter_fields}")
+
+        base_filters = [
+            {
+                'field': 'field_133', # Assuming field_133 is the link to establishment in object_10
+                'operator': 'is',
+                'value': establishment_id
+            }
+        ]
+
+        # Fetch ALL records for the given object and establishment.
+        # This is necessary to get all potential filter values within that subset.
+        # The performance bottleneck is fetching all records, but filtering *before*\
+        # extracting unique values on the backend is still more efficient than doing it client-side.
+        all_records = []
+        page = 1
+        # Using a larger rows_per_page here to minimize API calls
+        rows_per_page = 1000
+        while True:
+            data = make_knack_request(object_key, filters=base_filters, page=page, rows_per_page=rows_per_page) # Corrected rows_per_per_page to rows_per_page
+            records = data.get('records', [])
+
+            if not records:
+                break
+
+            all_records.extend(records)
+
+            if len(records) < rows_per_page or page > 100: # Safety limit for very large schools
+                break
+
+            page += 1
+
+        app.logger.info(f"Fetched {len(all_records)} records for filter option extraction.")
+
+        # Extract unique values for the requested fields
+        unique_values = {}
+        for field in filter_fields:
+            unique_values[field] = set()
+
+        for record in all_records:
+            for field in filter_fields:
+                field_value = record.get(f'{field}_raw') or record.get(field)
+                if field_value is not None and field_value != '':
+                    # Handle potential array of linked values or single values
+                    if isinstance(field_value, list):
+                        for item in field_value:
+                            if isinstance(item, dict) and item.get('id'):
+                                display_value = item.get('identifier') or item.get('value') or item.get('id')
+                                unique_values[field].add(json.dumps({'id': item['id'], 'name': display_value}))
+                            elif isinstance(item, str) and item.strip():
+                                unique_values[field].add(item.strip())
+                    elif isinstance(field_value, dict) and field_value.get('id'):
+                         unique_values[field].add(json.dumps({
+                            'id': field_value['id'],
+                            'name': field_value.get('identifier') or field_value.get('value') or field_value.get('id')
+                        }))
+                    elif isinstance(field_value, str) and field_value.strip():
+                        value = field_value.strip()
+                        if value and value != 'null' and value != 'undefined':
+                            unique_values[field].add(value)
+
+        # Convert sets to lists and parse JSON strings back to objects for object values
+        processed_unique_values = {}
+        for field, values in unique_values.items():
+            processed_values = []
+            for val in values:
+                try:
+                    # Try to parse as JSON (for linked objects)
+                    parsed_val = json.loads(val)
+                    processed_values.append(parsed_val)
+                except json.JSONDecodeError:
+                    # If not JSON, it's a plain string
+                    processed_values.append(val)
+            # Sort the values alphabetically by name or string value
+            processed_values.sort(key=lambda x: x.get('name', x) if isinstance(x, dict) else x)
+            processed_unique_values[field] = processed_values
+
+        return jsonify({
+            'filter_options': processed_unique_values
+        })
+
+    except Exception as e:
+        app.logger.error(f"Failed to fetch filter options: {e}")
+        raise ApiError(f"Failed to fetch filter options: {str(e)}", 500)
+
+# --- ERI (Exam Readiness Index) Endpoint ---
+@app.route('/api/calculate-eri', methods=['GET'])
+def calculate_eri():
+    """Calculate Exam Readiness Index for a school/establishment."""
+    try:
+        # Get parameters
+        staff_admin_id = request.args.get('staffAdminId')
+        establishment_id = request.args.get('establishmentId')
+        cycle = request.args.get('cycle', '1')
+        
+        # Validate cycle
+        if cycle not in ['1', '2', '3']:
+            raise ApiError("Invalid cycle. Must be 1, 2, or 3.")
+        
+        # Build filters for psychometric responses (object_29)
+        filters = []
+        
+        if establishment_id:
+            filters.append({
+                'field': 'field_1821',  # VESPA Customer field in object_29
+                'operator': 'is',
+                'value': establishment_id
+            })
+        elif staff_admin_id:
+            filters.append({
+                'field': 'field_2069',  # Staff Admin field in object_29
+                'operator': 'is',
+                'value': staff_admin_id
+            })
+        else:
+            raise ApiError("Either staffAdminId or establishmentId must be provided")
+        
+        # Map cycle to ERI field
+        eri_field_map = {
+            '1': 'field_2868',
+            '2': 'field_2869',
+            '3': 'field_2870'
+        }
+        
+        eri_field = eri_field_map[cycle]
+        
+        # Fetch psychometric responses
+        app.logger.info(f"Fetching psychometric responses for ERI calculation with filters: {filters}")
+        
+        all_responses = []
+        page = 1
+        max_pages = request.args.get('max_pages', 3, type=int)
+        while True:
+            data = make_knack_request('object_29', filters=filters, page=page, rows_per_page=1000)
+            records = data.get('records', [])
+            
+            if not records:
+                break
+                
+            all_responses.extend(records)
+            
+            if len(records) < 1000 or page > max_pages:  # Stop after max_pages to avoid timeout
+                break
+                
+            page += 1
+        
+        app.logger.info(f"Found {len(all_responses)} psychometric responses")
+        
+        # Calculate average ERI
+        total_eri = 0
+        valid_responses = 0
+        
+        for response in all_responses:
+            eri_value = response.get(f'{eri_field}_raw')
+            if eri_value is not None:
+                try:
+                    eri_float = float(eri_value)
+                    if 1 <= eri_float <= 5:  # Valid range for psychometric scale
+                        total_eri += eri_float
+                        valid_responses += 1
+                except (ValueError, TypeError):
+                    continue
+        
+        if valid_responses == 0:
+            return jsonify({
+                'school_eri': None,
+                'response_count': 0,
+                'message': 'No valid ERI responses found'
+            })
+        
+        average_eri = total_eri / valid_responses
+        
+        app.logger.info(f"Calculated ERI: {average_eri:.2f} from {valid_responses} responses")
+        
+        return jsonify({
+            'school_eri': round(average_eri, 2),
+            'response_count': valid_responses,
+            'cycle': cycle
+        })
+        
+    except ApiError as e:
+        raise e
+    except Exception as e:
+        app.logger.error(f"Failed to calculate ERI: {e}")
+        raise ApiError(f"Failed to calculate ERI: {str(e)}", 500)
+
+# --- National ERI Endpoint ---
+@app.route('/api/national-eri', methods=['GET'])
+def get_national_eri():
+    """Get national ERI benchmark for a specific cycle."""
+    try:
+        cycle = request.args.get('cycle', '1')
+        
+        # Validate cycle
+        if cycle not in ['1', '2', '3']:
+            raise ApiError("Invalid cycle. Must be 1, 2, or 3.")
+        
+        # Map cycle to actual field IDs in object_120
+        national_eri_field_map = {
+            '1': 'field_3432',  # ERI_cycle1
+            '2': 'field_3433',  # ERI_cycle2
+            '3': 'field_3434'   # ERI_cycle3
+        }
+        
+        eri_field = national_eri_field_map[cycle]
+        
+        # Fetch latest national benchmark record
+        app.logger.info(f"Fetching national ERI for cycle {cycle} from object_120")
+        
+        data = make_knack_request(
+            'object_120',
+            filters=[],
+            page=1,
+            rows_per_page=1,
+            sort_field='field_3307',  # Date Time field
+            sort_order='desc'
+        )
+        
+        records = data.get('records', [])
+        if not records:
+            app.logger.warning("No national benchmark data found in object_120")
+            # Return placeholder if no data exists yet
+            return jsonify({
+                'national_eri': 3.5,
+                'cycle': cycle,
+                'source': 'placeholder',
+                'message': 'No national benchmark data found'
+            })
+        
+        national_record = records[0]
+        national_eri_raw = national_record.get(f'{eri_field}_raw')
+        
+        if national_eri_raw is None:
+            app.logger.warning(f"National ERI field {eri_field} is empty for cycle {cycle}")
+            # Return placeholder if field is empty
+            return jsonify({
+                'national_eri': 3.5,
+                'cycle': cycle,
+                'source': 'placeholder',
+                'message': f'National ERI not yet calculated for cycle {cycle}'
+            })
+        
+        try:
+            national_eri = float(national_eri_raw)
+            app.logger.info(f"Found national ERI: {national_eri} for cycle {cycle}")
+            
+            return jsonify({
+                'national_eri': round(national_eri, 2),
+                'cycle': cycle,
+                'source': 'object_120',
+                'record_date': national_record.get('field_3307', 'Unknown')  # Include the date of the benchmark
+            })
+            
+        except (ValueError, TypeError) as e:
+            app.logger.error(f"Invalid national ERI value: {national_eri_raw}")
+            return jsonify({
+                'national_eri': 3.5,
+                'cycle': cycle,
+                'source': 'placeholder',
+                'message': 'Invalid national ERI value in database'
+            })
+        
+    except ApiError as e:
+        raise e
+    except Exception as e:
+        app.logger.error(f"Failed to get national ERI: {e}")
+        raise ApiError(f"Failed to get national ERI: {str(e)}", 500)
+
+@app.route('/api/establishments/popular', methods=['GET'])
+@cached(ttl_key='popular_establishments', ttl_seconds=3600)  # Cache for 1 hour
+def get_popular_establishments():
+    """Get most active establishments based on recent VESPA results"""
+    try:
+        # Get establishments with most recent activity
+        # Sort by most recent submission date
+        records = make_knack_request(
+            'object_10',  # VESPA Results
+            rows_per_page=500,
+            page=1,
+            sort_field='field_132',  # Date submitted
+            sort_order='desc',
+            fields=['field_133', 'field_133_raw', 'field_132']  # Establishment and date
+        )
+        
+        if not records:
+            return jsonify({'establishments': []})
+        
+        # Count establishment occurrences
+        establishment_counts = {}
+        establishment_names = {}
+        
+        for record in records:
+            est_display = record.get('field_133')
+            est_raw = record.get('field_133_raw')
+            
+            if est_raw and est_display:
+                if isinstance(est_raw, list):
+                    for i, est_id in enumerate(est_raw):
+                        if est_id:
+                            est_name = est_display[i] if isinstance(est_display, list) and i < len(est_display) else est_display
+                            establishment_counts[est_id] = establishment_counts.get(est_id, 0) + 1
+                            establishment_names[est_id] = est_name
+                else:
+                    establishment_counts[est_raw] = establishment_counts.get(est_raw, 0) + 1
+                    establishment_names[est_raw] = est_display
+        
+        # Sort by count and get top 10
+        sorted_establishments = sorted(
+            establishment_counts.items(), 
+            key=lambda x: x[1], 
+            reverse=True
+        )[:10]
+        
+        # Format results
+        popular = []
+        for est_id, count in sorted_establishments:
+            popular.append({
+                'id': est_id,
+                'name': establishment_names.get(est_id, 'Unknown'),
+                'activity_count': count
+            })
+        
+        return jsonify({'establishments': popular})
+        
+    except Exception as e:
+        app.logger.error(f"Error fetching popular establishments: {str(e)}")
+        return jsonify({'establishments': []}), 500
+
+# --- Background Pre-caching System ---
+def precache_establishment_data(establishment_id, establishment_name=None):
+    """Pre-cache all data for an establishment in the background"""
+    try:
+        app.logger.info(f"Starting background pre-cache for establishment {establishment_id}")
+        
+        # Pre-cache for all 3 cycles
+        for cycle in [1, 2, 3]:
+            cache_key = f"dashboard_data:none:{establishment_id}:{cycle}:1:1000"
+            
+            # Check if already cached
+            if CACHE_ENABLED:
+                try:
+                    existing = redis_client.get(cache_key)
+                    if existing:
+                        app.logger.info(f"Establishment {establishment_id} cycle {cycle} already cached")
+                        continue
+                except:
+                    pass
+            
+            # Fetch and cache the data
+            try:
+                # Build filters
+                base_filters = [{
+                    'field': 'field_133',
+                    'operator': 'is',
+                    'value': establishment_id
+                }]
+                
+                # Fetch VESPA results with minimal fields for speed
+                vespa_records = []
+                page = 1
+                while page <= 2:  # Limit to 2 pages for pre-cache
+                    data = make_knack_request(
+                        'object_10',
+                        filters=base_filters,
+                        page=page,
+                        rows_per_page=1000,
+                        fields=['id', 'field_133', 'field_133_raw', 'field_439_raw', 
+                               f'field_{155 + (cycle-1)*6}_raw',  # Vision score for cycle
+                               f'field_{160 + (cycle-1)*6}_raw']  # Overall score for cycle
+                    )
+                    records = data.get('records', [])
+                    if not records:
+                        break
+                    vespa_records.extend(records)
+                    if len(records) < 1000:
+                        break
+                    page += 1
+                
+                # Create minimal cache entry
+                cache_data = {
+                    'vespaResults': vespa_records,
+                    'nationalBenchmark': {},  # Will be fetched separately
+                    'filterOptions': {'groups': [], 'courses': [], 'yearGroups': [], 'faculties': []},
+                    'cycle': cycle,
+                    'staffAdminId': None,
+                    'establishmentId': establishment_id,
+                    'precached': True,
+                    'timestamp': time.time()
+                }
+                
+                # Store in cache with longer TTL for pre-cached data
+                if CACHE_ENABLED:
+                    try:
+                        compressed_data = gzip.compress(pickle.dumps(cache_data))
+                        redis_client.setex(cache_key, 1800, compressed_data)  # 30 minutes
+                        app.logger.info(f"Pre-cached establishment {establishment_id} cycle {cycle}")
+                    except Exception as e:
+                        app.logger.error(f"Failed to cache: {e}")
+                        
+            except Exception as e:
+                app.logger.error(f"Error pre-caching establishment {establishment_id} cycle {cycle}: {e}")
+                
+        app.logger.info(f"Completed pre-cache for establishment {establishment_id}")
+        
+    except Exception as e:
+        app.logger.error(f"Pre-cache failed for establishment {establishment_id}: {e}")
+
+@app.route('/api/establishments', methods=['GET'])
+@cached(ttl_key='establishments')
+def get_establishments():
+    """Fetch VESPA Customer establishments from object_2"""
+    try:
+        app.logger.info("Fetching VESPA Customer establishments from object_2")
+        
+        # Check if we should trigger pre-caching
+        should_precache = request.args.get('precache', 'false').lower() == 'true'
+        
+        # Fetch all VESPA Customers from object_2, excluding cancelled ones
+        filters = [
+            {
+                'field': 'field_2209',
+                'operator': 'is not',
+                'value': 'Cancelled'
+            }
+        ]
+        
+        all_establishments = []
+        page = 1
+        
+        while True:
+            data = make_knack_request('object_2', filters=filters, page=page, rows_per_page=1000)
+            records = data.get('records', [])
+            
+            if not records:
+                break
+                
+            all_establishments.extend(records)
+            
+            # Since there are only ~200 records, we should get them all in one page
+            if len(records) < 1000 or page > 5:  # Safety limit
+                break
+                
+            page += 1
+        
+        app.logger.info(f"Found {len(all_establishments)} active VESPA Customers")
+        
+        # Format establishments using field_44 for the name
+        establishments = []
+        for record in all_establishments:
+            est_id = record.get('id')
+            # field_44 contains the VESPA Customer name
+            est_name = record.get('field_44') or record.get('field_44_raw') or f"Customer {est_id}"
+            
+            # Also check if there's a formatted/display version
+            if not est_name and record.get('identifier'):
+                est_name = record.get('identifier')
+            
+            establishments.append({
+                'id': est_id,
+                'name': est_name,
+                # Include additional useful fields if needed
+                'status': record.get('field_2209') or 'Active'
+            })
+        
+        # Sort by name
+        establishments.sort(key=lambda x: x['name'].lower() if x['name'] else '')
+        
+        # If pre-caching requested, start background jobs for top establishments
+        if should_precache and CACHE_ENABLED:
+            # Pre-cache top 10 most likely establishments
+            for est in establishments[:10]:
+                Thread(target=precache_establishment_data, args=(est['id'], est['name'])).start()
+        
+        return jsonify({
+            'establishments': establishments,
+            'source_object': 'object_2',
+            'total': len(establishments)
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch establishments from object_2: {e}")
+        raise ApiError(f"Failed to fetch establishments: {str(e)}", 500)
+
+# --- Generate PDF Report Endpoint ---
+@app.route('/api/generate-report', methods=['POST'])
+def generate_pdf_report():
+    """Generate a comprehensive PDF report with AI-generated insights"""
+    try:
+        data = request.get_json()
+        if not data:
+            raise ApiError("Missing request body")
+        
+        establishment_id = data.get('establishmentId')
+        establishment_name = data.get('establishmentName', 'Unknown Establishment')
+        staff_admin_id = data.get('staffAdminId')
+        cycle = data.get('cycle', 1)
+        vespa_scores = data.get('vespaScores', {})
+        qla_insights = data.get('qlaInsights', [])
+        filters = data.get('filters', {})
+        
+        app.logger.info(f"Generating PDF report for establishment: {establishment_name}, cycle: {cycle}")
+        app.logger.info(f"Received VESPA scores: {vespa_scores}")
+        app.logger.info(f"Received QLA insights count: {len(qla_insights)}")
+        
+        # Create PDF buffer
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.75*inch, bottomMargin=0.75*inch)
+        
+        # Container for the 'Flowable' objects
+        elements = []
+        
+        # Define styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#0f0f23'),
+            spaceAfter=30,
+            alignment=TA_CENTER
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=16,
+            textColor=colors.HexColor('#3b82f6'),
+            spaceAfter=12,
+            spaceBefore=20
+        )
+        
+        body_style = ParagraphStyle(
+            'CustomBody',
+            parent=styles['BodyText'],
+            fontSize=11,
+            textColor=colors.HexColor('#1a1a2e'),
+            alignment=TA_JUSTIFY,
+            spaceAfter=12
+        )
+        
+        # Title Page
+        elements.append(Paragraph("VESPA Performance Report", title_style))
+        elements.append(Spacer(1, 0.2*inch))
+        elements.append(Paragraph(f"<b>{establishment_name}</b>", styles['Heading3']))
+        elements.append(Paragraph(f"Cycle {cycle} Analysis", styles['Normal']))
+        elements.append(Paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y')}", styles['Normal']))
+        elements.append(PageBreak())
+        
+        # Section 1: Executive Summary
+        elements.append(Paragraph("1. Executive Summary", heading_style))
+        
+        # Generate AI summary if OpenAI is configured
+        executive_summary = "This report provides a comprehensive analysis of student performance and engagement metrics."
+        
+        if OPENAI_API_KEY:
+            try:
+                import openai
+                
+                # Set the API key directly
+                openai.api_key = OPENAI_API_KEY
+                
+                # Prepare context for AI
+                context = f"""
+                Establishment: {establishment_name}
+                Cycle: {cycle}
+                VESPA Scores: Vision={vespa_scores.get('vision', 'N/A')}, Effort={vespa_scores.get('effort', 'N/A')}, 
+                Systems={vespa_scores.get('systems', 'N/A')}, Practice={vespa_scores.get('practice', 'N/A')}, 
+                Attitude={vespa_scores.get('attitude', 'N/A')}, Overall={vespa_scores.get('overall', 'N/A')}
+                
+                Top performing areas based on QLA insights: {', '.join([i.get('title', '') for i in qla_insights[:3]])}
+                """
+                
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are an educational data analyst creating executive summaries for school performance reports. Be concise, professional, and focus on actionable insights."},
+                        {"role": "user", "content": f"Write a 2-3 paragraph executive summary for this school's performance report:\n{context}"}
+                    ],
+                    temperature=0.7,
+                    max_tokens=300
+                )
+                
+                executive_summary = response.choices[0].message['content']
+                
+            except Exception as e:
+                # Surface the OpenAI failure to the caller so the front-end knows something went wrong
+                app.logger.error(f"Failed to generate AI summary: {e}")
+                raise ApiError(f"OpenAI error while generating executive summary: {str(e)}", 500)
+        
+        elements.append(Paragraph(executive_summary, body_style))
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Section 2: VESPA Scores Analysis
+        elements.append(Paragraph("2. VESPA Performance Metrics", heading_style))
+        
+        # Helper function to format difference
+        def format_difference(school_score, national_score):
+            if school_score is None or national_score is None:
+                return 'N/A'
+            diff = school_score - national_score
+            sign = '+' if diff > 0 else ''
+            return f"{sign}{diff:.1f}"
+        
+        # Create VESPA scores table
+        vespa_data = [
+            ['Metric', 'School Score', 'National Average', 'Difference']
+        ]
+        
+        # Add rows for each metric
+        for metric in ['vision', 'effort', 'systems', 'practice', 'attitude', 'overall']:
+            school_score = vespa_scores.get(metric)
+            national_score = vespa_scores.get(f'{metric}National')
+            
+            # Format scores for display
+            school_display = f"{school_score:.1f}" if isinstance(school_score, (int, float)) else 'N/A'
+            national_display = f"{national_score:.1f}" if isinstance(national_score, (int, float)) else 'N/A'
+            
+            # Calculate difference
+            if isinstance(school_score, (int, float)) and isinstance(national_score, (int, float)):
+                diff_display = format_difference(school_score, national_score)
+            else:
+                diff_display = 'N/A'
+            
+            vespa_data.append([
+                metric.capitalize(),
+                school_display,
+                national_display,
+                diff_display
+            ])
+        
+        vespa_table = Table(vespa_data, colWidths=[2*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+        vespa_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        
+        elements.append(vespa_table)
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # AI Commentary on VESPA scores
+        if OPENAI_API_KEY:
+            try:
+                vespa_analysis = "Based on the VESPA scores, the following observations can be made..."
+                
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are analyzing VESPA educational metrics. Provide specific, actionable insights based on the scores."},
+                        {"role": "user", "content": f"Analyze these VESPA scores and provide 2-3 key insights:\n{vespa_data}"}
+                    ],
+                    temperature=0.7,
+                    max_tokens=250
+                )
+                
+                vespa_analysis = response.choices[0].message['content']
+                elements.append(Paragraph(vespa_analysis, body_style))
+                
+            except Exception as e:
+                app.logger.error(f"Failed to generate VESPA analysis: {e}")
+                raise ApiError(f"OpenAI error while generating VESPA analysis: {str(e)}", 500)
+        
+        elements.append(PageBreak())
+        
+        # Section 3: Question Level Analysis
+        elements.append(Paragraph("3. Question Level Analysis - Key Insights", heading_style))
+        
+        if qla_insights:
+            # Create insights table
+            insights_data = [['Insight', 'Score', 'Status']]
+            
+            for insight in qla_insights[:8]:  # Top 8 insights
+                status = 'Excellent' if insight.get('percentage', 0) >= 80 else 'Good' if insight.get('percentage', 0) >= 60 else 'Needs Attention'
+                insights_data.append([
+                    insight.get('title', 'Unknown'),
+                    f"{insight.get('percentage', 0):.1f}%",
+                    status
+                ])
+            
+            insights_table = Table(insights_data, colWidths=[3*inch, 1.5*inch, 1.5*inch])
+            insights_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            
+            elements.append(insights_table)
+        
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Section 4: Intervention Strategies
+        elements.append(Paragraph("4. Recommended Intervention Strategies", heading_style))
+        
+        # Generate AI recommendations
+        if OPENAI_API_KEY and qla_insights:
+            try:
+                low_performing = [i for i in qla_insights if i.get('percentage', 100) < 60]
+                
+                context = f"Low performing areas: {', '.join([i.get('title', '') for i in low_performing[:3]])}"
+                
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are an educational consultant providing specific intervention strategies. Be practical and actionable."},
+                        {"role": "user", "content": f"Suggest 3-4 specific intervention strategies for these areas:\n{context}"}
+                    ],
+                    temperature=0.7,
+                    max_tokens=300
+                )
+                
+                interventions = response.choices[0].message['content']
+                elements.append(Paragraph(interventions, body_style))
+                
+            except Exception as e:
+                app.logger.error(f"Failed to generate interventions: {e}")
+                raise ApiError(f"OpenAI error while generating intervention strategies: {str(e)}", 500)
+        else:
+            elements.append(Paragraph("Contact VESPA support for customized intervention strategies.", body_style))
+        
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Section 5: Conclusion
+        elements.append(Paragraph("5. Conclusion and Next Steps", heading_style))
+        
+        conclusion = "This report highlights key areas of strength and opportunities for improvement. Regular monitoring and targeted interventions will help achieve better student outcomes."
+        
+        if OPENAI_API_KEY:
+            try:
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "Write a brief, actionable conclusion for an educational performance report."},
+                        {"role": "user", "content": f"Summarize key findings and suggest 2-3 next steps for {establishment_name}"}
+                    ],
+                    temperature=0.7,
+                    max_tokens=200
+                )
+                
+                conclusion = response.choices[0].message['content']
+                
+            except Exception as e:
+                app.logger.error(f"Failed to generate conclusion: {e}")
+                raise ApiError(f"OpenAI error while generating conclusion: {str(e)}", 500)
+        
+        elements.append(Paragraph(conclusion, body_style))
+        
+        # Build PDF
+        doc.build(elements)
+        
+        # Return PDF
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'VESPA_Report_{establishment_name.replace(" ", "_")}_Cycle{cycle}_{datetime.now().strftime("%Y%m%d")}.pdf'
+        )
+        
+    except Exception as e:
+        app.logger.error(f"Failed to generate PDF report: {e}")
+        raise ApiError(f"Failed to generate report: {str(e)}", 500)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 
