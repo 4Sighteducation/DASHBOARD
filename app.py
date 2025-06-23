@@ -571,9 +571,9 @@ def get_dashboard_initial_data():
             vespa_records = []
             import concurrent.futures
             
-            # For initial load, only fetch first 10 pages (10,000 records max)
-            # This prevents the 12MB response issue
-            pages_to_fetch = min(total_pages, 10)  # Reduced from 50 to 10 pages
+            # For initial load, only fetch first 3 pages (3,000 records max)
+            # This prevents the 12MB response issue and improves performance
+            pages_to_fetch = min(total_pages, 3)  # Reduced from 10 to 3 pages for better performance
             app.logger.info(f"Will fetch {pages_to_fetch} pages initially (total available: {total_pages})")
             
             # Fetch pages in parallel (but limit concurrent requests)
@@ -647,7 +647,7 @@ def get_dashboard_initial_data():
             import concurrent.futures
             
             # Limit pages for initial load to prevent large responses
-            initial_pages = min(total_pages, 5)  # Max 5 pages (5000 records) for initial load
+            initial_pages = min(total_pages, 2)  # Max 2 pages (2000 records) for initial load
             
             with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
                 futures = []
