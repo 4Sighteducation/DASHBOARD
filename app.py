@@ -93,7 +93,12 @@ load_dotenv() # Load environment variables from .env for local development
 app = Flask(__name__)
 
 # --- Redis Cache Setup ---
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
+# Check for different Redis URL environment variable names
+REDIS_URL = os.getenv('REDIS_URL') or os.getenv('HEROKU_REDIS_COBALT_URL') or os.getenv('HEROKU_REDIS_CRIMSON_URL')
+if not REDIS_URL:
+    app.logger.warning("Redis URL not found in environment variables (checked REDIS_URL, HEROKU_REDIS_COBALT_URL)")
+    REDIS_URL = 'redis://localhost:6379'
+
 try:
     # Handle SSL connections for Heroku Redis
     if REDIS_URL.startswith('rediss://'):
@@ -113,7 +118,7 @@ try:
     # Test the connection
     redis_client.ping()
     CACHE_ENABLED = True
-    app.logger.info("Redis cache connected successfully")
+    app.logger.info(f"Redis cache connected successfully to {REDIS_URL.split('@')[1] if '@' in REDIS_URL else REDIS_URL}")
 except Exception as e:
     redis_client = None
     CACHE_ENABLED = False
@@ -225,6 +230,20 @@ def handle_service_unavailable(error):
     response = jsonify({'message': "Request timeout - please try again with a smaller dataset or contact support."})
     response.status_code = 503
     # Ensure CORS headers are added to 503 responses
+    origin = request.headers.get('Origin')
+    if origin in ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
+
+@app.errorhandler(504)
+def handle_gateway_timeout(error):
+    app.logger.error(f"Gateway timeout (504): {error}")
+    response = jsonify({'message': "Request processing took too long. Please try loading a smaller dataset or contact support."})
+    response.status_code = 504
+    # Ensure CORS headers are added
     origin = request.headers.get('Origin')
     if origin in ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]:
         response.headers['Access-Control-Allow-Origin'] = origin
@@ -431,6 +450,10 @@ def get_dashboard_initial_data():
     Batch endpoint to fetch all initial dashboard data in one request.
     This reduces multiple round trips and allows better caching.
     """
+    import time
+    start_time = time.time()
+    MAX_REQUEST_TIME = 25  # Exit before Heroku's 30s timeout
+    
     data = request.get_json()
     if not data:
         raise ApiError("Missing request body")
@@ -529,22 +552,41 @@ def get_dashboard_initial_data():
         
         app.logger.info(f"Total records for establishment: {total_records}, Total pages: {total_pages}")
         
-        # If it's a large dataset, fetch ALL records in batches
+        # Check if we have time left
+        elapsed_time = time.time() - start_time
+        if elapsed_time > MAX_REQUEST_TIME:
+            app.logger.warning(f"Request time limit approaching ({elapsed_time}s), returning cached data if available")
+            return jsonify({
+                'vespaResults': [],
+                'nationalBenchmark': {},
+                'filterOptions': {'groups': [], 'courses': [], 'yearGroups': [], 'faculties': []},
+                'error': 'Request timeout - dataset too large',
+                'totalRecords': total_records
+            })
+        
+        # If it's a large dataset, fetch in smarter batches
         if total_records > 1500:
-            app.logger.info(f"Large dataset detected ({total_records} records). Fetching ALL records in batches.")
+            app.logger.info(f"Large dataset detected ({total_records} records). Fetching initial subset.")
             
             vespa_records = []
             import concurrent.futures
             
-            # Calculate how many pages we need to fetch
-            pages_needed = (total_records + 999) // 1000  # Round up
-            app.logger.info(f"Need to fetch {pages_needed} pages for {total_records} records")
+            # For initial load, only fetch first 10 pages (10,000 records max)
+            # This prevents the 12MB response issue
+            pages_to_fetch = min(total_pages, 10)  # Reduced from 50 to 10 pages
+            app.logger.info(f"Will fetch {pages_to_fetch} pages initially (total available: {total_pages})")
             
             # Fetch pages in parallel (but limit concurrent requests)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:  # Reduced from 5 to 3
                 futures = []
+                consecutive_empty_pages = 0
                 
-                for page_num in range(1, pages_needed + 1):
+                for page_num in range(1, pages_to_fetch + 1):
+                    # Check time before submitting
+                    if time.time() - start_time > MAX_REQUEST_TIME - 5:
+                        app.logger.warning(f"Stopping page submission at page {page_num} due to time limit")
+                        break
+                        
                     future = executor.submit(
                         make_knack_request,
                         'object_10',
@@ -558,31 +600,62 @@ def get_dashboard_initial_data():
                 # Collect results with progress logging
                 for page_num, future in futures:
                     try:
-                        page_data = future.result(timeout=30)  # 30 second timeout per page
+                        # Check time before processing each page
+                        elapsed_time = time.time() - start_time
+                        if elapsed_time > MAX_REQUEST_TIME - 3:  # Leave 3s buffer
+                            app.logger.warning(f"Approaching timeout after {elapsed_time}s, stopping at page {page_num}")
+                            # Cancel remaining futures
+                            for _, remaining_future in futures[futures.index((page_num, future)):]:
+                                remaining_future.cancel()
+                            break
+                        
+                        page_data = future.result(timeout=min(5, MAX_REQUEST_TIME - elapsed_time))  # Dynamic timeout
                         page_records = page_data.get('records', [])
-                        vespa_records.extend(page_records)
-                        app.logger.info(f"Fetched page {page_num}/{pages_needed} - {len(page_records)} records")
+                        
+                        # Stop if we get empty pages
+                        if not page_records:
+                            consecutive_empty_pages += 1
+                            app.logger.warning(f"Page {page_num} returned 0 records")
+                            if consecutive_empty_pages >= 3:  # Stop after 3 consecutive empty pages
+                                app.logger.warning(f"Stopping fetch after {consecutive_empty_pages} consecutive empty pages")
+                                break
+                        else:
+                            consecutive_empty_pages = 0  # Reset counter
+                            vespa_records.extend(page_records)
+                        
+                        app.logger.info(f"Fetched page {page_num}/{pages_to_fetch} - {len(page_records)} records")
                     except Exception as e:
                         app.logger.error(f"Error fetching page {page_num}: {e}")
+                        # Don't fail the entire request for one page error
+                        continue
             
             app.logger.info(f"Fetched total of {len(vespa_records)} records")
             
-            # Add metadata about the full dataset
-            results['isLimitedMode'] = False
+            # Add metadata about the dataset
+            results['isLimitedMode'] = len(vespa_records) < total_records
             results['totalRecords'] = total_records
             results['loadedRecords'] = len(vespa_records)
             
+            # Check if we had to stop early
+            if elapsed_time > MAX_REQUEST_TIME - 3:
+                results['partialLoad'] = True
+                results['message'] = f'Loaded {len(vespa_records)} of {total_records} records due to time constraints'
+                app.logger.warning(f"Partial load: {results['message']}")
+        
         else:
-            # For smaller datasets, fetch ALL pages
+            # For smaller datasets, still be careful about response size
             import concurrent.futures
+            
+            # Limit pages for initial load to prevent large responses
+            initial_pages = min(total_pages, 5)  # Max 5 pages (5000 records) for initial load
             
             with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
                 futures = []
                 
-                # Fetch ALL pages in parallel
-                app.logger.info(f"Fetching all {total_pages} pages for {total_records} records")
+                # Fetch limited pages initially
+                app.logger.info(f"Fetching {initial_pages} of {total_pages} pages initially for {total_records} records")
                 
-                for page_num in range(1, total_pages + 1):
+                for page_num in range(1, initial_pages + 1):
                     future = executor.submit(
                         make_knack_request,
                         'object_10',
@@ -619,6 +692,7 @@ def get_dashboard_initial_data():
                 except Exception as e:
                     app.logger.error(f"Error fetching national benchmark: {e}")
                     results['nationalBenchmark'] = {}
+            
         
         # For large datasets, fetch national benchmark separately
         if total_records > 1500 and 'nationalBenchmark' not in results:
@@ -636,7 +710,9 @@ def get_dashboard_initial_data():
                 results['nationalBenchmark'] = {}
         
         results['vespaResults'] = vespa_records
-        app.logger.info(f"Fetched {len(vespa_records)} VESPA results")
+        results['hasMore'] = len(vespa_records) < total_records
+        results['totalAvailable'] = total_records
+        app.logger.info(f"Fetched {len(vespa_records)} of {total_records} VESPA results")
         
         # Build filter options locally (quick)
         filter_sets = {
@@ -702,8 +778,98 @@ def get_dashboard_initial_data():
 
     except Exception as e:
         app.logger.error(f"Error fetching dashboard initial data: {e}")
-        raise ApiError(f"Failed to fetch dashboard initial data: {str(e)}", 500)
+        # Always return CORS headers even on error
+        response = jsonify({
+            'error': str(e),
+            'message': 'Failed to fetch dashboard initial data',
+            'vespaResults': [],
+            'nationalBenchmark': {},
+            'filterOptions': {'groups': [], 'courses': [], 'yearGroups': [], 'faculties': []}
+        })
+        response.status_code = 500
+        # Add CORS headers
+        origin = request.headers.get('Origin')
+        if origin in ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]:
+            response.headers['Access-Control-Allow-Origin'] = origin
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response
 
+
+# --- New Progressive Loading Endpoint ---
+@app.route('/api/dashboard-data-page', methods=['POST'])
+def get_dashboard_data_page():
+    """
+    Fetch a single page of dashboard data for progressive loading.
+    Used for large establishments to avoid timeouts.
+    """
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    establishment_id = data.get('establishmentId')
+    cycle = data.get('cycle', 1)
+    page = data.get('page', 1)
+    rows_per_page = data.get('rowsPerPage', 1000)
+    
+    if not establishment_id:
+        raise ApiError("establishmentId must be provided")
+    
+    app.logger.info(f"Fetching page {page} for establishment {establishment_id}, cycle {cycle}")
+    
+    try:
+        # Build filters
+        base_filters = [{
+            'field': 'field_133',
+            'operator': 'is',
+            'value': establishment_id
+        }]
+        
+        # Define minimal field set
+        cycle_offset = (cycle - 1) * 6
+        score_fields = [f'field_{154 + cycle_offset + i}_raw' for i in range(6)]
+        
+        vespa_fields = [
+            'id',
+            'field_133',
+            'field_133_raw',
+            'field_439_raw',
+            'field_187_raw',
+            'field_223',
+            'field_223_raw',
+            'field_2299',
+            'field_2299_raw',
+            'field_144_raw',
+            'field_782_raw',
+            *score_fields,
+            'field_2302_raw',
+            'field_2303_raw',
+            'field_2304_raw',
+            'field_2499_raw',
+            'field_2493_raw',
+            'field_2494_raw',
+        ]
+        
+        # Fetch single page
+        page_data = make_knack_request(
+            'object_10',
+            filters=base_filters,
+            page=page,
+            rows_per_page=rows_per_page,
+            fields=vespa_fields
+        )
+        
+        return jsonify({
+            'records': page_data.get('records', []),
+            'total_pages': page_data.get('total_pages', 0),
+            'total_records': page_data.get('total_records', 0),
+            'current_page': page
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error fetching dashboard page: {e}")
+        raise ApiError(f"Failed to fetch dashboard page: {str(e)}", 500)
 
 # --- Cache Management Endpoints ---
 @app.route('/api/cache/clear', methods=['POST'])
