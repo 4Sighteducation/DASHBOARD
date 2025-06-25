@@ -1299,6 +1299,12 @@ def qla_analysis():
                     'operator': 'is',
                     'value': filters_param['staffAdminId']
                 })
+            if 'trustFieldValue' in filters_param:
+                base_filters.append({
+                    'field': 'field_3479', # Academy Trust text field in object_29
+                    'operator': 'is',
+                    'value': filters_param['trustFieldValue']
+                })
         if analysis_type in calc_dispatch:
             result = calc_dispatch[analysis_type](question_ids, base_filters, cycle)
         else:
@@ -1368,6 +1374,12 @@ def qla_batch_analysis():
                     'field': 'field_2069',
                     'operator': 'is',
                     'value': filters_param['staffAdminId']
+                })
+            if 'trustFieldValue' in filters_param:
+                base_filters.append({
+                    'field': 'field_3479', # Academy Trust text field in object_29
+                    'operator': 'is',
+                    'value': filters_param['trustFieldValue']
                 })
         
         # Collect all unique question IDs
@@ -1564,6 +1576,12 @@ def generate_wordcloud():
                 'operator': 'is',
                 'value': filters['staffAdminId']
             })
+        elif filters.get('trustFieldValue'):
+            knack_filters.append({
+                'field': 'field_3478',
+                'operator': 'is',
+                'value': filters['trustFieldValue']
+            })
         
         # Fetch VESPA results with comment fields
         fields_to_fetch = ['id'] + [f + '_raw' for f in comment_fields]
@@ -1696,6 +1714,12 @@ def analyze_themes():
                 'field': 'field_439',
                 'operator': 'is',
                 'value': filters['staffAdminId']
+            })
+        elif filters.get('trustFieldValue'):
+            knack_filters.append({
+                'field': 'field_3478',
+                'operator': 'is',
+                'value': filters['trustFieldValue']
             })
         
         # Fetch VESPA results with comment fields
