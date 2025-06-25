@@ -2342,60 +2342,33 @@ def get_academy_trusts():
 def get_dashboard_trust_data():
     """
     Fetch aggregated dashboard data for an Academy Trust.
-    This searches Object_10 using field_3478 (Academy Trust field).
+    This searches across multiple schools in the trust.
     """
     data = request.get_json()
     if not data:
         raise ApiError("Missing request body")
-    
+
     trust_name = data.get('trustName')
-    trust_field_value = data.get('trustFieldValue')  # The exact Academy Trust field value
-    school_ids = data.get('schoolIds', [])  # List of establishment IDs in the trust (fallback)
+    trust_field_value = data.get('trustFieldValue')
+    school_ids = data.get('schoolIds', [])
     cycle = data.get('cycle', 1)
-    
-    if not trust_name:
-        raise ApiError("trustName must be provided")
-    
-    app.logger.info(f"Fetching trust data for: {trust_name} using field_3478 filter")
-    
+
+    if not trust_name or not trust_field_value:
+        raise ApiError("trustName and trustFieldValue must be provided")
+
+    app.logger.info(f"Fetching trust data for: {trust_name} using value: {trust_field_value}")
+
     try:
-        # Primary method: Use field_3478 (Academy Trust field in Object_10) to filter
-        trust_filters = []
-        
-        if trust_field_value:
-            # Filter Object_10 records by Academy Trust field (field_3478)
-            trust_filters.append({
-                'field': 'field_3478',  # Academy Trust field in Object_10
-                'operator': 'is',
-                'value': trust_field_value
-            })
-            app.logger.info(f"Using field_3478 filter with value: {trust_field_value}")
-        elif school_ids:
-            # Fallback: Use establishment IDs if trust field value not available
-            app.logger.info(f"Falling back to establishment ID filtering for {len(school_ids)} schools")
-            if len(school_ids) == 1:
-                trust_filters.append({
-                    'field': 'field_133',
-                    'operator': 'is',
-                    'value': school_ids[0]
-                })
-            else:
-                school_rules = []
-                for school_id in school_ids:
-                    school_rules.append({
-                        'field': 'field_133',
-                        'operator': 'is',
-                        'value': school_id
-                    })
-                
-                trust_filters.append({
-                    'match': 'or',
-                    'rules': school_rules
-                })
-        else:
-            raise ApiError("Either trustFieldValue or schoolIds must be provided")
-        
-        # Define minimal field set for VESPA results
+        # Build filter to get all records for the given trust
+        trust_filters = [{
+            'field': 'field_3478',  # Academy Trust field in Object_10
+            'operator': 'is',
+            'value': trust_field_value
+        }]
+
+        app.logger.info(f"Using trust filter: {trust_filters}")
+
+        # Define fields to fetch
         cycle_offset = (cycle - 1) * 6
         score_fields = [f'field_{154 + cycle_offset + i}_raw' for i in range(6)]
         
@@ -2409,53 +2382,44 @@ def get_dashboard_trust_data():
             'field_187_raw',    # Student name
             'field_223',        # Group
             'field_223_raw',
-            'field_2299',       # Course
+            'field_2299',
             'field_2299_raw',
-            'field_144_raw',    # Year Group
-            'field_782_raw',    # Faculty
-            *score_fields,      # VESPA scores for the cycle
-            'field_2302_raw',   # Comments
+            'field_144_raw',
+            'field_782_raw',
+            *score_fields,
+            'field_2302_raw',
             'field_2303_raw',
             'field_2304_raw',
             'field_2499_raw',
             'field_2493_raw',
             'field_2494_raw',
         ]
+
+        # Fetch all records for the trust
+        vespa_data = make_knack_request('object_10', filters=trust_filters, fields=vespa_fields)
+        vespa_records = vespa_data.get('records', [])
         
-        # Fetch VESPA results for all schools in trust
-        vespa_records = []
-        page = 1
-        max_pages = 5  # Limit for small trusts
-        
-        while page <= max_pages:
-            data = make_knack_request(
-                'object_10',
-                filters=trust_filters,
-                page=page,
-                rows_per_page=1000,
-                fields=vespa_fields
-            )
-            
-            records = data.get('records', [])
-            if not records:
-                break
-                
-            vespa_records.extend(records)
-            
-            if len(records) < 1000:
-                break
-                
-            page += 1
-        
-        app.logger.info(f"Fetched {len(vespa_records)} VESPA records for trust")
-        
+        app.logger.info(f"Found {len(vespa_records)} records for trust '{trust_name}'")
+
+        if not vespa_records:
+            return jsonify({
+                'vespaResults': [],
+                'nationalBenchmark': {},
+                'filterOptions': {},
+                'trustSchools': [],
+                'trustName': trust_name,
+                'schoolCount': 0,
+                'totalRecords': 0,
+                'cycle': cycle
+            })
+
         # Build filter options from all trust data
         filter_sets = {
             'groups': set(),
             'courses': set(),
             'yearGroups': set(),
             'faculties': set(),
-            'schools': set()  # Add schools for trust filtering
+            'schools': set()  # To collect school IDs for filtering
         }
 
         for rec in vespa_records:
@@ -2480,12 +2444,12 @@ def get_dashboard_trust_data():
             fac = rec.get('field_782_raw')
             if fac:
                 filter_sets['faculties'].add(str(fac))
-            
-            # Add establishment/school information
-            est_id = rec.get('field_133_raw') or rec.get('field_133')
-            if est_id:
-                filter_sets['schools'].add(str(est_id))
-        
+                
+            # Collect school IDs from the records
+            school_conn = rec.get('field_133_raw')
+            if school_conn and isinstance(school_conn, list) and len(school_conn) > 0:
+                filter_sets['schools'].add(school_conn[0]['id'])
+
         # Get national benchmark
         national_data = make_knack_request(
             'object_120',
@@ -2496,67 +2460,29 @@ def get_dashboard_trust_data():
         )
         
         # Get school information for the trust filter
-        trust_schools = []
-        unique_school_ids = list(filter_sets['schools'])
-        
-        if unique_school_ids:
-            # Fetch establishment names from Object_2
-            try:
-                if len(unique_school_ids) == 1:
-                    school_filters = [{
-                        'field': 'id',
-                        'operator': 'is',
-                        'value': unique_school_ids[0]
-                    }]
-                else:
-                    school_rules = []
-                    for school_id in unique_school_ids:
-                        school_rules.append({
-                            'field': 'id',
-                            'operator': 'is',
-                            'value': school_id
-                        })
-                    school_filters = [{
-                        'match': 'or',
-                        'rules': school_rules
-                    }]
-                
-                schools_data = make_knack_request(
-                    'object_2',
-                    filters=school_filters,
-                    rows_per_page=len(unique_school_ids),
-                    fields=['id', 'field_44', 'field_44_raw']
-                )
-                
-                for school_record in schools_data.get('records', []):
-                    trust_schools.append({
-                        'id': school_record.get('id'),
-                        'name': school_record.get('field_44') or school_record.get('field_44_raw') or f"School {school_record.get('id')}"
-                    })
-                
-                app.logger.info(f"Found {len(trust_schools)} schools in trust")
-                
-            except Exception as e:
-                app.logger.error(f"Error fetching school names: {e}")
-                # Fallback: use school IDs as names
-                trust_schools = [{'id': sid, 'name': f"School {sid}"} for sid in unique_school_ids]
-        
+        school_info = []
+        if filter_sets['schools']:
+            school_filters = [{'match': 'or', 'rules': [{'field': 'id', 'operator': 'is', 'value': sid} for sid in filter_sets['schools']]}]
+            school_records_data = make_knack_request('object_2', filters=school_filters, fields=['id', 'field_44'])
+            school_records = school_records_data.get('records', [])
+            school_info = [{'id': s['id'], 'name': s.get('field_44', 'Unknown School')} for s in school_records]
+
         results = {
             'vespaResults': vespa_records,
             'nationalBenchmark': national_data.get('records', [{}])[0],
-            'filterOptions': {k: sorted(list(v)) for k, v in filter_sets.items()},
+            'filterOptions': {k: sorted(list(v)) for k, v in filter_sets.items() if k != 'schools'},
+            'trustSchools': sorted(school_info, key=lambda x: x['name']),
             'trustName': trust_name,
-            'trustSchools': trust_schools,  # Add school information
-            'schoolCount': len(trust_schools),
+            'schoolCount': len(filter_sets['schools']),
             'totalRecords': len(vespa_records),
             'cycle': cycle
         }
         
         return jsonify(results)
-        
+
     except Exception as e:
-        app.logger.error(f"Error fetching trust dashboard data: {e}")
-        raise ApiError(f"Failed to fetch trust dashboard data: {str(e)}", 500)
+        app.logger.error(f"Error fetching trust data: {e}", exc_info=True)
+        raise ApiError(f"Failed to fetch trust dashboard data: {e}", 500)
 
 @app.route('/api/establishments', methods=['GET'])
 @cached(ttl_key='establishments')
