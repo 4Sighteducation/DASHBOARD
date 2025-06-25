@@ -15,6 +15,7 @@ from scipy.stats import pearsonr
 import gzip  # Add gzip for compression
 from threading import Thread
 import time
+import random  # Add random for sampling comments
 
 # Add PDF generation imports
 from reportlab.lib import colors
@@ -1284,9 +1285,7 @@ def qla_analysis():
     try:
         # Convert filters_param into proper list for builder
         base_filters = []
-        if isinstance(filters_param, list):
-            base_filters = filters_param
-        elif isinstance(filters_param, dict):
+        if isinstance(filters_param, dict):
             if 'establishmentId' in filters_param:
                 base_filters.append({
                     'field': 'field_1821',
@@ -1305,6 +1304,11 @@ def qla_analysis():
                     'operator': 'is',
                     'value': filters_param['trustFieldValue']
                 })
+            
+            # Combine base filters with any additional filters from the frontend
+            if 'additionalFilters' in filters_param and filters_param['additionalFilters']:
+                base_filters.extend(filters_param['additionalFilters'])
+
         if analysis_type in calc_dispatch:
             result = calc_dispatch[analysis_type](question_ids, base_filters, cycle)
         else:
@@ -1381,6 +1385,10 @@ def qla_batch_analysis():
                     'operator': 'is',
                     'value': filters_param['trustFieldValue']
                 })
+            
+            # Combine base filters with any additional filters from the frontend
+            if 'additionalFilters' in filters_param and filters_param['additionalFilters']:
+                base_filters.extend(filters_param['additionalFilters'])
         
         # Collect all unique question IDs
         all_question_ids = set()
@@ -1583,6 +1591,10 @@ def generate_wordcloud():
                 'value': filters['trustFieldValue']
             })
         
+        # Combine base filters with any additional filters from the frontend
+        if 'additionalFilters' in filters and filters['additionalFilters']:
+            knack_filters.extend(filters['additionalFilters'])
+        
         # Fetch VESPA results with comment fields
         fields_to_fetch = ['id'] + [f + '_raw' for f in comment_fields]
         
@@ -1722,6 +1734,10 @@ def analyze_themes():
                 'value': filters['trustFieldValue']
             })
         
+        # Combine base filters with any additional filters from the frontend
+        if 'additionalFilters' in filters and filters['additionalFilters']:
+            knack_filters.extend(filters['additionalFilters'])
+        
         # Fetch VESPA results with comment fields
         fields_to_fetch = ['id'] + [f + '_raw' for f in comment_fields]
         
@@ -1764,17 +1780,262 @@ def analyze_themes():
                 'message': 'No comments found for theme analysis'
             })
         
-        # For now, return a simple message indicating themes will be analyzed
-        # In production, this would use OpenAI API to identify themes
-        return jsonify({
-            'themes': [],
-            'totalThemes': 0,
-            'totalComments': len(all_comments),
-            'message': 'Theme analysis feature coming soon. Found {} comments to analyze.'.format(len(all_comments))
-        })
+        # Use OpenAI to analyze themes
+        if OPENAI_API_KEY:
+            try:
+                import openai
+                openai.api_key = OPENAI_API_KEY
+                
+                # Sample comments if too many (to avoid token limits and timeouts)
+                comments_to_analyze = all_comments
+                if len(all_comments) > 50:
+                    # Take a smaller representative sample to avoid timeouts
+                    import random
+                    comments_to_analyze = random.sample(all_comments, 50)
+                    app.logger.info(f"Sampled 50 comments from {len(all_comments)} for analysis")
+                elif len(all_comments) > 30:
+                    # For medium datasets, sample a bit
+                    import random
+                    comments_to_analyze = random.sample(all_comments, 30)
+                    app.logger.info(f"Sampled 30 comments from {len(all_comments)} for analysis")
+                
+                # Prepare the prompt
+                comments_text = '\n'.join([f"- {comment}" for comment in comments_to_analyze])
+                
+                prompt = f"""Analyze these student comments and identify the main themes. For each theme:
+1. Give it a clear, descriptive name
+2. Count how many comments relate to it
+3. Determine the overall sentiment (positive, negative, or mixed)
+4. Select 2-3 representative example quotes
+
+Return the results as a JSON array with this structure:
+[
+  {{
+    "theme": "Theme Name",
+    "count": number,
+    "sentiment": "positive|negative|mixed",
+    "examples": ["quote 1", "quote 2"]
+  }}
+]
+
+Focus on themes related to learning, support, challenges, goals, and academic experience.
+
+Student Comments:
+{comments_text}
+
+Important: Return ONLY the JSON array, no additional text."""
+
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo-16k" if len(prompt) > 3000 else "gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are an educational data analyst specializing in identifying themes from student feedback. Return only valid JSON."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=2000
+                )
+                
+                themes_text = response.choices[0].message['content'].strip()
+                
+                # Parse the JSON response
+                try:
+                    # Clean up the response if needed
+                    if themes_text.startswith('```json'):
+                        themes_text = themes_text[7:]
+                    if themes_text.endswith('```'):
+                        themes_text = themes_text[:-3]
+                    
+                    themes = json.loads(themes_text)
+                    
+                    # Sort themes by count
+                    themes.sort(key=lambda x: x.get('count', 0), reverse=True)
+                    
+                    # Take top 6 themes
+                    themes = themes[:6]
+                    
+                    return jsonify({
+                        'themes': themes,
+                        'totalThemes': len(themes),
+                        'totalComments': len(all_comments),
+                        'sampledComments': len(comments_to_analyze) if len(comments_to_analyze) < len(all_comments) else None
+                    })
+                    
+                except json.JSONDecodeError as e:
+                    app.logger.error(f"Failed to parse OpenAI response as JSON: {e}")
+                    app.logger.error(f"Response was: {themes_text}")
+                    
+                    # Fallback to simple theme extraction
+                    return jsonify({
+                        'themes': [],
+                        'totalThemes': 0,
+                        'totalComments': len(all_comments),
+                        'message': 'Theme extraction completed but failed to parse results',
+                        'error': 'JSON parsing failed'
+                    })
+                    
+            except Exception as e:
+                app.logger.error(f"OpenAI theme analysis error: {e}")
+                return jsonify({
+                    'themes': [],
+                    'totalThemes': 0,
+                    'totalComments': len(all_comments),
+                    'message': f'Theme analysis error: {str(e)}'
+                })
+        else:
+            # No OpenAI key configured
+            return jsonify({
+                'themes': [],
+                'totalThemes': 0,
+                'totalComments': len(all_comments),
+                'message': 'Theme analysis requires OpenAI API configuration'
+            })
         
     except Exception as e:
         app.logger.error(f"Theme analysis error: {e}")
+        raise ApiError(f"Failed to analyze themes: {str(e)}", 500)
+
+@app.route('/api/comment-themes-fast', methods=['POST'])
+def analyze_themes_from_wordcloud():
+    """Extract themes from word cloud data using AI - much faster than analyzing raw comments"""
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    app.logger.info("Analyzing themes from word cloud data (fast method)")
+    
+    try:
+        # First get the word cloud data
+        comment_fields = data.get('commentFields', [])
+        filters = data.get('filters', {})
+        
+        # Call the word cloud generation internally
+        from flask import current_app
+        with current_app.test_request_context(json=data):
+            wordcloud_response = generate_wordcloud()
+            wordcloud_data = wordcloud_response.get_json()
+        
+        if not wordcloud_data or not wordcloud_data.get('wordCloudData'):
+            return jsonify({
+                'themes': [],
+                'totalThemes': 0,
+                'totalComments': wordcloud_data.get('totalComments', 0),
+                'message': 'No word cloud data available for theme analysis'
+            })
+        
+        # Use OpenAI to analyze themes from word patterns
+        if OPENAI_API_KEY:
+            try:
+                import openai
+                openai.api_key = OPENAI_API_KEY
+                
+                # Get top words with their frequencies
+                top_words = wordcloud_data['wordCloudData'][:50]  # Top 50 words
+                total_comments = wordcloud_data.get('totalComments', 0)
+                
+                # Create a text representation of word patterns
+                word_patterns = []
+                for word_data in top_words:
+                    word = word_data['text']
+                    count = word_data['count']
+                    sentiment = word_data.get('sentiment', 0)
+                    
+                    # Include sentiment indicator
+                    sentiment_label = 'positive' if sentiment > 0.1 else 'negative' if sentiment < -0.1 else 'neutral'
+                    word_patterns.append(f"{word} (mentioned {count} times, {sentiment_label})")
+                
+                patterns_text = '\n'.join(word_patterns)
+                
+                prompt = f"""Based on these frequently mentioned words from {total_comments} student comments, identify the main themes.
+
+Word patterns (word, frequency, sentiment):
+{patterns_text}
+
+Analyze these patterns and identify 4-6 main themes. For each theme:
+1. Give it a clear, descriptive name based on the related words
+2. Estimate how many comments might relate to it (based on word frequencies)
+3. Determine the overall sentiment (positive, negative, or mixed) based on word sentiments
+4. List the key words that support this theme
+
+Return the results as a JSON array with this structure:
+[
+  {{
+    "theme": "Theme Name",
+    "count": estimated_number,
+    "sentiment": "positive|negative|mixed",
+    "examples": ["key word 1", "key word 2", "key word 3"]
+  }}
+]
+
+Focus on themes related to learning, support, challenges, goals, and academic experience.
+
+Important: Return ONLY the JSON array, no additional text."""
+
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are an educational data analyst specializing in identifying themes from word patterns. Return only valid JSON."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=1500
+                )
+                
+                themes_text = response.choices[0].message['content'].strip()
+                
+                # Parse the JSON response
+                try:
+                    # Clean up the response if needed
+                    if themes_text.startswith('```json'):
+                        themes_text = themes_text[7:]
+                    if themes_text.endswith('```'):
+                        themes_text = themes_text[:-3]
+                    
+                    themes = json.loads(themes_text)
+                    
+                    # Sort themes by count
+                    themes.sort(key=lambda x: x.get('count', 0), reverse=True)
+                    
+                    # Take top 6 themes
+                    themes = themes[:6]
+                    
+                    return jsonify({
+                        'themes': themes,
+                        'totalThemes': len(themes),
+                        'totalComments': total_comments,
+                        'method': 'word_patterns',
+                        'processingTime': 'fast'
+                    })
+                    
+                except json.JSONDecodeError as e:
+                    app.logger.error(f"Failed to parse OpenAI response as JSON: {e}")
+                    app.logger.error(f"Response was: {themes_text}")
+                    
+                    return jsonify({
+                        'themes': [],
+                        'totalThemes': 0,
+                        'totalComments': total_comments,
+                        'message': 'Theme extraction completed but failed to parse results'
+                    })
+                    
+            except Exception as e:
+                app.logger.error(f"OpenAI theme analysis error: {e}")
+                return jsonify({
+                    'themes': [],
+                    'totalThemes': 0,
+                    'totalComments': total_comments,
+                    'message': f'Theme analysis error: {str(e)}'
+                })
+        else:
+            # No OpenAI key configured
+            return jsonify({
+                'themes': [],
+                'totalThemes': 0,
+                'totalComments': total_comments,
+                'message': 'Theme analysis requires OpenAI API configuration'
+            })
+        
+    except Exception as e:
+        app.logger.error(f"Fast theme analysis error: {e}")
         raise ApiError(f"Failed to analyze themes: {str(e)}", 500)
 
 @app.route('/api/comment-sentiment', methods=['POST'])
