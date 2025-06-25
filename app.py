@@ -2342,47 +2342,58 @@ def get_academy_trusts():
 def get_dashboard_trust_data():
     """
     Fetch aggregated dashboard data for an Academy Trust.
-    This searches across multiple schools in the trust.
+    This searches Object_10 using field_3478 (Academy Trust field).
     """
     data = request.get_json()
     if not data:
         raise ApiError("Missing request body")
     
     trust_name = data.get('trustName')
-    school_ids = data.get('schoolIds', [])  # List of establishment IDs in the trust
+    trust_field_value = data.get('trustFieldValue')  # The exact Academy Trust field value
+    school_ids = data.get('schoolIds', [])  # List of establishment IDs in the trust (fallback)
     cycle = data.get('cycle', 1)
     
-    if not trust_name or not school_ids:
-        raise ApiError("trustName and schoolIds must be provided")
+    if not trust_name:
+        raise ApiError("trustName must be provided")
     
-    app.logger.info(f"Fetching trust data for: {trust_name} with {len(school_ids)} schools")
+    app.logger.info(f"Fetching trust data for: {trust_name} using field_3478 filter")
     
     try:
-        # For small trusts (<1000 records total), we can aggregate data from all schools
-        # Build filters to include all schools in the trust
+        # Primary method: Use field_3478 (Academy Trust field in Object_10) to filter
         trust_filters = []
         
-        if len(school_ids) == 1:
-            # Single school in trust
+        if trust_field_value:
+            # Filter Object_10 records by Academy Trust field (field_3478)
             trust_filters.append({
-                'field': 'field_133',
+                'field': 'field_3478',  # Academy Trust field in Object_10
                 'operator': 'is',
-                'value': school_ids[0]
+                'value': trust_field_value
             })
-        else:
-            # Multiple schools - use OR logic
-            school_rules = []
-            for school_id in school_ids:
-                school_rules.append({
+            app.logger.info(f"Using field_3478 filter with value: {trust_field_value}")
+        elif school_ids:
+            # Fallback: Use establishment IDs if trust field value not available
+            app.logger.info(f"Falling back to establishment ID filtering for {len(school_ids)} schools")
+            if len(school_ids) == 1:
+                trust_filters.append({
                     'field': 'field_133',
                     'operator': 'is',
-                    'value': school_id
+                    'value': school_ids[0]
                 })
-            
-            trust_filters.append({
-                'match': 'or',
-                'rules': school_rules
-            })
+            else:
+                school_rules = []
+                for school_id in school_ids:
+                    school_rules.append({
+                        'field': 'field_133',
+                        'operator': 'is',
+                        'value': school_id
+                    })
+                
+                trust_filters.append({
+                    'match': 'or',
+                    'rules': school_rules
+                })
+        else:
+            raise ApiError("Either trustFieldValue or schoolIds must be provided")
         
         # Define minimal field set for VESPA results
         cycle_offset = (cycle - 1) * 6
@@ -2390,18 +2401,20 @@ def get_dashboard_trust_data():
         
         vespa_fields = [
             'id',
-            'field_133',
+            'field_133',        # VESPA Customer (establishment)
             'field_133_raw',
-            'field_439_raw',
-            'field_187_raw',
-            'field_223',
+            'field_3478',       # Academy Trust field in Object_10
+            'field_3478_raw',
+            'field_439_raw',    # Staff Admin
+            'field_187_raw',    # Student name
+            'field_223',        # Group
             'field_223_raw',
-            'field_2299',
+            'field_2299',       # Course
             'field_2299_raw',
-            'field_144_raw',
-            'field_782_raw',
-            *score_fields,
-            'field_2302_raw',
+            'field_144_raw',    # Year Group
+            'field_782_raw',    # Faculty
+            *score_fields,      # VESPA scores for the cycle
+            'field_2302_raw',   # Comments
             'field_2303_raw',
             'field_2304_raw',
             'field_2499_raw',
@@ -2441,7 +2454,8 @@ def get_dashboard_trust_data():
             'groups': set(),
             'courses': set(),
             'yearGroups': set(),
-            'faculties': set()
+            'faculties': set(),
+            'schools': set()  # Add schools for trust filtering
         }
 
         for rec in vespa_records:
@@ -2466,6 +2480,11 @@ def get_dashboard_trust_data():
             fac = rec.get('field_782_raw')
             if fac:
                 filter_sets['faculties'].add(str(fac))
+            
+            # Add establishment/school information
+            est_id = rec.get('field_133_raw') or rec.get('field_133')
+            if est_id:
+                filter_sets['schools'].add(str(est_id))
         
         # Get national benchmark
         national_data = make_knack_request(
@@ -2476,12 +2495,59 @@ def get_dashboard_trust_data():
             sort_order='desc'
         )
         
+        # Get school information for the trust filter
+        trust_schools = []
+        unique_school_ids = list(filter_sets['schools'])
+        
+        if unique_school_ids:
+            # Fetch establishment names from Object_2
+            try:
+                if len(unique_school_ids) == 1:
+                    school_filters = [{
+                        'field': 'id',
+                        'operator': 'is',
+                        'value': unique_school_ids[0]
+                    }]
+                else:
+                    school_rules = []
+                    for school_id in unique_school_ids:
+                        school_rules.append({
+                            'field': 'id',
+                            'operator': 'is',
+                            'value': school_id
+                        })
+                    school_filters = [{
+                        'match': 'or',
+                        'rules': school_rules
+                    }]
+                
+                schools_data = make_knack_request(
+                    'object_2',
+                    filters=school_filters,
+                    rows_per_page=len(unique_school_ids),
+                    fields=['id', 'field_44', 'field_44_raw']
+                )
+                
+                for school_record in schools_data.get('records', []):
+                    trust_schools.append({
+                        'id': school_record.get('id'),
+                        'name': school_record.get('field_44') or school_record.get('field_44_raw') or f"School {school_record.get('id')}"
+                    })
+                
+                app.logger.info(f"Found {len(trust_schools)} schools in trust")
+                
+            except Exception as e:
+                app.logger.error(f"Error fetching school names: {e}")
+                # Fallback: use school IDs as names
+                trust_schools = [{'id': sid, 'name': f"School {sid}"} for sid in unique_school_ids]
+        
         results = {
             'vespaResults': vespa_records,
             'nationalBenchmark': national_data.get('records', [{}])[0],
             'filterOptions': {k: sorted(list(v)) for k, v in filter_sets.items()},
             'trustName': trust_name,
-            'schoolCount': len(school_ids),
+            'trustSchools': trust_schools,  # Add school information
+            'schoolCount': len(trust_schools),
             'totalRecords': len(vespa_records),
             'cycle': cycle
         }
