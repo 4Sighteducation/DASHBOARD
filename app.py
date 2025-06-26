@@ -2,7 +2,7 @@ import os
 import json
 import requests
 from datetime import datetime, timedelta
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, current_app
 from dotenv import load_dotenv
 from flask_cors import CORS # Import CORS
 import logging # Import Python's standard logging
@@ -577,58 +577,94 @@ def get_dashboard_initial_data():
             pages_to_fetch = min(total_pages, 3)  # Reduced from 10 to 3 pages for better performance
             app.logger.info(f"Will fetch {pages_to_fetch} pages initially (total available: {total_pages})")
             
-            # Fetch pages in parallel (but limit concurrent requests)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:  # Reduced from 5 to 3
-                futures = []
-                consecutive_empty_pages = 0
+            # For very large datasets, try fetching pages sequentially with smaller page size
+            if total_records > 2000:
+                app.logger.info(f"Very large dataset ({total_records} records). Using sequential fetch with smaller pages.")
                 
-                for page_num in range(1, pages_to_fetch + 1):
-                    # Check time before submitting
+                # Try smaller page size for large datasets
+                smaller_page_size = 500
+                pages_needed = min(6, (3000 // smaller_page_size))  # Max 3000 records, 6 pages of 500
+                
+                for page_num in range(1, pages_needed + 1):
+                    # Check time before each request
                     if time.time() - start_time > MAX_REQUEST_TIME - 5:
-                        app.logger.warning(f"Stopping page submission at page {page_num} due to time limit")
+                        app.logger.warning(f"Stopping at page {page_num} due to time limit")
                         break
-                        
-                    future = executor.submit(
-                        make_knack_request,
-                        'object_10',
-                        filters=base_filters,
-                        page=page_num,
-                        rows_per_page=1000,
-                        fields=vespa_fields
-                    )
-                    futures.append((page_num, future))
-                
-                # Collect results with progress logging
-                for page_num, future in futures:
+                    
                     try:
-                        # Check time before processing each page
-                        elapsed_time = time.time() - start_time
-                        if elapsed_time > MAX_REQUEST_TIME - 3:  # Leave 3s buffer
-                            app.logger.warning(f"Approaching timeout after {elapsed_time}s, stopping at page {page_num}")
-                            # Cancel remaining futures
-                            for _, remaining_future in futures[futures.index((page_num, future)):]:
-                                remaining_future.cancel()
-                            break
-                        
-                        page_data = future.result(timeout=min(5, MAX_REQUEST_TIME - elapsed_time))  # Dynamic timeout
+                        page_data = make_knack_request(
+                            'object_10',
+                            filters=base_filters,
+                            page=page_num,
+                            rows_per_page=smaller_page_size,
+                            fields=vespa_fields
+                        )
                         page_records = page_data.get('records', [])
                         
-                        # Stop if we get empty pages
-                        if not page_records:
-                            consecutive_empty_pages += 1
-                            app.logger.warning(f"Page {page_num} returned 0 records")
-                            if consecutive_empty_pages >= 3:  # Stop after 3 consecutive empty pages
-                                app.logger.warning(f"Stopping fetch after {consecutive_empty_pages} consecutive empty pages")
-                                break
-                        else:
-                            consecutive_empty_pages = 0  # Reset counter
+                        if page_records:
                             vespa_records.extend(page_records)
-                        
-                        app.logger.info(f"Fetched page {page_num}/{pages_to_fetch} - {len(page_records)} records")
+                            app.logger.info(f"Fetched page {page_num} - {len(page_records)} records (total so far: {len(vespa_records)})")
+                        else:
+                            app.logger.warning(f"Page {page_num} returned 0 records")
+                            break
+                            
                     except Exception as e:
                         app.logger.error(f"Error fetching page {page_num}: {e}")
-                        # Don't fail the entire request for one page error
+                        # Try to continue with other pages
                         continue
+            else:
+                # For smaller datasets, use parallel fetching
+                with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:  # Reduced from 5 to 3
+                    futures = []
+                    consecutive_empty_pages = 0
+                    
+                    for page_num in range(1, pages_to_fetch + 1):
+                        # Check time before submitting
+                        if time.time() - start_time > MAX_REQUEST_TIME - 5:
+                            app.logger.warning(f"Stopping page submission at page {page_num} due to time limit")
+                            break
+                            
+                        future = executor.submit(
+                            make_knack_request,
+                            'object_10',
+                            filters=base_filters,
+                            page=page_num,
+                            rows_per_page=1000,
+                            fields=vespa_fields
+                        )
+                        futures.append((page_num, future))
+                
+                    # Collect results with progress logging
+                    for page_num, future in futures:
+                        try:
+                            # Check time before processing each page
+                            elapsed_time = time.time() - start_time
+                            if elapsed_time > MAX_REQUEST_TIME - 3:  # Leave 3s buffer
+                                app.logger.warning(f"Approaching timeout after {elapsed_time}s, stopping at page {page_num}")
+                                # Cancel remaining futures
+                                for _, remaining_future in futures[futures.index((page_num, future)):]:
+                                    remaining_future.cancel()
+                                break
+                            
+                            page_data = future.result(timeout=min(5, MAX_REQUEST_TIME - elapsed_time))  # Dynamic timeout
+                            page_records = page_data.get('records', [])
+                            
+                            # Stop if we get empty pages
+                            if not page_records:
+                                consecutive_empty_pages += 1
+                                app.logger.warning(f"Page {page_num} returned 0 records")
+                                if consecutive_empty_pages >= 3:  # Stop after 3 consecutive empty pages
+                                    app.logger.warning(f"Stopping fetch after {consecutive_empty_pages} consecutive empty pages")
+                                    break
+                            else:
+                                consecutive_empty_pages = 0  # Reset counter
+                                vespa_records.extend(page_records)
+                            
+                            app.logger.info(f"Fetched page {page_num}/{pages_to_fetch} - {len(page_records)} records")
+                        except Exception as e:
+                            app.logger.error(f"Error fetching page {page_num}: {e}")
+                            # Don't fail the entire request for one page error
+                            continue
             
             app.logger.info(f"Fetched total of {len(vespa_records)} records")
             
@@ -3134,6 +3170,267 @@ def generate_pdf_report():
     except Exception as e:
         app.logger.error(f"Failed to generate PDF report: {e}")
         raise ApiError(f"Failed to generate report: {str(e)}", 500)
+
+@app.route('/api/dashboard-data-optimized', methods=['POST'])
+def get_dashboard_data_optimized():
+    """
+    Optimized endpoint for large datasets that uses Redis more efficiently.
+    Stores data in chunks and allows progressive loading.
+    """
+    import time
+    import hashlib
+    
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    establishment_id = data.get('establishmentId')
+    cycle = data.get('cycle', 1)
+    chunk_size = data.get('chunkSize', 500)  # Smaller chunks for better caching
+    chunk_index = data.get('chunkIndex', 0)  # Which chunk to return
+    
+    if not establishment_id:
+        raise ApiError("establishmentId must be provided")
+    
+    # Create a stable cache key for the entire dataset
+    dataset_key = f"dataset:{establishment_id}:{cycle}"
+    metadata_key = f"metadata:{establishment_id}:{cycle}"
+    chunk_key = f"{dataset_key}:chunk:{chunk_index}"
+    
+    # Try to get metadata from cache first
+    metadata = None
+    if CACHE_ENABLED:
+        try:
+            cached_metadata = redis_client.get(metadata_key)
+            if cached_metadata:
+                metadata = json.loads(cached_metadata)
+                app.logger.info(f"Found cached metadata: {metadata}")
+        except Exception as e:
+            app.logger.error(f"Error reading metadata from cache: {e}")
+    
+    # If no metadata, we need to fetch initial data to understand the dataset
+    if not metadata:
+        app.logger.info(f"No metadata found, fetching dataset info for establishment {establishment_id}")
+        
+        # Build filters
+        base_filters = [{
+            'field': 'field_133',
+            'operator': 'is',
+            'value': establishment_id
+        }]
+        
+        # Get dataset size with minimal fields
+        size_check = make_knack_request(
+            'object_10',
+            filters=base_filters,
+            page=1,
+            rows_per_page=1,
+            fields=['id']
+        )
+        
+        total_records = size_check.get('total_records', 0)
+        total_pages = size_check.get('total_pages', 1)
+        total_chunks = (total_records + chunk_size - 1) // chunk_size
+        
+        metadata = {
+            'total_records': total_records,
+            'total_pages': total_pages,
+            'total_chunks': total_chunks,
+            'chunk_size': chunk_size,
+            'created_at': time.time()
+        }
+        
+        # Cache metadata for 30 minutes
+        if CACHE_ENABLED:
+            try:
+                redis_client.setex(metadata_key, 1800, json.dumps(metadata))
+            except Exception as e:
+                app.logger.error(f"Error caching metadata: {e}")
+    
+    # Check if requested chunk is in cache
+    chunk_data = None
+    if CACHE_ENABLED:
+        try:
+            cached_chunk = redis_client.get(chunk_key)
+            if cached_chunk:
+                chunk_data = pickle.loads(gzip.decompress(cached_chunk))
+                app.logger.info(f"Returning cached chunk {chunk_index}")
+                return jsonify({
+                    'chunk': chunk_data,
+                    'metadata': metadata,
+                    'cached': True
+                })
+        except Exception as e:
+            app.logger.error(f"Error reading chunk from cache: {e}")
+    
+    # If not in cache, fetch the specific chunk
+    app.logger.info(f"Fetching chunk {chunk_index} (records {chunk_index * chunk_size} to {(chunk_index + 1) * chunk_size})")
+    
+    # Calculate which Knack page contains this chunk
+    records_per_knack_page = 1000
+    start_record = chunk_index * chunk_size
+    knack_page = (start_record // records_per_knack_page) + 1
+    offset_in_page = start_record % records_per_knack_page
+    
+    # Define fields to fetch
+    cycle_offset = (cycle - 1) * 6
+    score_fields = [f'field_{154 + cycle_offset + i}_raw' for i in range(6)]
+    
+    vespa_fields = [
+        'id',
+        'field_133_raw',
+        'field_187_raw',
+        'field_223_raw',
+        'field_2299_raw',
+        'field_144_raw',
+        'field_782_raw',
+        *score_fields
+    ]
+    
+    # Build filters
+    base_filters = [{
+        'field': 'field_133',
+        'operator': 'is',
+        'value': establishment_id
+    }]
+    
+    try:
+        # Fetch the page(s) needed for this chunk
+        chunk_records = []
+        records_needed = chunk_size
+        current_page = knack_page
+        
+        while records_needed > 0 and current_page <= metadata['total_pages']:
+            page_data = make_knack_request(
+                'object_10',
+                filters=base_filters,
+                page=current_page,
+                rows_per_page=records_per_knack_page,
+                fields=vespa_fields
+            )
+            
+            page_records = page_data.get('records', [])
+            
+            if current_page == knack_page:
+                # First page - skip to offset
+                page_records = page_records[offset_in_page:]
+            
+            # Take only what we need
+            records_to_take = min(records_needed, len(page_records))
+            chunk_records.extend(page_records[:records_to_take])
+            records_needed -= records_to_take
+            
+            if records_to_take < len(page_records):
+                break  # We have enough
+                
+            current_page += 1
+        
+        # Cache this chunk for 30 minutes
+        if CACHE_ENABLED and chunk_records:
+            try:
+                compressed_chunk = gzip.compress(pickle.dumps(chunk_records))
+                redis_client.setex(chunk_key, 1800, compressed_chunk)
+                app.logger.info(f"Cached chunk {chunk_index} ({len(chunk_records)} records, {len(compressed_chunk)} bytes)")
+            except Exception as e:
+                app.logger.error(f"Error caching chunk: {e}")
+        
+        return jsonify({
+            'chunk': chunk_records,
+            'metadata': metadata,
+            'cached': False
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error fetching chunk: {e}")
+        raise ApiError(f"Failed to fetch data chunk: {str(e)}", 500)
+
+@app.route('/api/cache/prewarm', methods=['POST'])
+def prewarm_cache():
+    """
+    Pre-warm cache for an establishment to improve subsequent load times.
+    This can be called after selecting an establishment but before loading the dashboard.
+    """
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    establishment_id = data.get('establishmentId')
+    cycles = data.get('cycles', [1, 2, 3])  # Pre-warm all cycles by default
+    
+    if not establishment_id:
+        raise ApiError("establishmentId must be provided")
+    
+    if not CACHE_ENABLED:
+        return jsonify({'message': 'Cache not enabled', 'success': False})
+    
+    try:
+        warmed_keys = []
+        
+        for cycle in cycles:
+            # Get metadata first
+            metadata_key = f"metadata:{establishment_id}:{cycle}"
+            dataset_key = f"dataset:{establishment_id}:{cycle}"
+            
+            # Check dataset size
+            base_filters = [{
+                'field': 'field_133',
+                'operator': 'is',
+                'value': establishment_id
+            }]
+            
+            size_check = make_knack_request(
+                'object_10',
+                filters=base_filters,
+                page=1,
+                rows_per_page=1,
+                fields=['id']
+            )
+            
+            total_records = size_check.get('total_records', 0)
+            
+            # Only pre-warm first few chunks for large datasets
+            chunk_size = 500
+            chunks_to_warm = min(6, (total_records + chunk_size - 1) // chunk_size)  # Max 6 chunks (3000 records)
+            
+            app.logger.info(f"Pre-warming {chunks_to_warm} chunks for establishment {establishment_id}, cycle {cycle}")
+            
+            # Store metadata
+            metadata = {
+                'total_records': total_records,
+                'total_pages': size_check.get('total_pages', 1),
+                'total_chunks': (total_records + chunk_size - 1) // chunk_size,
+                'chunk_size': chunk_size,
+                'created_at': time.time()
+            }
+            redis_client.setex(metadata_key, 1800, json.dumps(metadata))
+            warmed_keys.append(metadata_key)
+            
+            # Pre-fetch first few chunks
+            for chunk_index in range(chunks_to_warm):
+                # Use the optimized endpoint internally
+                with current_app.test_request_context(json={
+                    'establishmentId': establishment_id,
+                    'cycle': cycle,
+                    'chunkSize': chunk_size,
+                    'chunkIndex': chunk_index
+                }):
+                    response = get_dashboard_data_optimized()
+                    if response.status_code == 200:
+                        warmed_keys.append(f"{dataset_key}:chunk:{chunk_index}")
+        
+        return jsonify({
+            'success': True,
+            'warmed_keys': len(warmed_keys),
+            'message': f'Pre-warmed cache for establishment {establishment_id}'
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error pre-warming cache: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to pre-warm cache'
+        })
 
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 
