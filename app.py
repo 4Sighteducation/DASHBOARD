@@ -583,7 +583,8 @@ def get_dashboard_initial_data():
                 
                 # Try smaller page size for large datasets
                 smaller_page_size = 500
-                pages_needed = min(10, (5000 // smaller_page_size))  # Max 5000 records, 10 pages of 500
+                # Calculate pages needed based on actual total records, with some buffer
+                pages_needed = min(15, ((total_records + smaller_page_size - 1) // smaller_page_size) + 2)  # Add 2 extra pages for buffer
                 
                 for page_num in range(1, pages_needed + 1):
                     # Check time before each request
@@ -605,8 +606,7 @@ def get_dashboard_initial_data():
                             vespa_records.extend(page_records)
                             app.logger.info(f"Fetched page {page_num} - {len(page_records)} records (total so far: {len(vespa_records)})")
                         else:
-                            app.logger.warning(f"Page {page_num} returned 0 records")
-                            break
+                            app.logger.warning(f"Page {page_num} returned 0 records, continuing to check next pages...")
                             
                     except Exception as e:
                         app.logger.error(f"Error fetching page {page_num}: {e}")
@@ -649,16 +649,16 @@ def get_dashboard_initial_data():
                             page_data = future.result(timeout=min(5, MAX_REQUEST_TIME - elapsed_time))  # Dynamic timeout
                             page_records = page_data.get('records', [])
                             
-                            # Stop if we get empty pages
-                            if not page_records:
+                            if page_records:
+                                vespa_records.extend(page_records)
+                                consecutive_empty_pages = 0  # Reset counter
+                            else:
                                 consecutive_empty_pages += 1
                                 app.logger.warning(f"Page {page_num} returned 0 records")
-                                if consecutive_empty_pages >= 3:  # Stop after 3 consecutive empty pages
-                                    app.logger.warning(f"Stopping fetch after {consecutive_empty_pages} consecutive empty pages")
+                                # Only stop if we're sure there's no more data
+                                if consecutive_empty_pages >= 3 and page_num >= pages_to_fetch - 2:
+                                    app.logger.warning(f"Stopping fetch after {consecutive_empty_pages} consecutive empty pages near end")
                                     break
-                            else:
-                                consecutive_empty_pages = 0  # Reset counter
-                                vespa_records.extend(page_records)
                             
                             app.logger.info(f"Fetched page {page_num}/{pages_to_fetch} - {len(page_records)} records")
                         except Exception as e:
@@ -1659,7 +1659,8 @@ def generate_wordcloud():
                         all_comments.append(comment.strip())
             
             if len(records) < 500:
-                break
+                # Don't break - there might be more data on subsequent pages
+                pass
             page += 1
         
         app.logger.info(f"Collected {len(all_comments)} comments")
@@ -1802,7 +1803,8 @@ def analyze_themes():
                         all_comments.append(comment.strip())
             
             if len(records) < 500:
-                break
+                # Don't break - there might be more data on subsequent pages
+                pass
             page += 1
         
         app.logger.info(f"Collected {len(all_comments)} comments for theme analysis")
