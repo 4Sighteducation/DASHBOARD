@@ -572,9 +572,9 @@ def get_dashboard_initial_data():
             vespa_records = []
             import concurrent.futures
             
-            # For initial load, only fetch first 3 pages (3,000 records max)
+            # For initial load, only fetch first 5 pages (5,000 records max)
             # This prevents the 12MB response issue and improves performance
-            pages_to_fetch = min(total_pages, 3)  # Reduced from 10 to 3 pages for better performance
+            pages_to_fetch = min(total_pages, 5)  # Increased from 3 to 5 pages for better performance
             app.logger.info(f"Will fetch {pages_to_fetch} pages initially (total available: {total_pages})")
             
             # For very large datasets, try fetching pages sequentially with smaller page size
@@ -583,7 +583,7 @@ def get_dashboard_initial_data():
                 
                 # Try smaller page size for large datasets
                 smaller_page_size = 500
-                pages_needed = min(6, (3000 // smaller_page_size))  # Max 3000 records, 6 pages of 500
+                pages_needed = min(10, (5000 // smaller_page_size))  # Max 5000 records, 10 pages of 500
                 
                 for page_num in range(1, pages_needed + 1):
                     # Check time before each request
@@ -684,7 +684,7 @@ def get_dashboard_initial_data():
             import concurrent.futures
             
             # Limit pages for initial load to prevent large responses
-            initial_pages = min(total_pages, 3)  # Max 3 pages (3000 records) for initial load
+            initial_pages = min(total_pages, 5)  # Max 5 pages (5000 records) for initial load
             
             with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
                 futures = []
@@ -1636,7 +1636,7 @@ def generate_wordcloud():
         
         all_comments = []
         page = 1
-        max_pages = 5  # Limit to prevent timeout
+        max_pages = 10  # Increased to handle larger datasets
         
         while page <= max_pages:
             vespa_data = make_knack_request(
@@ -1779,7 +1779,7 @@ def analyze_themes():
         
         all_comments = []
         page = 1
-        max_pages = 3  # Limit to prevent timeout
+        max_pages = 10  # Increased to handle larger datasets
         
         while page <= max_pages:
             vespa_data = make_knack_request(
