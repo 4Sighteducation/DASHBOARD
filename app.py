@@ -256,6 +256,79 @@ def handle_gateway_timeout(error):
 # --- Knack API Proxy ---
 BASE_KNACK_URL = f"https://api.knack.com/v1/objects"
 
+# --- Academic Year Helper ---
+def get_academic_year_filters(establishment_id=None, date_field='field_855', australian_field='field_3511'):
+    """
+    Generate academic year date filters for UK/Australian schools.
+    
+    Args:
+        establishment_id: The establishment record ID to check if Australian
+        date_field: The date field to filter on (default: field_855 for Object_10)
+        australian_field: The boolean field indicating Australian school (default: field_3511 for Object_10)
+    
+    Returns:
+        list: Filter rules for the academic year
+    """
+    from datetime import datetime, timedelta
+    
+    is_australian_school = False
+    
+    # Check if this is an Australian school
+    if establishment_id:
+        try:
+            # Fetch establishment record to check if Australian
+            est_data = make_knack_request('object_2', record_id=establishment_id, fields=[australian_field, f'{australian_field}_raw'])
+            is_australian = est_data.get(f'{australian_field}_raw', False)
+            if is_australian == 'true' or is_australian == True or is_australian == 'True':
+                is_australian_school = True
+                app.logger.info(f"Establishment {establishment_id} is an Australian school")
+        except Exception as e:
+            app.logger.warning(f"Could not check if establishment is Australian: {e}")
+    
+    # Calculate academic year date boundaries
+    today = datetime.now()
+    
+    if is_australian_school:
+        # Australian schools: Calendar year (Jan 1 - Dec 31)
+        academic_year_start = datetime(today.year, 1, 1)
+        academic_year_end = datetime(today.year, 12, 31)
+        app.logger.info(f"Using Australian academic year: {today.year}")
+    else:
+        # UK schools: Academic year (Aug 1 - Jul 31)
+        if today.month >= 8:  # August or later
+            academic_year_start = datetime(today.year, 8, 1)
+            academic_year_end = datetime(today.year + 1, 7, 31)
+            app.logger.info(f"Using UK academic year: {today.year}-{str(today.year + 1)[2:]}")
+        else:  # January to July
+            academic_year_start = datetime(today.year - 1, 8, 1)
+            academic_year_end = datetime(today.year, 7, 31)
+            app.logger.info(f"Using UK academic year: {today.year - 1}-{str(today.year)[2:]}")
+    
+    # Format dates as dd/mm/yyyy for Knack (inclusive boundaries)
+    # Subtract 1 day from start to make it inclusive, add 1 day to end
+    start_date_inclusive = academic_year_start - timedelta(days=1)
+    end_date_inclusive = academic_year_end + timedelta(days=1)
+    
+    start_date_str = start_date_inclusive.strftime('%d/%m/%Y')
+    end_date_str = end_date_inclusive.strftime('%d/%m/%Y')
+    
+    # Return date range filter
+    return {
+        'match': 'and',
+        'rules': [
+            {
+                'field': date_field,
+                'operator': 'is after',
+                'value': start_date_str
+            },
+            {
+                'field': date_field,
+                'operator': 'is before',
+                'value': end_date_str
+            }
+        ]
+    }
+
 # --- Caching Decorator ---
 def cache_key(*args, **kwargs):
     """Generate a cache key from function arguments"""
@@ -494,12 +567,18 @@ def get_dashboard_initial_data():
             'operator': 'is',
             'value': establishment_id
         })
+        # Add academic year filter for Object_10
+        academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
+        base_filters.append(academic_year_filter)
     elif staff_admin_id:
         base_filters.append({
             'field': 'field_439',
             'operator': 'is',
             'value': staff_admin_id
         })
+        # For staff admin, we default to UK academic year (can't determine if Australian without specific establishment)
+        academic_year_filter = get_academic_year_filters(None, 'field_855', 'field_3511')
+        base_filters.append(academic_year_filter)
     
     # Define minimal field set for VESPA results (object_10)
     cycle_offset = (cycle - 1) * 6
@@ -524,6 +603,9 @@ def get_dashboard_initial_data():
         'field_2499_raw',
         'field_2493_raw',
         'field_2494_raw',
+        'field_855',        # Completion date for academic year filtering
+        'field_855_raw',
+        'field_3511_raw',   # Australian school indicator
     ]
     
     try:
@@ -863,6 +945,10 @@ def get_dashboard_data_page():
             'value': establishment_id
         }]
         
+        # Add academic year filter for Object_10
+        academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
+        base_filters.append(academic_year_filter)
+        
         # Define minimal field set
         cycle_offset = (cycle - 1) * 6
         score_fields = [f'field_{154 + cycle_offset + i}_raw' for i in range(6)]
@@ -886,6 +972,9 @@ def get_dashboard_data_page():
             'field_2499_raw',
             'field_2493_raw',
             'field_2494_raw',
+            'field_855',        # Completion date
+            'field_855_raw',
+            'field_3511_raw',   # Australian school indicator
         ]
         
         # Fetch single page
@@ -1071,24 +1160,119 @@ def _fetch_psychometric_records(question_field_ids, base_filters, cycle=None):
         fields.append(fid)
         fields.append(fid + '_raw')
     
-    # Add cycle field to ensure we can filter properly
-    fields.append('field_863')
-    fields.append('field_863_raw')
+    # Add cycle-specific completion check fields
+    cycle_completion_fields = {
+        1: 'field_1953',  # Cycle 1 completion field
+        2: 'field_1955',  # Cycle 2 completion field
+        3: 'field_1956'   # Cycle 3 completion field
+    }
     
     # Add cycle filter if specified
     filters = base_filters.copy()
-    if cycle:
+    if cycle and cycle in cycle_completion_fields:
+        # Filter by checking if the cycle-specific field is not blank
+        completion_field = cycle_completion_fields[cycle]
         filters.append({
-            'field': 'field_863',
-            'operator': 'is',
-            'value': str(cycle)
+            'field': completion_field,
+            'operator': 'is not blank'
         })
-        app.logger.info(f"Added cycle filter for cycle {cycle}")
+        # Also add the field to fetch list to verify
+        fields.append(completion_field)
+        fields.append(completion_field + '_raw')
+        app.logger.info(f"Added cycle filter for cycle {cycle} using field {completion_field}")
+    
+    # Always include student ID field for reconciliation
+    fields.append('field_1819')  # Student connection field in object_29
+    fields.append('field_1819_raw')
+    
+    # Add completion date field for academic year filtering
+    fields.append('field_856')  # Completion date
+    fields.append('field_856_raw')
+    
+    # First, determine if this is an Australian school
+    # We need to check the establishment record to see if field_3508 is True
+    is_australian_school = False
+    establishment_id = None
+    
+    if base_filters:
+        # Extract establishment ID from filters
+        for f in base_filters:
+            if f.get('field') == 'field_1821':  # Establishment field in object_29
+                establishment_id = f.get('value')
+                break
+        
+        # If no direct establishment filter, we might have a trust or staff admin filter
+        # In these cases, we'll default to UK academic year unless we implement
+        # a more complex logic to check all establishments in the trust
+        if establishment_id:
+            try:
+                # Fetch establishment record to check if Australian
+                est_data = make_knack_request('object_2', record_id=establishment_id, fields=['field_3508', 'field_3508_raw'])
+                is_australian = est_data.get('field_3508_raw', False)
+                if is_australian == 'true' or is_australian == True or is_australian == 'True':
+                    is_australian_school = True
+                    app.logger.info(f"Establishment {establishment_id} is an Australian school")
+            except Exception as e:
+                app.logger.warning(f"Could not check if establishment is Australian: {e}")
+        else:
+            # For trust or staff admin filters, we still apply academic year filtering
+            # But we use UK academic year as the default when establishment is not specified
+            app.logger.info("No establishment ID found in filters, using UK academic year for filtering")
+    
+    # Calculate academic year date boundaries
+    from datetime import datetime
+    today = datetime.now()
+    
+    if is_australian_school:
+        # Australian schools: Calendar year (Jan 1 - Dec 31)
+        academic_year_start = datetime(today.year, 1, 1)
+        academic_year_end = datetime(today.year, 12, 31)
+        app.logger.info(f"Using Australian academic year: {today.year}")
+    else:
+        # UK schools: Academic year (Aug 1 - Jul 31)
+        if today.month >= 8:  # August or later
+            academic_year_start = datetime(today.year, 8, 1)
+            academic_year_end = datetime(today.year + 1, 7, 31)
+            app.logger.info(f"Using UK academic year: {today.year}-{str(today.year + 1)[2:]}")
+        else:  # January to July
+            academic_year_start = datetime(today.year - 1, 8, 1)
+            academic_year_end = datetime(today.year, 7, 31)
+            app.logger.info(f"Using UK academic year: {today.year - 1}-{str(today.year)[2:]}")
+    
+    # Add date range filter for academic year
+    # Format dates as dd/mm/yyyy for Knack (inclusive boundaries)
+    # Subtract 1 day from start to make it inclusive, add 1 day to end
+    from datetime import timedelta
+    start_date_inclusive = academic_year_start - timedelta(days=1)
+    end_date_inclusive = academic_year_end + timedelta(days=1)
+    
+    start_date_str = start_date_inclusive.strftime('%d/%m/%Y')
+    end_date_str = end_date_inclusive.strftime('%d/%m/%Y')
+    
+    # Add date range filter using Knack's date operators
+    # Using 'is after' and 'is before' to create an inclusive range
+    filters.append({
+        'match': 'and',
+        'rules': [
+            {
+                'field': 'field_856',  # Completion date
+                'operator': 'is after',
+                'value': start_date_str
+            },
+            {
+                'field': 'field_856',
+                'operator': 'is before',
+                'value': end_date_str
+            }
+        ]
+    })
+    
+    app.logger.info(f"Added academic year filter: {start_date_str} to {end_date_str}")
     
     data = make_knack_request('object_29', filters=filters, fields=list(set(fields)))
     records = data.get('records', [])
     
-    app.logger.info(f"Fetched {len(records)} psychometric records for cycle {cycle}")
+    app.logger.info(f"Fetched {len(records)} psychometric records for cycle {cycle} in current academic year")
     
     return records
 
@@ -1249,6 +1433,7 @@ def quick_top_bottom(question_ids, filters, cycle=None):
     
     app.logger.info(f"quick_top_bottom: Processing {len(qs)} unique questions for cycle {cycle}")
     app.logger.info(f"quick_top_bottom: Filters: {filters}")
+    app.logger.info(f"quick_top_bottom: Using cycle {cycle} for data fetching")
     
     df = _build_dataframe(qs, filters, cycle)
     
@@ -1608,11 +1793,14 @@ def generate_wordcloud():
         
         # Build filters for fetching VESPA results
         knack_filters = []
+        establishment_id = None
+        
         if filters.get('establishmentId'):
+            establishment_id = filters['establishmentId']
             knack_filters.append({
                 'field': 'field_133',
                 'operator': 'is',
-                'value': filters['establishmentId']
+                'value': establishment_id
             })
         elif filters.get('staffAdminId'):
             knack_filters.append({
@@ -1627,12 +1815,16 @@ def generate_wordcloud():
                 'value': filters['trustFieldValue']
             })
         
+        # Add academic year filter for current academic year comments
+        academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
+        knack_filters.append(academic_year_filter)
+        
         # Combine base filters with any additional filters from the frontend
         if 'additionalFilters' in filters and filters['additionalFilters']:
             knack_filters.extend(filters['additionalFilters'])
         
         # Fetch VESPA results with comment fields
-        fields_to_fetch = ['id'] + [f + '_raw' for f in comment_fields]
+        fields_to_fetch = ['id', 'field_855', 'field_855_raw', 'field_3511_raw'] + [f + '_raw' for f in comment_fields]
         
         all_comments = []
         page = 1
@@ -1752,11 +1944,14 @@ def analyze_themes():
     try:
         # Build filters for fetching VESPA results
         knack_filters = []
+        establishment_id = None
+        
         if filters.get('establishmentId'):
+            establishment_id = filters['establishmentId']
             knack_filters.append({
                 'field': 'field_133',
                 'operator': 'is',
-                'value': filters['establishmentId']
+                'value': establishment_id
             })
         elif filters.get('staffAdminId'):
             knack_filters.append({
@@ -1771,12 +1966,16 @@ def analyze_themes():
                 'value': filters['trustFieldValue']
             })
         
+        # Add academic year filter for current academic year comments
+        academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
+        knack_filters.append(academic_year_filter)
+        
         # Combine base filters with any additional filters from the frontend
         if 'additionalFilters' in filters and filters['additionalFilters']:
             knack_filters.extend(filters['additionalFilters'])
         
         # Fetch VESPA results with comment fields
-        fields_to_fetch = ['id'] + [f + '_raw' for f in comment_fields]
+        fields_to_fetch = ['id', 'field_855', 'field_855_raw', 'field_3511_raw'] + [f + '_raw' for f in comment_fields]
         
         all_comments = []
         page = 1
@@ -2688,6 +2887,10 @@ def get_dashboard_trust_data():
             'operator': 'is',
             'value': trust_field_value
         }]
+        
+        # Add academic year filter (default to UK as trust could have mixed schools)
+        academic_year_filter = get_academic_year_filters(None, 'field_855', 'field_3511')
+        trust_filters.append(academic_year_filter)
 
         app.logger.info(f"Using trust filter: {trust_filters}")
 
@@ -2716,6 +2919,9 @@ def get_dashboard_trust_data():
             'field_2499_raw',
             'field_2493_raw',
             'field_2494_raw',
+            'field_855',        # Completion date
+            'field_855_raw',
+            'field_3511_raw',   # Australian school indicator
         ]
 
         # Fetch all records for the trust
