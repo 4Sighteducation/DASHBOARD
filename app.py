@@ -3640,5 +3640,243 @@ def prewarm_cache():
             'message': 'Failed to pre-warm cache'
         })
 
+@app.route('/api/data-health-check', methods=['POST'])
+@cached(ttl_key='data_health', ttl_seconds=300)  # Cache for 5 minutes
+def check_data_health():
+    """
+    Compare Object_10 (VESPA scores) and Object_29 (Psychometric responses) to identify data discrepancies.
+    Returns health status (green/amber/red) and detailed mismatch information.
+    """
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    establishment_id = data.get('establishmentId')
+    staff_admin_id = data.get('staffAdminId')
+    cycle = data.get('cycle', 1)
+    trust_field_value = data.get('trustFieldValue')
+    
+    # Must have at least one identifier
+    if not establishment_id and not staff_admin_id and not trust_field_value:
+        raise ApiError("Either establishmentId, staffAdminId, or trustFieldValue must be provided")
+    
+    try:
+        # Build filters for Object_10 (VESPA Results)
+        vespa_filters = []
+        if establishment_id:
+            vespa_filters.append({
+                'field': 'field_133',
+                'operator': 'is',
+                'value': establishment_id
+            })
+        elif staff_admin_id:
+            vespa_filters.append({
+                'field': 'field_439',
+                'operator': 'is',
+                'value': staff_admin_id
+            })
+        elif trust_field_value:
+            # For trust, we need to get all establishments in the trust first
+            est_filters = [{
+                'field': 'field_3480',  # Academy Trust field in Object_2
+                'operator': 'is',
+                'value': trust_field_value
+            }]
+            trust_establishments = make_knack_request('object_2', filters=est_filters, fields=['id'])
+            trust_est_ids = [e['id'] for e in trust_establishments.get('records', [])]
+            
+            if trust_est_ids:
+                vespa_filters.append({
+                    'field': 'field_133',
+                    'operator': 'is one of',
+                    'value': trust_est_ids
+                })
+        
+        # Add academic year filters
+        vespa_filters.extend(get_academic_year_filters(establishment_id))
+        
+        # Build filters for Object_29 (Psychometric responses)
+        psycho_filters = []
+        if establishment_id:
+            psycho_filters.append({
+                'field': 'field_1821',  # Establishment connection in Object_29
+                'operator': 'is',
+                'value': establishment_id
+            })
+        elif staff_admin_id:
+            # For staff admin, we need to find their establishment first
+            staff_record = make_knack_request(
+                'object_5',
+                filters=[{'field': 'id', 'operator': 'is', 'value': staff_admin_id}],
+                fields=['field_35_raw']  # Establishment connection
+            )
+            if staff_record['records']:
+                est_id = staff_record['records'][0].get('field_35_raw', [{}])[0].get('id')
+                if est_id:
+                    psycho_filters.append({
+                        'field': 'field_1821',
+                        'operator': 'is',
+                        'value': est_id
+                    })
+        elif trust_field_value and trust_est_ids:
+            psycho_filters.append({
+                'field': 'field_1821',
+                'operator': 'is one of',
+                'value': trust_est_ids
+            })
+        
+        # Add academic year filters for Object_29
+        psycho_filters.extend(get_academic_year_filters(establishment_id, 'field_856', 'field_3508'))
+        
+        # Add cycle filter for Object_29
+        cycle_field_map = {
+            1: 'field_1953',  # Cycle 1 response field
+            2: 'field_1955',  # Cycle 2 response field
+            3: 'field_1956'   # Cycle 3 response field
+        }
+        
+        if cycle in cycle_field_map:
+            psycho_filters.append({
+                'field': cycle_field_map[cycle],
+                'operator': 'is not blank'
+            })
+        
+        # Fetch all records from both objects
+        app.logger.info(f"Fetching VESPA records with filters: {vespa_filters}")
+        vespa_response = make_knack_request(
+            'object_10',
+            filters=vespa_filters,
+            fields=['id', 'field_187_raw', 'field_133_raw'],  # ID, Student name, Establishment
+            max_pages=0  # Get all pages
+        )
+        vespa_records = vespa_response.get('records', [])
+        
+        app.logger.info(f"Fetching Psychometric records with filters: {psycho_filters}")
+        psycho_response = make_knack_request(
+            'object_29',
+            filters=psycho_filters,
+            fields=['id', 'field_1819_raw', 'field_1821_raw'],  # ID, Student connection, Establishment
+            max_pages=0  # Get all pages
+        )
+        psycho_records = psycho_response.get('records', [])
+        
+        # Create maps for comparison
+        # For Object_10: map by student name
+        vespa_students = {}
+        for record in vespa_records:
+            student_name = record.get('field_187_raw', {})
+            if student_name:
+                full_name = f"{student_name.get('first', '')} {student_name.get('last', '')}".strip()
+                if full_name:
+                    vespa_students[full_name.lower()] = {
+                        'id': record['id'],
+                        'name': full_name,
+                        'establishment': record.get('field_133_raw', [{}])[0].get('identifier', 'Unknown')
+                    }
+        
+        # For Object_29: map by student connection
+        psycho_students = {}
+        for record in psycho_records:
+            student_conn = record.get('field_1819_raw', [])
+            if student_conn and len(student_conn) > 0:
+                student_name = student_conn[0].get('identifier', '').strip()
+                if student_name:
+                    psycho_students[student_name.lower()] = {
+                        'id': record['id'],
+                        'name': student_name,
+                        'student_id': student_conn[0].get('id'),
+                        'establishment': record.get('field_1821_raw', [{}])[0].get('identifier', 'Unknown')
+                    }
+        
+        # Find discrepancies
+        vespa_names = set(vespa_students.keys())
+        psycho_names = set(psycho_students.keys())
+        
+        # Students with VESPA scores but no questionnaire
+        missing_questionnaires = []
+        for name in (vespa_names - psycho_names):
+            student = vespa_students[name]
+            missing_questionnaires.append({
+                'student_id': student['id'],
+                'student_name': student['name'],
+                'has_vespa_score': True,
+                'has_questionnaire': False,
+                'establishment': student['establishment']
+            })
+        
+        # Students with questionnaire but no VESPA scores
+        missing_scores = []
+        for name in (psycho_names - vespa_names):
+            student = psycho_students[name]
+            missing_scores.append({
+                'student_id': student['student_id'],
+                'student_name': student['name'],
+                'has_vespa_score': False,
+                'has_questionnaire': True,
+                'questionnaire_id': student['id'],
+                'establishment': student['establishment']
+            })
+        
+        # Calculate health status
+        total_students = len(vespa_students)
+        total_issues = len(missing_questionnaires) + len(missing_scores)
+        
+        if total_students == 0:
+            status = 'gray'  # No data
+            discrepancy_rate = 0
+        else:
+            discrepancy_rate = (total_issues / total_students) * 100
+            
+            if discrepancy_rate == 0:
+                status = 'green'
+            elif discrepancy_rate <= 5:
+                status = 'amber'
+            else:
+                status = 'red'
+        
+        # Build response
+        response_data = {
+            'status': status,
+            'summary': {
+                'object10_count': len(vespa_students),
+                'object29_count': len(psycho_students),
+                'matched_count': len(vespa_names & psycho_names),
+                'discrepancy_rate': round(discrepancy_rate, 1)
+            },
+            'issues': {
+                'missing_questionnaires': missing_questionnaires[:50],  # Limit to first 50
+                'missing_scores': missing_scores[:50],  # Limit to first 50
+                'total_missing_questionnaires': len(missing_questionnaires),
+                'total_missing_scores': len(missing_scores)
+            },
+            'recommendations': []
+        }
+        
+        # Add recommendations based on findings
+        if len(missing_questionnaires) > 0:
+            response_data['recommendations'].append(
+                f"{len(missing_questionnaires)} students need to complete psychometric questionnaires"
+            )
+        
+        if len(missing_scores) > 0:
+            response_data['recommendations'].append(
+                f"{len(missing_scores)} students have questionnaire data but no VESPA scores recorded"
+            )
+        
+        if discrepancy_rate > 10:
+            response_data['recommendations'].append(
+                "High discrepancy rate - urgent data reconciliation needed"
+            )
+        elif discrepancy_rate > 5:
+            response_data['recommendations'].append(
+                "Moderate discrepancy rate - review data entry processes"
+            )
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        app.logger.error(f"Data health check error: {e}")
+        raise ApiError(f"Failed to check data health: {str(e)}", 500)
+
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 
