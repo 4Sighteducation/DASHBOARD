@@ -1042,11 +1042,20 @@ def clear_cache():
     data = request.get_json() or {}
     pattern = data.get('pattern', '*')
     establishment_id = data.get('establishmentId')
+    clear_type = data.get('clearType')  # New parameter for specific cache types
     
     try:
         if pattern == '*':
             redis_client.flushdb()
             message = 'All cache cleared'
+        elif clear_type == 'data_health':
+            # Clear all data health cache entries
+            keys = redis_client.keys('check_data_health:*')
+            if keys:
+                redis_client.delete(*keys)
+                message = f'Cleared {len(keys)} data health cache entries'
+            else:
+                message = 'No data health cache entries found'
         elif establishment_id:
             # Clear all cache entries for a specific establishment
             patterns = [
@@ -1054,7 +1063,8 @@ def clear_cache():
                 f'*establishment*{establishment_id}*',
                 f'dashboard_data:*:{establishment_id}:*',
                 f'dataset:{establishment_id}:*',
-                f'metadata:{establishment_id}:*'
+                f'metadata:{establishment_id}:*',
+                f'check_data_health:*'  # Also clear data health cache
             ]
             total_cleared = 0
             for p in patterns:
@@ -3721,7 +3731,7 @@ def prewarm_cache():
         })
 
 @app.route('/api/data-health-check', methods=['POST'])
-@cached(ttl_key='data_health', ttl_seconds=300)  # Cache for 5 minutes
+@cached(ttl_key='data_health', ttl_seconds=60)  # Cache for 1 minute (reduced for faster updates)
 def check_data_health():
     """
     Compare Object_10 (VESPA scores) and Object_29 (Psychometric responses) to identify data discrepancies.
@@ -3825,22 +3835,83 @@ def check_data_health():
                 'operator': 'is not blank'
             })
         
-        # Fetch all records from both objects
+        # Fetch all records from both objects with pagination
         app.logger.info(f"Fetching VESPA records with filters: {vespa_filters}")
-        vespa_response = make_knack_request(
-            'object_10',
-            filters=vespa_filters,
-            fields=['id', 'field_187_raw', 'field_133_raw']  # ID, Student name, Establishment
-        )
-        vespa_records = vespa_response.get('records', [])
         
+        # Determine which score fields to check based on cycle
+        cycle_offset = (int(cycle) - 1) * 6
+        score_fields = [f'field_{154 + cycle_offset + i}' for i in range(6)]  # Score fields for this cycle
+        
+        # Include score fields in the fetch to check if they have values
+        vespa_fields = ['id', 'field_187_raw', 'field_133_raw'] + [f + '_raw' for f in score_fields]
+        
+        # Fetch all VESPA records with pagination
+        all_vespa_records = []
+        page = 1
+        max_pages = 10  # Safety limit
+        
+        while page <= max_pages:
+            vespa_response = make_knack_request(
+                'object_10',
+                filters=vespa_filters,
+                page=page,
+                rows_per_page=1000,
+                fields=vespa_fields
+            )
+            
+            records = vespa_response.get('records', [])
+            if not records:
+                break
+                
+            all_vespa_records.extend(records)
+            app.logger.info(f"Fetched page {page} of VESPA records: {len(records)} records (total so far: {len(all_vespa_records)})")
+            
+            if len(records) < 1000:  # Last page
+                break
+                
+            page += 1
+        
+        # Filter to only include records that have at least one score for this cycle
+        vespa_records = []
+        for record in all_vespa_records:
+            has_score = False
+            for field in score_fields:
+                if record.get(f'{field}_raw'):
+                    has_score = True
+                    break
+            if has_score:
+                vespa_records.append(record)
+        
+        app.logger.info(f"Total VESPA records fetched: {len(all_vespa_records)}, with Cycle {cycle} scores: {len(vespa_records)}")
+        
+        # Fetch all Psychometric records with pagination
         app.logger.info(f"Fetching Psychometric records with filters: {psycho_filters}")
-        psycho_response = make_knack_request(
-            'object_29',
-            filters=psycho_filters,
-            fields=['id', 'field_1819_raw', 'field_1821_raw']  # ID, Student connection, Establishment
-        )
-        psycho_records = psycho_response.get('records', [])
+        
+        psycho_records = []
+        page = 1
+        
+        while page <= max_pages:
+            psycho_response = make_knack_request(
+                'object_29',
+                filters=psycho_filters,
+                page=page,
+                rows_per_page=1000,
+                fields=['id', 'field_1819_raw', 'field_1821_raw']  # ID, Student connection, Establishment
+            )
+            
+            records = psycho_response.get('records', [])
+            if not records:
+                break
+                
+            psycho_records.extend(records)
+            app.logger.info(f"Fetched page {page} of Psychometric records: {len(records)} records (total so far: {len(psycho_records)})")
+            
+            if len(records) < 1000:  # Last page
+                break
+                
+            page += 1
+        
+        app.logger.info(f"Total Psychometric records fetched: {len(psycho_records)}")
         
         # Create maps for comparison
         # For Object_10: map by student name
