@@ -312,6 +312,9 @@ def get_academic_year_filters(establishment_id=None, date_field='field_855', aus
     start_date_str = start_date_inclusive.strftime('%d/%m/%Y')
     end_date_str = end_date_inclusive.strftime('%d/%m/%Y')
     
+    # Log the filter being applied
+    app.logger.info(f"Academic year filter: {start_date_str} to {end_date_str} on field {date_field}")
+    
     # Return date range filter
     return {
         'match': 'and',
@@ -567,6 +570,12 @@ def get_dashboard_initial_data():
             'operator': 'is',
             'value': establishment_id
         })
+        # Add cycle filter - field_146 contains the current cycle
+        base_filters.append({
+            'field': 'field_146',
+            'operator': 'is',
+            'value': str(cycle)
+        })
         # Add academic year filter for Object_10
         academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
         base_filters.append(academic_year_filter)
@@ -576,6 +585,12 @@ def get_dashboard_initial_data():
             'operator': 'is',
             'value': staff_admin_id
         })
+        # Add cycle filter - field_146 contains the current cycle
+        base_filters.append({
+            'field': 'field_146',
+            'operator': 'is',
+            'value': str(cycle)
+        })
         # For staff admin, we default to UK academic year (can't determine if Australian without specific establishment)
         academic_year_filter = get_academic_year_filters(None, 'field_855', 'field_3511')
         base_filters.append(academic_year_filter)
@@ -583,6 +598,8 @@ def get_dashboard_initial_data():
     # Define minimal field set for VESPA results (object_10)
     cycle_offset = (cycle - 1) * 6
     score_fields = [f'field_{154 + cycle_offset + i}_raw' for i in range(6)]
+    
+    app.logger.info(f"DEBUG: Looking for cycle {cycle} score fields: {score_fields}")
     
     vespa_fields = [
         'id',
@@ -596,6 +613,8 @@ def get_dashboard_initial_data():
         'field_2299_raw',
         'field_144_raw',
         'field_782_raw',
+        'field_146',        # Current cycle
+        'field_146_raw',    # Current cycle raw value
         *score_fields,
         'field_2302_raw',
         'field_2303_raw',
@@ -634,6 +653,7 @@ def get_dashboard_initial_data():
         total_pages = size_check.get('total_pages', 1)
         
         app.logger.info(f"Total records for establishment: {total_records}, Total pages: {total_pages}")
+        app.logger.info(f"DEBUG: Using filters: {base_filters}")
         
         # Check if we have time left
         elapsed_time = time.time() - start_time
@@ -833,6 +853,12 @@ def get_dashboard_initial_data():
         results['totalAvailable'] = total_records
         app.logger.info(f"Fetched {len(vespa_records)} of {total_records} VESPA results")
         
+        # Debug: Log first few records to check data structure
+        if vespa_records:
+            app.logger.info(f"DEBUG: First VESPA record structure: {json.dumps(vespa_records[0], indent=2)[:500]}...")
+        else:
+            app.logger.warning("DEBUG: No VESPA records found!")
+        
         # Build filter options locally (quick)
         filter_sets = {
             'groups': set(),
@@ -945,6 +971,13 @@ def get_dashboard_data_page():
             'value': establishment_id
         }]
         
+        # Add cycle filter - field_146 contains the current cycle
+        base_filters.append({
+            'field': 'field_146',
+            'operator': 'is',
+            'value': str(cycle)
+        })
+        
         # Add academic year filter for Object_10
         academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
         base_filters.append(academic_year_filter)
@@ -965,6 +998,8 @@ def get_dashboard_data_page():
             'field_2299_raw',
             'field_144_raw',
             'field_782_raw',
+            'field_146',        # Current cycle
+            'field_146_raw',    # Current cycle raw value
             *score_fields,
             'field_2302_raw',
             'field_2303_raw',
@@ -1006,11 +1041,28 @@ def clear_cache():
     
     data = request.get_json() or {}
     pattern = data.get('pattern', '*')
+    establishment_id = data.get('establishmentId')
     
     try:
         if pattern == '*':
             redis_client.flushdb()
             message = 'All cache cleared'
+        elif establishment_id:
+            # Clear all cache entries for a specific establishment
+            patterns = [
+                f'*:{establishment_id}:*',
+                f'*establishment*{establishment_id}*',
+                f'dashboard_data:*:{establishment_id}:*',
+                f'dataset:{establishment_id}:*',
+                f'metadata:{establishment_id}:*'
+            ]
+            total_cleared = 0
+            for p in patterns:
+                keys = redis_client.keys(p)
+                if keys:
+                    redis_client.delete(*keys)
+                    total_cleared += len(keys)
+            message = f'Cleared {total_cleared} cache entries for establishment {establishment_id}'
         else:
             keys = redis_client.keys(f'*{pattern}*')
             if keys:
@@ -1747,8 +1799,9 @@ def generate_wordcloud():
     
     comment_fields = data.get('commentFields', [])
     filters = data.get('filters', {})
+    cycle = data.get('cycle')  # Get cycle from request
     
-    app.logger.info(f"Generating word cloud for fields: {comment_fields}")
+    app.logger.info(f"Generating word cloud for fields: {comment_fields}, cycle: {cycle}")
     
     try:
         # Import required libraries
@@ -1818,6 +1871,15 @@ def generate_wordcloud():
         # Add academic year filter for current academic year comments
         academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
         knack_filters.append(academic_year_filter)
+        
+        # Add cycle filter if provided
+        if cycle:
+            knack_filters.append({
+                'field': 'field_146',
+                'operator': 'is',
+                'value': str(cycle)
+            })
+            app.logger.info(f"Added cycle filter for cycle {cycle}")
         
         # Combine base filters with any additional filters from the frontend
         if 'additionalFilters' in filters and filters['additionalFilters']:
@@ -1969,6 +2031,15 @@ def analyze_themes():
         # Add academic year filter for current academic year comments
         academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
         knack_filters.append(academic_year_filter)
+        
+        # Add cycle filter if provided
+        if cycle:
+            knack_filters.append({
+                'field': 'field_146',
+                'operator': 'is',
+                'value': str(cycle)
+            })
+            app.logger.info(f"Added cycle filter for cycle {cycle}")
         
         # Combine base filters with any additional filters from the frontend
         if 'additionalFilters' in filters and filters['additionalFilters']:
@@ -2891,6 +2962,13 @@ def get_dashboard_trust_data():
         # Add academic year filter (default to UK as trust could have mixed schools)
         academic_year_filter = get_academic_year_filters(None, 'field_855', 'field_3511')
         trust_filters.append(academic_year_filter)
+        
+        # Add cycle filter - field_146 contains the current cycle
+        trust_filters.append({
+            'field': 'field_146',
+            'operator': 'is',
+            'value': str(cycle)
+        })
 
         app.logger.info(f"Using trust filter: {trust_filters}")
 
@@ -2912,6 +2990,8 @@ def get_dashboard_trust_data():
             'field_2299_raw',
             'field_144_raw',
             'field_782_raw',
+            'field_146',        # Current cycle
+            'field_146_raw',    # Current cycle raw value
             *score_fields,
             'field_2302_raw',
             'field_2303_raw',
@@ -3693,7 +3773,9 @@ def check_data_health():
                 })
         
         # Add academic year filters
-        vespa_filters.extend(get_academic_year_filters(establishment_id))
+        academic_year_filter = get_academic_year_filters(establishment_id)
+        if academic_year_filter:
+            vespa_filters.append(academic_year_filter)
         
         # Build filters for Object_29 (Psychometric responses)
         psycho_filters = []
@@ -3726,7 +3808,9 @@ def check_data_health():
             })
         
         # Add academic year filters for Object_29
-        psycho_filters.extend(get_academic_year_filters(establishment_id, 'field_856', 'field_3508'))
+        psycho_academic_filter = get_academic_year_filters(establishment_id, 'field_856', 'field_3508')
+        if psycho_academic_filter:
+            psycho_filters.append(psycho_academic_filter)
         
         # Add cycle filter for Object_29
         cycle_field_map = {
@@ -3746,8 +3830,7 @@ def check_data_health():
         vespa_response = make_knack_request(
             'object_10',
             filters=vespa_filters,
-            fields=['id', 'field_187_raw', 'field_133_raw'],  # ID, Student name, Establishment
-            max_pages=0  # Get all pages
+            fields=['id', 'field_187_raw', 'field_133_raw']  # ID, Student name, Establishment
         )
         vespa_records = vespa_response.get('records', [])
         
@@ -3755,8 +3838,7 @@ def check_data_health():
         psycho_response = make_knack_request(
             'object_29',
             filters=psycho_filters,
-            fields=['id', 'field_1819_raw', 'field_1821_raw'],  # ID, Student connection, Establishment
-            max_pages=0  # Get all pages
+            fields=['id', 'field_1819_raw', 'field_1821_raw']  # ID, Student connection, Establishment
         )
         psycho_records = psycho_response.get('records', [])
         
