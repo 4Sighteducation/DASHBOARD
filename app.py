@@ -570,30 +570,35 @@ def get_dashboard_initial_data():
             'operator': 'is',
             'value': establishment_id
         })
-        # Add cycle filter - field_146 contains the current cycle
-        base_filters.append({
-            'field': 'field_146',
-            'operator': 'is',
-            'value': str(cycle)
-        })
         # Add academic year filter for Object_10
         academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
         base_filters.append(academic_year_filter)
+        
+        # Add filter for cycle completion - check if at least one score field is not blank
+        # For cycle 1: field_155, cycle 2: field_161, cycle 3: field_167
+        cycle_completion_field = f'field_{155 + (cycle - 1) * 6}'
+        base_filters.append({
+            'field': cycle_completion_field,
+            'operator': 'is not blank'
+        })
+        app.logger.info(f"Added cycle {cycle} completion filter on field {cycle_completion_field}")
     elif staff_admin_id:
         base_filters.append({
             'field': 'field_439',
             'operator': 'is',
             'value': staff_admin_id
         })
-        # Add cycle filter - field_146 contains the current cycle
-        base_filters.append({
-            'field': 'field_146',
-            'operator': 'is',
-            'value': str(cycle)
-        })
         # For staff admin, we default to UK academic year (can't determine if Australian without specific establishment)
         academic_year_filter = get_academic_year_filters(None, 'field_855', 'field_3511')
         base_filters.append(academic_year_filter)
+        
+        # Add filter for cycle completion
+        cycle_completion_field = f'field_{155 + (cycle - 1) * 6}'
+        base_filters.append({
+            'field': cycle_completion_field,
+            'operator': 'is not blank'
+        })
+        app.logger.info(f"Added cycle {cycle} completion filter on field {cycle_completion_field}")
     
     # Define minimal field set for VESPA results (object_10)
     cycle_offset = (cycle - 1) * 6
@@ -971,16 +976,17 @@ def get_dashboard_data_page():
             'value': establishment_id
         }]
         
-        # Add cycle filter - field_146 contains the current cycle
-        base_filters.append({
-            'field': 'field_146',
-            'operator': 'is',
-            'value': str(cycle)
-        })
-        
         # Add academic year filter for Object_10
         academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
         base_filters.append(academic_year_filter)
+        
+        # Add filter for cycle completion
+        cycle_completion_field = f'field_{155 + (cycle - 1) * 6}'
+        base_filters.append({
+            'field': cycle_completion_field,
+            'operator': 'is not blank'
+        })
+        app.logger.info(f"Added cycle {cycle} completion filter on field {cycle_completion_field}")
         
         # Define minimal field set
         cycle_offset = (cycle - 1) * 6
@@ -2973,12 +2979,13 @@ def get_dashboard_trust_data():
         academic_year_filter = get_academic_year_filters(None, 'field_855', 'field_3511')
         trust_filters.append(academic_year_filter)
         
-        # Add cycle filter - field_146 contains the current cycle
+        # Add filter for cycle completion
+        cycle_completion_field = f'field_{155 + (cycle - 1) * 6}'
         trust_filters.append({
-            'field': 'field_146',
-            'operator': 'is',
-            'value': str(cycle)
+            'field': cycle_completion_field,
+            'operator': 'is not blank'
         })
+        app.logger.info(f"Added cycle {cycle} completion filter on field {cycle_completion_field}")
 
         app.logger.info(f"Using trust filter: {trust_filters}")
 
