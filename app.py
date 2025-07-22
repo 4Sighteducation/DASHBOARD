@@ -1249,6 +1249,10 @@ def _get_psychometric_mapping(cycle=None):
             # Also map without 'outcome_' prefix for flexibility
             short_id = qid.replace('outcome_', '').upper()
             id_map[f'OUTCOME_{short_id}'] = field_id
+            # Also map the exact format used by frontend: OUTCOME_Q_CONFIDENT
+            if '_q_' in qid:
+                uppercase_with_underscore = qid.upper()
+                id_map[uppercase_with_underscore] = field_id
         else:
             # Regular questions (q1-q29)
             # Map lowercase version
@@ -1454,9 +1458,11 @@ def _build_dataframe(question_ids, base_filters, cycle=None):
         for variant in [qid, qid.upper(), qid.lower()]:
             f_id = mapping.get(variant)
             if f_id:
+                app.logger.info(f"Mapped question {qid} (variant: {variant}) to field {f_id}")
                 break
         
         if not f_id:
+            app.logger.warning(f"No mapping found for question {qid} in cycle {cycle}")
             continue
             
         col_vals = []
@@ -1465,9 +1471,13 @@ def _build_dataframe(question_ids, base_filters, cycle=None):
             try:
                 # Treat zeros as null/missing values
                 if val is not None:
-                    float_val = float(val)
-                    # If the value is 0, treat it as null (don't include in calculations)
-                    col_vals.append(None if float_val == 0 else float_val)
+                    # Handle string "0" as well as numeric 0
+                    if str(val) == "0" or val == 0:
+                        col_vals.append(None)
+                    else:
+                        float_val = float(val)
+                        # If the value is 0, treat it as null (don't include in calculations)
+                        col_vals.append(None if float_val == 0 else float_val)
                 else:
                     col_vals.append(None)
             except ValueError:
@@ -1494,8 +1504,10 @@ def _build_dataframe(question_ids, base_filters, cycle=None):
 # === Analysis helpers ===
 
 def quick_percent_agree(question_ids, filters, cycle=None):
+    app.logger.info(f"quick_percent_agree called with questions: {question_ids}, cycle: {cycle}")
     df = _build_dataframe(question_ids, filters, cycle)
     if df.empty:
+        app.logger.warning(f"DataFrame is empty for questions: {question_ids}")
         return {"percent": 0, "n": 0}
     
     # Handle multiple questions - calculate average percentage across all questions
@@ -1511,6 +1523,11 @@ def quick_percent_agree(question_ids, filters, cycle=None):
                     agree_count = (series >= 4).sum()
                     total_agree += agree_count
                     total_responses += n
+                    app.logger.info(f"Question {q}: {n} responses, {agree_count} agree")
+                else:
+                    app.logger.warning(f"Question {q}: No valid responses after dropna")
+            else:
+                app.logger.warning(f"Question {q} not found in dataframe columns: {list(df.columns)}")
         
         if total_responses == 0:
             return {"percent": 0, "n": 0}
