@@ -11,33 +11,40 @@ The VESPA Dashboard was incorrectly filtering Object_29 (psychometric questionna
 
 The VESPA automation script and the dashboard were using different approaches for storing/reading cycle data:
 
-### How the VESPA Automation Works:
-1. Stores all statement scores in **currentCycleFieldId** fields (field_794 through field_821)
-2. Uses **field_863** to indicate which cycle's data is currently stored
-3. Does NOT use cycle-specific fields (field_1953, field_1955, field_1956, etc.)
+### How the VESPA Automation Actually Works:
+1. Stores statement scores in **cycle-specific fields** (field_1953 for Cycle 1, field_1955 for Cycle 2, field_1956 for Cycle 3)
+2. ALSO uses **currentCycleFieldId** fields (field_794 through field_821)
+3. Uses **field_863** to indicate which cycle's data is currently active
+4. Preserves historical data for all cycles
 
 ### What the Dashboard Was Doing Wrong:
 1. Looking for data in cycle-specific fields that were never populated
 2. Checking if field_1953 had data for Cycle 1, field_1955 for Cycle 2, etc.
 3. These fields were empty, causing the dashboard to think there was no data
 
-## The Fix (Updated)
+## The Fix (Final)
 
-After further investigation, we discovered that the VESPA automation **overwrites** previous cycle data. This means:
+After testing with actual data, we discovered that the VESPA automation DOES preserve cycle-specific data:
 
-### 1. Object_29 (Psychometric) Filtering - REMOVED COMPLETELY
+### 1. Object_29 (Psychometric) Filtering - Use Cycle-Specific Fields
 
 **Final Solution:**
 ```python
-# NO CYCLE FILTER APPLIED
-# The automation overwrites data, so we fetch ALL records
+cycle_field_map = {
+    1: 'field_1953',  # Cycle 1 data
+    2: 'field_1955',  # Cycle 2 data (NOT field_1954)
+    3: 'field_1956'   # Cycle 3 data
+}
+filters.append({
+    'field': cycle_field_map[cycle],
+    'operator': 'is not blank'
+})
 ```
 
 **Why:** 
-- The automation stores only the CURRENT cycle's data
-- When Cycle 2 is processed, Cycle 1 data is overwritten
-- When Cycle 3 is processed, Cycle 2 data is overwritten
-- Filtering by cycle would miss students who have moved to later cycles
+- The automation stores data in cycle-specific fields
+- Each cycle's data is preserved
+- We can accurately filter by cycle
 
 ### 2. Object_10 (VESPA) Filtering
 This was already correct - checking if Vision score exists for the cycle:

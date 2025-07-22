@@ -1370,18 +1370,28 @@ def _fetch_psychometric_records(question_field_ids, base_filters, cycle=None):
     
     # Add date range filter using Knack's date operators
     # Using 'is after' and 'is before' to create an inclusive range
+    # Also include records with blank dates (no completion date recorded)
     filters.append({
-        'match': 'and',
+        'match': 'or',
         'rules': [
             {
-                'field': 'field_856',  # Completion date
-                'operator': 'is after',
-                'value': start_date_str
+                'match': 'and',
+                'rules': [
+                    {
+                        'field': 'field_856',  # Completion date
+                        'operator': 'is after',
+                        'value': start_date_str
+                    },
+                    {
+                        'field': 'field_856',
+                        'operator': 'is before',
+                        'value': end_date_str
+                    }
+                ]
             },
             {
-                'field': 'field_856',
-                'operator': 'is before',
-                'value': end_date_str
+                'field': 'field_856',  # Include records with no date
+                'operator': 'is blank'
             }
         ]
     })
@@ -3909,6 +3919,21 @@ def check_data_health():
         if academic_year_filter:
             vespa_filters.append(academic_year_filter)
         
+        # Add cycle filter for Object_10 - check if Vision score exists for the cycle
+        cycle_vision_fields = {
+            1: 'field_155',  # Vision Cycle 1
+            2: 'field_161',  # Vision Cycle 2
+            3: 'field_167'   # Vision Cycle 3
+        }
+        
+        if cycle in cycle_vision_fields:
+            cycle_filter_field = cycle_vision_fields[cycle]
+            vespa_filters.append({
+                'field': cycle_filter_field,
+                'operator': 'is not blank'
+            })
+            app.logger.info(f"Added Object_10 cycle {cycle} filter: checking if {cycle_filter_field} (Vision score) exists")
+        
         # Build filters for Object_29 (Psychometric responses)
         psycho_filters = []
         if establishment_id:
@@ -3939,20 +3964,33 @@ def check_data_health():
                 'value': trust_est_ids
             })
         
-        # Add academic year filters for Object_29
+        # Add academic year filters for Object_29 with special handling for blank dates
         psycho_academic_filter = get_academic_year_filters(establishment_id, 'field_856', 'field_3508')
         if psycho_academic_filter:
-            psycho_filters.append(psycho_academic_filter)
+            # Modify the filter to also include records with no date
+            # Wrap the existing date filter in an OR condition with "date is blank"
+            modified_filter = {
+                'match': 'or',
+                'rules': [
+                    psycho_academic_filter,  # Original date range filter
+                    {
+                        'field': 'field_856',  # Completion date
+                        'operator': 'is blank'
+                    }
+                ]
+            }
+            psycho_filters.append(modified_filter)
+            app.logger.info("Added academic year filter for Object_29 with blank date handling")
         
         # Add cycle filter for Object_29 using cycle-specific fields
         cycle_field_map = {
-            1: 'field_1953',  # Cycle 1 data field
-            2: 'field_1955',  # Cycle 2 data field (note: was incorrectly documented as field_1954)
-            3: 'field_1956'   # Cycle 3 data field
+            1: 'field_1953',  # Cycle 1 Q1 response
+            2: 'field_1955',  # Cycle 2 Q1 response  
+            3: 'field_1956'   # Cycle 3 Q1 response
         }
         
         if cycle in cycle_field_map:
-            # Filter by checking if the cycle-specific field is not blank
+            # Filter by checking if the Q1 response for this cycle is not blank
             psycho_filters.append({
                 'field': cycle_field_map[cycle],
                 'operator': 'is not blank'
