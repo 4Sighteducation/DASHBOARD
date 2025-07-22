@@ -96,17 +96,19 @@ if cycle in cycle_vision_fields:
 ```
 
 **Object_29 Filtering:**
-- All cycles: Checks if field_863 (current cycle) equals the selected cycle number
+- NO CYCLE FILTERING: We fetch ALL psychometric records regardless of cycle
 
 ```python
-psycho_filters.append({
-    'field': 'field_863',  # Current cycle field
-    'operator': 'is',
-    'value': str(cycle)
-})
+# NO FILTER APPLIED - see comment in code
 ```
 
-This is because the VESPA automation stores data in currentCycleFieldId fields (field_794-field_821) and uses field_863 to indicate which cycle's data is currently stored.
+This is because the VESPA automation:
+- Stores data in currentCycleFieldId fields (field_794-field_821)
+- OVERWRITES previous cycle data when processing a new cycle
+- Uses field_863 to indicate which cycle's data is currently stored
+- Does NOT preserve historical cycle data
+
+Therefore, filtering by cycle would only show students whose CURRENT data matches that cycle, missing all students who have moved on to later cycles.
 
 This approach is more reliable because:
 - It checks actual data presence, not just what the "current cycle" field says

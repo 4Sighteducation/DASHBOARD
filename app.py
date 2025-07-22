@@ -1277,18 +1277,28 @@ def _fetch_psychometric_records(question_field_ids, base_filters, cycle=None):
     
     # Add cycle filter if specified
     filters = base_filters.copy()
-    if cycle:
-        # The automation uses currentCycleFieldId fields and sets field_863 to indicate the cycle
-        # So we should check if field_863 matches our cycle
+    
+    # Check cycle-specific fields that are actually populated
+    cycle_field_map = {
+        1: 'field_1953',  # Cycle 1 data field
+        2: 'field_1955',  # Cycle 2 data field (note: was incorrectly documented as field_1954)
+        3: 'field_1956'   # Cycle 3 data field
+    }
+    
+    if cycle and cycle in cycle_field_map:
+        # Filter by checking if the cycle-specific field is not blank
         filters.append({
-            'field': 'field_863',  # Current cycle field
-            'operator': 'is',
-            'value': str(cycle)
+            'field': cycle_field_map[cycle],
+            'operator': 'is not blank'
         })
         # Also add the field to fetch list to verify
-        fields.append('field_863')
-        fields.append('field_863_raw')
-        app.logger.info(f"Added cycle filter for cycle {cycle} using field_863 (current cycle)")
+        fields.append(cycle_field_map[cycle])
+        fields.append(cycle_field_map[cycle] + '_raw')
+        app.logger.info(f"Added cycle filter for cycle {cycle} using field {cycle_field_map[cycle]}")
+    
+    # Always include the current cycle field to see what's stored
+    fields.append('field_863')
+    fields.append('field_863_raw')
     
     # Always include student ID field for reconciliation
     fields.append('field_1819')  # Student connection field in object_29
@@ -3934,15 +3944,20 @@ def check_data_health():
         if psycho_academic_filter:
             psycho_filters.append(psycho_academic_filter)
         
-        # Add cycle filter for Object_29
-        # The automation uses currentCycleFieldId fields and sets field_863 to indicate the cycle
-        # So we should check if field_863 matches our cycle, not the cycle-specific fields
-        psycho_filters.append({
-            'field': 'field_863',  # Current cycle field
-            'operator': 'is',
-            'value': str(cycle)
-        })
-        app.logger.info(f"Added Object_29 cycle filter: checking if field_863 (current cycle) = {cycle}")
+        # Add cycle filter for Object_29 using cycle-specific fields
+        cycle_field_map = {
+            1: 'field_1953',  # Cycle 1 data field
+            2: 'field_1955',  # Cycle 2 data field (note: was incorrectly documented as field_1954)
+            3: 'field_1956'   # Cycle 3 data field
+        }
+        
+        if cycle in cycle_field_map:
+            # Filter by checking if the cycle-specific field is not blank
+            psycho_filters.append({
+                'field': cycle_field_map[cycle],
+                'operator': 'is not blank'
+            })
+            app.logger.info(f"Added Object_29 cycle {cycle} filter: checking if {cycle_field_map[cycle]} exists")
         
         # Fetch all records from both objects with pagination
         app.logger.info(f"Fetching VESPA records with filters: {vespa_filters}")
@@ -3989,7 +4004,9 @@ def check_data_health():
         for record in all_vespa_records:
             has_score = False
             for field in score_fields:
-                if record.get(f'{field}_raw'):
+                score_value = record.get(f'{field}_raw')
+                # Check if score exists and is not empty string (but allow 0)
+                if score_value is not None and score_value != '':
                     has_score = True
                     break
             if has_score:
