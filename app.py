@@ -1473,13 +1473,24 @@ def _build_dataframe(question_ids, base_filters, cycle=None):
         for rec in records:
             val = rec.get(f_id + '_raw')
             try:
-                col_vals.append(float(val) if val is not None else None)
+                # Treat zeros as null/missing values
+                if val is not None:
+                    float_val = float(val)
+                    # If the value is 0, treat it as null (don't include in calculations)
+                    col_vals.append(None if float_val == 0 else float_val)
+                else:
+                    col_vals.append(None)
             except ValueError:
                 col_vals.append(None)
         data_dict[qid] = col_vals
     
     df = pd.DataFrame(data_dict)
     app.logger.info(f"_build_dataframe: Created DataFrame with shape {df.shape}")
+    
+    # Log information about null values (including zeros treated as nulls)
+    null_counts = df.isnull().sum()
+    if not null_counts.empty:
+        app.logger.info(f"_build_dataframe: Null counts per question (includes zeros): {null_counts.to_dict()}")
     
     # cache with compression
     if CACHE_ENABLED:
