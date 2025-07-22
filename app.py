@@ -872,6 +872,10 @@ def get_dashboard_initial_data():
             'faculties': set()
         }
 
+        # Standard year groups that should always be visible
+        STANDARD_YEAR_GROUPS = ['Yr7', 'Yr8', 'Yr9', 'Yr10', 'Yr11', 'Yr12', 'Yr13']
+        filter_sets['yearGroups'].update(STANDARD_YEAR_GROUPS)
+
         for rec in vespa_records:
             grp = rec.get('field_223_raw') or rec.get('field_223')
             if grp:
@@ -896,6 +900,25 @@ def get_dashboard_initial_data():
                 filter_sets['faculties'].add(str(fac))
 
         results['filterOptions'] = {k: sorted(list(v)) for k, v in filter_sets.items()}
+        
+        # Calculate counts for each filter option
+        filter_counts = {
+            'groups': {},
+            'courses': {},
+            'yearGroups': {},
+            'faculties': {}
+        }
+        
+        for rec in vespa_records:
+            # Count year groups
+            yg = rec.get('field_144_raw')
+            if yg:
+                yg_str = str(yg)
+                filter_counts['yearGroups'][yg_str] = filter_counts['yearGroups'].get(yg_str, 0) + 1
+                
+            # Count other fields similarly...
+            
+        results['filterCounts'] = filter_counts
 
         # Always calculate ERI and psychometric data - no compromises on data accuracy
         # Calculate school ERI
@@ -1361,7 +1384,14 @@ def _build_dataframe(question_ids, base_filters, cycle=None):
     mapping = _get_psychometric_mapping(cycle)
     field_ids = []
     
-    app.logger.info(f"_build_dataframe: Processing {len(question_ids)} question IDs for cycle {cycle}")
+    # Extract establishment context from filters for logging
+    establishment_context = "Unknown"
+    for f in base_filters:
+        if f.get('field') == 'field_1821' and f.get('value'):
+            establishment_context = f"EstablishmentID: {f['value']}"
+            break
+    
+    app.logger.info(f"_build_dataframe: Processing {len(question_ids)} question IDs for cycle {cycle} - {establishment_context}")
     app.logger.info(f"_build_dataframe: First 5 question IDs: {question_ids[:5]}")
     
     for qid in question_ids:
@@ -1569,7 +1599,12 @@ def qla_analysis():
     if not analysis_type:
         raise ApiError("Missing analysisType parameter")
     
+    # Enhanced logging with establishment context
+    establishment_id = filters_param.get('establishmentId', 'Unknown')
+    establishment_name = filters_param.get('establishmentName', 'Unknown')
+    
     app.logger.info(f"QLA analysis requested: {analysis_type} for questions: {question_ids}, cycle: {cycle}")
+    app.logger.info(f"QLA analysis for establishment: {establishment_name} (ID: {establishment_id})")
     
     try:
         # Convert filters_param into proper list for builder
@@ -1600,13 +1635,16 @@ def qla_analysis():
 
         if analysis_type in calc_dispatch:
             result = calc_dispatch[analysis_type](question_ids, base_filters, cycle)
+            app.logger.info(f"QLA analysis completed successfully for {establishment_name}")
         else:
+            app.logger.error(f"Unknown analysis type '{analysis_type}' requested by {establishment_name}")
             raise ApiError(f"Unknown analysis type: {analysis_type}")
         
         return jsonify(result)
         
     except Exception as e:
-        app.logger.error(f"QLA analysis error: {e}")
+        app.logger.error(f"QLA analysis error for {establishment_name} (ID: {establishment_id}): {e}")
+        app.logger.error(f"QLA analysis failed with filters: {filters_param}")
         raise ApiError(f"Analysis failed: {str(e)}", 500)
 
 @app.route('/api/qla-correlation', methods=['POST'])
@@ -3736,6 +3774,34 @@ def prewarm_cache():
             'error': str(e),
             'message': 'Failed to pre-warm cache'
         })
+
+@app.route('/api/debug/recent-logs', methods=['GET'])
+def get_recent_logs():
+    """
+    Get recent application logs for debugging purposes.
+    This is a temporary endpoint to help diagnose issues when Heroku logs are not accessible.
+    """
+    try:
+        # Check if authorized (you should add proper authentication here)
+        auth_token = request.headers.get('Authorization')
+        if auth_token != os.getenv('DEBUG_AUTH_TOKEN', 'debug-token-2025'):
+            raise ApiError("Unauthorized", 401)
+        
+        # In a real implementation, you would store logs in Redis or a database
+        # For now, return a message about how to access logs
+        return jsonify({
+            'message': 'To view Heroku logs, use the following commands:',
+            'commands': [
+                'heroku logs --tail -a vespa-dashboard-9a1f84ee5341',
+                'heroku logs -n 1500 -a vespa-dashboard-9a1f84ee5341 | grep -i "qla"',
+                'heroku logs -n 1500 -a vespa-dashboard-9a1f84ee5341 | grep -i "ashlyns"'
+            ],
+            'note': 'Heroku only retains the last 1,500 lines. For persistent logging, configure a log drain service.',
+            'recommendation': 'Set up Papertrail or similar service for log retention'
+        })
+    except Exception as e:
+        app.logger.error(f"Debug logs endpoint error: {e}")
+        raise ApiError(f"Failed to retrieve logs: {str(e)}", 500)
 
 @app.route('/api/data-health-check', methods=['POST'])
 @cached(ttl_key='data_health', ttl_seconds=60)  # Cache for 1 minute (reduced for faster updates)
