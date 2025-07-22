@@ -1370,28 +1370,18 @@ def _fetch_psychometric_records(question_field_ids, base_filters, cycle=None):
     
     # Add date range filter using Knack's date operators
     # Using 'is after' and 'is before' to create an inclusive range
-    # Also include records with blank dates (no completion date recorded)
     filters.append({
-        'match': 'or',
+        'match': 'and',
         'rules': [
             {
-                'match': 'and',
-                'rules': [
-                    {
-                        'field': 'field_856',  # Completion date
-                        'operator': 'is after',
-                        'value': start_date_str
-                    },
-                    {
-                        'field': 'field_856',
-                        'operator': 'is before',
-                        'value': end_date_str
-                    }
-                ]
+                'field': 'field_856',  # Completion date
+                'operator': 'is after',
+                'value': start_date_str
             },
             {
-                'field': 'field_856',  # Include records with no date
-                'operator': 'is blank'
+                'field': 'field_856',
+                'operator': 'is before',
+                'value': end_date_str
             }
         ]
     })
@@ -3975,23 +3965,11 @@ def check_data_health():
                 'value': trust_est_ids
             })
         
-        # Add academic year filters for Object_29 with special handling for blank dates
+        # Add academic year filter for Object_29
         psycho_academic_filter = get_academic_year_filters(establishment_id, 'field_856', 'field_3508')
         if psycho_academic_filter:
-            # Modify the filter to also include records with no date
-            # Wrap the existing date filter in an OR condition with "date is blank"
-            modified_filter = {
-                'match': 'or',
-                'rules': [
-                    psycho_academic_filter,  # Original date range filter
-                    {
-                        'field': 'field_856',  # Completion date
-                        'operator': 'is blank'
-                    }
-                ]
-            }
-            psycho_filters.append(modified_filter)
-            app.logger.info("Added academic year filter for Object_29 with blank date handling")
+            psycho_filters.append(psycho_academic_filter)
+            app.logger.info("Added academic year filter for Object_29")
         
         # Add cycle filter for Object_29 using cycle-specific fields
         cycle_field_map = {
@@ -4075,7 +4053,7 @@ def check_data_health():
                 filters=psycho_filters,
                 page=page,
                 rows_per_page=1000,
-                fields=['id', 'field_1819_raw', 'field_1821_raw', 'field_2732', 'field_2732_raw', 'field_792_raw', 'field_863', 'field_863_raw']  # ID, Student connection, Establishment, Email, Object_10 connection, Cycle
+                fields=['id', 'field_1819_raw', 'field_1821_raw', 'field_2732', 'field_2732_raw', 'field_792_raw', 'field_863', 'field_863_raw']
             )
             
             records = psycho_response.get('records', [])
