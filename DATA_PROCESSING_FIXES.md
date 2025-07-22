@@ -96,16 +96,17 @@ if cycle in cycle_vision_fields:
 ```
 
 **Object_29 Filtering:**
-- Cycle 1: Checks if field_1953 has data
-- Cycle 2: Checks if field_1955 has data
-- Cycle 3: Checks if field_1956 has data
+- All cycles: Checks if field_863 (current cycle) equals the selected cycle number
 
 ```python
 psycho_filters.append({
-    'field': cycle_field_map[cycle],
-    'operator': 'is not blank'
+    'field': 'field_863',  # Current cycle field
+    'operator': 'is',
+    'value': str(cycle)
 })
 ```
+
+This is because the VESPA automation stores data in currentCycleFieldId fields (field_794-field_821) and uses field_863 to indicate which cycle's data is currently stored.
 
 This approach is more reliable because:
 - It checks actual data presence, not just what the "current cycle" field says
@@ -144,9 +145,10 @@ The data health indicator shows:
 - Object_10 email: field_197
 - Object_29 email: field_2732
 - Object_10 → Object_29 connection: field_792
+- Current cycle indicator: field_863 (indicates which cycle's data is stored in currentCycleFieldId fields)
 - Cycle data check fields:
   - Object_10: field_155 (Cycle 1 Vision), field_161 (Cycle 2 Vision), field_167 (Cycle 3 Vision)
-  - Object_29: field_1953 (Cycle 1 data), field_1955 (Cycle 2 data), field_1956 (Cycle 3 data)
+  - Object_29: Uses currentCycleFieldId fields (field_794-field_821) with field_863 indicating which cycle
 
 ## Testing with Towers School
 

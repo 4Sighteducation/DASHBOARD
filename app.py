@@ -1275,26 +1275,20 @@ def _fetch_psychometric_records(question_field_ids, base_filters, cycle=None):
         fields.append(fid)
         fields.append(fid + '_raw')
     
-    # Add cycle-specific completion check fields
-    cycle_completion_fields = {
-        1: 'field_1953',  # Cycle 1 completion field
-        2: 'field_1955',  # Cycle 2 completion field
-        3: 'field_1956'   # Cycle 3 completion field
-    }
-    
     # Add cycle filter if specified
     filters = base_filters.copy()
-    if cycle and cycle in cycle_completion_fields:
-        # Filter by checking if the cycle-specific field is not blank
-        completion_field = cycle_completion_fields[cycle]
+    if cycle:
+        # The automation uses currentCycleFieldId fields and sets field_863 to indicate the cycle
+        # So we should check if field_863 matches our cycle
         filters.append({
-            'field': completion_field,
-            'operator': 'is not blank'
+            'field': 'field_863',  # Current cycle field
+            'operator': 'is',
+            'value': str(cycle)
         })
         # Also add the field to fetch list to verify
-        fields.append(completion_field)
-        fields.append(completion_field + '_raw')
-        app.logger.info(f"Added cycle filter for cycle {cycle} using field {completion_field}")
+        fields.append('field_863')
+        fields.append('field_863_raw')
+        app.logger.info(f"Added cycle filter for cycle {cycle} using field_863 (current cycle)")
     
     # Always include student ID field for reconciliation
     fields.append('field_1819')  # Student connection field in object_29
@@ -3941,20 +3935,14 @@ def check_data_health():
             psycho_filters.append(psycho_academic_filter)
         
         # Add cycle filter for Object_29
-        # Check if data exists in the cycle-specific completion fields
-        cycle_field_map = {
-            1: 'field_1953',  # Cycle 1 data field
-            2: 'field_1955',  # Cycle 2 data field
-            3: 'field_1956'   # Cycle 3 data field
-        }
-        
-        if cycle in cycle_field_map:
-            # Only check if the cycle-specific data field is not blank
-            psycho_filters.append({
-                'field': cycle_field_map[cycle],
-                'operator': 'is not blank'
-            })
-            app.logger.info(f"Added Object_29 cycle {cycle} filter: checking if {cycle_field_map[cycle]} exists")
+        # The automation uses currentCycleFieldId fields and sets field_863 to indicate the cycle
+        # So we should check if field_863 matches our cycle, not the cycle-specific fields
+        psycho_filters.append({
+            'field': 'field_863',  # Current cycle field
+            'operator': 'is',
+            'value': str(cycle)
+        })
+        app.logger.info(f"Added Object_29 cycle filter: checking if field_863 (current cycle) = {cycle}")
         
         # Fetch all records from both objects with pagination
         app.logger.info(f"Fetching VESPA records with filters: {vespa_filters}")
