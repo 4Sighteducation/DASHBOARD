@@ -42,3 +42,16 @@ share/python-wheels/
 ._*
 .DS_Store
 Thumbs.db
+
+# Knack automation configuration (contains API keys)
+knack_config.py
+
+# Generated automation reports and results
+vespa_automation_report_*.txt
+vespa_automation_results_*.json
+vespa_automation_success_*.txt
+
+# Generated student data files
+generated_students.json
+generated_student_records.json
+knack_import_data.json

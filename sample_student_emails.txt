@@ -1,0 +1,6 @@
+student1@example.com
+student2@example.com
+student3@example.com
+jane.doe@school.edu
+john.smith@school.edu
+mary.johnson@school.edu 

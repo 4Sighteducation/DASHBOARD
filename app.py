@@ -540,6 +540,7 @@ def get_dashboard_initial_data():
     cycle = data.get('cycle', 1)
     page = data.get('page', 1)  # Support pagination
     rows_per_page = data.get('rowsPerPage', 1000)  # Reduced default from 3000
+    force_refresh = data.get('forceRefresh', False)  # Allow cache bypass
     
     if not staff_admin_id and not establishment_id:
         raise ApiError("Either staffAdminId or establishmentId must be provided")
@@ -547,8 +548,8 @@ def get_dashboard_initial_data():
     # Generate cache key for this specific request
     cache_key = f"dashboard_data:{staff_admin_id or 'none'}:{establishment_id or 'none'}:{cycle}:{page}:{rows_per_page}"
     
-    # Try to get from cache first
-    if CACHE_ENABLED:
+    # Try to get from cache first (unless force refresh is requested)
+    if CACHE_ENABLED and not force_refresh:
         try:
             cached_data = redis_client.get(cache_key)
             if cached_data:
@@ -574,14 +575,21 @@ def get_dashboard_initial_data():
         academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
         base_filters.append(academic_year_filter)
         
-        # Add filter for cycle completion - check if at least one score field is not blank
-        # For cycle 1: field_155, cycle 2: field_161, cycle 3: field_167
-        cycle_completion_field = f'field_{155 + (cycle - 1) * 6}'
-        base_filters.append({
-            'field': cycle_completion_field,
-            'operator': 'is not blank'
-        })
-        app.logger.info(f"Added cycle {cycle} completion filter on field {cycle_completion_field}")
+        # Add filter for cycle completion - check if Vision score exists for the cycle
+        # Cycle 1: field_155 (V1), Cycle 2: field_161 (V2), Cycle 3: field_167 (V3)
+        cycle_vision_fields = {
+            1: 'field_155',  # Vision Cycle 1
+            2: 'field_161',  # Vision Cycle 2
+            3: 'field_167'   # Vision Cycle 3
+        }
+        
+        if cycle in cycle_vision_fields:
+            cycle_filter_field = cycle_vision_fields[cycle]
+            base_filters.append({
+                'field': cycle_filter_field,
+                'operator': 'is not blank'
+            })
+            app.logger.info(f"Added cycle {cycle} filter: checking if {cycle_filter_field} (Vision score) exists")
     elif staff_admin_id:
         base_filters.append({
             'field': 'field_439',
@@ -592,13 +600,21 @@ def get_dashboard_initial_data():
         academic_year_filter = get_academic_year_filters(None, 'field_855', 'field_3511')
         base_filters.append(academic_year_filter)
         
-        # Add filter for cycle completion
-        cycle_completion_field = f'field_{155 + (cycle - 1) * 6}'
-        base_filters.append({
-            'field': cycle_completion_field,
-            'operator': 'is not blank'
-        })
-        app.logger.info(f"Added cycle {cycle} completion filter on field {cycle_completion_field}")
+        # Add filter for cycle completion - check if Vision score exists for the cycle
+        # Cycle 1: field_155 (V1), Cycle 2: field_161 (V2), Cycle 3: field_167 (V3)
+        cycle_vision_fields = {
+            1: 'field_155',  # Vision Cycle 1
+            2: 'field_161',  # Vision Cycle 2
+            3: 'field_167'   # Vision Cycle 3
+        }
+        
+        if cycle in cycle_vision_fields:
+            cycle_filter_field = cycle_vision_fields[cycle]
+            base_filters.append({
+                'field': cycle_filter_field,
+                'operator': 'is not blank'
+            })
+            app.logger.info(f"Added cycle {cycle} filter: checking if {cycle_filter_field} (Vision score) exists")
     
     # Define minimal field set for VESPA results (object_10)
     cycle_offset = (cycle - 1) * 6
@@ -1003,13 +1019,21 @@ def get_dashboard_data_page():
         academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
         base_filters.append(academic_year_filter)
         
-        # Add filter for cycle completion
-        cycle_completion_field = f'field_{155 + (cycle - 1) * 6}'
-        base_filters.append({
-            'field': cycle_completion_field,
-            'operator': 'is not blank'
-        })
-        app.logger.info(f"Added cycle {cycle} completion filter on field {cycle_completion_field}")
+        # Add filter for cycle completion - check if Vision score exists for the cycle
+        # Cycle 1: field_155 (V1), Cycle 2: field_161 (V2), Cycle 3: field_167 (V3)
+        cycle_vision_fields = {
+            1: 'field_155',  # Vision Cycle 1
+            2: 'field_161',  # Vision Cycle 2
+            3: 'field_167'   # Vision Cycle 3
+        }
+        
+        if cycle in cycle_vision_fields:
+            cycle_filter_field = cycle_vision_fields[cycle]
+            base_filters.append({
+                'field': cycle_filter_field,
+                'operator': 'is not blank'
+            })
+            app.logger.info(f"Added cycle {cycle} filter: checking if {cycle_filter_field} (Vision score) exists")
         
         # Define minimal field set
         cycle_offset = (cycle - 1) * 6
@@ -3017,13 +3041,21 @@ def get_dashboard_trust_data():
         academic_year_filter = get_academic_year_filters(None, 'field_855', 'field_3511')
         trust_filters.append(academic_year_filter)
         
-        # Add filter for cycle completion
-        cycle_completion_field = f'field_{155 + (cycle - 1) * 6}'
-        trust_filters.append({
-            'field': cycle_completion_field,
-            'operator': 'is not blank'
-        })
-        app.logger.info(f"Added cycle {cycle} completion filter on field {cycle_completion_field}")
+        # Add filter for cycle completion - check if Vision score exists for the cycle
+        # Cycle 1: field_155 (V1), Cycle 2: field_161 (V2), Cycle 3: field_167 (V3)
+        cycle_vision_fields = {
+            1: 'field_155',  # Vision Cycle 1
+            2: 'field_161',  # Vision Cycle 2
+            3: 'field_167'   # Vision Cycle 3
+        }
+        
+        if cycle in cycle_vision_fields:
+            cycle_filter_field = cycle_vision_fields[cycle]
+            trust_filters.append({
+                'field': cycle_filter_field,
+                'operator': 'is not blank'
+            })
+            app.logger.info(f"Added cycle {cycle} filter: checking if {cycle_filter_field} (Vision score) exists")
 
         app.logger.info(f"Using trust filter: {trust_filters}")
 
@@ -3804,7 +3836,6 @@ def get_recent_logs():
         raise ApiError(f"Failed to retrieve logs: {str(e)}", 500)
 
 @app.route('/api/data-health-check', methods=['POST'])
-@cached(ttl_key='data_health', ttl_seconds=60)  # Cache for 1 minute (reduced for faster updates)
 def check_data_health():
     """
     Compare Object_10 (VESPA scores) and Object_29 (Psychometric responses) to identify data discrepancies.
@@ -3818,10 +3849,24 @@ def check_data_health():
     staff_admin_id = data.get('staffAdminId')
     cycle = data.get('cycle', 1)
     trust_field_value = data.get('trustFieldValue')
+    force_refresh = data.get('forceRefresh', False)
     
     # Must have at least one identifier
     if not establishment_id and not staff_admin_id and not trust_field_value:
         raise ApiError("Either establishmentId, staffAdminId, or trustFieldValue must be provided")
+    
+    # Generate cache key
+    cache_key = f"data_health:{establishment_id or 'none'}:{staff_admin_id or 'none'}:{trust_field_value or 'none'}:{cycle}"
+    
+    # Try cache first unless force refresh
+    if CACHE_ENABLED and not force_refresh:
+        try:
+            cached_result = redis_client.get(cache_key)
+            if cached_result:
+                app.logger.info(f"Returning cached data health check for key: {cache_key}")
+                return jsonify(pickle.loads(gzip.decompress(cached_result)))
+        except Exception as e:
+            app.logger.error(f"Cache retrieval error in data health check: {e}")
     
     try:
         # Build filters for Object_10 (VESPA Results)
@@ -3896,17 +3941,20 @@ def check_data_health():
             psycho_filters.append(psycho_academic_filter)
         
         # Add cycle filter for Object_29
+        # Check if data exists in the cycle-specific completion fields
         cycle_field_map = {
-            1: 'field_1953',  # Cycle 1 response field
-            2: 'field_1955',  # Cycle 2 response field
-            3: 'field_1956'   # Cycle 3 response field
+            1: 'field_1953',  # Cycle 1 data field
+            2: 'field_1955',  # Cycle 2 data field
+            3: 'field_1956'   # Cycle 3 data field
         }
         
         if cycle in cycle_field_map:
+            # Only check if the cycle-specific data field is not blank
             psycho_filters.append({
                 'field': cycle_field_map[cycle],
                 'operator': 'is not blank'
             })
+            app.logger.info(f"Added Object_29 cycle {cycle} filter: checking if {cycle_field_map[cycle]} exists")
         
         # Fetch all records from both objects with pagination
         app.logger.info(f"Fetching VESPA records with filters: {vespa_filters}")
@@ -3917,6 +3965,10 @@ def check_data_health():
         
         # Include score fields in the fetch to check if they have values
         vespa_fields = ['id', 'field_187_raw', 'field_133_raw'] + [f + '_raw' for f in score_fields]
+        
+        # Add email field for proper matching
+        vespa_fields.append('field_197')  # Email field in Object_10
+        vespa_fields.append('field_197_raw')
         
         # Fetch all VESPA records with pagination
         all_vespa_records = []
@@ -3969,7 +4021,7 @@ def check_data_health():
                 filters=psycho_filters,
                 page=page,
                 rows_per_page=1000,
-                fields=['id', 'field_1819_raw', 'field_1821_raw']  # ID, Student connection, Establishment
+                fields=['id', 'field_1819_raw', 'field_1821_raw', 'field_2732', 'field_2732_raw', 'field_792_raw', 'field_863', 'field_863_raw']  # ID, Student connection, Establishment, Email, Object_10 connection, Cycle
             )
             
             records = psycho_response.get('records', [])
@@ -3987,61 +4039,98 @@ def check_data_health():
         app.logger.info(f"Total Psychometric records fetched: {len(psycho_records)}")
         
         # Create maps for comparison
-        # For Object_10: map by student name
+        # For Object_10: map by email AND record ID
         vespa_students = {}
+        vespa_by_id = {}
+        
         for record in vespa_records:
-            student_name = record.get('field_187_raw', {})
-            if student_name:
-                full_name = f"{student_name.get('first', '')} {student_name.get('last', '')}".strip()
-                if full_name:
-                    vespa_students[full_name.lower()] = {
-                        'id': record['id'],
-                        'name': full_name,
-                        'establishment': record.get('field_133_raw', [{}])[0].get('identifier', 'Unknown')
-                    }
+            # Map by email if available
+            email_data = record.get('field_197_raw') or record.get('field_197', {})
+            if isinstance(email_data, dict) and email_data.get('email'):
+                email = email_data['email'].lower().strip()
+                vespa_students[email] = {
+                    'id': record['id'],
+                    'email': email,
+                    'name': f"{record.get('field_187_raw', {}).get('first', '')} {record.get('field_187_raw', {}).get('last', '')}".strip(),
+                    'establishment': record.get('field_133_raw', [{}])[0].get('identifier', 'Unknown')
+                }
+            
+            # Also map by record ID for Object_29 connection checking
+            vespa_by_id[record['id']] = record
         
-        # For Object_29: map by student connection
+        # For Object_29: map by email AND check Object_10 connections
         psycho_students = {}
+        psycho_by_object10_connection = {}
+        
         for record in psycho_records:
-            student_conn = record.get('field_1819_raw', [])
-            if student_conn and len(student_conn) > 0:
-                student_name = student_conn[0].get('identifier', '').strip()
-                if student_name:
-                    psycho_students[student_name.lower()] = {
-                        'id': record['id'],
-                        'name': student_name,
-                        'student_id': student_conn[0].get('id'),
-                        'establishment': record.get('field_1821_raw', [{}])[0].get('identifier', 'Unknown')
-                    }
+            # First check if it has Object_10 connection
+            object10_connection = record.get('field_792_raw', [])
+            if object10_connection and len(object10_connection) > 0:
+                object10_id = object10_connection[0].get('id', object10_connection[0])
+                psycho_by_object10_connection[object10_id] = record
+            
+            # Also map by email
+            email_data = record.get('field_2732_raw') or record.get('field_2732', {})
+            if isinstance(email_data, dict) and email_data.get('email'):
+                email = email_data['email'].lower().strip()
+                psycho_students[email] = {
+                    'id': record['id'],
+                    'email': email,
+                    'cycle': record.get('field_863', record.get('field_863_raw', '')),
+                    'establishment': record.get('field_1821_raw', [{}])[0].get('identifier', 'Unknown')
+                }
         
-        # Find discrepancies
-        vespa_names = set(vespa_students.keys())
-        psycho_names = set(psycho_students.keys())
-        
-        # Students with VESPA scores but no questionnaire
+        # Find discrepancies using multiple matching methods
         missing_questionnaires = []
-        for name in (vespa_names - psycho_names):
-            student = vespa_students[name]
-            missing_questionnaires.append({
-                'student_id': student['id'],
-                'student_name': student['name'],
-                'has_vespa_score': True,
-                'has_questionnaire': False,
-                'establishment': student['establishment']
-            })
-        
-        # Students with questionnaire but no VESPA scores
         missing_scores = []
-        for name in (psycho_names - vespa_names):
-            student = psycho_students[name]
-            missing_scores.append({
-                'student_id': student['student_id'],
-                'student_name': student['name'],
-                'has_vespa_score': False,
-                'has_questionnaire': True,
-                'questionnaire_id': student['id'],
-                'establishment': student['establishment']
-            })
+        matched_count = 0
+        
+        # Check each VESPA record
+        for vespa_id, vespa_record in vespa_by_id.items():
+            # Check if there's a corresponding Object_29 record
+            has_object29 = False
+            
+            # Method 1: Check by Object_10 connection
+            if vespa_id in psycho_by_object10_connection:
+                has_object29 = True
+                matched_count += 1
+            else:
+                # Method 2: Check by email as fallback
+                email_data = vespa_record.get('field_197_raw') or vespa_record.get('field_197', {})
+                if isinstance(email_data, dict) and email_data.get('email'):
+                    email = email_data['email'].lower().strip()
+                    if email in psycho_students:
+                        has_object29 = True
+                        matched_count += 1
+            
+            if not has_object29:
+                student_name = f"{vespa_record.get('field_187_raw', {}).get('first', '')} {vespa_record.get('field_187_raw', {}).get('last', '')}".strip()
+                missing_questionnaires.append({
+                    'student_id': vespa_id,
+                    'student_name': student_name,
+                    'has_vespa_score': True,
+                    'has_questionnaire': False,
+                    'establishment': vespa_record.get('field_133_raw', [{}])[0].get('identifier', 'Unknown'),
+                    'email': (vespa_record.get('field_197_raw') or vespa_record.get('field_197', {})).get('email', 'No email')
+                })
+                # Log missing questionnaire for debugging
+                app.logger.info(f"Missing questionnaire for student: {student_name} (ID: {vespa_id}, Email: {(vespa_record.get('field_197_raw') or vespa_record.get('field_197', {})).get('email', 'No email')})")
+        
+        # Check for Object_29 records without corresponding Object_10 records
+        for object29_record in psycho_records:
+            object10_connection = object29_record.get('field_792_raw', [])
+            if object10_connection and len(object10_connection) > 0:
+                object10_id = object10_connection[0].get('id', object10_connection[0])
+                if object10_id not in vespa_by_id:
+                    # This Object_29 record points to an Object_10 record we didn't fetch (possibly no scores for this cycle)
+                    missing_scores.append({
+                        'student_id': object10_id,
+                        'student_name': 'Unknown (Object_10 record not in current cycle)',
+                        'has_vespa_score': False,
+                        'has_questionnaire': True,
+                        'questionnaire_id': object29_record['id'],
+                        'establishment': object29_record.get('field_1821_raw', [{}])[0].get('identifier', 'Unknown')
+                    })
         
         # Calculate health status
         total_students = len(vespa_students)
@@ -4066,7 +4155,7 @@ def check_data_health():
             'summary': {
                 'object10_count': len(vespa_students),
                 'object29_count': len(psycho_students),
-                'matched_count': len(vespa_names & psycho_names),
+                'matched_count': matched_count,
                 'discrepancy_rate': round(discrepancy_rate, 1)
             },
             'issues': {
@@ -4097,6 +4186,15 @@ def check_data_health():
             response_data['recommendations'].append(
                 "Moderate discrepancy rate - review data entry processes"
             )
+        
+        # Cache the result for 30 seconds (reduced from 60)
+        if CACHE_ENABLED:
+            try:
+                compressed_data = gzip.compress(pickle.dumps(response_data))
+                redis_client.setex(cache_key, 30, compressed_data)
+                app.logger.info(f"Cached data health check result for key: {cache_key}")
+            except Exception as e:
+                app.logger.error(f"Cache storage error in data health check: {e}")
         
         return jsonify(response_data)
         
