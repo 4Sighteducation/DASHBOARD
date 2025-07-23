@@ -1271,6 +1271,59 @@ def _get_psychometric_mapping(cycle=None):
     return id_map
 
 
+def map_object10_to_object29_filters(filters):
+    """
+    Map Object_10 filters to their Object_29 equivalents.
+    Some fields exist directly in Object_29, others need special handling.
+    """
+    # Direct field mappings from Object_10 to Object_29
+    direct_mapping = {
+        'field_144': 'field_1826',   # Year Group
+        'field_223': 'field_1824',   # Groups
+        'field_187': 'field_1823'    # Student Name
+    }
+    
+    # Fields that don't exist in Object_29
+    unsupported_fields = {
+        'field_2299': 'Course',
+        'field_782': 'Faculty'
+    }
+    
+    mapped_filters = []
+    unsupported_filter_names = []
+    
+    for filter_item in filters:
+        field = filter_item.get('field')
+        
+        if field in direct_mapping:
+            # Direct mapping exists - use Object_29 field
+            mapped_filter = filter_item.copy()
+            mapped_filter['field'] = direct_mapping[field]
+            mapped_filters.append(mapped_filter)
+            app.logger.info(f"Mapped Object_10 field {field} to Object_29 field {direct_mapping[field]}")
+        elif field in unsupported_fields:
+            # Track unsupported filters for warning message
+            unsupported_filter_names.append(unsupported_fields[field])
+            app.logger.warning(f"Filter '{unsupported_fields[field]}' (field {field}) is not supported in QLA")
+            # Don't add to mapped_filters - these will be ignored
+        else:
+            # Unknown field, pass through as-is (might be a valid Object_29 field)
+            mapped_filters.append(filter_item)
+    
+    # Return filters and any warning message
+    result = {
+        'filters': mapped_filters,
+        'warnings': []
+    }
+    
+    if unsupported_filter_names:
+        warning_msg = f"{', '.join(unsupported_filter_names)} filters cannot be applied at Question Level Analysis"
+        result['warnings'].append(warning_msg)
+        app.logger.warning(f"QLA Analysis: {warning_msg}")
+    
+    return result
+
+
 def _fetch_psychometric_records(question_field_ids, base_filters, cycle=None):
     """Fetch records from object_29 containing the requested fields."""
     # Build field list with _raw so we get numeric value directly
@@ -1687,10 +1740,18 @@ def qla_analysis():
             
             # Combine base filters with any additional filters from the frontend
             if 'additionalFilters' in filters_param and filters_param['additionalFilters']:
-                base_filters.extend(filters_param['additionalFilters'])
+                # Map Object_10 filters to Object_29 filters
+                mapping_result = map_object10_to_object29_filters(filters_param['additionalFilters'])
+                base_filters.extend(mapping_result['filters'])
 
         if analysis_type in calc_dispatch:
             result = calc_dispatch[analysis_type](question_ids, base_filters, cycle)
+            # Add any filter warnings to the result
+            if 'additionalFilters' in filters_param and filters_param['additionalFilters']:
+                if mapping_result.get('warnings'):
+                    if 'warnings' not in result:
+                        result['warnings'] = []
+                    result['warnings'].extend(mapping_result['warnings'])
             app.logger.info(f"QLA analysis completed successfully for {establishment_name}")
         else:
             app.logger.error(f"Unknown analysis type '{analysis_type}' requested by {establishment_name}")
@@ -1770,8 +1831,12 @@ def qla_batch_analysis():
                 })
             
             # Combine base filters with any additional filters from the frontend
+            filter_warnings = []
             if 'additionalFilters' in filters_param and filters_param['additionalFilters']:
-                base_filters.extend(filters_param['additionalFilters'])
+                # Map Object_10 filters to Object_29 filters
+                mapping_result = map_object10_to_object29_filters(filters_param['additionalFilters'])
+                base_filters.extend(mapping_result['filters'])
+                filter_warnings = mapping_result.get('warnings', [])
         
         # Collect all unique question IDs
         all_question_ids = set()
@@ -1828,6 +1893,10 @@ def qla_batch_analysis():
             else:
                 # Other analysis types can be added here
                 results[insight_id] = {"error": f"Unsupported analysis type: {analysis_type}"}
+        
+        # Add filter warnings if any
+        if filter_warnings:
+            results['_warnings'] = filter_warnings
         
         return jsonify(results)
         
