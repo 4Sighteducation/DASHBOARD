@@ -103,14 +103,23 @@ def sync_establishments():
     """Sync establishments (schools) from Knack to Supabase"""
     logging.info("Syncing establishments...")
     
-    establishments = fetch_all_knack_records(OBJECT_KEYS['establishments'])
+    # Filter out cancelled establishments
+    filters = [
+        {
+            'field': 'field_2209',
+            'operator': 'is not',
+            'value': 'Cancelled'
+        }
+    ]
+    
+    establishments = fetch_all_knack_records(OBJECT_KEYS['establishments'], filters=filters)
     
     for est in establishments:
         try:
             # Map Knack fields to Supabase schema
             establishment_data = {
                 'knack_id': est['id'],
-                'name': est.get('field_11', ''),  # School name
+                'name': est.get('field_44') or est.get('field_44_raw') or f"Customer {est['id']}",  # School name
                 'is_australian': est.get('field_3508_raw', False) == 'true'
             }
             
@@ -126,86 +135,98 @@ def sync_students_and_vespa_scores():
     """Sync students and VESPA scores from Object_10"""
     logging.info("Syncing students and VESPA scores...")
     
-    vespa_records = fetch_all_knack_records(OBJECT_KEYS['vespa_results'])
-    
-    # Get establishment mapping
+    # Get establishment mapping first
     establishments = supabase.table('establishments').select('id', 'knack_id').execute()
     est_map = {e['knack_id']: e['id'] for e in establishments.data}
     
     students_processed = set()
     scores_synced = 0
     
-    for record in vespa_records:
-        try:
-            # Extract student info
-            student_email = record.get('field_197_raw', {}).get('email', '')
-            if not student_email:
-                continue
+    # Process in batches to avoid memory issues
+    page = 1
+    while True:
+        logging.info(f"Processing VESPA records page {page}...")
+        data = make_knack_request(OBJECT_KEYS['vespa_results'], page=page)
+        records = data.get('records', [])
+        
+        if not records:
+            break
             
-            # Get establishment UUID
-            est_knack_id = record.get('field_133_raw', [None])[0] if record.get('field_133_raw') else None
-            establishment_id = est_map.get(est_knack_id) if est_knack_id else None
-            
-            # Create/update student if not already processed
-            if student_email not in students_processed:
-                student_data = {
-                    'knack_id': record['id'],
-                    'email': student_email,
-                    'name': record.get('field_187_raw', ''),
-                    'establishment_id': establishment_id,
-                    'year_group': record.get('field_223', ''),
-                    'course': record.get('field_2299', ''),
-                    'faculty': record.get('field_144_raw', '')
-                }
+        for record in records:
+            try:
+                # Extract student info
+                student_email = record.get('field_197_raw', {}).get('email', '')
+                if not student_email:
+                    continue
                 
-                student_result = supabase.table('students').upsert(
-                    student_data,
-                    on_conflict='email'
-                ).execute()
+                # Get establishment UUID
+                est_knack_id = record.get('field_133_raw', [None])[0] if record.get('field_133_raw') else None
+                establishment_id = est_map.get(est_knack_id) if est_knack_id else None
                 
-                students_processed.add(student_email)
-            
-            # Get student ID
-            student = supabase.table('students').select('id').eq('email', student_email).execute()
-            if not student.data:
-                continue
-                
-            student_id = student.data[0]['id']
-            
-            # Extract VESPA scores for each cycle
-            for cycle in [1, 2, 3]:
-                # Calculate field offsets for each cycle
-                field_offset = (cycle - 1) * 6
-                vision_field = f'field_{155 + field_offset}_raw'
-                
-                # Check if this cycle has data
-                if record.get(vision_field) is not None:
-                    vespa_data = {
-                        'student_id': student_id,
-                        'cycle': cycle,
-                        'vision': record.get(f'field_{155 + field_offset}_raw'),
-                        'effort': record.get(f'field_{156 + field_offset}_raw'),
-                        'systems': record.get(f'field_{157 + field_offset}_raw'),
-                        'practice': record.get(f'field_{158 + field_offset}_raw'),
-                        'attitude': record.get(f'field_{159 + field_offset}_raw'),
-                        'overall': record.get(f'field_{160 + field_offset}_raw'),
-                        'completion_date': record.get('field_855'),
-                        'academic_year': calculate_academic_year(
-                            record.get('field_855'),
-                            establishment_id
-                        )
+                # Create/update student if not already processed
+                if student_email not in students_processed:
+                    student_data = {
+                        'knack_id': record['id'],
+                        'email': student_email,
+                        'name': record.get('field_187_raw', ''),
+                        'establishment_id': establishment_id,
+                        'group': record.get('field_223', ''),  # field_223 is group
+                        'year_group': record.get('field_144', ''),  # Corrected: field_144 is year_group
+                        'course': record.get('field_2299', ''),
+                        'faculty': record.get('field_782', '')  # Corrected: field_782 is faculty
                     }
                     
-                    # Upsert VESPA scores
-                    supabase.table('vespa_scores').upsert(
-                        vespa_data,
-                        on_conflict='student_id,cycle'
+                    student_result = supabase.table('students').upsert(
+                        student_data,
+                        on_conflict='email'
                     ).execute()
                     
-                    scores_synced += 1
+                    students_processed.add(student_email)
+                
+                # Get student ID
+                student = supabase.table('students').select('id').eq('email', student_email).execute()
+                if not student.data:
+                    continue
                     
-        except Exception as e:
-            logging.error(f"Error syncing VESPA record {record.get('id')}: {e}")
+                student_id = student.data[0]['id']
+                
+                # Extract VESPA scores for each cycle
+                for cycle in [1, 2, 3]:
+                    # Calculate field offsets for each cycle
+                    field_offset = (cycle - 1) * 6
+                    vision_field = f'field_{155 + field_offset}_raw'
+                    
+                    # Check if this cycle has data
+                    if record.get(vision_field) is not None:
+                        vespa_data = {
+                            'student_id': student_id,
+                            'cycle': cycle,
+                            'vision': record.get(f'field_{155 + field_offset}_raw'),
+                            'effort': record.get(f'field_{156 + field_offset}_raw'),
+                            'systems': record.get(f'field_{157 + field_offset}_raw'),
+                            'practice': record.get(f'field_{158 + field_offset}_raw'),
+                            'attitude': record.get(f'field_{159 + field_offset}_raw'),
+                            'overall': record.get(f'field_{160 + field_offset}_raw'),
+                            'completion_date': record.get('field_855'),
+                            'academic_year': calculate_academic_year(
+                                record.get('field_855'),
+                                establishment_id
+                            )
+                        }
+                        
+                        # Upsert VESPA scores
+                        supabase.table('vespa_scores').upsert(
+                            vespa_data,
+                            on_conflict='student_id,cycle'
+                        ).execute()
+                        
+                        scores_synced += 1
+                        
+            except Exception as e:
+                logging.error(f"Error syncing VESPA record {record.get('id')}: {e}")
+        
+        page += 1
+        time.sleep(0.5)  # Rate limiting
     
     logging.info(f"Synced {len(students_processed)} students and {scores_synced} VESPA scores")
 
@@ -221,47 +242,59 @@ def sync_question_responses():
     students = supabase.table('students').select('id', 'knack_id').execute()
     student_map = {s['knack_id']: s['id'] for s in students.data}
     
-    psychometric_records = fetch_all_knack_records(OBJECT_KEYS['psychometric'])
     responses_synced = 0
     
-    for record in psychometric_records:
-        try:
-            # Get student ID from connection
-            student_knack_id = record.get('field_1819_raw', [None])[0] if record.get('field_1819_raw') else None
-            student_id = student_map.get(student_knack_id)
+    # Process in batches to avoid memory issues
+    page = 1
+    while True:
+        logging.info(f"Processing psychometric records page {page}...")
+        data = make_knack_request(OBJECT_KEYS['psychometric'], page=page)
+        records = data.get('records', [])
+        
+        if not records:
+            break
             
-            if not student_id:
-                continue
-            
-            # Process each cycle's data
-            for cycle in [1, 2, 3]:
-                cycle_field_map = {
-                    1: 'field_1953',
-                    2: 'field_1955',
-                    3: 'field_1956'
-                }
+        for record in records:
+            try:
+                # Get student ID from connection
+                student_knack_id = record.get('field_1819_raw', [None])[0] if record.get('field_1819_raw') else None
+                student_id = student_map.get(student_knack_id)
                 
-                # Check if this cycle has data
-                if record.get(cycle_field_map[cycle]):
-                    # Process all questions
-                    for q_detail in question_mapping:
-                        field_id = q_detail.get(f'fieldIdCycle{cycle}')
-                        if field_id:
-                            response_value = record.get(f'{field_id}_raw')
-                            
-                            if response_value:
-                                response_data = {
-                                    'student_id': student_id,
-                                    'cycle': cycle,
-                                    'question_id': q_detail['questionId'],
-                                    'response_value': int(response_value)
-                                }
+                if not student_id:
+                    continue
+                
+                # Process each cycle's data
+                for cycle in [1, 2, 3]:
+                    cycle_field_map = {
+                        1: 'field_1953',
+                        2: 'field_1955',
+                        3: 'field_1956'
+                    }
+                    
+                    # Check if this cycle has data
+                    if record.get(cycle_field_map[cycle]):
+                        # Process all questions
+                        for q_detail in question_mapping:
+                            field_id = q_detail.get(f'fieldIdCycle{cycle}')
+                            if field_id:
+                                response_value = record.get(f'{field_id}_raw')
                                 
-                                supabase.table('question_responses').insert(response_data).execute()
-                                responses_synced += 1
-                                
-        except Exception as e:
-            logging.error(f"Error syncing psychometric record {record.get('id')}: {e}")
+                                if response_value:
+                                    response_data = {
+                                        'student_id': student_id,
+                                        'cycle': cycle,
+                                        'question_id': q_detail['questionId'],
+                                        'response_value': int(response_value)
+                                    }
+                                    
+                                    supabase.table('question_responses').insert(response_data).execute()
+                                    responses_synced += 1
+                                    
+            except Exception as e:
+                logging.error(f"Error syncing psychometric record {record.get('id')}: {e}")
+        
+        page += 1
+        time.sleep(0.5)  # Rate limiting
     
     logging.info(f"Synced {responses_synced} question responses")
 
@@ -271,8 +304,8 @@ def calculate_academic_year(date_str, establishment_id=None):
         return None
     
     try:
-        # Parse date (Knack format: MM/DD/YYYY)
-        date = datetime.strptime(date_str, '%m/%d/%Y')
+        # Parse date (Knack format: DD/MM/YYYY - UK format)
+        date = datetime.strptime(date_str, '%d/%m/%Y')
         
         # Check if Australian school
         is_australian = False
