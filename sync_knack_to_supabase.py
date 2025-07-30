@@ -207,13 +207,13 @@ def sync_students_and_vespa_scores():
                     
                     student_result = supabase.table('students').upsert(
                         student_data,
-                        on_conflict='email'
+                        on_conflict='knack_id'
                     ).execute()
                     
                     students_processed.add(student_email)
                 
-                # Get student ID
-                student = supabase.table('students').select('id').eq('email', student_email).execute()
+                # Get student ID by knack_id (more reliable than email)
+                student = supabase.table('students').select('id').eq('knack_id', record['id']).execute()
                 if not student.data:
                     continue
                     
