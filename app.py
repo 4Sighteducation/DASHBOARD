@@ -146,14 +146,13 @@ SUPABASE_ENABLED = False
 if SUPABASE_URL and SUPABASE_KEY:
     try:
         supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        # Test the connection by attempting a simple query
-        test_query = supabase_client.table('establishments').select('count', count='exact').execute()
+        # Don't test the connection yet - tables don't exist
         SUPABASE_ENABLED = True
-        app.logger.info(f"Supabase connected successfully to {SUPABASE_URL}")
+        app.logger.info(f"Supabase client initialized for {SUPABASE_URL}")
     except Exception as e:
         supabase_client = None
         SUPABASE_ENABLED = False
-        app.logger.warning(f"Supabase connection failed: {str(e)}")
+        app.logger.warning(f"Supabase client initialization failed: {str(e)}")
 else:
     app.logger.warning("Supabase credentials not found in environment variables")
 
@@ -2629,11 +2628,14 @@ def health_check():
     # Test Supabase connection if enabled
     if SUPABASE_ENABLED:
         try:
-            # Simple query to test connection
-            supabase_client.table('establishments').select('count', count='exact').limit(1).execute()
-            health_status['services']['supabase_status'] = 'connected'
-        except:
-            health_status['services']['supabase_status'] = 'disconnected'
+            # Test with a simple RPC call or basic connectivity
+            # Since tables might not exist yet, just check if client is initialized
+            if supabase_client:
+                health_status['services']['supabase_status'] = 'initialized'
+            else:
+                health_status['services']['supabase_status'] = 'not_initialized'
+        except Exception as e:
+            health_status['services']['supabase_status'] = f'error: {str(e)}'
             health_status['status'] = 'degraded'
     
     return jsonify(health_status)
