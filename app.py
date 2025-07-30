@@ -2646,6 +2646,55 @@ def health_check():
     
     return jsonify(health_status)
 
+@app.route('/api/sync/test', methods=['POST'])
+def test_sync():
+    """Test endpoint to verify sync setup"""
+    if not SUPABASE_ENABLED:
+        raise ApiError("Supabase not enabled", 503)
+    
+    try:
+        # Test Supabase tables
+        tables_status = {}
+        tables = ['establishments', 'students', 'vespa_scores', 'question_responses', 'school_statistics']
+        
+        for table in tables:
+            try:
+                result = supabase_client.table(table).select('count', count='exact').limit(1).execute()
+                tables_status[table] = {
+                    'accessible': True,
+                    'count': result.count
+                }
+            except Exception as e:
+                tables_status[table] = {
+                    'accessible': False,
+                    'error': str(e)
+                }
+        
+        # Test Knack connection
+        knack_status = {
+            'configured': bool(KNACK_APP_ID and KNACK_API_KEY)
+        }
+        
+        if knack_status['configured']:
+            try:
+                # Test with a simple request
+                test_data = make_knack_request('object_2', rows_per_page=1)
+                knack_status['connected'] = True
+                knack_status['total_establishments'] = test_data.get('total_records', 0)
+            except Exception as e:
+                knack_status['connected'] = False
+                knack_status['error'] = str(e)
+        
+        return jsonify({
+            'supabase_tables': tables_status,
+            'knack': knack_status,
+            'ready_to_sync': all(t['accessible'] for t in tables_status.values()) and knack_status.get('connected', False)
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Sync test error: {e}")
+        raise ApiError(f"Sync test failed: {str(e)}", 500)
+
 @app.route('/api/filter-options', methods=['GET'])
 def get_filter_options():
     """Fetch unique values for filter dropdowns based on object and establishment."""
