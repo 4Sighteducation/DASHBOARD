@@ -160,14 +160,19 @@ def sync_students_and_vespa_scores():
                 # Extract student info
                 email_field = record.get('field_197_raw', {})
                 if isinstance(email_field, dict):
-                    student_email = email_field.get('email', '')
+                    email_value = email_field.get('email', '')
+                    # Handle case where email value is also a dict
+                    if isinstance(email_value, dict):
+                        student_email = email_value.get('address', '') or email_value.get('email', '') or str(email_value)
+                    else:
+                        student_email = str(email_value) if email_value else ''
                 elif isinstance(email_field, str):
                     student_email = email_field
                 else:
                     student_email = ''
                 
-                # Ensure email is a string
-                if not student_email or not isinstance(student_email, str):
+                # Ensure email is a string and not empty
+                if not student_email or not isinstance(student_email, str) or student_email == '{}':
                     continue
                 
                 # Get establishment UUID
@@ -239,6 +244,10 @@ def sync_students_and_vespa_scores():
                         
             except Exception as e:
                 logging.error(f"Error syncing VESPA record {record.get('id')}: {e}")
+                # Log more details for debugging
+                if 'unhashable' in str(e):
+                    logging.error(f"Debug - field_197_raw: {record.get('field_197_raw')}")
+                    logging.error(f"Debug - student_email type: {type(student_email) if 'student_email' in locals() else 'undefined'}")
         
         page += 1
         time.sleep(0.5)  # Rate limiting
