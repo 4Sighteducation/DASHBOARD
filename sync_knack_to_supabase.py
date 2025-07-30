@@ -176,7 +176,16 @@ def sync_students_and_vespa_scores():
                     continue
                 
                 # Get establishment UUID
-                est_knack_id = record.get('field_133_raw', [None])[0] if record.get('field_133_raw') else None
+                est_field = record.get('field_133_raw', [])
+                if est_field and isinstance(est_field, list) and len(est_field) > 0:
+                    est_item = est_field[0]
+                    # Handle if the establishment reference is a dict
+                    if isinstance(est_item, dict):
+                        est_knack_id = est_item.get('id') or est_item.get('value') or None
+                    else:
+                        est_knack_id = est_item
+                else:
+                    est_knack_id = None
                 establishment_id = est_map.get(est_knack_id) if est_knack_id else None
                 
                 # Create/update student if not already processed
@@ -247,6 +256,7 @@ def sync_students_and_vespa_scores():
                 # Log more details for debugging
                 if 'unhashable' in str(e):
                     logging.error(f"Debug - field_197_raw: {record.get('field_197_raw')}")
+                    logging.error(f"Debug - field_133_raw: {record.get('field_133_raw')}")
                     logging.error(f"Debug - student_email type: {type(student_email) if 'student_email' in locals() else 'undefined'}")
         
         page += 1
@@ -281,7 +291,16 @@ def sync_question_responses():
         for record in records:
             try:
                 # Get student ID from connection
-                student_knack_id = record.get('field_1819_raw', [None])[0] if record.get('field_1819_raw') else None
+                student_field = record.get('field_1819_raw', [])
+                if student_field and isinstance(student_field, list) and len(student_field) > 0:
+                    student_item = student_field[0]
+                    # Handle if the student reference is a dict
+                    if isinstance(student_item, dict):
+                        student_knack_id = student_item.get('id') or student_item.get('value') or None
+                    else:
+                        student_knack_id = student_item
+                else:
+                    student_knack_id = None
                 student_id = student_map.get(student_knack_id)
                 
                 if not student_id:
