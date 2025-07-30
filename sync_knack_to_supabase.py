@@ -124,7 +124,10 @@ def sync_establishments():
             }
             
             # Upsert to Supabase
-            result = supabase.table('establishments').upsert(establishment_data).execute()
+            result = supabase.table('establishments').upsert(
+                establishment_data,
+                on_conflict='knack_id'
+            ).execute()
             
         except Exception as e:
             logging.error(f"Error syncing establishment {est.get('id')}: {e}")
@@ -155,8 +158,16 @@ def sync_students_and_vespa_scores():
         for record in records:
             try:
                 # Extract student info
-                student_email = record.get('field_197_raw', {}).get('email', '')
-                if not student_email:
+                email_field = record.get('field_197_raw', {})
+                if isinstance(email_field, dict):
+                    student_email = email_field.get('email', '')
+                elif isinstance(email_field, str):
+                    student_email = email_field
+                else:
+                    student_email = ''
+                
+                # Ensure email is a string
+                if not student_email or not isinstance(student_email, str):
                     continue
                 
                 # Get establishment UUID
@@ -165,10 +176,14 @@ def sync_students_and_vespa_scores():
                 
                 # Create/update student if not already processed
                 if student_email not in students_processed:
+                    # Extract name safely
+                    name_field = record.get('field_187_raw', '')
+                    student_name = name_field if isinstance(name_field, str) else str(name_field) if name_field else ''
+                    
                     student_data = {
                         'knack_id': record['id'],
                         'email': student_email,
-                        'name': record.get('field_187_raw', ''),
+                        'name': student_name,
                         'establishment_id': establishment_id,
                         'group': record.get('field_223', ''),  # field_223 is group
                         'year_group': record.get('field_144', ''),  # Corrected: field_144 is year_group
