@@ -145,8 +145,14 @@ SUPABASE_ENABLED = False
 
 if SUPABASE_URL and SUPABASE_KEY:
     try:
+        # Create client with basic options only - avoid proxy issues on Heroku
+        import os
+        # Clear any proxy settings that might interfere
+        for proxy_var in ['http_proxy', 'https_proxy', 'HTTP_PROXY', 'HTTPS_PROXY']:
+            if proxy_var in os.environ:
+                del os.environ[proxy_var]
+        
         supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        # Don't test the connection yet - tables don't exist
         SUPABASE_ENABLED = True
         app.logger.info(f"Supabase client initialized for {SUPABASE_URL}")
     except Exception as e:
