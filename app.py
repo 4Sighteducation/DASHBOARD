@@ -26,6 +26,7 @@ from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
 from io import BytesIO
 import base64
+from supabase import create_client, Client
 
 # Download NLTK data at startup
 import nltk
@@ -134,6 +135,27 @@ CACHE_TTL = {
     'question_mappings': 86400,  # 24 hours for static mappings
     'dashboard_data': 600,  # 10 minutes for dashboard batch data
 }
+
+# --- Supabase Setup ---
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+
+supabase_client = None
+SUPABASE_ENABLED = False
+
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        # Test the connection by attempting a simple query
+        test_query = supabase_client.table('establishments').select('count', count='exact').execute()
+        SUPABASE_ENABLED = True
+        app.logger.info(f"Supabase connected successfully to {SUPABASE_URL}")
+    except Exception as e:
+        supabase_client = None
+        SUPABASE_ENABLED = False
+        app.logger.warning(f"Supabase connection failed: {str(e)}")
+else:
+    app.logger.warning("Supabase credentials not found in environment variables")
 
 # --- Explicit CORS Configuration ---
 # Allow requests from your specific Knack domain and potentially localhost for development
@@ -2590,7 +2612,8 @@ def health_check():
         'services': {
             'knack_api': bool(KNACK_APP_ID and KNACK_API_KEY),
             'openai_api': bool(OPENAI_API_KEY),
-            'redis_cache': CACHE_ENABLED
+            'redis_cache': CACHE_ENABLED,
+            'supabase': SUPABASE_ENABLED
         }
     }
     
@@ -2601,6 +2624,16 @@ def health_check():
             health_status['services']['redis_status'] = 'connected'
         except:
             health_status['services']['redis_status'] = 'disconnected'
+            health_status['status'] = 'degraded'
+    
+    # Test Supabase connection if enabled
+    if SUPABASE_ENABLED:
+        try:
+            # Simple query to test connection
+            supabase_client.table('establishments').select('count', count='exact').limit(1).execute()
+            health_status['services']['supabase_status'] = 'connected'
+        except:
+            health_status['services']['supabase_status'] = 'disconnected'
             health_status['status'] = 'degraded'
     
     return jsonify(health_status)
@@ -3936,12 +3969,16 @@ def get_recent_logs():
         app.logger.error(f"Debug logs endpoint error: {e}")
         raise ApiError(f"Failed to retrieve logs: {str(e)}", 500)
 
-@app.route('/api/data-health-check', methods=['POST'])
+@app.route('/api/data-health-check', methods=['POST', 'OPTIONS'])
 def check_data_health():
     """
     Compare Object_10 (VESPA scores) and Object_29 (Psychometric responses) to identify data discrepancies.
     Returns health status (green/amber/red) and detailed mismatch information.
     """
+    # Handle OPTIONS request for CORS preflight
+    if request.method == 'OPTIONS':
+        return '', 204
+    
     data = request.get_json()
     if not data:
         raise ApiError("Missing request body")
