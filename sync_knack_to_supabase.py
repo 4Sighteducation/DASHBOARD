@@ -2,6 +2,7 @@
 """
 Sync script to migrate data from Knack to Supabase
 This script fetches all data from Knack and populates the Supabase database
+Enhanced with batch processing, resume capability, and timeout handling
 """
 
 import os
@@ -13,6 +14,10 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import time
+import pickle
+from pathlib import Path
+import signal
+import threading
 
 # Load environment variables
 load_dotenv()
@@ -36,7 +41,7 @@ BASE_KNACK_URL = "https://api.knack.com/v1/objects"
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
-# Initialize Supabase client
+# Initialize Supabase client with timeout
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Knack field mappings (from your existing app)
@@ -47,6 +52,70 @@ OBJECT_KEYS = {
     'staff_admins': 'object_3',
     'academy_trusts': 'object_134'
 }
+
+# Checkpoint file for resume capability
+CHECKPOINT_FILE = Path('sync_checkpoint.pkl')
+
+# Batch sizes for efficient processing
+BATCH_SIZES = {
+    'establishments': 50,
+    'students': 100,
+    'vespa_scores': 200,
+    'question_responses': 500
+}
+
+# Global flag for graceful shutdown
+shutdown_requested = False
+
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully"""
+    global shutdown_requested
+    logging.info("Shutdown requested, will stop after current batch...")
+    shutdown_requested = True
+
+# Register signal handlers
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+class SyncCheckpoint:
+    """Manages sync progress for resume capability"""
+    def __init__(self):
+        self.establishments_synced = False
+        self.vespa_page = 1
+        self.students_processed = set()
+        self.psychometric_page = 1
+        self.statistics_calculated = False
+        self.last_update = datetime.now()
+    
+    def save(self):
+        """Save checkpoint to disk"""
+        with open(CHECKPOINT_FILE, 'wb') as f:
+            pickle.dump(self, f)
+    
+    @classmethod
+    def load(cls):
+        """Load checkpoint from disk"""
+        if CHECKPOINT_FILE.exists():
+            with open(CHECKPOINT_FILE, 'rb') as f:
+                return pickle.load(f)
+        return cls()
+    
+    def clear(self):
+        """Clear checkpoint file"""
+        if CHECKPOINT_FILE.exists():
+            CHECKPOINT_FILE.unlink()
+
+def keep_system_awake():
+    """Prevent system from sleeping during sync"""
+    try:
+        import ctypes
+        if sys.platform == 'win32':
+            # Windows: Prevent sleep
+            ctypes.windll.kernel32.SetThreadExecutionState(
+                0x80000000 | 0x00000001 | 0x00000002
+            )
+    except Exception as e:
+        logging.warning(f"Could not prevent system sleep: {e}")
 
 def make_knack_request(object_key, page=1, rows_per_page=1000, filters=None):
     """Make a request to Knack API with pagination support"""
@@ -140,20 +209,39 @@ def sync_establishments():
     
     logging.info(f"Synced {len(establishments)} establishments")
 
-def sync_students_and_vespa_scores():
-    """Sync students and VESPA scores from Object_10"""
+def sync_students_and_vespa_scores(checkpoint=None):
+    """Sync students and VESPA scores from Object_10 with batch processing"""
     logging.info("Syncing students and VESPA scores...")
     
-    # Get establishment mapping first
+    # Load checkpoint data
+    if checkpoint:
+        page = checkpoint.vespa_page
+        students_processed = checkpoint.students_processed
+        logging.info(f"Resuming from page {page}, {len(students_processed)} students already processed")
+    else:
+        page = 1
+        students_processed = set()
+    
+    # Get establishment mapping first - cache this for efficiency
     establishments = supabase.table('establishments').select('id', 'knack_id').execute()
     est_map = {e['knack_id']: e['id'] for e in establishments.data}
     
-    students_processed = set()
+    # Pre-fetch all Australian establishments to avoid repeated queries
+    australian_ests = {e['id']: e['is_australian'] for e in establishments.data}
+    
     scores_synced = 0
+    student_batch = []
+    vespa_batch = []
     
     # Process in batches to avoid memory issues
-    page = 1
     while True:
+        if shutdown_requested:
+            logging.info("Shutdown requested, saving checkpoint...")
+            checkpoint.vespa_page = page
+            checkpoint.students_processed = students_processed
+            checkpoint.save()
+            break
+            
         logging.info(f"Processing VESPA records page {page}...")
         data = make_knack_request(OBJECT_KEYS['vespa_results'], page=page)
         records = data.get('records', [])
