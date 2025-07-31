@@ -117,9 +117,15 @@ def sync_establishments():
     for est in establishments:
         try:
             # Map Knack fields to Supabase schema
+            # Get establishment name with better fallback
+            est_name = est.get('field_44') or est.get('field_44_raw') or ""
+            if not est_name or est_name == "EMPTY":
+                # Try alternative fields or use a descriptive fallback
+                est_name = est.get('field_11') or est.get('identifier') or f"Establishment {est['id'][:8]}"
+            
             establishment_data = {
                 'knack_id': est['id'],
-                'name': est.get('field_44') or est.get('field_44_raw') or f"Customer {est['id']}",  # School name
+                'name': est_name,
                 'is_australian': est.get('field_3508_raw', False) == 'true'
             }
             
@@ -192,7 +198,13 @@ def sync_students_and_vespa_scores():
                 if student_email not in students_processed:
                     # Extract name safely
                     name_field = record.get('field_187_raw', '')
-                    student_name = name_field if isinstance(name_field, str) else str(name_field) if name_field else ''
+                    if isinstance(name_field, dict):
+                        # Extract full name from the name object
+                        student_name = name_field.get('full', '') or f"{name_field.get('first', '')} {name_field.get('last', '')}".strip()
+                    elif isinstance(name_field, str):
+                        student_name = name_field
+                    else:
+                        student_name = ''
                     
                     student_data = {
                         'knack_id': record['id'],
@@ -227,15 +239,24 @@ def sync_students_and_vespa_scores():
                     
                     # Check if this cycle has data
                     if record.get(vision_field) is not None:
+                        # Helper function to convert empty strings to None
+                        def clean_score(value):
+                            if value == "" or value is None:
+                                return None
+                            try:
+                                return int(value)
+                            except (ValueError, TypeError):
+                                return None
+                        
                         vespa_data = {
                             'student_id': student_id,
                             'cycle': cycle,
-                            'vision': record.get(f'field_{155 + field_offset}_raw'),
-                            'effort': record.get(f'field_{156 + field_offset}_raw'),
-                            'systems': record.get(f'field_{157 + field_offset}_raw'),
-                            'practice': record.get(f'field_{158 + field_offset}_raw'),
-                            'attitude': record.get(f'field_{159 + field_offset}_raw'),
-                            'overall': record.get(f'field_{160 + field_offset}_raw'),
+                            'vision': clean_score(record.get(f'field_{155 + field_offset}_raw')),
+                            'effort': clean_score(record.get(f'field_{156 + field_offset}_raw')),
+                            'systems': clean_score(record.get(f'field_{157 + field_offset}_raw')),
+                            'practice': clean_score(record.get(f'field_{158 + field_offset}_raw')),
+                            'attitude': clean_score(record.get(f'field_{159 + field_offset}_raw')),
+                            'overall': clean_score(record.get(f'field_{160 + field_offset}_raw')),
                             'completion_date': record.get('field_855'),
                             'academic_year': calculate_academic_year(
                                 record.get('field_855'),
