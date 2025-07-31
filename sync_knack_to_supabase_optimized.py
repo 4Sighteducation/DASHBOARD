@@ -54,7 +54,8 @@ OBJECT_KEYS = {
     'establishments': 'object_2',
     'vespa_results': 'object_10',
     'psychometric': 'object_29',
-    'staff_admins': 'object_3',
+    'staff_admins': 'object_5',  # Fixed: was object_3, should be object_5
+    'super_users': 'object_21',  # Added: for super user access
     'academy_trusts': 'object_134'
 }
 
@@ -86,6 +87,8 @@ class SyncCheckpoint:
     """Manages sync progress for resume capability"""
     def __init__(self):
         self.establishments_synced = False
+        self.staff_admins_synced = False
+        self.super_users_synced = False
         self.vespa_page = 1
         self.students_processed = set()
         self.psychometric_page = 1
@@ -270,7 +273,8 @@ def sync_establishments(checkpoint: SyncCheckpoint) -> bool:
             establishment_data = {
                 'knack_id': est['id'],
                 'name': est_name,
-                'is_australian': est.get('field_3508_raw', False) == 'true'
+                # Check field_3573 for Australian schools - only "True" counts
+                'is_australian': est.get('field_3573_raw', '') == 'True'
             }
             
             batch.append(establishment_data)
@@ -294,7 +298,7 @@ def sync_establishments(checkpoint: SyncCheckpoint) -> bool:
 
 def calculate_academic_year(date_str: str, is_australian: bool = False) -> Optional[str]:
     """Calculate academic year based on date and establishment location"""
-    if not date_str:
+    if not date_str or date_str == "":
         return None
     
     try:
@@ -313,6 +317,20 @@ def calculate_academic_year(date_str: str, is_australian: bool = False) -> Optio
                 
     except Exception as e:
         logging.error(f"Error calculating academic year for {date_str}: {e}")
+        return None
+
+def format_date_for_postgres(date_str: str) -> Optional[str]:
+    """Convert DD/MM/YYYY to PostgreSQL format YYYY-MM-DD"""
+    if not date_str or date_str == "":
+        return None
+    
+    try:
+        # Parse UK format date
+        date = datetime.strptime(date_str, '%d/%m/%Y')
+        # Return PostgreSQL format
+        return date.strftime('%Y-%m-%d')
+    except Exception as e:
+        logging.error(f"Error formatting date {date_str}: {e}")
         return None
 
 def sync_students_and_vespa_scores(checkpoint: SyncCheckpoint) -> bool:
@@ -429,26 +447,35 @@ def sync_students_and_vespa_scores(checkpoint: SyncCheckpoint) -> bool:
                     field_offset = (cycle - 1) * 6
                     vision_field = f'field_{155 + field_offset}_raw'
                     
-                    # Check if this cycle has data
-                    if record.get(vision_field) is not None:
-                        def clean_score(value):
-                            if value == "" or value is None:
-                                return None
-                            try:
-                                return int(value)
-                            except (ValueError, TypeError):
-                                return None
-                        
+                    # Check if this cycle has any actual scores
+                    def clean_score(value):
+                        if value == "" or value is None:
+                            return None
+                        try:
+                            return int(value)
+                        except (ValueError, TypeError):
+                            return None
+                    
+                    # Get all scores for this cycle
+                    vision = clean_score(record.get(f'field_{155 + field_offset}_raw'))
+                    effort = clean_score(record.get(f'field_{156 + field_offset}_raw'))
+                    systems = clean_score(record.get(f'field_{157 + field_offset}_raw'))
+                    practice = clean_score(record.get(f'field_{158 + field_offset}_raw'))
+                    attitude = clean_score(record.get(f'field_{159 + field_offset}_raw'))
+                    overall = clean_score(record.get(f'field_{160 + field_offset}_raw'))
+                    
+                    # Only create record if at least one score exists
+                    if any([vision, effort, systems, practice, attitude, overall]):
                         vespa_data = {
                             'student_knack_id': student_knack_id,  # We'll resolve this later
                             'cycle': cycle,
-                            'vision': clean_score(record.get(f'field_{155 + field_offset}_raw')),
-                            'effort': clean_score(record.get(f'field_{156 + field_offset}_raw')),
-                            'systems': clean_score(record.get(f'field_{157 + field_offset}_raw')),
-                            'practice': clean_score(record.get(f'field_{158 + field_offset}_raw')),
-                            'attitude': clean_score(record.get(f'field_{159 + field_offset}_raw')),
-                            'overall': clean_score(record.get(f'field_{160 + field_offset}_raw')),
-                            'completion_date': completion_date,
+                            'vision': vision,
+                            'effort': effort,
+                            'systems': systems,
+                            'practice': practice,
+                            'attitude': attitude,
+                            'overall': overall,
+                            'completion_date': format_date_for_postgres(completion_date),
                             'academic_year': academic_year
                         }
                         
@@ -569,38 +596,33 @@ def sync_question_responses(checkpoint: SyncCheckpoint) -> bool:
             
         for record in records:
             try:
-                # Get student ID from connection
-                student_field = record.get('field_1819_raw', [])
-                student_knack_id = None
-                if student_field and isinstance(student_field, list) and len(student_field) > 0:
-                    student_item = student_field[0]
-                    if isinstance(student_item, dict):
-                        student_knack_id = student_item.get('id') or student_item.get('value')
+                # Get Object_10 connection via field_792 (email-based connection)
+                object_10_field = record.get('field_792_raw', [])
+                object_10_knack_id = None
+                if object_10_field and isinstance(object_10_field, list) and len(object_10_field) > 0:
+                    object_10_item = object_10_field[0]
+                    if isinstance(object_10_item, dict):
+                        object_10_knack_id = object_10_item.get('id') or object_10_item.get('value')
                     else:
-                        student_knack_id = student_item
+                        object_10_knack_id = object_10_item
                 
-                student_id = student_map.get(student_knack_id)
+                # Map Object_10 ID to student ID (students were created from Object_10 records)
+                student_id = student_map.get(object_10_knack_id)
                 
                 if not student_id:
                     continue
                 
                 # Process each cycle's data
                 for cycle in [1, 2, 3]:
-                    cycle_field_map = {
-                        1: 'field_1953',
-                        2: 'field_1955',
-                        3: 'field_1956'
-                    }
-                    
-                    # Check if this cycle has data
-                    if record.get(cycle_field_map[cycle]):
-                        # Process all questions
-                        for q_detail in question_mapping:
-                            field_id = q_detail.get(f'fieldIdCycle{cycle}')
-                            if field_id:
-                                response_value = record.get(f'{field_id}_raw')
-                                
-                                if response_value:
+                    # Process all questions for this cycle
+                    for q_detail in question_mapping:
+                        field_id = q_detail.get(f'fieldIdCycle{cycle}')
+                        if field_id:
+                            response_value = record.get(f'{field_id}_raw')
+                            
+                            # Only create a record if there's an actual response
+                            if response_value is not None and response_value != '':
+                                try:
                                     response_data = {
                                         'student_id': student_id,
                                         'cycle': cycle,
@@ -609,6 +631,9 @@ def sync_question_responses(checkpoint: SyncCheckpoint) -> bool:
                                     }
                                     
                                     response_batch.append(response_data)
+                                except (ValueError, TypeError):
+                                    # Skip if can't convert to int
+                                    pass
                                     
             except Exception as e:
                 logging.error(f"Error processing psychometric record {record.get('id')}: {e}")
@@ -651,6 +676,96 @@ def sync_question_responses(checkpoint: SyncCheckpoint) -> bool:
     logging.info(f"Synced {checkpoint.total_responses} question responses")
     return True
 
+def sync_staff_admins(checkpoint: SyncCheckpoint) -> bool:
+    """Sync staff admins from object_5"""
+    if hasattr(checkpoint, 'staff_admins_synced') and checkpoint.staff_admins_synced:
+        logging.info("Staff admins already synced, skipping...")
+        return True
+        
+    logging.info("Syncing staff admins...")
+    
+    try:
+        staff_admins = fetch_all_knack_records(OBJECT_KEYS['staff_admins'])
+        
+        batch = []
+        for admin in staff_admins:
+            try:
+                # Map fields from object_5
+                admin_data = {
+                    'knack_id': admin['id'],
+                    'email': admin.get('field_86', ''),  # Email field
+                    'name': admin.get('field_85', '') or admin.get('field_85_raw', '')  # Name field
+                }
+                
+                if admin_data['email']:  # Only sync if email exists
+                    batch.append(admin_data)
+                
+                if len(batch) >= 50:
+                    batch_upsert_with_retry('staff_admins', batch, 'knack_id')
+                    batch = []
+                    
+            except Exception as e:
+                logging.error(f"Error processing staff admin {admin.get('id')}: {e}")
+        
+        # Process remaining
+        if batch:
+            batch_upsert_with_retry('staff_admins', batch, 'knack_id')
+        
+        if hasattr(checkpoint, 'staff_admins_synced'):
+            checkpoint.staff_admins_synced = True
+        checkpoint.save()
+        logging.info(f"Synced {len(staff_admins)} staff admins")
+        return True
+        
+    except Exception as e:
+        logging.error(f"Failed to sync staff admins: {e}")
+        return False
+
+def sync_super_users(checkpoint: SyncCheckpoint) -> bool:
+    """Sync super users from object_21"""
+    if hasattr(checkpoint, 'super_users_synced') and checkpoint.super_users_synced:
+        logging.info("Super users already synced, skipping...")
+        return True
+        
+    logging.info("Syncing super users...")
+    
+    try:
+        super_users = fetch_all_knack_records(OBJECT_KEYS['super_users'])
+        
+        batch = []
+        for user in super_users:
+            try:
+                # Map fields from object_21
+                user_data = {
+                    'knack_id': user['id'],
+                    'email': user.get('field_86', ''),  # Email field (same as staff admin)
+                    'name': user.get('field_85', '') or user.get('field_85_raw', '')  # Name field
+                }
+                
+                if user_data['email']:  # Only sync if email exists
+                    batch.append(user_data)
+                
+                if len(batch) >= 50:
+                    batch_upsert_with_retry('super_users', batch, 'knack_id')
+                    batch = []
+                    
+            except Exception as e:
+                logging.error(f"Error processing super user {user.get('id')}: {e}")
+        
+        # Process remaining
+        if batch:
+            batch_upsert_with_retry('super_users', batch, 'knack_id')
+        
+        if hasattr(checkpoint, 'super_users_synced'):
+            checkpoint.super_users_synced = True
+        checkpoint.save()
+        logging.info(f"Synced {len(super_users)} super users")
+        return True
+        
+    except Exception as e:
+        logging.error(f"Failed to sync super users: {e}")
+        return False
+
 def calculate_statistics(checkpoint: SyncCheckpoint) -> bool:
     """Calculate and store statistics for schools"""
     if checkpoint.statistics_calculated:
@@ -661,7 +776,7 @@ def calculate_statistics(checkpoint: SyncCheckpoint) -> bool:
     
     try:
         # Call the Supabase stored procedure to calculate all statistics
-        result = supabase.rpc('calculate_all_statistics').execute()
+        result = supabase.rpc('calculate_all_statistics', {}).execute()
         logging.info("Statistics calculation completed via stored procedure")
         
         checkpoint.statistics_calculated = True
@@ -716,7 +831,7 @@ def calculate_statistics(checkpoint: SyncCheckpoint) -> bool:
                                 'cycle': cycle,
                                 'academic_year': current_year,
                                 'element': element,
-                                'average': sum(values) / len(values),
+                                'mean': sum(values) / len(values),  # Fixed: was 'average', schema has 'mean'
                                 'count': len(values),
                                 'min_value': min(values),
                                 'max_value': max(values)
@@ -773,6 +888,12 @@ def main():
         
         if success and not checkpoint.establishments_synced:
             success = sync_establishments(checkpoint)
+        
+        if success:
+            success = sync_staff_admins(checkpoint)
+        
+        if success:
+            success = sync_super_users(checkpoint)
         
         if success:
             success = sync_students_and_vespa_scores(checkpoint)

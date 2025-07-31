@@ -1,3 +1,7 @@
+# Environment variables (contains sensitive API keys)
+.env
+.env.*
+
 # Knack specific files
 WorkingBridge.js
 

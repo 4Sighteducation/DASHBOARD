@@ -121,7 +121,8 @@ def test_sample_sync():
             establishment_data = {
                 'knack_id': est['id'],
                 'name': est.get('field_11', ''),
-                'is_australian': est.get('field_3508_raw', False) == 'true'
+                # Check field_3573 for Australian schools - only "True" counts
+                'is_australian': est.get('field_3573_raw', '') == 'True'
             }
             
             result = supabase.table('establishments').upsert(establishment_data).execute()

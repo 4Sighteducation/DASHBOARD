@@ -49,7 +49,8 @@ OBJECT_KEYS = {
     'establishments': 'object_2',
     'vespa_results': 'object_10',
     'psychometric': 'object_29',
-    'staff_admins': 'object_3',
+    'staff_admins': 'object_5',  # Fixed: was object_3, should be object_5
+    'super_users': 'object_21',  # Added: for super user access
     'academy_trusts': 'object_134'
 }
 
@@ -195,7 +196,8 @@ def sync_establishments():
             establishment_data = {
                 'knack_id': est['id'],
                 'name': est_name,
-                'is_australian': est.get('field_3508_raw', False) == 'true'
+                # Check field_3573 for Australian schools - only "True" counts
+                'is_australian': est.get('field_3573_raw', '') == 'True'
             }
             
             # Upsert to Supabase
@@ -399,39 +401,34 @@ def sync_question_responses():
             
         for record in records:
             try:
-                # Get student ID from connection
-                student_field = record.get('field_1819_raw', [])
-                if student_field and isinstance(student_field, list) and len(student_field) > 0:
-                    student_item = student_field[0]
-                    # Handle if the student reference is a dict
-                    if isinstance(student_item, dict):
-                        student_knack_id = student_item.get('id') or student_item.get('value') or None
+                # Get Object_10 connection via field_792 (email-based connection)
+                object_10_field = record.get('field_792_raw', [])
+                if object_10_field and isinstance(object_10_field, list) and len(object_10_field) > 0:
+                    object_10_item = object_10_field[0]
+                    # Handle if the Object_10 reference is a dict
+                    if isinstance(object_10_item, dict):
+                        object_10_knack_id = object_10_item.get('id') or object_10_item.get('value') or None
                     else:
-                        student_knack_id = student_item
+                        object_10_knack_id = object_10_item
                 else:
-                    student_knack_id = None
-                student_id = student_map.get(student_knack_id)
+                    object_10_knack_id = None
+                # Map Object_10 ID to student ID (students were created from Object_10 records)
+                student_id = student_map.get(object_10_knack_id)
                 
                 if not student_id:
                     continue
                 
                 # Process each cycle's data
                 for cycle in [1, 2, 3]:
-                    cycle_field_map = {
-                        1: 'field_1953',
-                        2: 'field_1955',
-                        3: 'field_1956'
-                    }
-                    
-                    # Check if this cycle has data
-                    if record.get(cycle_field_map[cycle]):
-                        # Process all questions
-                        for q_detail in question_mapping:
-                            field_id = q_detail.get(f'fieldIdCycle{cycle}')
-                            if field_id:
-                                response_value = record.get(f'{field_id}_raw')
-                                
-                                if response_value:
+                    # Process all questions for this cycle
+                    for q_detail in question_mapping:
+                        field_id = q_detail.get(f'fieldIdCycle{cycle}')
+                        if field_id:
+                            response_value = record.get(f'{field_id}_raw')
+                            
+                            # Only create a record if there's an actual response
+                            if response_value is not None and response_value != '':
+                                try:
                                     response_data = {
                                         'student_id': student_id,
                                         'cycle': cycle,
@@ -440,6 +437,9 @@ def sync_question_responses():
                                     }
                                     
                                     supabase.table('question_responses').insert(response_data).execute()
+                                except (ValueError, TypeError):
+                                    # Skip if can't convert to int
+                                    pass
                                     responses_synced += 1
                                     
             except Exception as e:

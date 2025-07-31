@@ -305,9 +305,15 @@ def get_academic_year_filters(establishment_id=None, date_field='field_855', aus
         try:
             # Fetch establishment record to check if Australian
             est_data = make_knack_request('object_2', record_id=establishment_id, fields=[australian_field, f'{australian_field}_raw'])
-            is_australian = est_data.get(f'{australian_field}_raw', False)
-            if is_australian == 'true' or is_australian == True or is_australian == 'True':
-                is_australian_school = True
+            is_australian = est_data.get(f'{australian_field}_raw', '')
+            # For field_3573, only exactly "True" counts
+            if australian_field == 'field_3573':
+                is_australian_school = (is_australian == 'True')
+            else:
+                # For backward compatibility with other fields
+                is_australian_school = (is_australian == 'true' or is_australian == True or is_australian == 'True')
+            
+            if is_australian_school:
                 app.logger.info(f"Establishment {establishment_id} is an Australian school")
         except Exception as e:
             app.logger.warning(f"Could not check if establishment is Australian: {e}")
@@ -1393,7 +1399,7 @@ def _fetch_psychometric_records(question_field_ids, base_filters, cycle=None):
     fields.append('field_856_raw')
     
     # First, determine if this is an Australian school
-    # We need to check the establishment record to see if field_3508 is True
+    # We need to check the establishment record to see if field_3573 is True
     is_australian_school = False
     establishment_id = None
     
@@ -1410,9 +1416,9 @@ def _fetch_psychometric_records(question_field_ids, base_filters, cycle=None):
         if establishment_id:
             try:
                 # Fetch establishment record to check if Australian
-                est_data = make_knack_request('object_2', record_id=establishment_id, fields=['field_3508', 'field_3508_raw'])
-                is_australian = est_data.get('field_3508_raw', False)
-                if is_australian == 'true' or is_australian == True or is_australian == 'True':
+                est_data = make_knack_request('object_2', record_id=establishment_id, fields=['field_3573', 'field_3573_raw'])
+                is_australian = est_data.get('field_3573_raw', '')
+                if is_australian == 'True':  # Only exactly "True" counts
                     is_australian_school = True
                     app.logger.info(f"Establishment {establishment_id} is an Australian school")
             except Exception as e:
@@ -4146,7 +4152,7 @@ def check_data_health():
             })
         
         # Add academic year filter for Object_29
-        psycho_academic_filter = get_academic_year_filters(establishment_id, 'field_856', 'field_3508')
+        psycho_academic_filter = get_academic_year_filters(establishment_id, 'field_856', 'field_3573')
         if psycho_academic_filter:
             psycho_filters.append(psycho_academic_filter)
             app.logger.info("Added academic year filter for Object_29")
