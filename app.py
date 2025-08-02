@@ -1255,7 +1255,7 @@ def get_questions():
         is_active = request.args.get('active', 'true').lower() == 'true'
         
         # Build query
-        query = supabase.table('questions').select('*')
+        query = supabase_client.table('questions').select('*')
         
         if vespa_category:
             query = query.eq('vespa_category', vespa_category)
@@ -4546,11 +4546,13 @@ def get_qla_data():
         cycle = data.get('cycle')
         question_ids = data.get('question_ids', [])
         
-        # Use the question_level_analysis view
-        query = supabase_client.rpc('get_question_level_analysis', {
-            'p_establishment_id': establishment_id,
-            'p_cycle': cycle
-        })
+        # Query question_statistics directly instead of using RPC
+        query = supabase_client.table('question_statistics').select('*')
+        
+        if establishment_id:
+            query = query.eq('establishment_id', establishment_id)
+        if cycle:
+            query = query.eq('cycle', cycle)
         
         result = query.execute()
         

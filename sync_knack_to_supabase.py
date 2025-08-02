@@ -1100,12 +1100,12 @@ def calculate_question_statistics():
             # Clear existing statistics
             supabase.table('question_statistics').delete().neq('id', '00000000-0000-0000-0000-000000000000').execute()
             
-            # Get current academic year
+            # Get current academic year (matching format used in school_statistics)
             now = datetime.now()
-            if now.month >= 9:
-                current_year = f"{now.year}/{now.year + 1}"
+            if now.month >= 8:  # August onwards
+                current_year = f"{now.year}-{str(now.year + 1)[2:]}"  # e.g., "2025-26"
             else:
-                current_year = f"{now.year - 1}/{now.year}"
+                current_year = f"{now.year - 1}-{str(now.year)[2:]}"  # e.g., "2024-25"
             
             # Get all establishments
             establishments = supabase.table('establishments').select('id', 'is_australian').execute()
