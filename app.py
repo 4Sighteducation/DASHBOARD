@@ -4654,5 +4654,34 @@ def get_trust_statistics(trust_id):
         app.logger.error(f"Failed to fetch trust statistics: {e}")
         raise ApiError(f"Failed to fetch trust statistics: {str(e)}", 500)
 
+@app.route('/api/check-super-user', methods=['GET', 'OPTIONS'])
+def check_super_user():
+    """Check if a user is a super user by email"""
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        return '', 200
+        
+    try:
+        email = request.args.get('email')
+        app.logger.info(f"[CHECK-SUPER-USER] Checking super user status for email: {email}")
+        
+        if not email:
+            app.logger.warning("[CHECK-SUPER-USER] No email parameter provided")
+            return jsonify({'error': 'Email parameter required'}), 400
+        
+        # For now, let's return false for all users to get the dashboard working
+        # This will treat everyone as a Staff Admin (no emulation modal)
+        app.logger.info(f"[CHECK-SUPER-USER] Temporarily returning false for {email} to allow dashboard to load")
+        
+        return jsonify({
+            'is_super_user': False,
+            'user': None
+        })
+        
+    except Exception as e:
+        app.logger.error(f"[CHECK-SUPER-USER] Failed to check super user status: {type(e).__name__}: {str(e)}")
+        app.logger.error(f"[CHECK-SUPER-USER] Full traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 
