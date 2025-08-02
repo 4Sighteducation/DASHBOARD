@@ -1,0 +1,87 @@
+============================================================
+VESPA SYNC REPORT
+============================================================
+Date: 2025-08-02 09:00:59
+Duration: 0:19:06.291256
+
+=== TABLE SUMMARY ===
+
+ESTABLISHMENTS:
+  Records before: 109
+  Records after: 109
+  New records: 0
+  Errors: 0
+  Duration: 0:00:11.794551
+  Status: ✓ OK
+
+STUDENTS:
+  Records before: 24,971
+  Records after: 24,971
+  New records: 0
+  Errors: 0
+  Duration: 0:05:40.907849
+  Status: ✓ OK
+
+VESPA_SCORES:
+  Records before: 74,913
+  Records after: 74,913
+  New records: 0
+  Errors: 0
+  Duration: 0:05:40.938400
+  Status: ✓ OK
+
+STAFF_ADMINS:
+  Records before: 423
+  Records after: 423
+  New records: 0
+  Errors: 0
+  Duration: 0:00:41.874697
+  Status: ✓ OK
+
+SUPER_USERS:
+  Records before: 9
+  Records after: 9
+  New records: 0
+  Errors: 0
+  Duration: 0:00:01.486699
+  Status: ✓ OK
+
+QUESTION_RESPONSES:
+  Records before: 750,641
+  Records after: 750,641
+  New records: 0
+  Skipped: 15,379
+  Errors: 0
+  Duration: 0:10:12.830162
+  Status: ✓ OK
+
+SCHOOL_STATISTICS:
+  Records before: 0
+  Records after: 954
+  New records: 954
+  Errors: 0
+  Duration: 0:02:09.858578
+  Status: ✓ OK
+
+QUESTION_STATISTICS:
+  Records before: 5,974
+  Records after: 5,974
+  New records: 0
+  Errors: 0
+  Duration: 0:00:02.898142
+  Status: ✓ OK
+
+NATIONAL_STATISTICS:
+  Records before: 0
+  Records after: 18
+  New records: 18
+  Errors: 0
+  Duration: 0:00:03.658858
+  Status: ✓ OK
+
+=== ISSUES REQUIRING ATTENTION ===
+WARNING: Some question responses skipped due to missing student links
+WARNING: 15379 question responses skipped due to missing student links
+WARNING: 253 duplicate responses removed (multiple Object_29 records for same student)
+
+=== END OF REPORT ===

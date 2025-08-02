@@ -1246,6 +1246,36 @@ def get_question_mappings():
         'psychometric_details': psychometric_details
     })
 
+@app.route('/api/questions', methods=['GET'])
+def get_questions():
+    """Get all questions from the database with optional filtering"""
+    try:
+        # Get query parameters
+        vespa_category = request.args.get('category')
+        is_active = request.args.get('active', 'true').lower() == 'true'
+        
+        # Build query
+        query = supabase.table('questions').select('*')
+        
+        if vespa_category:
+            query = query.eq('vespa_category', vespa_category)
+        
+        if is_active:
+            query = query.eq('is_active', True)
+            
+        # Order by question_order
+        query = query.order('question_order')
+        
+        result = query.execute()
+        
+        return jsonify({
+            'questions': result.data,
+            'count': len(result.data)
+        })
+    except Exception as e:
+        app.logger.error(f"Error fetching questions: {str(e)}")
+        return jsonify({'error': 'Failed to fetch questions'}), 500
+
 # === QLA DATAFRAME UTILS (new) ===
 def _get_psychometric_mapping(cycle=None):
     mapping_path = 'AIVESPACoach/psychometric_question_details.json'
@@ -4419,6 +4449,208 @@ def check_data_health():
     except Exception as e:
         app.logger.error(f"Data health check error: {e}")
         raise ApiError(f"Failed to check data health: {str(e)}", 500)
+
+# ============================================
+# SUPABASE-BACKED ENDPOINTS
+# ============================================
+
+@app.route('/api/schools', methods=['GET'])
+@cached(ttl_key='establishments', ttl_seconds=3600)
+def get_schools():
+    """Get all schools from Supabase"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        # Get all establishments
+        result = supabase_client.table('establishments').select('*').order('name').execute()
+        
+        # Format response
+        schools = [{
+            'id': school['id'],
+            'knack_id': school['knack_id'],
+            'name': school['name'],
+            'is_australian': school.get('is_australian', False),
+            'trust_id': school.get('trust_id')
+        } for school in result.data]
+        
+        return jsonify(schools)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch schools: {e}")
+        raise ApiError(f"Failed to fetch schools: {str(e)}", 500)
+
+@app.route('/api/statistics/<school_id>', methods=['GET'])
+@cached(ttl_key='school_statistics', ttl_seconds=600)
+def get_school_statistics(school_id):
+    """Get statistics for a specific school"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        cycle = request.args.get('cycle', type=int)
+        academic_year = request.args.get('academic_year')
+        
+        # Build query
+        query = supabase_client.table('school_statistics').select('*').eq('establishment_id', school_id)
+        
+        if cycle:
+            query = query.eq('cycle', cycle)
+        if academic_year:
+            query = query.eq('academic_year', academic_year)
+        
+        result = query.execute()
+        
+        return jsonify(result.data)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch school statistics: {e}")
+        raise ApiError(f"Failed to fetch school statistics: {str(e)}", 500)
+
+@app.route('/api/national-statistics', methods=['GET'])
+@cached(ttl_key='national_statistics', ttl_seconds=3600)
+def get_national_statistics():
+    """Get national statistics from Supabase"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        cycle = request.args.get('cycle', type=int)
+        academic_year = request.args.get('academic_year')
+        
+        # Build query
+        query = supabase_client.table('national_statistics').select('*')
+        
+        if cycle:
+            query = query.eq('cycle', cycle)
+        if academic_year:
+            query = query.eq('academic_year', academic_year)
+        
+        result = query.execute()
+        
+        return jsonify(result.data)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch national statistics: {e}")
+        raise ApiError(f"Failed to fetch national statistics: {str(e)}", 500)
+
+@app.route('/api/qla-data', methods=['POST'])
+def get_qla_data():
+    """Get Question Level Analysis data from Supabase"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        data = request.get_json() or {}
+        establishment_id = data.get('establishment_id')
+        cycle = data.get('cycle')
+        question_ids = data.get('question_ids', [])
+        
+        # Use the question_level_analysis view
+        query = supabase_client.rpc('get_question_level_analysis', {
+            'p_establishment_id': establishment_id,
+            'p_cycle': cycle
+        })
+        
+        result = query.execute()
+        
+        # Filter by question IDs if provided
+        qla_data = result.data
+        if question_ids:
+            qla_data = [q for q in qla_data if q['question_id'] in question_ids]
+        
+        return jsonify(qla_data)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch QLA data: {e}")
+        raise ApiError(f"Failed to fetch QLA data: {str(e)}", 500)
+
+@app.route('/api/current-averages', methods=['GET'])
+@cached(ttl_key='current_averages', ttl_seconds=600)
+def get_current_averages():
+    """Get current school averages from Supabase view"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        establishment_id = request.args.get('establishment_id')
+        
+        # Query the current_school_averages view
+        query = supabase_client.table('current_school_averages').select('*')
+        
+        if establishment_id:
+            query = query.eq('establishment_id', establishment_id)
+        
+        result = query.execute()
+        
+        return jsonify(result.data)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch current averages: {e}")
+        raise ApiError(f"Failed to fetch current averages: {str(e)}", 500)
+
+@app.route('/api/trust/<trust_id>/statistics', methods=['GET'])
+@cached(ttl_key='trust_statistics', ttl_seconds=600)
+def get_trust_statistics(trust_id):
+    """Get aggregated statistics for all schools in a trust"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        cycle = request.args.get('cycle', type=int)
+        
+        # Get all establishments in the trust
+        est_result = supabase_client.table('establishments').select('id').eq('trust_id', trust_id).execute()
+        establishment_ids = [e['id'] for e in est_result.data]
+        
+        if not establishment_ids:
+            return jsonify([])
+        
+        # Get statistics for all establishments
+        query = supabase_client.table('school_statistics').select('*').in_('establishment_id', establishment_ids)
+        
+        if cycle:
+            query = query.eq('cycle', cycle)
+        
+        result = query.execute()
+        
+        # Aggregate statistics by element
+        aggregated = {}
+        for stat in result.data:
+            key = f"{stat['cycle']}_{stat['element']}"
+            if key not in aggregated:
+                aggregated[key] = {
+                    'cycle': stat['cycle'],
+                    'element': stat['element'],
+                    'academic_year': stat['academic_year'],
+                    'schools': [],
+                    'total_count': 0,
+                    'weighted_sum': 0
+                }
+            
+            aggregated[key]['schools'].append(stat)
+            aggregated[key]['total_count'] += stat['count']
+            aggregated[key]['weighted_sum'] += stat['mean'] * stat['count']
+        
+        # Calculate trust-wide means
+        trust_stats = []
+        for key, data in aggregated.items():
+            if data['total_count'] > 0:
+                trust_stats.append({
+                    'trust_id': trust_id,
+                    'cycle': data['cycle'],
+                    'element': data['element'],
+                    'academic_year': data['academic_year'],
+                    'mean': round(data['weighted_sum'] / data['total_count'], 2),
+                    'count': data['total_count'],
+                    'school_count': len(data['schools'])
+                })
+        
+        return jsonify(trust_stats)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch trust statistics: {e}")
+        raise ApiError(f"Failed to fetch trust statistics: {str(e)}", 500)
 
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 

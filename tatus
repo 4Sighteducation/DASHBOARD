@@ -1,0 +1,10 @@
+[33m453f43ed[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Fix critical Object_29 sync bug - was only processing 0.67% of question responses
+[33m7158bb85[m Fix critical Object_29 sync bug - was only processing 0.67% of question responses
+[33m97922880[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix establishment ID extraction for dict values5
+[33mc705f0d8[m Fix establishment ID extraction for dict values3
+[33m5bd129fe[m Fix establishment ID extraction for dict values2
+[33m44583ed1[m Fix establishment ID extraction for dict values
+[33m8af840a9[m[33m ([m[1;31mheroku/main[m[33m, [m[1;31mheroku/HEAD[m[33m)[m Fix nested dict email fields and add debug logging
+[33mb00023f9[m update supabase link file2
+[33m314beef1[m update supabase link file
+[33m98235a1f[m Add Supabase integration and sync script for Knack data migration

@@ -26,6 +26,11 @@ try:
 except Exception as e:
     print(f"❌ Error clearing question responses: {e}")
 
+# Also clear any existing checkpoint for fresh start
+if Path('sync_checkpoint.pkl').exists():
+    Path('sync_checkpoint.pkl').unlink()
+    print("✅ Cleared checkpoint file")
+
 def main():
     """Run just the question responses and statistics sync"""
     print("=" * 60)

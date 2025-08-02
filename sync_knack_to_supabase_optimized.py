@@ -565,9 +565,28 @@ def sync_question_responses(checkpoint: SyncCheckpoint) -> bool:
     with open(question_file, 'r') as f:
         question_mapping = json.load(f)
     
-    # Get student mapping
-    students = supabase.table('students').select('id', 'knack_id').execute()
-    student_map = {s['knack_id']: s['id'] for s in students.data}
+    # Get student mapping - need to get ALL students, not just first 1000
+    logging.info("Loading all students for mapping...")
+    student_map = {}
+    
+    # Supabase returns max 1000 by default, need to paginate
+    offset = 0
+    limit = 1000
+    while True:
+        students = supabase.table('students').select('id', 'knack_id').limit(limit).offset(offset).execute()
+        if not students.data:
+            break
+        
+        for student in students.data:
+            student_map[student['knack_id']] = student['id']
+        
+        logging.info(f"  Loaded batch at offset {offset}: {len(students.data)} students")
+        
+        if len(students.data) < limit:
+            break
+        offset += limit
+    
+    logging.info(f"Total loaded: {len(student_map)} student mappings")
     
     page = checkpoint.psychometric_page
     response_batch = []
@@ -623,14 +642,17 @@ def sync_question_responses(checkpoint: SyncCheckpoint) -> bool:
                             # Only create a record if there's an actual response
                             if response_value is not None and response_value != '':
                                 try:
-                                    response_data = {
-                                        'student_id': student_id,
-                                        'cycle': cycle,
-                                        'question_id': q_detail['questionId'],
-                                        'response_value': int(response_value)
-                                    }
-                                    
-                                    response_batch.append(response_data)
+                                    int_value = int(response_value)
+                                    # Skip responses with value 0 (violates DB constraint)
+                                    if int_value > 0:
+                                        response_data = {
+                                            'student_id': student_id,
+                                            'cycle': cycle,
+                                            'question_id': q_detail['questionId'],
+                                            'response_value': int_value
+                                        }
+                                        
+                                        response_batch.append(response_data)
                                 except (ValueError, TypeError):
                                     # Skip if can't convert to int
                                     pass
@@ -832,9 +854,8 @@ def calculate_statistics(checkpoint: SyncCheckpoint) -> bool:
                                 'academic_year': current_year,
                                 'element': element,
                                 'mean': sum(values) / len(values),  # Fixed: was 'average', schema has 'mean'
-                                'count': len(values),
-                                'min_value': min(values),
-                                'max_value': max(values)
+                                'count': len(values)
+                                # Note: schema doesn't have min_value/max_value, only percentiles
                             }
                             
                             supabase.table('school_statistics').upsert(
