@@ -4911,5 +4911,49 @@ def get_comment_insights():
 # ===== END FIXED ENDPOINTS =====
 
 
+
+@app.route('/api/staff-admin/<email>', methods=['GET'])
+@cached(ttl_key='staff_admin', ttl_seconds=600)
+def get_staff_admin_by_email(email):
+    """Get Staff Admin record by email from Supabase"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        # Get staff admin by email
+        result = supabase_client.table('staff_admins').select('*').eq('email', email).execute()
+        
+        if not result.data:
+            return jsonify({'error': 'Staff Admin not found'}), 404
+        
+        staff_admin = result.data[0]
+        
+        # Format response to match dashboard expectations
+        response = {
+            'id': staff_admin['knack_id'],  # Use knack_id for compatibility
+            'email': staff_admin['email'],
+            'name': staff_admin['name'],
+            'field_110_raw': []  # Establishment connection
+        }
+        
+        # If there's an establishment_id, format it as Knack expects
+        if staff_admin.get('establishment_id'):
+            # Get establishment details
+            est_result = supabase_client.table('establishments').select('*').eq('id', staff_admin['establishment_id']).execute()
+            if est_result.data:
+                establishment = est_result.data[0]
+                response['field_110_raw'] = [{
+                    'id': establishment['knack_id'],  # Use knack_id for compatibility
+                    'identifier': establishment['name']
+                }]
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch staff admin: {e}")
+        raise ApiError(f"Failed to fetch staff admin: {str(e)}", 500)
+
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 
