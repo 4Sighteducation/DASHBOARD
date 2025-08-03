@@ -45,6 +45,14 @@ export default defineConfig({
   // Development server config
   server: {
     port: 3000,
-    open: true
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'https://vespa-dashboard-9a1f84ee5341.herokuapp.com',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path
+      }
+    }
   }
 })

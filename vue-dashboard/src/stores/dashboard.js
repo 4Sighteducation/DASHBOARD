@@ -88,10 +88,14 @@ export const useDashboardStore = defineStore('dashboard', {
         // Check if user is super user
         if (this.userEmail) {
           try {
+            console.log('Checking super user status for:', this.userEmail)
             const superUserCheck = await API.checkSuperUser(this.userEmail)
+            console.log('Super user check result:', superUserCheck)
             this.isSuperUser = superUserCheck.is_super_user
           } catch (err) {
-            console.warn('Super user check failed, assuming staff admin:', err)
+            console.error('Super user check failed:', err)
+            console.error('API URL:', API.getBaseUrl())
+            console.warn('Assuming staff admin role')
             this.isSuperUser = false
           }
         }

@@ -6,15 +6,37 @@
   <title>Vue Dashboard Development</title>
   <!-- Simulate Knack environment -->
   <script>
+    // Development Test Users
+    const TEST_USERS = {
+      superUser: {
+        email: 'tony@vespa.academy',
+        role: 'Super User',
+        knackRole: ['Staff Admin'] // Knack role stays the same
+      },
+      staffAdmin: {
+        email: 'lucas@vespa.academy', 
+        role: 'Staff Admin',
+        knackRole: ['Staff Admin']
+      }
+    }
+    
+    // Get test user from URL parameter or default to staffAdmin
+    const urlParams = new URLSearchParams(window.location.search);
+    const userType = urlParams.get('user') || 'staffAdmin';
+    const currentUser = TEST_USERS[userType] || TEST_USERS.staffAdmin;
+    
+    console.log(`🧪 Testing as: ${currentUser.role} (${currentUser.email})`);
+    console.log(`💡 Switch users by adding ?user=superUser or ?user=staffAdmin to the URL`);
+    
     // Mock Knack object for development
     window.Knack = {
       getUserAttributes: () => ({
-        email: 'test@vespa.academy',
+        email: currentUser.email,
         values: {
           field_441: 'GOLD'
         }
       }),
-      getUserRoles: () => ['Staff Admin']
+      getUserRoles: () => currentUser.knackRole
     }
     
     // Mock dashboard config
@@ -25,7 +47,7 @@
       debugMode: true,
       elementSelector: '#app',
       herokuAppUrl: 'https://vespa-dashboard-9a1f84ee5341.herokuapp.com',
-      loggedInUserEmail: 'test@vespa.academy',
+      loggedInUserEmail: currentUser.email,
       objectKeys: {
         vespaResults: 'object_10',
         staffAdminRoles: 'object_5',
@@ -45,12 +67,54 @@
     #app {
       min-height: 100vh;
     }
+    /* Dev user switcher */
+    .dev-user-switcher {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #333;
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 9999;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .dev-user-switcher button {
+      background: #4A90E2;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      margin-left: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .dev-user-switcher button:hover {
+      background: #357ABD;
+    }
   </style>
 </head>
 <body>
+  <!-- Development User Switcher -->
+  <div class="dev-user-switcher" id="devUserSwitcher">
+    <span>Testing as: <strong id="currentUserDisplay"></strong></span>
+    <button onclick="switchUser('staffAdmin')">Staff Admin</button>
+    <button onclick="switchUser('superUser')">Super User</button>
+  </div>
+  
   <div id="app"></div>
   <script type="module" src="/src/main.js"></script>
   <script>
+    // Display current user
+    document.getElementById('currentUserDisplay').textContent = `${currentUser.role} (${currentUser.email})`;
+    
+    // User switcher function
+    window.switchUser = function(userType) {
+      const url = new URL(window.location);
+      url.searchParams.set('user', userType);
+      window.location.href = url.toString();
+    }
+    
     // Initialize the dashboard after Vue loads
     setTimeout(() => {
       if (window.initializeVueDashboard) {
