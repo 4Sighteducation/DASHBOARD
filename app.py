@@ -4669,14 +4669,33 @@ def check_super_user():
             app.logger.warning("[CHECK-SUPER-USER] No email parameter provided")
             return jsonify({'error': 'Email parameter required'}), 400
         
-        # For now, let's return false for all users to get the dashboard working
-        # This will treat everyone as a Staff Admin (no emulation modal)
-        app.logger.info(f"[CHECK-SUPER-USER] Temporarily returning false for {email} to allow dashboard to load")
+        if not SUPABASE_ENABLED:
+            app.logger.warning("[CHECK-SUPER-USER] Supabase not enabled")
+            return jsonify({'error': 'Supabase not configured'}), 503
         
-        return jsonify({
-            'is_super_user': False,
-            'user': None
-        })
+        app.logger.info(f"[CHECK-SUPER-USER] Supabase enabled: {SUPABASE_ENABLED}, client exists: {supabase_client is not None}")
+        
+        # Check super_users table
+        result = supabase_client.table('super_users').select('*').eq('email', email).execute()
+        
+        app.logger.info(f"[CHECK-SUPER-USER] Super user query result: {result.data}")
+        
+        if result.data and len(result.data) > 0:
+            user = result.data[0]
+            return jsonify({
+                'is_super_user': True,
+                'user': {
+                    'id': user['id'],
+                    'knack_id': user.get('knack_id'),
+                    'name': user.get('name'),
+                    'email': user['email']
+                }
+            })
+        else:
+            return jsonify({
+                'is_super_user': False,
+                'user': None
+            })
         
     except Exception as e:
         app.logger.error(f"[CHECK-SUPER-USER] Failed to check super user status: {type(e).__name__}: {str(e)}")
