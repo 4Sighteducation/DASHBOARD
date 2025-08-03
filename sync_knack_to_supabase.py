@@ -789,7 +789,7 @@ def calculate_academic_year(date_str, establishment_id=None, is_australian=None)
         return None
 
 def sync_staff_admins():
-    """Sync staff admins from object_5"""
+    """Sync staff admins from object_5 with establishment connections"""
     logging.info("Syncing staff admins...")
     
     # Track metrics
@@ -799,7 +799,9 @@ def sync_staff_admins():
         'records_before': 0,
         'records_after': 0,
         'new_records': 0,
-        'errors': 0
+        'errors': 0,
+        'with_establishment': 0,
+        'without_establishment': 0
     }
     
     try:
@@ -810,30 +812,75 @@ def sync_staff_admins():
         pass
     
     try:
+        # First, get all establishments for mapping
+        establishments = supabase.table('establishments').select('id, knack_id').execute()
+        est_map = {est['knack_id']: est['id'] for est in establishments.data}
+        logging.info(f"Loaded {len(est_map)} establishments for staff admin mapping")
+        
         staff_admins = fetch_all_knack_records(OBJECT_KEYS['staff_admins'])
         count = 0
+        with_establishment = 0
+        without_establishment = 0
         
         for admin in staff_admins:
             try:
                 # Map fields from object_5
                 # Extract email from HTML if needed
                 email_raw = admin.get('field_86', '') or admin.get('field_86_raw', '')
+                email = extract_email_from_html(email_raw)
+                
+                if not email:
+                    logging.warning(f"Skipping staff admin {admin['id']} - no email")
+                    continue
+                
+                # CRITICAL: Get establishment connection from field_110
+                establishment_knack_id = None
+                establishment_id = None
+                
+                # Check field_110_raw for establishment connection
+                if 'field_110_raw' in admin and admin['field_110_raw']:
+                    if isinstance(admin['field_110_raw'], list) and len(admin['field_110_raw']) > 0:
+                        establishment_knack_id = admin['field_110_raw'][0].get('id')
+                        establishment_name = admin['field_110_raw'][0].get('identifier', 'Unknown')
+                        logging.debug(f"Found establishment connection: {establishment_name} ({establishment_knack_id})")
+                
+                # Also check field_110 as fallback
+                if not establishment_knack_id and 'field_110' in admin and admin['field_110']:
+                    if isinstance(admin['field_110'], list) and len(admin['field_110']) > 0:
+                        establishment_knack_id = admin['field_110'][0].get('id')
+                
+                # Map to Supabase establishment ID
+                if establishment_knack_id and establishment_knack_id in est_map:
+                    establishment_id = est_map[establishment_knack_id]
+                    with_establishment += 1
+                else:
+                    without_establishment += 1
+                    if establishment_knack_id:
+                        logging.warning(f"No mapping found for establishment {establishment_knack_id} (staff: {email})")
+                    else:
+                        logging.debug(f"No establishment connection for staff admin {email}")
                 
                 admin_data = {
                     'knack_id': admin['id'],
-                    'email': extract_email_from_html(email_raw),
-                    'name': admin.get('field_85', '') or admin.get('field_85_raw', '')  # Name field
+                    'email': email.lower().strip(),  # Normalize email
+                    'name': admin.get('field_85', '') or admin.get('field_85_raw', ''),  # Name field
+                    'establishment_id': establishment_id,  # This is the critical field!
+                    'updated_at': datetime.now().isoformat()
                 }
                 
-                if admin_data['email']:  # Only sync if email exists
-                    supabase.table('staff_admins').upsert(
-                        admin_data,
-                        on_conflict='knack_id'
-                    ).execute()
-                    count += 1
+                # Upsert to Supabase
+                supabase.table('staff_admins').upsert(
+                    admin_data,
+                    on_conflict='knack_id'
+                ).execute()
+                count += 1
+                
+                if count % 100 == 0:
+                    logging.info(f"Processed {count} staff admins...")
                     
             except Exception as e:
                 logging.error(f"Error processing staff admin {admin.get('id')}: {e}")
+                sync_report['tables'][table_name]['errors'] += 1
         
         # Get final count
         try:
@@ -844,7 +891,18 @@ def sync_staff_admins():
         except:
             pass
         
+        # Update sync report with establishment stats
+        sync_report['tables'][table_name]['with_establishment'] = with_establishment
+        sync_report['tables'][table_name]['without_establishment'] = without_establishment
+        
         logging.info(f"Synced {count} staff admins")
+        logging.info(f"  - With establishment: {with_establishment}")
+        logging.info(f"  - Without establishment: {without_establishment}")
+        
+        if without_establishment > 0:
+            percentage = (with_establishment / count * 100) if count > 0 else 0
+            if percentage < 90:
+                sync_report['warnings'].append(f"Only {percentage:.1f}% of staff admins have establishment connections")
         
     except Exception as e:
         logging.error(f"Failed to sync staff admins: {e}")
