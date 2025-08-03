@@ -4702,5 +4702,214 @@ def check_super_user():
         app.logger.error(f"[CHECK-SUPER-USER] Full traceback: {traceback.format_exc()}")
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
+
+# ===== FIXED SUPABASE ENDPOINTS FOR DASHBOARD4A.JS =====
+
+@app.route('/api/statistics', methods=['GET'])
+@cached(ttl_key='school_statistics', ttl_seconds=600)
+def get_school_statistics_query():
+    """Get statistics for a specific school (query parameter version)"""
+    try:
+        establishment_id = request.args.get('establishment_id')
+        if not establishment_id:
+            raise ApiError("establishment_id is required", 400)
+            
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        cycle = request.args.get('cycle', type=int)
+        academic_year = request.args.get('academic_year')
+        
+        # Get school statistics from Supabase
+        query = supabase_client.table('school_statistics').select('*').eq('establishment_id', establishment_id)
+        
+        if cycle:
+            query = query.eq('cycle', cycle)
+        if academic_year:
+            query = query.eq('academic_year', academic_year)
+        
+        result = query.execute()
+        
+        # Transform to match dashboard4a.js expectations
+        # Group by element type
+        stats_by_element = {}
+        for stat in result.data:
+            element = stat['element']
+            stats_by_element[element] = {
+                'mean': float(stat['mean']) if stat['mean'] else 0,
+                'std_dev': float(stat['std_dev']) if stat['std_dev'] else 0,
+                'count': stat['count'] or 0,
+                'percentile_25': float(stat['percentile_25']) if stat['percentile_25'] else 0,
+                'percentile_50': float(stat['percentile_50']) if stat['percentile_50'] else 0,
+                'percentile_75': float(stat['percentile_75']) if stat['percentile_75'] else 0,
+                'distribution': stat.get('distribution', {})
+            }
+        
+        return jsonify({
+            'establishment_id': establishment_id,
+            'cycle': cycle,
+            'academic_year': academic_year,
+            'statistics': stats_by_element,
+            'calculated_at': result.data[0]['calculated_at'] if result.data else None
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch school statistics: {e}")
+        raise ApiError(f"Failed to fetch school statistics: {str(e)}", 500)
+
+@app.route('/api/qla', methods=['GET'])
+def get_qla_data_query():
+    """Get QLA data with query parameters"""
+    try:
+        establishment_id = request.args.get('establishment_id')
+        if not establishment_id:
+            raise ApiError("establishment_id is required", 400)
+            
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        cycle = request.args.get('cycle', type=int, default=1)
+        
+        # Get question statistics
+        query = supabase_client.table('question_statistics').select('*').eq('establishment_id', establishment_id)
+        
+        if cycle:
+            query = query.eq('cycle', cycle)
+            
+        result = query.execute()
+        
+        # Get questions data
+        questions_result = supabase_client.table('questions').select('*').eq('active', True).execute()
+        questions_by_id = {q['question_id']: q for q in questions_result.data}
+        
+        # Format for dashboard4a.js
+        qla_data = {
+            'top_questions': [],
+            'bottom_questions': [],
+            'all_questions': []
+        }
+        
+        # Sort by mean score
+        sorted_stats = sorted(result.data, key=lambda x: float(x.get('mean', 0)) if x.get('mean') else 0)
+        
+        # Get top 5 and bottom 5
+        if len(sorted_stats) >= 10:
+            bottom_5 = sorted_stats[:5]
+            top_5 = sorted_stats[-5:][::-1]  # Reverse to get highest first
+        else:
+            half = len(sorted_stats) // 2
+            bottom_5 = sorted_stats[:half]
+            top_5 = sorted_stats[half:][::-1]
+        
+        # Format top questions
+        for i, stat in enumerate(top_5):
+            question_info = questions_by_id.get(stat['question_id'], {})
+            qla_data['top_questions'].append({
+                'rank': i + 1,
+                'question_id': stat['question_id'],
+                'question_text': question_info.get('text', f"Question {stat['question_id']}"),
+                'category': question_info.get('category', 'Unknown'),
+                'mean_score': float(stat['mean']) if stat['mean'] else 0,
+                'response_count': stat['count'] or 0,
+                'std_dev': float(stat['std_dev']) if stat['std_dev'] else 0
+            })
+        
+        # Format bottom questions
+        for i, stat in enumerate(bottom_5):
+            question_info = questions_by_id.get(stat['question_id'], {})
+            qla_data['bottom_questions'].append({
+                'rank': i + 1,
+                'question_id': stat['question_id'],
+                'question_text': question_info.get('text', f"Question {stat['question_id']}"),
+                'category': question_info.get('category', 'Unknown'),
+                'mean_score': float(stat['mean']) if stat['mean'] else 0,
+                'response_count': stat['count'] or 0,
+                'std_dev': float(stat['std_dev']) if stat['std_dev'] else 0
+            })
+        
+        # Add all questions
+        for stat in result.data:
+            question_info = questions_by_id.get(stat['question_id'], {})
+            qla_data['all_questions'].append({
+                'question_id': stat['question_id'],
+                'question_text': question_info.get('text', f"Question {stat['question_id']}"),
+                'category': question_info.get('category', 'Unknown'),
+                'mean_score': float(stat['mean']) if stat['mean'] else 0,
+                'response_count': stat['count'] or 0,
+                'std_dev': float(stat['std_dev']) if stat['std_dev'] else 0,
+                'distribution': stat.get('distribution', {})
+            })
+        
+        return jsonify(qla_data)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch QLA data: {e}")
+        raise ApiError(f"Failed to fetch QLA data: {str(e)}", 500)
+
+@app.route('/api/word-cloud', methods=['GET'])
+def get_word_cloud_data():
+    """Get word cloud data from student comments"""
+    try:
+        establishment_id = request.args.get('establishment_id')
+        if not establishment_id:
+            raise ApiError("establishment_id is required", 400)
+            
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        cycle = request.args.get('cycle', type=int, default=1)
+        
+        # For now, return mock data since comments aren't synced yet
+        # TODO: Implement actual comment word cloud from Supabase
+        
+        mock_words = [
+            {"text": "supportive", "size": 45, "count": 89},
+            {"text": "helpful", "size": 40, "count": 76},
+            {"text": "understanding", "size": 35, "count": 65},
+            {"text": "challenging", "size": 30, "count": 54},
+            {"text": "engaging", "size": 28, "count": 48},
+            {"text": "improvement", "size": 25, "count": 41},
+            {"text": "excellent", "size": 22, "count": 35}
+        ]
+        
+        return jsonify(mock_words)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch word cloud data: {e}")
+        raise ApiError(f"Failed to fetch word cloud data: {str(e)}", 500)
+
+@app.route('/api/comment-insights', methods=['GET'])
+def get_comment_insights():
+    """Get comment insights"""
+    try:
+        establishment_id = request.args.get('establishment_id')
+        if not establishment_id:
+            raise ApiError("establishment_id is required", 400)
+            
+        # Return mock data for now
+        return jsonify({
+            'themes': [
+                {
+                    'theme': 'Teaching Quality',
+                    'count': 45,
+                    'sentiment': 'positive',
+                    'examples': ['Great teaching methods', 'Very supportive teachers']
+                },
+                {
+                    'theme': 'Resources',
+                    'count': 32,
+                    'sentiment': 'mixed',
+                    'examples': ['Good online resources', 'Need more textbooks']
+                }
+            ]
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch comment insights: {e}")
+        raise ApiError(f"Failed to fetch comment insights: {str(e)}", 500)
+
+# ===== END FIXED ENDPOINTS =====
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 
