@@ -75,8 +75,7 @@ BATCH_SIZES = {
     'establishments': 50,
     'students': 100,
     'vespa_scores': 200,
-    'question_responses': 500,
-    'student_comments': 200
+    'question_responses': 500
 }
 
 # Global flag for graceful shutdown
@@ -286,10 +285,10 @@ def sync_establishments():
 
 def sync_students_and_vespa_scores():
     """Sync students and VESPA scores from Object_10 with batch processing"""
-    logging.info("Syncing students, VESPA scores, and comments...")
+    logging.info("Syncing students and VESPA scores...")
     
-    # Track metrics for all three tables
-    for table_name in ['students', 'vespa_scores', 'student_comments']:
+    # Track metrics for both tables
+    for table_name in ['students', 'vespa_scores']:
         sync_report['tables'][table_name] = {
             'start_time': datetime.now(),
             'records_before': 0,
@@ -333,10 +332,8 @@ def sync_students_and_vespa_scores():
     
     scores_synced = 0
     students_synced = 0
-    comments_synced = 0
     student_batch = []
     vespa_batch = []
-    comments_batch = []
     
     # Process in batches to avoid memory issues
     while True:
@@ -504,44 +501,6 @@ def sync_students_and_vespa_scores():
                             ).execute()
                             scores_synced += len(vespa_batch)
                             vespa_batch = []
-                
-                # Extract student comments from the record
-                comment_mappings = [
-                    # Cycle 1
-                    {'cycle': 1, 'type': 'rrc', 'field': 'field_2302', 'field_raw': 'field_2302_raw'},
-                    {'cycle': 1, 'type': 'goal', 'field': 'field_2499', 'field_raw': 'field_2499_raw'},
-                    # Cycle 2
-                    {'cycle': 2, 'type': 'rrc', 'field': 'field_2303', 'field_raw': 'field_2303_raw'},
-                    {'cycle': 2, 'type': 'goal', 'field': 'field_2493', 'field_raw': 'field_2493_raw'},
-                    # Cycle 3
-                    {'cycle': 3, 'type': 'rrc', 'field': 'field_2304', 'field_raw': 'field_2304_raw'},
-                    {'cycle': 3, 'type': 'goal', 'field': 'field_2494', 'field_raw': 'field_2494_raw'},
-                ]
-                
-                for mapping in comment_mappings:
-                    # Try to get the comment text from raw field first, then regular field
-                    comment_text = record.get(mapping['field_raw']) or record.get(mapping['field'])
-                    
-                    # Only create a record if there's actual comment text
-                    if comment_text and isinstance(comment_text, str) and comment_text.strip():
-                        comment_data = {
-                            'student_id': student_id,
-                            'cycle': mapping['cycle'],
-                            'comment_type': mapping['type'],
-                            'comment_text': comment_text.strip(),
-                            'knack_field_id': mapping['field']
-                        }
-                        comments_batch.append(comment_data)
-                
-                # Process comments batch if it reaches the limit
-                if len(comments_batch) >= BATCH_SIZES['student_comments']:
-                    logging.info(f"Processing batch of {len(comments_batch)} student comments...")
-                    supabase.table('student_comments').upsert(
-                        comments_batch,
-                        on_conflict='student_id,cycle,comment_type'
-                    ).execute()
-                    comments_synced += len(comments_batch)
-                    comments_batch = []
                         
             except Exception as e:
                 error_msg = f"Error syncing VESPA record {record.get('id')}: {e}"
@@ -580,17 +539,8 @@ def sync_students_and_vespa_scores():
         ).execute()
         scores_synced += len(vespa_batch)
     
-    # Process any remaining comments in the batch
-    if comments_batch:
-        logging.info(f"Processing final batch of {len(comments_batch)} student comments...")
-        supabase.table('student_comments').upsert(
-            comments_batch,
-            on_conflict='student_id,cycle,comment_type'
-        ).execute()
-        comments_synced += len(comments_batch)
-    
     # Get final counts
-    for table_name in ['students', 'vespa_scores', 'student_comments']:
+    for table_name in ['students', 'vespa_scores']:
         try:
             after_count = supabase.table(table_name).select('id', count='exact').execute()
             sync_report['tables'][table_name]['records_after'] = after_count.count
@@ -599,7 +549,7 @@ def sync_students_and_vespa_scores():
         except:
             pass
     
-    logging.info(f"Synced {students_synced} students, {scores_synced} VESPA scores, and {comments_synced} comments")
+    logging.info(f"Synced {students_synced} students and {scores_synced} VESPA scores")
 
 def sync_question_responses():
     """Sync psychometric question responses from Object_29"""
@@ -1080,13 +1030,6 @@ def calculate_statistics():
     
     for est in establishments.data:
         try:
-            # Get current academic year
-            current_year = calculate_academic_year(
-                datetime.now().strftime('%d/%m/%Y'), 
-                est['id'], 
-                est.get('is_australian', False)
-            )
-            
             # Get all students for this establishment
             students = supabase.table('students').select('id').eq('establishment_id', est['id']).execute()
             if not students.data:
@@ -1094,14 +1037,29 @@ def calculate_statistics():
                 
             student_ids = [s['id'] for s in students.data]
             
-            # Calculate statistics for each cycle and element
-            for cycle in [1, 2, 3]:
-                # Get all scores for this cycle
-                scores = supabase.table('vespa_scores')\
-                    .select('vision, effort, systems, practice, attitude, overall')\
-                    .in_('student_id', student_ids)\
-                    .eq('cycle', cycle)\
-                    .execute()
+            # Get distinct academic years from the actual data
+            academic_years_result = supabase.table('vespa_scores')\
+                .select('academic_year')\
+                .in_('student_id', student_ids)\
+                .execute()
+            
+            # Get unique academic years
+            academic_years = list(set([r['academic_year'] for r in academic_years_result.data if r['academic_year']]))
+            
+            if not academic_years:
+                logging.warning(f"No academic years found for establishment {est['name']}")
+                continue
+            
+            # Calculate statistics for each academic year and cycle
+            for academic_year in academic_years:
+                for cycle in [1, 2, 3]:
+                    # Get all scores for this academic year and cycle
+                    scores = supabase.table('vespa_scores')\
+                        .select('vision, effort, systems, practice, attitude, overall')\
+                        .in_('student_id', student_ids)\
+                        .eq('cycle', cycle)\
+                        .eq('academic_year', academic_year)\
+                        .execute()
                 
                 if not scores.data:
                     continue
@@ -1122,7 +1080,7 @@ def calculate_statistics():
                         stats_data = {
                             'establishment_id': est['id'],
                             'cycle': cycle,
-                            'academic_year': current_year,
+                            'academic_year': academic_year,
                             'element': element,
                             'mean': round(sum(values) / len(values), 2),
                             'std_dev': round(stats.stdev(values), 2) if len(values) > 1 else 0,
@@ -1318,29 +1276,37 @@ def calculate_national_statistics():
         pass
     
     try:
-        # Get current academic year (matching format used in school_statistics)
-        now = datetime.now()
-        if now.month >= 8:  # August onwards (matching SQL stored procedure)
-            current_year = f"{now.year}-{str(now.year + 1)[2:]}"  # e.g., "2025-26"
-        else:
-            current_year = f"{now.year - 1}-{str(now.year)[2:]}"  # e.g., "2024-25"
+        # Get distinct academic years from school_statistics
+        academic_years_result = supabase.table('school_statistics')\
+            .select('academic_year')\
+            .execute()
         
-        logging.info(f"Calculating for academic year: {current_year}")
+        # Get unique academic years
+        academic_years = list(set([r['academic_year'] for r in academic_years_result.data if r['academic_year']]))
         
-        # Clear existing national statistics for current year
-        supabase.table('national_statistics').delete().eq('academic_year', current_year).execute()
+        if not academic_years:
+            logging.warning("No academic years found in school_statistics")
+            return False
         
-        # For each cycle and element combination
+        logging.info(f"Calculating national statistics for academic years: {academic_years}")
+        
+        # Clear existing national statistics for all found academic years
+        for academic_year in academic_years:
+            supabase.table('national_statistics').delete().eq('academic_year', academic_year).execute()
+        
+        # For each academic year
         national_count = 0
-        for cycle in [1, 2, 3]:
-            for element in ['vision', 'effort', 'systems', 'practice', 'attitude', 'overall']:
-                # Get all school statistics for this combination
-                school_stats = supabase.table('school_statistics')\
-                    .select('mean, count, percentile_25, percentile_50, percentile_75, distribution')\
-                    .eq('cycle', cycle)\
-                    .eq('element', element)\
-                    .eq('academic_year', current_year)\
-                    .execute()
+        for academic_year in academic_years:
+            # For each cycle and element combination
+            for cycle in [1, 2, 3]:
+                for element in ['vision', 'effort', 'systems', 'practice', 'attitude', 'overall']:
+                    # Get all school statistics for this combination
+                    school_stats = supabase.table('school_statistics')\
+                        .select('mean, count, percentile_25, percentile_50, percentile_75, distribution')\
+                        .eq('cycle', cycle)\
+                        .eq('element', element)\
+                        .eq('academic_year', academic_year)\
+                        .execute()
                 
                 if not school_stats.data:
                     continue
@@ -1385,7 +1351,7 @@ def calculate_national_statistics():
                 # Insert national statistics
                 national_data = {
                     'cycle': cycle,
-                    'academic_year': current_year,
+                    'academic_year': academic_year,
                     'element': element,
                     'mean': round(national_mean, 2),
                     'std_dev': round(national_std, 2),
@@ -1522,7 +1488,7 @@ def main():
             'completed_at': end_time.isoformat(),
             'metadata': {
                 'duration_seconds': (end_time - start_time).total_seconds(),
-                'tables_synced': ['establishments', 'students', 'vespa_scores', 'student_comments', 'staff_admins', 'super_users', 'question_responses', 'school_statistics', 'national_statistics']
+                'tables_synced': ['establishments', 'students', 'vespa_scores', 'staff_admins', 'super_users', 'question_responses', 'school_statistics', 'national_statistics']
             }
         }).eq('id', sync_log_id).execute()
         

@@ -1,0 +1,502 @@
+[
+  {
+    "table_name": "comparison_cache",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "establishment_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "comparison_type",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "dimension1",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "dimension2",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "metric",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "group1_mean",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "group1_std_dev",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "group1_count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "group2_mean",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "group2_std_dev",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "group2_count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "mean_difference",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "percent_change",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "cohen_d",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "p_value",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "ai_insights",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "comparison_cache",
+    "column_name": "expires_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "current_school_averages",
+    "column_name": "establishment_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "current_school_averages",
+    "column_name": "establishment_name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "current_school_averages",
+    "column_name": "cycle",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "current_school_averages",
+    "column_name": "element",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "current_school_averages",
+    "column_name": "mean",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "current_school_averages",
+    "column_name": "std_dev",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "current_school_averages",
+    "column_name": "count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "current_school_averages",
+    "column_name": "academic_year",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "dashboard_user_access",
+    "column_name": "user_email",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "dashboard_user_access",
+    "column_name": "establishment_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "dashboard_user_access",
+    "column_name": "establishment_name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "dashboard_user_access",
+    "column_name": "user_role",
+    "data_type": "text"
+  },
+  {
+    "table_name": "dashboard_user_access",
+    "column_name": "staff_admin_knack_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "dashboard_user_access",
+    "column_name": "super_user_knack_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "establishments",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "establishments",
+    "column_name": "knack_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "establishments",
+    "column_name": "name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "establishments",
+    "column_name": "trust_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "establishments",
+    "column_name": "is_australian",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "establishments",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "establishments",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "establishments",
+    "column_name": "status",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "national_question_statistics",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "national_question_statistics",
+    "column_name": "question_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "national_question_statistics",
+    "column_name": "cycle",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "national_question_statistics",
+    "column_name": "academic_year",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "national_question_statistics",
+    "column_name": "mean",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "national_question_statistics",
+    "column_name": "std_dev",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "national_question_statistics",
+    "column_name": "count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "national_question_statistics",
+    "column_name": "mode",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "national_question_statistics",
+    "column_name": "percentile_25",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "national_question_statistics",
+    "column_name": "percentile_75",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "national_question_statistics",
+    "column_name": "distribution",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "national_question_statistics",
+    "column_name": "calculated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "cycle",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "academic_year",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "element",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "mean",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "std_dev",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "percentile_25",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "percentile_50",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "percentile_75",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "distribution",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "calculated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "establishment_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "cycle",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "academic_year",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "question_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "mean",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "std_dev",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "distribution",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "calculated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "mode",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "percentile_25",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "percentile_75",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "rank_high_to_low",
+    "data_type": "bigint"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "rank_low_to_high",
+    "data_type": "bigint"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "national_mean",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "national_std_dev",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "national_count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "diff_from_national",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "performance_category",
+    "data_type": "text"
+  },
+  {
+    "table_name": "qla_question_performance",
+    "column_name": "national_comparison",
+    "data_type": "text"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "establishment_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "cycle",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "academic_year",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "question_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "mean",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "std_dev",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "distribution",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "calculated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "mode",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "percentile_25",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "percentile_75",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "rank_desc",
+    "data_type": "bigint"
+  }
+]

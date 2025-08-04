@@ -1,7 +1,6 @@
 import os
 import json
 import requests
-import traceback
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file, current_app
 from dotenv import load_dotenv
@@ -169,7 +168,7 @@ else:
 CORS(app, 
      resources={r"/api/*": {"origins": ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]}},
      supports_credentials=True,
-     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'X-Knack-Application-Id', 'X-Knack-REST-API-Key', 'x-knack-application-id', 'x-knack-rest-api-key'],
+     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 # Add explicit CORS headers to all responses (belt and suspenders approach)
@@ -184,7 +183,7 @@ def after_request(response):
     if origin in allowed_origins:
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-Knack-Application-Id, X-Knack-REST-API-Key, x-knack-application-id, x-knack-rest-api-key'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         response.headers['Access-Control-Max-Age'] = '3600'
     
@@ -2243,7 +2242,6 @@ def analyze_themes():
     
     comment_fields = data.get('commentFields', [])
     filters = data.get('filters', {})
-    cycle = filters.get('cycle')
     
     app.logger.info(f"Analyzing themes for fields: {comment_fields}")
     
@@ -4716,8 +4714,6 @@ def get_school_statistics_query():
         if not establishment_id:
             raise ApiError("establishment_id is required", 400)
             
-        app.logger.info(f"[STATISTICS] Fetching statistics for establishment: {establishment_id}")
-            
         if not SUPABASE_ENABLED:
             raise ApiError("Supabase not configured", 503)
         
@@ -4734,35 +4730,6 @@ def get_school_statistics_query():
         
         result = query.execute()
         
-        # If no statistics found, return empty but valid structure
-        if not result.data:
-            app.logger.warning(f"No statistics found for establishment {establishment_id}")
-            return jsonify({
-                'establishment_id': establishment_id,
-                'cycle': cycle,
-                'academic_year': academic_year,
-                'statistics': {
-                    'totalStudents': 0,
-                    'averageERI': 0,
-                    'eriChange': 0,
-                    'completionRate': 0,
-                    'averageScore': 0,
-                    'scoreChange': 0,
-                    'nationalERI': 70.0,
-                    'eriTrend': 'neutral',
-                    'vespaScores': {
-                        'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0,
-                        'nationalVision': 0, 'nationalEffort': 0, 'nationalSystems': 0, 
-                        'nationalPractice': 0, 'nationalAttitude': 0
-                    },
-                    'comparison': {
-                        'school': [0, 0, 0, 0, 0],
-                        'national': [0, 0, 0, 0, 0]
-                    }
-                },
-                'calculated_at': None
-            })
-        
         # Transform to match dashboard4a.js expectations
         # Group by element type
         stats_by_element = {}
@@ -4778,78 +4745,11 @@ def get_school_statistics_query():
                 'distribution': stat.get('distribution', {})
             }
         
-        # Transform to match Vue dashboard expectations
-        vespa_scores = {}
-        total_students = 0
-        
-        # Extract VESPA scores and find max student count
-        for element, stats in stats_by_element.items():
-            vespa_scores[element] = stats['mean']
-            if stats['count'] > total_students:
-                total_students = stats['count']
-        
-        # Calculate average ERI (overall score * 10 for percentage)
-        average_eri = stats_by_element.get('overall', {}).get('mean', 0) * 10
-        
-        # Get national statistics for comparison
-        national_query = supabase_client.table('national_statistics')\
-            .select('*')\
-            .eq('cycle', cycle or 1)\
-            .eq('academic_year', academic_year or '2025-26')\
-            .execute()
-        
-        national_scores = {}
-        national_eri = 70.0  # Default
-        if national_query.data:
-            for nat_stat in national_query.data:
-                element = nat_stat['element']
-                national_scores[f'national{element.capitalize()}'] = float(nat_stat['mean']) if nat_stat['mean'] else 0
-                if element == 'overall':
-                    national_eri = float(nat_stat['mean']) * 10 if nat_stat['mean'] else 70.0
-        
-        # Build response matching frontend expectations
         return jsonify({
             'establishment_id': establishment_id,
             'cycle': cycle,
             'academic_year': academic_year,
-            'statistics': {
-                'totalStudents': total_students,
-                'averageERI': round(average_eri, 1),
-                'eriChange': 0,  # TODO: Calculate from previous cycle
-                'completionRate': 89,  # TODO: Calculate actual completion rate
-                'averageScore': round(stats_by_element.get('overall', {}).get('mean', 0) * 10, 1),
-                'scoreChange': 0,  # TODO: Calculate from previous cycle
-                'nationalERI': round(national_eri, 1),
-                'eriTrend': 'up' if average_eri > national_eri else 'down',
-                'vespaScores': {
-                    'vision': round(vespa_scores.get('vision', 0) * 10, 1),
-                    'effort': round(vespa_scores.get('effort', 0) * 10, 1),
-                    'systems': round(vespa_scores.get('systems', 0) * 10, 1),
-                    'practice': round(vespa_scores.get('practice', 0) * 10, 1),
-                    'attitude': round(vespa_scores.get('attitude', 0) * 10, 1),
-                    'nationalVision': round(national_scores.get('nationalVision', 0) * 10, 1),
-                    'nationalEffort': round(national_scores.get('nationalEffort', 0) * 10, 1),
-                    'nationalSystems': round(national_scores.get('nationalSystems', 0) * 10, 1),
-                    'nationalPractice': round(national_scores.get('nationalPractice', 0) * 10, 1),
-                    'nationalAttitude': round(national_scores.get('nationalAttitude', 0) * 10, 1)
-                },
-                'comparison': {
-                    'school': [
-                        round(vespa_scores.get('vision', 0) * 10, 1),
-                        round(vespa_scores.get('effort', 0) * 10, 1),
-                        round(vespa_scores.get('systems', 0) * 10, 1),
-                        round(vespa_scores.get('practice', 0) * 10, 1),
-                        round(vespa_scores.get('attitude', 0) * 10, 1)
-                    ],
-                    'national': [
-                        round(national_scores.get('nationalVision', 0) * 10, 1),
-                        round(national_scores.get('nationalEffort', 0) * 10, 1),
-                        round(national_scores.get('nationalSystems', 0) * 10, 1),
-                        round(national_scores.get('nationalPractice', 0) * 10, 1),
-                        round(national_scores.get('nationalAttitude', 0) * 10, 1)
-                    ]
-                }
-            },
+            'statistics': stats_by_element,
             'calculated_at': result.data[0]['calculated_at'] if result.data else None
         })
         
@@ -4879,7 +4779,7 @@ def get_qla_data_query():
         result = query.execute()
         
         # Get questions data
-        questions_result = supabase_client.table('questions').select('*').eq('is_active', True).execute()
+        questions_result = supabase_client.table('questions').select('*').eq('active', True).execute()
         questions_by_id = {q['question_id']: q for q in questions_result.data}
         
         # Format for dashboard4a.js
@@ -5053,77 +4953,6 @@ def get_staff_admin_by_email(email):
         app.logger.error(f"Failed to fetch staff admin: {e}")
         raise ApiError(f"Failed to fetch staff admin: {str(e)}", 500)
 
-
-@app.route('/api/academic-years', methods=['GET', 'OPTIONS'])
-def get_academic_years():
-    """Get distinct academic years from national statistics"""
-    if request.method == 'OPTIONS':
-        return '', 200
-        
-    try:
-        if not SUPABASE_ENABLED:
-            raise ApiError("Supabase not configured", 503)
-            
-        # Query distinct academic years from national_statistics
-        result = supabase_client.table('national_statistics')\
-            .select('academic_year')\
-            .execute()
-            
-        # Get unique years
-        years = sorted(list(set(stat['academic_year'] for stat in result.data if stat['academic_year'])))
-        
-        return jsonify(years)
-        
-    except Exception as e:
-        app.logger.error(f"Failed to fetch academic years: {e}")
-        raise ApiError(f"Failed to fetch academic years: {str(e)}", 500)
-
-
-@app.route('/api/key-stages', methods=['GET', 'OPTIONS'])
-def get_key_stages():
-    """Get available key stages"""
-    if request.method == 'OPTIONS':
-        return '', 200
-        
-    # Return static list of key stages
-    return jsonify(['KS3', 'KS4', 'KS5'])
-
-
-@app.route('/api/year-groups', methods=['GET', 'OPTIONS'])
-def get_year_groups():
-    """Get available year groups"""
-    if request.method == 'OPTIONS':
-        return '', 200
-        
-    # Return static list of year groups
-    return jsonify(['7', '8', '9', '10', '11', '12', '13'])
-
-
-@app.route('/api/establishment/<establishment_id>', methods=['GET', 'OPTIONS'])
-def get_establishment(establishment_id):
-    """Get establishment details by ID"""
-    if request.method == 'OPTIONS':
-        return '', 200
-        
-    try:
-        if not SUPABASE_ENABLED:
-            raise ApiError("Supabase not configured", 503)
-            
-        # Query establishment details
-        result = supabase_client.table('establishments')\
-            .select('*')\
-            .eq('id', establishment_id)\
-            .single()\
-            .execute()
-            
-        if not result.data:
-            raise ApiError("Establishment not found", 404)
-            
-        return jsonify(result.data)
-        
-    except Exception as e:
-        app.logger.error(f"Failed to fetch establishment: {e}")
-        raise ApiError(f"Failed to fetch establishment: {str(e)}", 500)
 
 
 if __name__ == '__main__':
