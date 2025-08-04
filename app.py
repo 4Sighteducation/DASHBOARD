@@ -1,5 +1,6 @@
 import os
 import json
+import traceback
 import requests
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file, current_app
@@ -168,7 +169,7 @@ else:
 CORS(app, 
      resources={r"/api/*": {"origins": ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]}},
      supports_credentials=True,
-     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
+     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'X-Knack-Application-Id', 'X-Knack-REST-API-Key', 'x-knack-application-id', 'x-knack-rest-api-key'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 # Add explicit CORS headers to all responses (belt and suspenders approach)
@@ -183,7 +184,7 @@ def after_request(response):
     if origin in allowed_origins:
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-Knack-Application-Id, X-Knack-REST-API-Key, x-knack-application-id, x-knack-rest-api-key'
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         response.headers['Access-Control-Max-Age'] = '3600'
     
@@ -2275,6 +2276,7 @@ def analyze_themes():
         knack_filters.append(academic_year_filter)
         
         # Add cycle filter if provided
+        cycle = filters.get('cycle')
         if cycle:
             knack_filters.append({
                 'field': 'field_146',
@@ -4654,6 +4656,61 @@ def get_trust_statistics(trust_id):
         app.logger.error(f"Failed to fetch trust statistics: {e}")
         raise ApiError(f"Failed to fetch trust statistics: {str(e)}", 500)
 
+@app.route('/api/academic-years', methods=['GET'])
+@cached(ttl_key='academic_years', ttl_seconds=3600)
+def get_academic_years():
+    """Get distinct academic years from national_statistics"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        # Get distinct academic years from national_statistics
+        result = supabase_client.table('national_statistics')\
+            .select('academic_year')\
+            .execute()
+        
+        # Extract unique years
+        years = list(set([r['academic_year'] for r in result.data if r['academic_year']]))
+        years.sort(reverse=True)  # Most recent first
+        
+        return jsonify(years)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch academic years: {e}")
+        raise ApiError(f"Failed to fetch academic years: {str(e)}", 500)
+
+@app.route('/api/key-stages', methods=['GET'])
+def get_key_stages():
+    """Return available key stages"""
+    return jsonify(['KS3', 'KS4', 'KS5'])
+
+@app.route('/api/year-groups', methods=['GET'])
+def get_year_groups():
+    """Return available year groups"""
+    return jsonify(['7', '8', '9', '10', '11', '12', '13'])
+
+@app.route('/api/establishment/<establishment_id>', methods=['GET'])
+@cached(ttl_key='establishment', ttl_seconds=3600)
+def get_establishment(establishment_id):
+    """Get establishment details"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        result = supabase_client.table('establishments')\
+            .select('id, name, knack_id, is_australian, trust_id')\
+            .eq('id', establishment_id)\
+            .execute()
+        
+        if not result.data:
+            raise ApiError("Establishment not found", 404)
+        
+        return jsonify(result.data[0])
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch establishment: {e}")
+        raise ApiError(f"Failed to fetch establishment: {str(e)}", 500)
+
 @app.route('/api/check-super-user', methods=['GET', 'OPTIONS'])
 def check_super_user():
     """Check if a user is a super user by email"""
@@ -4745,10 +4802,14 @@ def get_school_statistics_query():
                 'distribution': stat.get('distribution', {})
             }
         
+        # Get actual values from the first result if available
+        actual_cycle = result.data[0]['cycle'] if result.data else cycle
+        actual_academic_year = result.data[0]['academic_year'] if result.data else academic_year
+        
         return jsonify({
             'establishment_id': establishment_id,
-            'cycle': cycle,
-            'academic_year': academic_year,
+            'cycle': actual_cycle,
+            'academic_year': actual_academic_year,
             'statistics': stats_by_element,
             'calculated_at': result.data[0]['calculated_at'] if result.data else None
         })
