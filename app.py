@@ -5275,7 +5275,60 @@ def get_school_statistics_query():
         
         # Get national distributions
         try:
-            # Build query for national distributions
+            # First, calculate national averages from current_school_averages (primary method)
+            app.logger.info(f"Calculating national averages from current_school_averages")
+            
+            # Get all school averages for this cycle
+            school_avg_query = supabase_client.table('current_school_averages')\
+                .select('element,mean,count')\
+                .eq('cycle', cycle)
+            
+            if academic_year:
+                school_avg_query = school_avg_query.eq('academic_year', academic_year)
+                
+            school_avg_result = school_avg_query.execute()
+            
+            if school_avg_result.data:
+                # Calculate weighted average for each element
+                element_sums = {}
+                element_counts = {}
+                
+                for avg in school_avg_result.data:
+                    elem = avg['element'].lower() if avg['element'] else None
+                    if elem and elem in ['vision', 'effort', 'systems', 'practice', 'attitude', 'overall']:
+                        if elem not in element_sums:
+                            element_sums[elem] = 0
+                            element_counts[elem] = 0
+                        
+                        # Weighted average: sum(mean * count) / sum(count)
+                        mean_val = float(avg.get('mean', 0)) if avg.get('mean') is not None else 0
+                        count_val = int(avg.get('count', 0)) if avg.get('count') is not None else 0
+                        
+                        element_sums[elem] += mean_val * count_val
+                        element_counts[elem] += count_val
+                
+                # Calculate national averages
+                for elem in element_sums:
+                    if element_counts[elem] > 0:
+                        national_avg = element_sums[elem] / element_counts[elem]
+                        nat_stats_by_element[elem] = round(national_avg, 2)
+                        app.logger.info(f"Calculated national average for {elem}: {national_avg} from {element_counts[elem]} students")
+                
+                # Update comparison_national with calculated values
+                if nat_stats_by_element:
+                    comparison_national = []
+                    for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']:
+                        comparison_national.append(nat_stats_by_element.get(elem, 0))
+                    response_data['comparison']['national'] = comparison_national
+                    
+                    # Also update vespaScores with national values
+                    for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']:
+                        response_data['vespaScores'][f'national{elem.capitalize()}'] = nat_stats_by_element.get(elem, 0)
+                    response_data['vespaScores']['nationalOverall'] = nat_stats_by_element.get('overall', 0)
+                    
+                    app.logger.info(f"National averages from current_school_averages: {comparison_national}")
+            
+            # Then get distributions from national_statistics
             query = supabase_client.table('national_statistics')\
                 .select('element,distribution,mean')\
                 .eq('cycle', cycle)
@@ -5299,17 +5352,55 @@ def get_school_statistics_query():
                         else:
                             app.logger.warning(f"Invalid distribution data for {element_key}: {dist_data}")
                 
-                                # Also extract the mean values for the national averages if not already set
-                if not comparison_national or all(v == 0 for v in comparison_national):  # If we haven't set national data yet or it's all zeros
-                    app.logger.info(f"Extracting means from distribution query as fallback")
+                # If we only have overall distribution, try to get individual element distributions from vespa_scores
+                if len(national_distributions) == 1 and 'overall' in national_distributions:
+                    app.logger.info("Only overall distribution found, calculating element distributions from all schools")
+                    
+                    # Get a sample of vespa_scores from all schools for distribution calculation
+                    # We'll batch this to avoid huge queries
+                    element_distributions = {elem: [0] * 10 for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']}
+                    
+                    # Get sample of establishments to calculate from
+                    est_result = supabase_client.table('establishments')\
+                        .select('id')\
+                        .limit(50)\
+                        .execute()
+                    
+                    if est_result.data:
+                        for est in est_result.data:
+                            # Get vespa scores for this establishment
+                            vespa_sample = supabase_client.table('vespa_scores')\
+                                .select('vision,effort,systems,practice,attitude')\
+                                .eq('establishment_id', est['id'])\
+                                .eq('cycle', cycle)\
+                                .limit(100)\
+                                .execute()
+                            
+                            if vespa_sample.data:
+                                for score in vespa_sample.data:
+                                    for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']:
+                                        if score.get(elem) is not None:
+                                            rounded_score = round(score[elem])
+                                            if 1 <= rounded_score <= 10:
+                                                element_distributions[elem][rounded_score - 1] += 1
+                        
+                        # Add these to national_distributions
+                        for elem, dist in element_distributions.items():
+                            if sum(dist) > 0:  # Only add if we have data
+                                national_distributions[elem] = dist
+                                app.logger.info(f"Calculated distribution for {elem}: total={sum(dist)}")
+                
+                # Fallback: Use national_statistics means if available (for future when element-specific data exists)
+                if (not comparison_national or all(v == 0 for v in comparison_national)) and national_dist_result.data:
+                    app.logger.info(f"No data from current_school_averages, checking national_statistics as fallback")
                     for stat in national_dist_result.data:
-                        if stat['element'] and stat.get('mean') is not None:
+                        if stat['element'] and stat['element'].lower() != 'overall' and stat.get('mean') is not None:
                             element_key = stat['element'].lower()
                             # Store the mean for use in comparison
                             if element_key in ['vision', 'effort', 'systems', 'practice', 'attitude']:
                                 if element_key not in nat_stats_by_element or nat_stats_by_element[element_key] == 0:
                                     nat_stats_by_element[element_key] = float(stat['mean'])
-                                    app.logger.info(f"Setting national {element_key} = {stat['mean']} from distribution query")
+                                    app.logger.info(f"Setting national {element_key} = {stat['mean']} from national_statistics (fallback)")
                     
                     # Recalculate comparison_national if we got new data
                     if nat_stats_by_element and any(v > 0 for v in nat_stats_by_element.values()):
@@ -5318,7 +5409,7 @@ def get_school_statistics_query():
                             national_score = round(nat_stats_by_element.get(elem, 0), 2)
                             comparison_national.append(national_score)
                         response_data['comparison']['national'] = comparison_national
-                        app.logger.info(f"Updated comparison_national to: {comparison_national}")
+                        app.logger.info(f"Updated comparison_national from national_statistics fallback: {comparison_national}")
                 
                 response_data['nationalDistributions'] = national_distributions
                 app.logger.info(f"Returning national distributions for {len(national_distributions)} elements: {list(national_distributions.keys())}")
