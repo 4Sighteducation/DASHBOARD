@@ -4860,6 +4860,109 @@ def get_year_groups():
         # Return default on error
         return jsonify(['7', '8', '9', '10', '11', '12', '13'])
 
+@app.route('/api/groups', methods=['GET'])
+def get_groups():
+    """Return available groups, optionally filtered by establishment"""
+    try:
+        establishment_id = request.args.get('establishment_id')
+        
+        if not establishment_id or not SUPABASE_ENABLED:
+            return jsonify([])
+        
+        # Convert Knack ID to UUID if needed
+        establishment_uuid = convert_knack_id_to_uuid(establishment_id)
+        
+        # Get distinct groups for this establishment
+        result = supabase_client.table('students')\
+            .select('group')\
+            .eq('establishment_id', establishment_uuid)\
+            .execute()
+        
+        if result.data:
+            # Extract unique groups and sort them
+            groups = list(set(r['group'] for r in result.data if r.get('group')))
+            groups.sort()
+            return jsonify(groups)
+        
+        return jsonify([])
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch groups: {e}")
+        return jsonify([])
+
+@app.route('/api/faculties', methods=['GET'])
+def get_faculties():
+    """Return available faculties, optionally filtered by establishment"""
+    try:
+        establishment_id = request.args.get('establishment_id')
+        
+        if not establishment_id or not SUPABASE_ENABLED:
+            return jsonify([])
+        
+        # Convert Knack ID to UUID if needed
+        establishment_uuid = convert_knack_id_to_uuid(establishment_id)
+        
+        # Get distinct faculties for this establishment
+        result = supabase_client.table('students')\
+            .select('faculty')\
+            .eq('establishment_id', establishment_uuid)\
+            .execute()
+        
+        if result.data:
+            # Extract unique faculties and sort them
+            faculties = list(set(r['faculty'] for r in result.data if r.get('faculty')))
+            faculties.sort()
+            return jsonify(faculties)
+        
+        return jsonify([])
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch faculties: {e}")
+        return jsonify([])
+
+@app.route('/api/students/search', methods=['GET'])
+def search_students():
+    """Search for students by name or email"""
+    try:
+        establishment_id = request.args.get('establishment_id')
+        search_term = request.args.get('q', '').strip()
+        
+        if not establishment_id or not search_term or not SUPABASE_ENABLED:
+            return jsonify([])
+        
+        # Convert Knack ID to UUID if needed
+        establishment_uuid = convert_knack_id_to_uuid(establishment_id)
+        
+        # Search for students by name or email (case-insensitive)
+        # Using ilike for case-insensitive partial matching
+        result = supabase_client.table('students')\
+            .select('id, name, email, year_group, group, faculty')\
+            .eq('establishment_id', establishment_uuid)\
+            .or_(f"name.ilike.%{search_term}%,email.ilike.%{search_term}%")\
+            .limit(20)\
+            .execute()
+        
+        if result.data:
+            # Format results for frontend
+            students = []
+            for student in result.data:
+                students.append({
+                    'id': student['id'],
+                    'name': student['name'],
+                    'email': student['email'],
+                    'yearGroup': student.get('year_group', ''),
+                    'group': student.get('group', ''),
+                    'faculty': student.get('faculty', ''),
+                    'displayText': f"{student['name']} ({student.get('year_group', 'N/A')})"
+                })
+            return jsonify(students)
+        
+        return jsonify([])
+        
+    except Exception as e:
+        app.logger.error(f"Failed to search students: {e}")
+        return jsonify([])
+
 @app.route('/api/establishment/<establishment_id>', methods=['GET'])
 @cached(ttl_key='establishment', ttl_seconds=3600)
 def get_establishment(establishment_id):
@@ -4949,6 +5052,10 @@ def get_school_statistics_query():
         
         cycle = request.args.get('cycle', type=int, default=1)
         academic_year = request.args.get('academic_year')
+        year_group = request.args.get('yearGroup')
+        group = request.args.get('group')
+        faculty = request.args.get('faculty')
+        student_id = request.args.get('studentId')
         
         # Get ALL students for this establishment (paginate to avoid 1000 limit)
         all_students = []
@@ -4956,12 +5063,21 @@ def get_school_statistics_query():
         limit = 1000
         
         while True:
-            students_batch = supabase_client.table('students')\
-                .select('id')\
-                .eq('establishment_id', establishment_uuid)\
-                .limit(limit)\
-                .offset(offset)\
-                .execute()
+            # Build query with filters
+            query = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid)
+            
+            # Apply filters
+            if student_id:
+                query = query.eq('id', student_id)
+            else:
+                if year_group and year_group != 'all':
+                    query = query.eq('year_group', year_group)
+                if group and group != 'all':
+                    query = query.eq('group', group)
+                if faculty and faculty != 'all':
+                    query = query.eq('faculty', faculty)
+            
+            students_batch = query.limit(limit).offset(offset).execute()
             
             batch_count = len(students_batch.data) if students_batch.data else 0
             app.logger.info(f"Student fetch batch: offset={offset}, got {batch_count} students")
