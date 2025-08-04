@@ -55,3 +55,4 @@ vespa_automation_success_*.txt
 generated_students.json
 generated_student_records.json
 knack_import_data.json
+AppLoaderv5.0.ts

@@ -498,5 +498,850 @@
     "table_name": "question_rankings",
     "column_name": "rank_desc",
     "data_type": "bigint"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "rank_asc",
+    "data_type": "bigint"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "total_questions",
+    "data_type": "bigint"
+  },
+  {
+    "table_name": "question_rankings",
+    "column_name": "performance_category",
+    "data_type": "text"
+  },
+  {
+    "table_name": "question_responses",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "question_responses",
+    "column_name": "student_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "question_responses",
+    "column_name": "cycle",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "question_responses",
+    "column_name": "question_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "question_responses",
+    "column_name": "response_value",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "question_responses",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "establishment_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "cycle",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "academic_year",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "question_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "mean",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "std_dev",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "distribution",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "calculated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "mode",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "percentile_25",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "question_statistics",
+    "column_name": "percentile_75",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "question_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "question_text",
+    "data_type": "text"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "vespa_category",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "question_order",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "current_cycle_field_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "historical_cycle_field_base",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "field_id_cycle_1",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "field_id_cycle_2",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "field_id_cycle_3",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "is_active",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "questions",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "report_templates",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "report_templates",
+    "column_name": "name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "report_templates",
+    "column_name": "description",
+    "data_type": "text"
+  },
+  {
+    "table_name": "report_templates",
+    "column_name": "template_type",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "report_templates",
+    "column_name": "filters",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "report_templates",
+    "column_name": "metrics",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "report_templates",
+    "column_name": "visualizations",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "report_templates",
+    "column_name": "ai_prompt_template",
+    "data_type": "text"
+  },
+  {
+    "table_name": "report_templates",
+    "column_name": "created_by",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "report_templates",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "report_templates",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "establishment_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "cycle",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "academic_year",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "element",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "mean",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "std_dev",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "percentile_25",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "percentile_50",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "percentile_75",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "distribution",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "calculated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "school_statistics",
+    "column_name": "average",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "staff_admins",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "staff_admins",
+    "column_name": "knack_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "staff_admins",
+    "column_name": "email",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "staff_admins",
+    "column_name": "name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "staff_admins",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "staff_admins",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "staff_admins",
+    "column_name": "establishment_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "student_comments",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "student_comments",
+    "column_name": "student_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "student_comments",
+    "column_name": "cycle",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_comments",
+    "column_name": "comment_type",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_comments",
+    "column_name": "comment_text",
+    "data_type": "text"
+  },
+  {
+    "table_name": "student_comments",
+    "column_name": "knack_field_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_comments",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "student_comments",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "student_comments_aggregated",
+    "column_name": "establishment_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "student_comments_aggregated",
+    "column_name": "year_group",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_comments_aggregated",
+    "column_name": "course",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_comments_aggregated",
+    "column_name": "faculty",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_comments_aggregated",
+    "column_name": "group",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_comments_aggregated",
+    "column_name": "cycle",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_comments_aggregated",
+    "column_name": "comment_type",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_comments_aggregated",
+    "column_name": "comment_text",
+    "data_type": "text"
+  },
+  {
+    "table_name": "student_comments_aggregated",
+    "column_name": "academic_year",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "student_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "student_name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "email",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "establishment_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "establishment_name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "year_group",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "course",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "faculty",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle1_vision",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle1_effort",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle1_systems",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle1_practice",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle1_attitude",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle1_overall",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle1_date",
+    "data_type": "date"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle2_vision",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle2_effort",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle2_systems",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle2_practice",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle2_attitude",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle2_overall",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle2_date",
+    "data_type": "date"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle3_vision",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle3_effort",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle3_systems",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle3_practice",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle3_attitude",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle3_overall",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "student_vespa_progress",
+    "column_name": "cycle3_date",
+    "data_type": "date"
+  },
+  {
+    "table_name": "students",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "students",
+    "column_name": "knack_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "students",
+    "column_name": "email",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "students",
+    "column_name": "name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "students",
+    "column_name": "establishment_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "students",
+    "column_name": "year_group",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "students",
+    "column_name": "course",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "students",
+    "column_name": "faculty",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "students",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "students",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "students",
+    "column_name": "group",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "students",
+    "column_name": "status",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "super_users",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "super_users",
+    "column_name": "knack_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "super_users",
+    "column_name": "email",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "super_users",
+    "column_name": "name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "super_users",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "super_users",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "sync_logs",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "sync_logs",
+    "column_name": "sync_type",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "sync_logs",
+    "column_name": "status",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "sync_logs",
+    "column_name": "records_processed",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "sync_logs",
+    "column_name": "error_message",
+    "data_type": "text"
+  },
+  {
+    "table_name": "sync_logs",
+    "column_name": "started_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "sync_logs",
+    "column_name": "completed_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "sync_logs",
+    "column_name": "metadata",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "trusts",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "trusts",
+    "column_name": "knack_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "trusts",
+    "column_name": "name",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "trusts",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "trusts",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "question_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "question_text",
+    "data_type": "text"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "vespa_category",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "question_order",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "current_cycle_field_id",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "historical_cycle_field_base",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "field_id_cycle_1",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "field_id_cycle_2",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "field_id_cycle_3",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "is_active",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "vespa_questions",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "vespa_scores",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "vespa_scores",
+    "column_name": "student_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "vespa_scores",
+    "column_name": "cycle",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "vespa_scores",
+    "column_name": "vision",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "vespa_scores",
+    "column_name": "effort",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "vespa_scores",
+    "column_name": "systems",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "vespa_scores",
+    "column_name": "practice",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "vespa_scores",
+    "column_name": "attitude",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "vespa_scores",
+    "column_name": "overall",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "vespa_scores",
+    "column_name": "completion_date",
+    "data_type": "date"
+  },
+  {
+    "table_name": "vespa_scores",
+    "column_name": "academic_year",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "vespa_scores",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
   }
 ]

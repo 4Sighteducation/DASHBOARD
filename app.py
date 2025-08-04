@@ -4746,16 +4746,25 @@ def get_academic_years():
             if students_result.data:
                 student_ids = [s['id'] for s in students_result.data]
                 
-                # Get distinct academic years from vespa_scores for these students
-                result = supabase_client.table('vespa_scores')\
-                    .select('academic_year')\
-                    .in_('student_id', student_ids)\
-                    .execute()
+                # Get distinct academic years from vespa_scores for these students in batches
+                BATCH_SIZE = 100  # Can use larger batch for simpler query
+                all_years = set()
                 
-                # Extract unique years
-                years = list(set([r['academic_year'] for r in result.data if r.get('academic_year')]))
+                for i in range(0, len(student_ids), BATCH_SIZE):
+                    batch_ids = student_ids[i:i + BATCH_SIZE]
+                    batch_result = supabase_client.table('vespa_scores')\
+                        .select('academic_year')\
+                        .in_('student_id', batch_ids)\
+                        .execute()
+                    
+                    if batch_result.data:
+                        for record in batch_result.data:
+                            if record['academic_year']:
+                                all_years.add(record['academic_year'])
+                
+                # Convert set to sorted list
+                years = sorted(list(all_years), reverse=True)  # Most recent first
                 if years:
-                    years.sort(reverse=True)  # Most recent first
                     return jsonify(years)
         
         # Fall back to national statistics
@@ -4980,8 +4989,26 @@ def get_school_statistics_query():
                 'academic_year': academic_year
             })
         
-        # Get VESPA scores for these students
-        vespa_result = supabase_client.table('vespa_scores').select('*').in_('student_id', student_ids).eq('cycle', cycle).execute()
+        # Get VESPA scores for these students in batches to avoid URL length limits
+        BATCH_SIZE = 50  # Process 50 students at a time to stay well under URL limits
+        all_vespa_scores = []
+        
+        for i in range(0, len(student_ids), BATCH_SIZE):
+            batch_ids = student_ids[i:i + BATCH_SIZE]
+            batch_result = supabase_client.table('vespa_scores')\
+                .select('*')\
+                .in_('student_id', batch_ids)\
+                .eq('cycle', cycle)\
+                .execute()
+            if batch_result.data:
+                all_vespa_scores.extend(batch_result.data)
+        
+        # Create a mock result object with all the collected data
+        class MockResult:
+            def __init__(self, data):
+                self.data = data
+        
+        vespa_result = MockResult(all_vespa_scores)
         
         # Initialize distributions variable
         vespa_distributions = None
@@ -5121,8 +5148,22 @@ def get_school_statistics_query():
             # Get outcome question responses for these students
             outcome_questions = ['outcome_q_confident', 'outcome_q_equipped', 'outcome_q_support']
             
-            # Get question responses for outcome questions
-            outcome_responses = supabase_client.table('question_responses').select('*').in_('student_id', student_ids).in_('question_id', outcome_questions).eq('cycle', cycle).execute()
+            # Get question responses for outcome questions in batches
+            BATCH_SIZE = 50
+            all_outcome_responses = []
+            
+            for i in range(0, len(student_ids), BATCH_SIZE):
+                batch_ids = student_ids[i:i + BATCH_SIZE]
+                batch_result = supabase_client.table('question_responses')\
+                    .select('*')\
+                    .in_('student_id', batch_ids)\
+                    .in_('question_id', outcome_questions)\
+                    .eq('cycle', cycle)\
+                    .execute()
+                if batch_result.data:
+                    all_outcome_responses.extend(batch_result.data)
+            
+            outcome_responses = MockResult(all_outcome_responses)
             
             if outcome_responses.data:
                 # Calculate average ERI from outcome questions (1-5 scale)
@@ -5148,7 +5189,9 @@ def get_school_statistics_query():
             national_eri = sum(comparison_national) / len(comparison_national) if comparison_national else 0
         
         # Calculate completion rate
-        completion_rate = (total_students / len(student_ids) * 100) if student_ids else 0
+        # total_students is the count of students with vespa scores for this cycle
+        # student_ids is all students in the establishment
+        completion_rate = (total_students / len(student_ids) * 100) if len(student_ids) > 0 else 0
         
         # Determine ERI trend
         eri_diff = school_eri - national_eri
@@ -5178,10 +5221,30 @@ def get_school_statistics_query():
             'academic_year': academic_year
         }
         
-        # Add distributions if we calculated them from actual vespa data
-        if vespa_distributions is not None:
-            response_data['distributions'] = vespa_distributions
-            app.logger.info(f"Returning distributions for {len(vespa_distributions)} elements")
+                    # Add distributions if we calculated them from actual vespa data
+            if vespa_distributions is not None:
+                response_data['distributions'] = vespa_distributions
+                app.logger.info(f"Returning distributions for {len(vespa_distributions)} elements")
+            
+            # Get national distributions
+            try:
+                national_dist_result = supabase_client.table('national_statistics')\
+                    .select('element,distribution')\
+                    .eq('cycle', cycle)\
+                    .eq('academic_year', academic_year)\
+                    .execute()
+                
+                if national_dist_result.data:
+                    national_distributions = {}
+                    for stat in national_dist_result.data:
+                        if stat['element'] and stat['distribution']:
+                            # Distribution is stored as JSONB, should be an array
+                            national_distributions[stat['element']] = stat['distribution']
+                    
+                    response_data['nationalDistributions'] = national_distributions
+                    app.logger.info(f"Returning national distributions for {len(national_distributions)} elements")
+            except Exception as e:
+                app.logger.error(f"Failed to fetch national distributions: {e}")
         
         return jsonify(response_data)
         

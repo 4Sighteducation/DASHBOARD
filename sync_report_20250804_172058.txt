@@ -1,0 +1,89 @@
+============================================================
+VESPA SYNC REPORT
+============================================================
+Date: 2025-08-04 17:20:58
+Duration: 0:19:00.544511
+
+=== TABLE SUMMARY ===
+
+ESTABLISHMENTS:
+  Records before: 109
+  Records after: 111
+  New records: 2
+  Errors: 0
+  Duration: 0:00:14.995678
+  Status: ✓ OK
+
+STUDENTS:
+  Records before: 24,971
+  Records after: 24,971
+  New records: 0
+  Errors: 0
+  Duration: 0:05:43.644400
+  Status: ✓ OK
+
+VESPA_SCORES:
+  Records before: 74,913
+  Records after: 74,913
+  New records: 0
+  Errors: 0
+  Duration: 0:05:43.719214
+  Status: ✓ OK
+
+STAFF_ADMINS:
+  Records before: 423
+  Records after: 423
+  New records: 0
+  Errors: 0
+  Duration: 0:00:49.900088
+  Status: ✓ OK
+
+SUPER_USERS:
+  Records before: 9
+  Records after: 9
+  New records: 0
+  Errors: 0
+  Duration: 0:00:01.732295
+  Status: ✓ OK
+
+QUESTION_RESPONSES:
+  Records before: 750,641
+  Records after: 750,641
+  New records: 0
+  Skipped: 15,379
+  Errors: 1
+  Duration: 0:10:44.270875
+  Status: ⚠ WARNINGS
+
+SCHOOL_STATISTICS:
+  Records before: 954
+  Records after: 972
+  New records: 18
+  Errors: 0
+  Duration: 0:01:17.447901
+  Status: ✓ OK
+
+QUESTION_STATISTICS:
+  Records before: 5,974
+  Records after: 6,134
+  New records: 160
+  Errors: 0
+  Duration: 0:00:02.918447
+  Status: ✓ OK
+
+NATIONAL_STATISTICS:
+  Records before: 18
+  Records after: 4
+  New records: -14
+  Errors: 0
+  Duration: 0:00:04.386051
+  Status: ✓ OK
+
+=== ISSUES REQUIRING ATTENTION ===
+WARNING: Only 41.4% of staff admins have establishment connections
+WARNING: Some question responses skipped due to missing student links
+WARNING: 15379 question responses skipped due to missing student links
+WARNING: 268 duplicate responses removed (multiple Object_29 records for same student)
+ERROR: Error syncing psychometric record 656497200cbd0b1c0ae62573: [SSL: SSLV3_ALERT_BAD_RECORD_MAC] sslv3 alert bad record mac (_ssl.c:2648)
+
+=== END OF REPORT ===

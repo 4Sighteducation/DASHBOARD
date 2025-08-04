@@ -221,7 +221,7 @@
   },
   {
     "questionId": "q23",
-    "questionText": "I study by explaining difficult topics out loud)",
+    "questionText": "I study by explaining difficult topics out loud",
     "vespaCategory": "PRACTICE",
     "currentCycleFieldId": "field_816",
     "historicalCycleFieldBase": "Q23p",
