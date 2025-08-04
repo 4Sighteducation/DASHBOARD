@@ -4870,29 +4870,92 @@ def get_school_statistics_query():
         result = query.execute()
         
         # Transform to match dashboard4a.js expectations
-        # Group by element type
+        # Transform data to match frontend expectations
+        # First, organize stats by element
         stats_by_element = {}
+        total_count = 0
         for stat in result.data:
-            element = stat['element']
+            element = stat['element'].lower()  # lowercase to match frontend
             stats_by_element[element] = {
                 'mean': float(stat['mean']) if stat['mean'] else 0,
-                'std_dev': float(stat['std_dev']) if stat['std_dev'] else 0,
-                'count': stat['count'] or 0,
-                'percentile_25': float(stat['percentile_25']) if stat['percentile_25'] else 0,
-                'percentile_50': float(stat['percentile_50']) if stat['percentile_50'] else 0,
-                'percentile_75': float(stat['percentile_75']) if stat['percentile_75'] else 0,
-                'distribution': stat.get('distribution', {})
+                'count': stat['count'] or 0
             }
+            total_count += stat['count'] or 0
+        
+        # Calculate average ERI score (average of all VESPA elements)
+        vespa_elements = ['vision', 'effort', 'systems', 'practice', 'attitude']
+        eri_sum = sum(stats_by_element.get(elem, {}).get('mean', 0) for elem in vespa_elements)
+        eri_count = sum(1 for elem in vespa_elements if elem in stats_by_element)
+        average_eri = (eri_sum / eri_count) if eri_count > 0 else 0
+        
+        # Get national statistics for comparison
+        nat_query = supabase_client.table('national_statistics').select('*')
+        if actual_cycle := (result.data[0]['cycle'] if result.data else cycle):
+            nat_query = nat_query.eq('cycle', actual_cycle)
+        if actual_academic_year := (result.data[0]['academic_year'] if result.data else academic_year):
+            nat_query = nat_query.eq('academic_year', actual_academic_year)
+        
+        nat_result = nat_query.execute()
+        
+        # Process national stats
+        nat_stats_by_element = {}
+        for stat in nat_result.data:
+            element = stat['element'].lower()
+            nat_stats_by_element[element] = float(stat['mean']) if stat['mean'] else 0
+        
+        # Calculate national ERI
+        nat_eri_sum = sum(nat_stats_by_element.get(elem, 0) for elem in vespa_elements)
+        nat_eri_count = sum(1 for elem in vespa_elements if elem in nat_stats_by_element)
+        national_eri = (nat_eri_sum / nat_eri_count) if nat_eri_count > 0 else 0
+        
+        # Build vespaScores object matching frontend expectations
+        vespa_scores = {}
+        comparison_school = []
+        comparison_national = []
+        
+        for elem in vespa_elements:
+            school_score = stats_by_element.get(elem, {}).get('mean', 0)
+            national_score = nat_stats_by_element.get(elem, 0)
+            
+            vespa_scores[elem] = school_score
+            vespa_scores[f'national{elem.capitalize()}'] = national_score
+            
+            comparison_school.append(school_score)
+            comparison_national.append(national_score)
+        
+        # Calculate completion rate (percentage of students who have completed)
+        # This is a simplified calculation - you may want to adjust based on your data
+        completion_rate = min(100, (total_count / 100) * 100) if total_count > 0 else 0
+        
+        # Determine ERI trend
+        eri_diff = average_eri - national_eri
+        eri_trend = 'up' if eri_diff > 1 else 'down' if eri_diff < -1 else 'stable'
         
         # Get actual values from the first result if available
         actual_cycle = result.data[0]['cycle'] if result.data else cycle
         actual_academic_year = result.data[0]['academic_year'] if result.data else academic_year
         
         return jsonify({
-            'establishment_id': establishment_id,  # Return the original ID that was passed in
+            'totalStudents': total_count,
+            'averageERI': round(average_eri, 1),
+            'eriChange': round(average_eri - national_eri, 1),
+            'completionRate': round(completion_rate, 0),
+            'averageScore': round(average_eri, 1),  # Using ERI as average score
+            'scoreChange': round(average_eri - national_eri, 1),
+            'nationalERI': round(national_eri, 1),
+            'eriTrend': eri_trend,
+            'vespaScores': vespa_scores,
+            'comparison': {
+                'school': comparison_school,
+                'national': comparison_national
+            },
+            'yearGroupPerformance': {
+                'labels': [],  # TODO: Add year group breakdown
+                'scores': []   # TODO: Add year group scores
+            },
+            'establishment_id': establishment_id,
             'cycle': actual_cycle,
             'academic_year': actual_academic_year,
-            'statistics': stats_by_element,
             'calculated_at': result.data[0]['calculated_at'] if result.data else None
         })
         
