@@ -4936,7 +4936,7 @@ def get_qla_data_query():
         result = query.execute()
         
         # Get questions data
-        questions_result = supabase_client.table('questions').select('*').eq('active', True).execute()
+        questions_result = supabase_client.table('questions').select('*').eq('is_active', True).execute()
         questions_by_id = {q['question_id']: q for q in questions_result.data}
         
         # Format for dashboard4a.js
