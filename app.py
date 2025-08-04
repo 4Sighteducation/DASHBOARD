@@ -284,6 +284,28 @@ def handle_gateway_timeout(error):
 # --- Knack API Proxy ---
 BASE_KNACK_URL = f"https://api.knack.com/v1/objects"
 
+# --- ID Conversion Helper ---
+def convert_knack_id_to_uuid(establishment_id):
+    """Convert Knack ID to Supabase UUID if needed"""
+    if not establishment_id:
+        return None
+        
+    # Check if it's already a valid UUID format
+    import uuid
+    try:
+        uuid.UUID(establishment_id)
+        # It's already a UUID, use as is
+        return establishment_id
+    except ValueError:
+        # It's a Knack ID, need to convert
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+            
+        est_result = supabase_client.table('establishments').select('id').eq('knack_id', establishment_id).execute()
+        if not est_result.data:
+            raise ApiError(f"Establishment not found with ID: {establishment_id}", 404)
+        return est_result.data[0]['id']
+
 # --- Academic Year Helper ---
 def get_academic_year_filters(establishment_id=None, date_field='field_855', australian_field='field_3511'):
     """
@@ -4490,11 +4512,25 @@ def get_school_statistics(school_id):
         if not SUPABASE_ENABLED:
             raise ApiError("Supabase not configured", 503)
         
+        # Convert Knack ID to Supabase UUID if needed
+        # Check if it's a valid UUID format
+        import uuid
+        try:
+            uuid.UUID(school_id)
+            # It's already a UUID, use as is
+            school_uuid = school_id
+        except ValueError:
+            # It's a Knack ID, need to convert
+            est_result = supabase_client.table('establishments').select('id').eq('knack_id', school_id).execute()
+            if not est_result.data:
+                raise ApiError(f"Establishment not found with ID: {school_id}", 404)
+            school_uuid = est_result.data[0]['id']
+        
         cycle = request.args.get('cycle', type=int)
         academic_year = request.args.get('academic_year')
         
         # Build query
-        query = supabase_client.table('school_statistics').select('*').eq('establishment_id', school_id)
+        query = supabase_client.table('school_statistics').select('*').eq('establishment_id', school_uuid)
         
         if cycle:
             query = query.eq('cycle', cycle)
@@ -4548,11 +4584,27 @@ def get_qla_data():
         cycle = data.get('cycle')
         question_ids = data.get('question_ids', [])
         
+        # Convert Knack ID to Supabase UUID if needed
+        establishment_uuid = None
+        if establishment_id:
+            # Check if it's a valid UUID format
+            import uuid
+            try:
+                uuid.UUID(establishment_id)
+                # It's already a UUID, use as is
+                establishment_uuid = establishment_id
+            except ValueError:
+                # It's a Knack ID, need to convert
+                est_result = supabase_client.table('establishments').select('id').eq('knack_id', establishment_id).execute()
+                if not est_result.data:
+                    raise ApiError(f"Establishment not found with ID: {establishment_id}", 404)
+                establishment_uuid = est_result.data[0]['id']
+        
         # Query question_statistics directly instead of using RPC
         query = supabase_client.table('question_statistics').select('*')
         
-        if establishment_id:
-            query = query.eq('establishment_id', establishment_id)
+        if establishment_uuid:
+            query = query.eq('establishment_id', establishment_uuid)
         if cycle:
             query = query.eq('cycle', cycle)
         
@@ -4579,11 +4631,27 @@ def get_current_averages():
         
         establishment_id = request.args.get('establishment_id')
         
+        # Convert Knack ID to Supabase UUID if needed
+        establishment_uuid = None
+        if establishment_id:
+            # Check if it's a valid UUID format
+            import uuid
+            try:
+                uuid.UUID(establishment_id)
+                # It's already a UUID, use as is
+                establishment_uuid = establishment_id
+            except ValueError:
+                # It's a Knack ID, need to convert
+                est_result = supabase_client.table('establishments').select('id').eq('knack_id', establishment_id).execute()
+                if not est_result.data:
+                    raise ApiError(f"Establishment not found with ID: {establishment_id}", 404)
+                establishment_uuid = est_result.data[0]['id']
+        
         # Query the current_school_averages view
         query = supabase_client.table('current_school_averages').select('*')
         
-        if establishment_id:
-            query = query.eq('establishment_id', establishment_id)
+        if establishment_uuid:
+            query = query.eq('establishment_id', establishment_uuid)
         
         result = query.execute()
         
@@ -4774,11 +4842,25 @@ def get_school_statistics_query():
         if not SUPABASE_ENABLED:
             raise ApiError("Supabase not configured", 503)
         
+        # Convert Knack ID to Supabase UUID if needed
+        # Check if it's a valid UUID format
+        import uuid
+        try:
+            uuid.UUID(establishment_id)
+            # It's already a UUID, use as is
+            establishment_uuid = establishment_id
+        except ValueError:
+            # It's a Knack ID, need to convert
+            est_result = supabase_client.table('establishments').select('id').eq('knack_id', establishment_id).execute()
+            if not est_result.data:
+                raise ApiError(f"Establishment not found with ID: {establishment_id}", 404)
+            establishment_uuid = est_result.data[0]['id']
+        
         cycle = request.args.get('cycle', type=int)
         academic_year = request.args.get('academic_year')
         
         # Get school statistics from Supabase
-        query = supabase_client.table('school_statistics').select('*').eq('establishment_id', establishment_id)
+        query = supabase_client.table('school_statistics').select('*').eq('establishment_id', establishment_uuid)
         
         if cycle:
             query = query.eq('cycle', cycle)
@@ -4807,7 +4889,7 @@ def get_school_statistics_query():
         actual_academic_year = result.data[0]['academic_year'] if result.data else academic_year
         
         return jsonify({
-            'establishment_id': establishment_id,
+            'establishment_id': establishment_id,  # Return the original ID that was passed in
             'cycle': actual_cycle,
             'academic_year': actual_academic_year,
             'statistics': stats_by_element,
@@ -4829,10 +4911,24 @@ def get_qla_data_query():
         if not SUPABASE_ENABLED:
             raise ApiError("Supabase not configured", 503)
         
+        # Convert Knack ID to Supabase UUID if needed
+        # Check if it's a valid UUID format
+        import uuid
+        try:
+            uuid.UUID(establishment_id)
+            # It's already a UUID, use as is
+            establishment_uuid = establishment_id
+        except ValueError:
+            # It's a Knack ID, need to convert
+            est_result = supabase_client.table('establishments').select('id').eq('knack_id', establishment_id).execute()
+            if not est_result.data:
+                raise ApiError(f"Establishment not found with ID: {establishment_id}", 404)
+            establishment_uuid = est_result.data[0]['id']
+        
         cycle = request.args.get('cycle', type=int, default=1)
         
         # Get question statistics
-        query = supabase_client.table('question_statistics').select('*').eq('establishment_id', establishment_id)
+        query = supabase_client.table('question_statistics').select('*').eq('establishment_id', establishment_uuid)
         
         if cycle:
             query = query.eq('cycle', cycle)
