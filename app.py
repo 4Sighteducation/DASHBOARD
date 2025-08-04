@@ -5016,26 +5016,26 @@ def get_school_statistics_query():
                 'academic_year': academic_year
             })
         
-                    # Get VESPA scores for these students in batches to avoid URL length limits
-            BATCH_SIZE = 50  # Process 50 students at a time to stay well under URL limits
-            all_vespa_scores = []
+        # Get VESPA scores for these students in batches to avoid URL length limits
+        BATCH_SIZE = 50  # Process 50 students at a time to stay well under URL limits
+        all_vespa_scores = []
             
-            # Also filter by academic_year if provided
-            for i in range(0, len(student_ids), BATCH_SIZE):
-                batch_ids = student_ids[i:i + BATCH_SIZE]
-                vespa_query = supabase_client.table('vespa_scores')\
-                    .select('*')\
-                    .in_('student_id', batch_ids)\
-                    .eq('cycle', cycle)
+        # Also filter by academic_year if provided
+        for i in range(0, len(student_ids), BATCH_SIZE):
+            batch_ids = student_ids[i:i + BATCH_SIZE]
+            vespa_query = supabase_client.table('vespa_scores')\
+                .select('*')\
+                .in_('student_id', batch_ids)\
+                .eq('cycle', cycle)
+            
+            if academic_year:
+                vespa_query = vespa_query.eq('academic_year', academic_year)
                 
-                if academic_year:
-                    vespa_query = vespa_query.eq('academic_year', academic_year)
-                    
-                batch_result = vespa_query.execute()
-                if batch_result.data:
-                    all_vespa_scores.extend(batch_result.data)
+            batch_result = vespa_query.execute()
+            if batch_result.data:
+                all_vespa_scores.extend(batch_result.data)
             
-            app.logger.info(f"VESPA scores: Found {len(all_vespa_scores)} scores for {len(student_ids)} students")
+        app.logger.info(f"VESPA scores: Found {len(all_vespa_scores)} scores for {len(student_ids)} students")
         
         # Create a simple object to hold the data
         vespa_result = SimpleNamespace(data=all_vespa_scores)
