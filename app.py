@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import traceback
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file, current_app
 from dotenv import load_dotenv
@@ -168,7 +169,7 @@ else:
 CORS(app, 
      resources={r"/api/*": {"origins": ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]}},
      supports_credentials=True,
-     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
+     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'X-Knack-Application-Id', 'X-Knack-REST-API-Key', 'x-knack-application-id', 'x-knack-rest-api-key'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 # Add explicit CORS headers to all responses (belt and suspenders approach)
@@ -183,7 +184,7 @@ def after_request(response):
     if origin in allowed_origins:
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-Knack-Application-Id, X-Knack-REST-API-Key, x-knack-application-id, x-knack-rest-api-key'
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         response.headers['Access-Control-Max-Age'] = '3600'
     
@@ -2242,6 +2243,7 @@ def analyze_themes():
     
     comment_fields = data.get('commentFields', [])
     filters = data.get('filters', {})
+    cycle = filters.get('cycle')
     
     app.logger.info(f"Analyzing themes for fields: {comment_fields}")
     
@@ -4877,7 +4879,7 @@ def get_qla_data_query():
         result = query.execute()
         
         # Get questions data
-        questions_result = supabase_client.table('questions').select('*').eq('active', True).execute()
+        questions_result = supabase_client.table('questions').select('*').eq('is_active', True).execute()
         questions_by_id = {q['question_id']: q for q in questions_result.data}
         
         # Format for dashboard4a.js
@@ -5051,6 +5053,77 @@ def get_staff_admin_by_email(email):
         app.logger.error(f"Failed to fetch staff admin: {e}")
         raise ApiError(f"Failed to fetch staff admin: {str(e)}", 500)
 
+
+@app.route('/api/academic-years', methods=['GET', 'OPTIONS'])
+def get_academic_years():
+    """Get distinct academic years from national statistics"""
+    if request.method == 'OPTIONS':
+        return '', 200
+        
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+            
+        # Query distinct academic years from national_statistics
+        result = supabase_client.table('national_statistics')\
+            .select('academic_year')\
+            .execute()
+            
+        # Get unique years
+        years = sorted(list(set(stat['academic_year'] for stat in result.data if stat['academic_year'])))
+        
+        return jsonify(years)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch academic years: {e}")
+        raise ApiError(f"Failed to fetch academic years: {str(e)}", 500)
+
+
+@app.route('/api/key-stages', methods=['GET', 'OPTIONS'])
+def get_key_stages():
+    """Get available key stages"""
+    if request.method == 'OPTIONS':
+        return '', 200
+        
+    # Return static list of key stages
+    return jsonify(['KS3', 'KS4', 'KS5'])
+
+
+@app.route('/api/year-groups', methods=['GET', 'OPTIONS'])
+def get_year_groups():
+    """Get available year groups"""
+    if request.method == 'OPTIONS':
+        return '', 200
+        
+    # Return static list of year groups
+    return jsonify(['7', '8', '9', '10', '11', '12', '13'])
+
+
+@app.route('/api/establishment/<establishment_id>', methods=['GET', 'OPTIONS'])
+def get_establishment(establishment_id):
+    """Get establishment details by ID"""
+    if request.method == 'OPTIONS':
+        return '', 200
+        
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+            
+        # Query establishment details
+        result = supabase_client.table('establishments')\
+            .select('*')\
+            .eq('id', establishment_id)\
+            .single()\
+            .execute()
+            
+        if not result.data:
+            raise ApiError("Establishment not found", 404)
+            
+        return jsonify(result.data)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch establishment: {e}")
+        raise ApiError(f"Failed to fetch establishment: {str(e)}", 500)
 
 
 if __name__ == '__main__':
