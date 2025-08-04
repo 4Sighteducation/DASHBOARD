@@ -5368,13 +5368,22 @@ def get_school_statistics_query():
                     
                     if est_result.data:
                         for est in est_result.data:
-                            # Get vespa scores for this establishment
-                            vespa_sample = supabase_client.table('vespa_scores')\
-                                .select('vision,effort,systems,practice,attitude')\
+                            # First get students for this establishment
+                            students_sample = supabase_client.table('students')\
+                                .select('id')\
                                 .eq('establishment_id', est['id'])\
-                                .eq('cycle', cycle)\
                                 .limit(100)\
                                 .execute()
+                            
+                            if students_sample.data:
+                                student_ids = [s['id'] for s in students_sample.data]
+                                # Get vespa scores for these students
+                                vespa_sample = supabase_client.table('vespa_scores')\
+                                    .select('vision,effort,systems,practice,attitude')\
+                                    .in_('student_id', student_ids)\
+                                    .eq('cycle', cycle)\
+                                    .limit(100)\
+                                    .execute()
                             
                             if vespa_sample.data:
                                 for score in vespa_sample.data:
@@ -5416,6 +5425,8 @@ def get_school_statistics_query():
                 app.logger.info(f"Sample national distribution: {list(national_distributions.values())[0] if national_distributions else 'None'}")
             else:
                 app.logger.warning(f"No national distribution data found for cycle {cycle}, academic_year {academic_year}")
+                # Return empty distributions so frontend knows they're missing
+                response_data['nationalDistributions'] = {}
         except Exception as e:
             app.logger.error(f"Failed to fetch national distributions: {e}")
         
