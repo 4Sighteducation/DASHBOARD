@@ -1,0 +1,97 @@
+============================================================
+VESPA SYNC REPORT
+============================================================
+Date: 2025-08-03 13:36:43
+Duration: 0:18:03.748658
+
+=== TABLE SUMMARY ===
+
+ESTABLISHMENTS:
+  Records before: 109
+  Records after: 109
+  New records: 0
+  Errors: 0
+  Duration: 0:00:12.493609
+  Status: ✓ OK
+
+STUDENTS:
+  Records before: 24,971
+  Records after: 24,971
+  New records: 0
+  Errors: 0
+  Duration: 0:05:23.525815
+  Status: ✓ OK
+
+VESPA_SCORES:
+  Records before: 74,913
+  Records after: 74,913
+  New records: 0
+  Errors: 0
+  Duration: 0:05:23.530698
+  Status: ✓ OK
+
+STUDENT_COMMENTS:
+  Records before: 0
+  Records after: 6,539
+  New records: 6,539
+  Errors: 0
+  Duration: 0:05:23.532061
+  Status: ✓ OK
+
+STAFF_ADMINS:
+  Records before: 423
+  Records after: 423
+  New records: 0
+  Errors: 0
+  Duration: 0:00:40.054709
+  Status: ✓ OK
+
+SUPER_USERS:
+  Records before: 9
+  Records after: 9
+  New records: 0
+  Errors: 0
+  Duration: 0:00:01.379713
+  Status: ✓ OK
+
+QUESTION_RESPONSES:
+  Records before: 750,641
+  Records after: 750,641
+  New records: 0
+  Skipped: 15,379
+  Errors: 1
+  Duration: 0:09:29.856466
+  Status: ⚠ WARNINGS
+
+SCHOOL_STATISTICS:
+  Records before: 954
+  Records after: 954
+  New records: 0
+  Errors: 0
+  Duration: 0:02:08.566533
+  Status: ✓ OK
+
+QUESTION_STATISTICS:
+  Records before: 5,974
+  Records after: 5,974
+  New records: 0
+  Errors: 0
+  Duration: 0:00:03.038089
+  Status: ✓ OK
+
+NATIONAL_STATISTICS:
+  Records before: 18
+  Records after: 18
+  New records: 0
+  Errors: 0
+  Duration: 0:00:03.591546
+  Status: ✓ OK
+
+=== ISSUES REQUIRING ATTENTION ===
+WARNING: Only 38.3% of staff admins have establishment connections
+WARNING: Some question responses skipped due to missing student links
+WARNING: 15379 question responses skipped due to missing student links
+WARNING: 282 duplicate responses removed (multiple Object_29 records for same student)
+ERROR: Error syncing psychometric record 672e0fae6860f602d4877681: [SSL: SSLV3_ALERT_BAD_RECORD_MAC] sslv3 alert bad record mac (_ssl.c:2648)
+
+=== END OF REPORT ===

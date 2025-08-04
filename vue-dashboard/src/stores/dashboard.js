@@ -82,8 +82,36 @@ export const useDashboardStore = defineStore('dashboard', {
           throw new Error('Dashboard configuration not found')
         }
         
-        // Set user email
-        this.userEmail = config.loggedInUserEmail
+        // Get user email from multiple sources
+        let userEmail = config.loggedInUserEmail
+        
+        // If not in config, try to get from Knack
+        if (!userEmail && typeof Knack !== 'undefined' && Knack.getUserAttributes) {
+          try {
+            const userAttributes = Knack.getUserAttributes()
+            userEmail = userAttributes.email || userAttributes.values?.email
+            console.log('Got user email from Knack.getUserAttributes():', userEmail)
+          } catch (e) {
+            console.error('Failed to get user email from Knack.getUserAttributes():', e)
+          }
+        }
+        
+        // If still no email, try alternative Knack method
+        if (!userEmail && typeof Knack !== 'undefined' && Knack.session && Knack.session.user) {
+          try {
+            userEmail = Knack.session.user.email
+            console.log('Got user email from Knack.session.user:', userEmail)
+          } catch (e) {
+            console.error('Failed to get user email from Knack.session:', e)
+          }
+        }
+        
+        if (!userEmail) {
+          throw new Error('Unable to determine user email. Please ensure you are logged in.')
+        }
+        
+        this.userEmail = userEmail
+        console.log('User email detected:', this.userEmail)
         
         // Check if user is super user
         if (this.userEmail) {
@@ -138,16 +166,12 @@ export const useDashboardStore = defineStore('dashboard', {
       const config = window.DASHBOARD_CONFIG
       
       try {
-        // Get Knack user attributes
-        const userAttributes = Knack.getUserAttributes()
-        const userEmail = userAttributes.email
+        console.log('Loading staff admin establishment for:', this.userEmail)
         
-        // Query Knack for staff admin record
-        const filters = {
-          match: 'and',
-          rules: [{
-            field: 'field_86', // Staff admin email field
-            operator: 'is',
+        // First, get the staff admin record ID from Knack
+        const filters = [{
+          field: 'field_86', // Staff admin email field
+          operator: 'is',
             value: userEmail
           }]
         }

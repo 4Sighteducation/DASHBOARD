@@ -48,6 +48,12 @@
         <h3 class="chart-title">Performance by Year Group</h3>
         <YearGroupChart :data="yearGroupData" />
       </div>
+      
+      <!-- Automated Insights -->
+      <InsightsGrid
+        :responses="responses"
+        :loading="loading"
+      />
     </div>
   </div>
 </template>
@@ -59,6 +65,7 @@ import VespaRadarChart from './VespaRadarChart.vue'
 import VespaBarChart from './VespaBarChart.vue'
 import ERIGauge from './ERIGauge.vue'
 import YearGroupChart from './YearGroupChart.vue'
+import InsightsGrid from './InsightsGrid.vue'
 
 const props = defineProps({
   data: Object,
@@ -132,6 +139,11 @@ const eriTrend = computed(() => {
 const yearGroupData = computed(() => {
   if (!props.data?.statistics?.yearGroupPerformance) return null
   return props.data.statistics.yearGroupPerformance
+})
+
+const responses = computed(() => {
+  // Get responses data from the dashboard data
+  return props.data?.responses || []
 })
 </script>
 

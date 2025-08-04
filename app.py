@@ -16,6 +16,7 @@ import gzip  # Add gzip for compression
 from threading import Thread
 import time
 import random  # Add random for sampling comments
+import traceback  # Add traceback for error logging
 
 # Add PDF generation imports
 from reportlab.lib import colors
@@ -168,7 +169,7 @@ else:
 CORS(app, 
      resources={r"/api/*": {"origins": ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]}},
      supports_credentials=True,
-     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
+     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'X-Knack-Application-Id', 'X-Knack-REST-API-Key'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 # Add explicit CORS headers to all responses (belt and suspenders approach)
@@ -183,7 +184,7 @@ def after_request(response):
     if origin in allowed_origins:
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-Knack-Application-Id, X-Knack-REST-API-Key'
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         response.headers['Access-Control-Max-Age'] = '3600'
     
@@ -4953,6 +4954,106 @@ def get_staff_admin_by_email(email):
         app.logger.error(f"Failed to fetch staff admin: {e}")
         raise ApiError(f"Failed to fetch staff admin: {str(e)}", 500)
 
+@app.route('/api/academic-years', methods=['GET'])
+@cached(ttl_key='academic_years', ttl_seconds=3600)
+def get_academic_years():
+    """Get available academic years from Supabase data"""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'error': 'Supabase not configured'}), 503
+        
+        # Get distinct academic years from national_statistics table
+        result = supabase_client.table('national_statistics')\
+            .select('academic_year')\
+            .execute()
+        
+        # Extract unique years
+        years = set()
+        if result.data:
+            for record in result.data:
+                if record.get('academic_year'):
+                    years.add(record['academic_year'])
+        
+        # Add current year if not present
+        now = datetime.now()
+        if now.month >= 8:  # After August
+            current_year = f"{now.year}-{str(now.year + 1)[2:]}"
+        else:
+            current_year = f"{now.year - 1}-{str(now.year)[2:]}"
+        years.add(current_year)
+        
+        # Sort in descending order (newest first)
+        sorted_years = sorted(list(years), reverse=True)
+        
+        return jsonify(sorted_years)
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch academic years: {e}")
+        # Return static fallback data
+        current_year = datetime.now().year
+        return jsonify([
+            f"{current_year}-{str(current_year + 1)[2:]}",
+            f"{current_year - 1}-{str(current_year)[2:]}",
+            f"{current_year - 2}-{str(current_year - 1)[2:]}"
+        ])
+
+
+@app.route('/api/key-stages', methods=['GET'])
+@cached(ttl_key='key_stages', ttl_seconds=86400)  # Cache for 24 hours
+def get_key_stages():
+    """Get available key stages - static data"""
+    key_stages = [
+        {'value': 'ks3', 'label': 'Key Stage 3'},
+        {'value': 'ks4', 'label': 'Key Stage 4'},
+        {'value': 'ks5', 'label': 'Key Stage 5'}
+    ]
+    return jsonify(key_stages)
+
+
+@app.route('/api/year-groups', methods=['GET'])
+@cached(ttl_key='year_groups', ttl_seconds=86400)  # Cache for 24 hours
+def get_year_groups():
+    """Get available year groups - static data"""
+    year_groups = [
+        {'value': 'year7', 'label': 'Year 7'},
+        {'value': 'year8', 'label': 'Year 8'},
+        {'value': 'year9', 'label': 'Year 9'},
+        {'value': 'year10', 'label': 'Year 10'},
+        {'value': 'year11', 'label': 'Year 11'},
+        {'value': 'year12', 'label': 'Year 12'},
+        {'value': 'year13', 'label': 'Year 13'}
+    ]
+    return jsonify(year_groups)
+
+
+@app.route('/api/establishment/<establishment_id>', methods=['GET'])
+@cached(ttl_key='establishments', ttl_seconds=3600)
+def get_establishment_by_id(establishment_id):
+    """Get establishment details by ID"""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'error': 'Supabase not configured'}), 503
+        
+        # Query establishment by ID
+        result = supabase_client.table('establishments')\
+            .select('*')\
+            .eq('id', establishment_id)\
+            .execute()
+        
+        if result.data and len(result.data) > 0:
+            establishment = result.data[0]
+            return jsonify({
+                'id': establishment['id'],
+                'name': establishment['name'],
+                'trust_id': establishment.get('trust_id'),
+                'is_australian': establishment.get('is_australian', False)
+            })
+        else:
+            return jsonify({'error': 'Establishment not found'}), 404
+            
+    except Exception as e:
+        app.logger.error(f"Failed to fetch establishment {establishment_id}: {e}")
+        return jsonify({'error': f'Failed to fetch establishment: {str(e)}'}), 500
 
 
 if __name__ == '__main__':

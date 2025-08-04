@@ -8,13 +8,21 @@
 
     <!-- Content -->
     <div v-else class="qla-content">
+      <!-- Top/Bottom Questions Display -->
+      <TopBottomQuestions
+        :top-questions="topQuestions"
+        :bottom-questions="bottomQuestions"
+        :loading="loading"
+        @question-select="handleQuestionSelect"
+      />
+
       <!-- Question Selection -->
       <div class="qla-controls">
         <select 
           v-model="selectedQuestion"
           class="form-select"
         >
-          <option value="">Select a question...</option>
+          <option value="">Select a question for detailed analysis...</option>
           <option 
             v-for="question in questions" 
             :key="question.id"
@@ -47,20 +55,13 @@
           :nationalData="nationalPerformance"
         />
       </div>
-      
-      <!-- Empty State -->
-      <div v-else class="empty-state">
-        <svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-        </svg>
-        <p>Select a question to view detailed analysis</p>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
+import TopBottomQuestions from './TopBottomQuestions.vue'
 import QuestionDetail from './QuestionDetail.vue'
 import ResponseDistribution from './ResponseDistribution.vue'
 import SubThemeAnalysis from './SubThemeAnalysis.vue'
@@ -76,6 +77,39 @@ const selectedQuestion = ref('')
 
 const questions = computed(() => {
   return props.data?.qlaData?.questions || []
+})
+
+// Top and Bottom Questions
+const topQuestions = computed(() => {
+  if (!props.data?.qlaData) return []
+  
+  // Get top questions from API or calculate from available data
+  if (props.data.qlaData.topQuestions) {
+    return props.data.qlaData.topQuestions
+  }
+  
+  // Calculate from questions if not provided
+  const sortedQuestions = [...questions.value]
+    .filter(q => q.mean_score || q.score)
+    .sort((a, b) => (b.mean_score || b.score) - (a.mean_score || a.score))
+  
+  return sortedQuestions.slice(0, 5)
+})
+
+const bottomQuestions = computed(() => {
+  if (!props.data?.qlaData) return []
+  
+  // Get bottom questions from API or calculate from available data
+  if (props.data.qlaData.bottomQuestions) {
+    return props.data.qlaData.bottomQuestions
+  }
+  
+  // Calculate from questions if not provided
+  const sortedQuestions = [...questions.value]
+    .filter(q => q.mean_score || q.score)
+    .sort((a, b) => (a.mean_score || a.score) - (b.mean_score || b.score))
+  
+  return sortedQuestions.slice(0, 5)
 })
 
 const currentQuestion = computed(() => {
@@ -114,6 +148,18 @@ const nationalPerformance = computed(() => {
   if (!selectedQuestion.value) return null
   return props.data?.qlaData?.nationalPerformance[selectedQuestion.value] || null
 })
+
+// Methods
+function handleQuestionSelect(question) {
+  selectedQuestion.value = question.id
+  // Scroll to analysis section
+  nextTick(() => {
+    const analysisElement = document.querySelector('.question-analysis')
+    if (analysisElement) {
+      analysisElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  })
+}
 
 // Auto-select first question if available
 watch(() => questions.value, (newQuestions) => {
