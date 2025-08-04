@@ -5384,14 +5384,14 @@ def get_school_statistics_query():
                                     .eq('cycle', cycle)\
                                     .limit(100)\
                                     .execute()
-                            
-                            if vespa_sample.data:
-                                for score in vespa_sample.data:
-                                    for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']:
-                                        if score.get(elem) is not None:
-                                            rounded_score = round(score[elem])
-                                            if 1 <= rounded_score <= 10:
-                                                element_distributions[elem][rounded_score - 1] += 1
+                                
+                                if vespa_sample.data:
+                                    for score in vespa_sample.data:
+                                        for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']:
+                                            if score.get(elem) is not None:
+                                                rounded_score = round(score[elem])
+                                                if 1 <= rounded_score <= 10:
+                                                    element_distributions[elem][rounded_score - 1] += 1
                         
                         # Add these to national_distributions
                         for elem, dist in element_distributions.items():
@@ -5429,6 +5429,9 @@ def get_school_statistics_query():
                 response_data['nationalDistributions'] = {}
         except Exception as e:
             app.logger.error(f"Failed to fetch national distributions: {e}")
+            # Ensure nationalDistributions is set even on error
+            if 'nationalDistributions' not in response_data:
+                response_data['nationalDistributions'] = {}
         
         # Log the complete response structure
         app.logger.info(f"Final response data keys: {list(response_data.keys())}")
