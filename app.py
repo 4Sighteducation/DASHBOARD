@@ -4831,7 +4831,6 @@ def check_super_user():
 # ===== FIXED SUPABASE ENDPOINTS FOR DASHBOARD4A.JS =====
 
 @app.route('/api/statistics', methods=['GET'])
-@cached(ttl_key='school_statistics', ttl_seconds=600)
 def get_school_statistics_query():
     """Get statistics for a specific school (query parameter version)"""
     try:
@@ -4843,105 +4842,211 @@ def get_school_statistics_query():
             raise ApiError("Supabase not configured", 503)
         
         # Convert Knack ID to Supabase UUID if needed
-        # Check if it's a valid UUID format
-        import uuid
-        try:
-            uuid.UUID(establishment_id)
-            # It's already a UUID, use as is
-            establishment_uuid = establishment_id
-        except ValueError:
-            # It's a Knack ID, need to convert
-            est_result = supabase_client.table('establishments').select('id').eq('knack_id', establishment_id).execute()
-            if not est_result.data:
-                raise ApiError(f"Establishment not found with ID: {establishment_id}", 404)
-            establishment_uuid = est_result.data[0]['id']
+        establishment_uuid = convert_knack_id_to_uuid(establishment_id)
         
-        cycle = request.args.get('cycle', type=int)
+        cycle = request.args.get('cycle', type=int, default=1)
         academic_year = request.args.get('academic_year')
         
-        # Get school statistics from Supabase
-        query = supabase_client.table('school_statistics').select('*').eq('establishment_id', establishment_uuid)
+        # Get VESPA scores for all students in this establishment
+        vespa_query = """
+            SELECT 
+                COUNT(DISTINCT vs.student_id) as total_students,
+                AVG(vs.vision) as avg_vision,
+                AVG(vs.effort) as avg_effort,
+                AVG(vs.systems) as avg_systems,
+                AVG(vs.practice) as avg_practice,
+                AVG(vs.attitude) as avg_attitude,
+                AVG(vs.overall) as avg_overall,
+                vs.academic_year,
+                vs.cycle
+            FROM vespa_scores vs
+            JOIN students s ON vs.student_id = s.id
+            WHERE s.establishment_id = %s
+            AND vs.cycle = %s
+            GROUP BY vs.academic_year, vs.cycle
+        """
         
-        if cycle:
-            query = query.eq('cycle', cycle)
-        if academic_year:
-            query = query.eq('academic_year', academic_year)
+        # Execute raw SQL query
+        from psycopg2 import sql
+        result = supabase_client.postgrest.session.execute(
+            vespa_query,
+            (establishment_uuid, cycle)
+        )
         
-        result = query.execute()
+        # If that doesn't work, try the table query approach
+        # Get students for this establishment
+        students_result = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid).execute()
+        student_ids = [s['id'] for s in students_result.data]
         
-        # Transform to match dashboard4a.js expectations
-        # Transform data to match frontend expectations
-        # First, organize stats by element
-        stats_by_element = {}
-        total_count = 0
-        for stat in result.data:
-            element = stat['element'].lower()  # lowercase to match frontend
-            stats_by_element[element] = {
-                'mean': float(stat['mean']) if stat['mean'] else 0,
-                'count': stat['count'] or 0
-            }
-            total_count += stat['count'] or 0
+        if not student_ids:
+            # No students, return empty data
+            return jsonify({
+                'totalStudents': 0,
+                'averageERI': 0,
+                'eriChange': 0,
+                'completionRate': 0,
+                'averageScore': 0,
+                'scoreChange': 0,
+                'nationalERI': 0,
+                'eriTrend': 'stable',
+                'vespaScores': {
+                    'vision': 0,
+                    'effort': 0,
+                    'systems': 0,
+                    'practice': 0,
+                    'attitude': 0,
+                    'nationalVision': 0,
+                    'nationalEffort': 0,
+                    'nationalSystems': 0,
+                    'nationalPractice': 0,
+                    'nationalAttitude': 0
+                },
+                'comparison': {
+                    'school': [0, 0, 0, 0, 0],
+                    'national': [0, 0, 0, 0, 0]
+                },
+                'yearGroupPerformance': {
+                    'labels': [],
+                    'scores': []
+                },
+                'establishment_id': establishment_id,
+                'cycle': cycle,
+                'academic_year': academic_year
+            })
         
-        # Calculate average ERI score (average of all VESPA elements)
-        vespa_elements = ['vision', 'effort', 'systems', 'practice', 'attitude']
-        eri_sum = sum(stats_by_element.get(elem, {}).get('mean', 0) for elem in vespa_elements)
-        eri_count = sum(1 for elem in vespa_elements if elem in stats_by_element)
-        average_eri = (eri_sum / eri_count) if eri_count > 0 else 0
+        # Get VESPA scores for these students
+        vespa_result = supabase_client.table('vespa_scores').select('*').in_('student_id', student_ids).eq('cycle', cycle).execute()
         
-        # Get national statistics for comparison
-        nat_query = supabase_client.table('national_statistics').select('*')
-        if actual_cycle := (result.data[0]['cycle'] if result.data else cycle):
-            nat_query = nat_query.eq('cycle', actual_cycle)
-        if actual_academic_year := (result.data[0]['academic_year'] if result.data else academic_year):
-            nat_query = nat_query.eq('academic_year', actual_academic_year)
-        
-        nat_result = nat_query.execute()
-        
-        # Process national stats
-        nat_stats_by_element = {}
-        for stat in nat_result.data:
-            element = stat['element'].lower()
-            nat_stats_by_element[element] = float(stat['mean']) if stat['mean'] else 0
-        
-        # Calculate national ERI
-        nat_eri_sum = sum(nat_stats_by_element.get(elem, 0) for elem in vespa_elements)
-        nat_eri_count = sum(1 for elem in vespa_elements if elem in nat_stats_by_element)
-        national_eri = (nat_eri_sum / nat_eri_count) if nat_eri_count > 0 else 0
-        
-        # Build vespaScores object matching frontend expectations
-        vespa_scores = {}
-        comparison_school = []
-        comparison_national = []
-        
-        for elem in vespa_elements:
-            school_score = stats_by_element.get(elem, {}).get('mean', 0)
-            national_score = nat_stats_by_element.get(elem, 0)
+        if not vespa_result.data:
+            # Try to get data from school_statistics as fallback
+            stats_result = supabase_client.table('school_statistics').select('*').eq('establishment_id', establishment_uuid).eq('cycle', cycle).execute()
             
-            vespa_scores[elem] = school_score
-            vespa_scores[f'national{elem.capitalize()}'] = national_score
+            if stats_result.data:
+                # Use school_statistics data
+                stats_by_element = {}
+                for stat in stats_result.data:
+                    element = stat['element'].lower()
+                    stats_by_element[element] = float(stat['mean']) if stat['mean'] else 0
+                
+                # Get national statistics
+                nat_result = supabase_client.table('national_statistics').select('*').eq('cycle', cycle).execute()
+                nat_stats_by_element = {}
+                for stat in nat_result.data:
+                    element = stat['element'].lower()
+                    nat_stats_by_element[element] = float(stat['mean']) if stat['mean'] else 0
+                
+                # Convert 10-point scale to 5-point scale
+                vespa_elements = ['vision', 'effort', 'systems', 'practice', 'attitude']
+                vespa_scores = {}
+                comparison_school = []
+                comparison_national = []
+                
+                for elem in vespa_elements:
+                    # Convert from 10-point to 5-point scale
+                    school_score = stats_by_element.get(elem, 0) / 2.0 if stats_by_element.get(elem, 0) > 5 else stats_by_element.get(elem, 0)
+                    national_score = nat_stats_by_element.get(elem, 0) / 2.0 if nat_stats_by_element.get(elem, 0) > 5 else nat_stats_by_element.get(elem, 0)
+                    
+                    vespa_scores[elem] = round(school_score, 2)
+                    vespa_scores[f'national{elem.capitalize()}'] = round(national_score, 2)
+                    
+                    comparison_school.append(round(school_score, 2))
+                    comparison_national.append(round(national_score, 2))
+                
+                # Get total students from first stat
+                total_students = stats_result.data[0].get('count', 0) if stats_result.data else 0
+            else:
+                # No data at all
+                return jsonify({
+                    'totalStudents': 0,
+                    'averageERI': 0,
+                    'eriChange': 0,
+                    'completionRate': 0,
+                    'averageScore': 0,
+                    'scoreChange': 0,
+                    'nationalERI': 0,
+                    'eriTrend': 'stable',
+                    'vespaScores': {
+                        'vision': 0,
+                        'effort': 0,
+                        'systems': 0,
+                        'practice': 0,
+                        'attitude': 0,
+                        'nationalVision': 0,
+                        'nationalEffort': 0,
+                        'nationalSystems': 0,
+                        'nationalPractice': 0,
+                        'nationalAttitude': 0
+                    },
+                    'comparison': {
+                        'school': [0, 0, 0, 0, 0],
+                        'national': [0, 0, 0, 0, 0]
+                    },
+                    'yearGroupPerformance': {
+                        'labels': [],
+                        'scores': []
+                    },
+                    'establishment_id': establishment_id,
+                    'cycle': cycle,
+                    'academic_year': academic_year
+                })
+        else:
+            # Calculate averages from actual VESPA scores
+            total_students = len(vespa_result.data)
             
-            comparison_school.append(school_score)
-            comparison_national.append(national_score)
+            # Calculate averages
+            vespa_sums = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0}
+            vespa_counts = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0}
+            
+            for score in vespa_result.data:
+                for elem in vespa_sums:
+                    if score.get(elem) is not None:
+                        vespa_sums[elem] += score[elem]
+                        vespa_counts[elem] += 1
+            
+            # Calculate school averages (already on 5-point scale)
+            vespa_scores = {}
+            comparison_school = []
+            
+            for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']:
+                avg = vespa_sums[elem] / vespa_counts[elem] if vespa_counts[elem] > 0 else 0
+                vespa_scores[elem] = round(avg, 2)
+                comparison_school.append(round(avg, 2))
+            
+            # Get national statistics
+            nat_result = supabase_client.table('national_statistics').select('*').eq('cycle', cycle).execute()
+            nat_stats_by_element = {}
+            for stat in nat_result.data:
+                element = stat['element'].lower()
+                # Convert from 10-point to 5-point scale if needed
+                value = float(stat['mean']) if stat['mean'] else 0
+                nat_stats_by_element[element] = value / 2.0 if value > 5 else value
+            
+            # Add national scores
+            comparison_national = []
+            for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']:
+                national_score = round(nat_stats_by_element.get(elem, 0), 2)
+                vespa_scores[f'national{elem.capitalize()}'] = national_score
+                comparison_national.append(national_score)
         
-        # Calculate completion rate (percentage of students who have completed)
-        # This is a simplified calculation - you may want to adjust based on your data
-        completion_rate = min(100, (total_count / 100) * 100) if total_count > 0 else 0
+        # Calculate ERI from outcome questions (if available)
+        # For now, use average of VESPA scores
+        school_eri = sum(comparison_school) / len(comparison_school) if comparison_school else 0
+        national_eri = sum(comparison_national) / len(comparison_national) if comparison_national else 0
+        
+        # Calculate completion rate
+        completion_rate = (total_students / len(student_ids) * 100) if student_ids else 0
         
         # Determine ERI trend
-        eri_diff = average_eri - national_eri
-        eri_trend = 'up' if eri_diff > 1 else 'down' if eri_diff < -1 else 'stable'
-        
-        # Get actual values from the first result if available
-        actual_cycle = result.data[0]['cycle'] if result.data else cycle
-        actual_academic_year = result.data[0]['academic_year'] if result.data else academic_year
+        eri_diff = school_eri - national_eri
+        eri_trend = 'up' if eri_diff > 0.1 else 'down' if eri_diff < -0.1 else 'stable'
         
         return jsonify({
-            'totalStudents': total_count,
-            'averageERI': round(average_eri, 1),
-            'eriChange': round(average_eri - national_eri, 1),
+            'totalStudents': total_students,
+            'averageERI': round(school_eri, 1),
+            'eriChange': round(eri_diff, 1),
             'completionRate': round(completion_rate, 0),
-            'averageScore': round(average_eri, 1),  # Using ERI as average score
-            'scoreChange': round(average_eri - national_eri, 1),
+            'averageScore': round(school_eri, 1),
+            'scoreChange': round(eri_diff, 1),
             'nationalERI': round(national_eri, 1),
             'eriTrend': eri_trend,
             'vespaScores': vespa_scores,
@@ -4954,13 +5059,13 @@ def get_school_statistics_query():
                 'scores': []   # TODO: Add year group scores
             },
             'establishment_id': establishment_id,
-            'cycle': actual_cycle,
-            'academic_year': actual_academic_year,
-            'calculated_at': result.data[0]['calculated_at'] if result.data else None
+            'cycle': cycle,
+            'academic_year': academic_year
         })
         
     except Exception as e:
         app.logger.error(f"Failed to fetch school statistics: {e}")
+        app.logger.error(f"Traceback: {traceback.format_exc()}")
         raise ApiError(f"Failed to fetch school statistics: {str(e)}", 500)
 
 @app.route('/api/qla', methods=['GET'])
