@@ -3,6 +3,7 @@ import json
 import traceback
 import requests
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 from flask import Flask, request, jsonify, send_file, current_app
 from dotenv import load_dotenv
 from flask_cors import CORS # Import CORS
@@ -5003,12 +5004,8 @@ def get_school_statistics_query():
             if batch_result.data:
                 all_vespa_scores.extend(batch_result.data)
         
-        # Create a mock result object with all the collected data
-        class MockResult:
-            def __init__(self, data):
-                self.data = data
-        
-        vespa_result = MockResult(all_vespa_scores)
+        # Create a simple object to hold the data
+        vespa_result = SimpleNamespace(data=all_vespa_scores)
         
         # Initialize distributions variable
         vespa_distributions = None
@@ -5163,7 +5160,7 @@ def get_school_statistics_query():
                 if batch_result.data:
                     all_outcome_responses.extend(batch_result.data)
             
-            outcome_responses = MockResult(all_outcome_responses)
+            outcome_responses = SimpleNamespace(data=all_outcome_responses)
             
             if outcome_responses.data:
                 # Calculate average ERI from outcome questions (1-5 scale)
