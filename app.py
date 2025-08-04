@@ -4950,9 +4950,31 @@ def get_school_statistics_query():
         cycle = request.args.get('cycle', type=int, default=1)
         academic_year = request.args.get('academic_year')
         
-        # Get students for this establishment
-        students_result = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid).execute()
-        student_ids = [s['id'] for s in students_result.data]
+        # Get ALL students for this establishment (paginate to avoid 1000 limit)
+        all_students = []
+        offset = 0
+        limit = 1000
+        
+        while True:
+            students_batch = supabase_client.table('students')\
+                .select('id')\
+                .eq('establishment_id', establishment_uuid)\
+                .range(offset, offset + limit - 1)\
+                .execute()
+            
+            if not students_batch.data:
+                break
+                
+            all_students.extend(students_batch.data)
+            
+            # If we got less than the limit, we've reached the end
+            if len(students_batch.data) < limit:
+                break
+                
+            offset += limit
+        
+        student_ids = [s['id'] for s in all_students]
+        app.logger.info(f"Found {len(student_ids)} students for establishment {establishment_id}")
         
         if not student_ids:
             # No students, return empty data
