@@ -4959,8 +4959,12 @@ def get_school_statistics_query():
             students_batch = supabase_client.table('students')\
                 .select('id')\
                 .eq('establishment_id', establishment_uuid)\
-                .range(offset, offset + limit - 1)\
+                .limit(limit)\
+                .offset(offset)\
                 .execute()
+            
+            batch_count = len(students_batch.data) if students_batch.data else 0
+            app.logger.info(f"Student fetch batch: offset={offset}, got {batch_count} students")
             
             if not students_batch.data:
                 break
@@ -4968,7 +4972,7 @@ def get_school_statistics_query():
             all_students.extend(students_batch.data)
             
             # If we got less than the limit, we've reached the end
-            if len(students_batch.data) < limit:
+            if batch_count < limit:
                 break
                 
             offset += limit
@@ -5012,25 +5016,34 @@ def get_school_statistics_query():
                 'academic_year': academic_year
             })
         
-        # Get VESPA scores for these students in batches to avoid URL length limits
-        BATCH_SIZE = 50  # Process 50 students at a time to stay well under URL limits
-        all_vespa_scores = []
-        
-        for i in range(0, len(student_ids), BATCH_SIZE):
-            batch_ids = student_ids[i:i + BATCH_SIZE]
-            batch_result = supabase_client.table('vespa_scores')\
-                .select('*')\
-                .in_('student_id', batch_ids)\
-                .eq('cycle', cycle)\
-                .execute()
-            if batch_result.data:
-                all_vespa_scores.extend(batch_result.data)
+                    # Get VESPA scores for these students in batches to avoid URL length limits
+            BATCH_SIZE = 50  # Process 50 students at a time to stay well under URL limits
+            all_vespa_scores = []
+            
+            # Also filter by academic_year if provided
+            for i in range(0, len(student_ids), BATCH_SIZE):
+                batch_ids = student_ids[i:i + BATCH_SIZE]
+                vespa_query = supabase_client.table('vespa_scores')\
+                    .select('*')\
+                    .in_('student_id', batch_ids)\
+                    .eq('cycle', cycle)
+                
+                if academic_year:
+                    vespa_query = vespa_query.eq('academic_year', academic_year)
+                    
+                batch_result = vespa_query.execute()
+                if batch_result.data:
+                    all_vespa_scores.extend(batch_result.data)
+            
+            app.logger.info(f"VESPA scores: Found {len(all_vespa_scores)} scores for {len(student_ids)} students")
         
         # Create a simple object to hold the data
         vespa_result = SimpleNamespace(data=all_vespa_scores)
         
         # Initialize distributions variable
         vespa_distributions = None
+        nat_stats_by_element = {}
+        comparison_national = []
         
         if not vespa_result.data:
             # Try to get data from school_statistics as fallback
@@ -5106,9 +5119,11 @@ def get_school_statistics_query():
                 })
         else:
             # Calculate averages from actual VESPA scores
-            # Use the total count of all students, not just those with VESPA scores
-            total_students = len(student_ids)
+            # Use the count of students with VESPA scores for display
             students_with_vespa_scores = len(vespa_result.data)
+            total_students = len(student_ids)
+            
+            app.logger.info(f"Students analysis - Total in establishment: {total_students}, With VESPA scores: {students_with_vespa_scores}")
             
             # Calculate averages and distributions
             vespa_sums = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0, 'overall': 0}
@@ -5150,12 +5165,15 @@ def get_school_statistics_query():
                 value = float(stat['mean']) if stat['mean'] else 0
                 nat_stats_by_element[element] = value
             
-            # Add national scores
+            # Add national scores and log them
             comparison_national = []
             for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']:
                 national_score = round(nat_stats_by_element.get(elem, 0), 2)
                 vespa_scores[f'national{elem.capitalize()}'] = national_score
                 comparison_national.append(national_score)
+            
+            app.logger.info(f"National scores for comparison: {comparison_national}")
+            app.logger.info(f"National stats by element: {nat_stats_by_element}")
             
             # Add national overall
             vespa_scores['nationalOverall'] = round(nat_stats_by_element.get('overall', 0), 2)
@@ -5220,7 +5238,7 @@ def get_school_statistics_query():
         
         # Build response with distributions
         response_data = {
-            'totalStudents': total_students,
+            'totalStudents': students_with_vespa_scores,  # Show students with VESPA scores
             'averageERI': round(school_eri, 1),
             'eriChange': round(eri_diff, 1),
             'completionRate': round(completion_rate, 0),
@@ -5249,11 +5267,16 @@ def get_school_statistics_query():
         
         # Get national distributions
         try:
-            national_dist_result = supabase_client.table('national_statistics')\
-                .select('element,distribution')\
-                .eq('cycle', cycle)\
-                .eq('academic_year', academic_year)\
-                .execute()
+            # Build query for national distributions
+            query = supabase_client.table('national_statistics')\
+                .select('element,distribution,mean')\
+                .eq('cycle', cycle)
+            
+            # Only filter by academic_year if provided
+            if academic_year:
+                query = query.eq('academic_year', academic_year)
+            
+            national_dist_result = query.execute()
             
             if national_dist_result.data:
                 national_distributions = {}
@@ -5268,10 +5291,37 @@ def get_school_statistics_query():
                         else:
                             app.logger.warning(f"Invalid distribution data for {element_key}: {dist_data}")
                 
+                # Also extract the mean values for the national averages if not already set
+                if not comparison_national:  # Only if we haven't set national data yet
+                    for stat in national_dist_result.data:
+                        if stat['element'] and stat.get('mean') is not None:
+                            element_key = stat['element'].lower()
+                            # Store the mean for use in comparison
+                            if element_key in ['vision', 'effort', 'systems', 'practice', 'attitude']:
+                                if element_key not in nat_stats_by_element:
+                                    nat_stats_by_element[element_key] = float(stat['mean'])
+                    
+                    # Recalculate comparison_national if we got new data
+                    if nat_stats_by_element:
+                        comparison_national = []
+                        for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']:
+                            national_score = round(nat_stats_by_element.get(elem, 0), 2)
+                            comparison_national.append(national_score)
+                        response_data['comparison']['national'] = comparison_national
+                
                 response_data['nationalDistributions'] = national_distributions
                 app.logger.info(f"Returning national distributions for {len(national_distributions)} elements: {list(national_distributions.keys())}")
+                app.logger.info(f"Sample national distribution: {list(national_distributions.values())[0] if national_distributions else 'None'}")
+            else:
+                app.logger.warning(f"No national distribution data found for cycle {cycle}, academic_year {academic_year}")
         except Exception as e:
             app.logger.error(f"Failed to fetch national distributions: {e}")
+        
+        # Log the complete response structure
+        app.logger.info(f"Final response data keys: {list(response_data.keys())}")
+        app.logger.info(f"Response vespaScores: {response_data.get('vespaScores', {})}")
+        app.logger.info(f"Response comparison: {response_data.get('comparison', {})}")
+        app.logger.info(f"Response has nationalDistributions: {'nationalDistributions' in response_data}")
         
         return jsonify(response_data)
         
