@@ -5218,30 +5218,30 @@ def get_school_statistics_query():
             'academic_year': academic_year
         }
         
-                    # Add distributions if we calculated them from actual vespa data
-            if vespa_distributions is not None:
-                response_data['distributions'] = vespa_distributions
-                app.logger.info(f"Returning distributions for {len(vespa_distributions)} elements")
+        # Add distributions if we calculated them from actual vespa data
+        if vespa_distributions is not None:
+            response_data['distributions'] = vespa_distributions
+            app.logger.info(f"Returning distributions for {len(vespa_distributions)} elements")
+        
+        # Get national distributions
+        try:
+            national_dist_result = supabase_client.table('national_statistics')\
+                .select('element,distribution')\
+                .eq('cycle', cycle)\
+                .eq('academic_year', academic_year)\
+                .execute()
             
-            # Get national distributions
-            try:
-                national_dist_result = supabase_client.table('national_statistics')\
-                    .select('element,distribution')\
-                    .eq('cycle', cycle)\
-                    .eq('academic_year', academic_year)\
-                    .execute()
+            if national_dist_result.data:
+                national_distributions = {}
+                for stat in national_dist_result.data:
+                    if stat['element'] and stat['distribution']:
+                        # Distribution is stored as JSONB, should be an array
+                        national_distributions[stat['element']] = stat['distribution']
                 
-                if national_dist_result.data:
-                    national_distributions = {}
-                    for stat in national_dist_result.data:
-                        if stat['element'] and stat['distribution']:
-                            # Distribution is stored as JSONB, should be an array
-                            national_distributions[stat['element']] = stat['distribution']
-                    
-                    response_data['nationalDistributions'] = national_distributions
-                    app.logger.info(f"Returning national distributions for {len(national_distributions)} elements")
-            except Exception as e:
-                app.logger.error(f"Failed to fetch national distributions: {e}")
+                response_data['nationalDistributions'] = national_distributions
+                app.logger.info(f"Returning national distributions for {len(national_distributions)} elements")
+        except Exception as e:
+            app.logger.error(f"Failed to fetch national distributions: {e}")
         
         return jsonify(response_data)
         
