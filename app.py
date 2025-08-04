@@ -4745,14 +4745,10 @@ def get_school_statistics_query():
                 'distribution': stat.get('distribution', {})
             }
         
-        # Get actual values from the first record (they should all be the same)
-        actual_cycle = result.data[0]['cycle'] if result.data else None
-        actual_academic_year = result.data[0]['academic_year'] if result.data else None
-        
         return jsonify({
             'establishment_id': establishment_id,
-            'cycle': actual_cycle,
-            'academic_year': actual_academic_year,
+            'cycle': cycle,
+            'academic_year': academic_year,
             'statistics': stats_by_element,
             'calculated_at': result.data[0]['calculated_at'] if result.data else None
         })
