@@ -5129,10 +5129,10 @@ def get_school_statistics_query():
             vespa_sums = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0, 'overall': 0}
             vespa_counts = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0, 'overall': 0}
             
-            # Initialize distributions (0-10 scale)
+            # Initialize distributions (1-10 scale)
             vespa_distributions = {}
             for elem in ['vision', 'effort', 'systems', 'practice', 'attitude', 'overall']:
-                vespa_distributions[elem] = [0] * 11  # 11 slots for scores 0-10
+                vespa_distributions[elem] = [0] * 10  # 10 slots for scores 1-10
             
             for score in vespa_result.data:
                 for elem in vespa_sums:
@@ -5141,8 +5141,10 @@ def get_school_statistics_query():
                         vespa_sums[elem] += score_value
                         vespa_counts[elem] += 1
                         # Add to distribution (round to nearest integer for histogram)
-                        if 0 <= score_value <= 10:
-                            vespa_distributions[elem][round(score_value)] += 1
+                        # VESPA scores are 1-10, so subtract 1 for array index
+                        rounded_score = round(score_value)
+                        if 1 <= rounded_score <= 10:
+                            vespa_distributions[elem][rounded_score - 1] += 1
             
             # Calculate school averages (already on correct scale)
             vespa_scores = {}
@@ -5158,12 +5160,18 @@ def get_school_statistics_query():
             vespa_scores['overall'] = round(overall_avg, 2)
             
             # Get national statistics
-            nat_result = supabase_client.table('national_statistics').select('*').eq('cycle', cycle).execute()
+            nat_query = supabase_client.table('national_statistics').select('*').eq('cycle', cycle)
+            if academic_year:
+                nat_query = nat_query.eq('academic_year', academic_year)
+            nat_result = nat_query.execute()
+            
+            app.logger.info(f"National statistics query returned {len(nat_result.data)} records")
             nat_stats_by_element = {}
             for stat in nat_result.data:
                 element = stat['element'].lower()
                 value = float(stat['mean']) if stat['mean'] else 0
                 nat_stats_by_element[element] = value
+                app.logger.info(f"National stat: {element} = {value}")
             
             # Add national scores and log them
             comparison_national = []
@@ -5284,30 +5292,33 @@ def get_school_statistics_query():
                     if stat['element'] and stat['distribution']:
                         # Distribution is stored as JSONB, should be an array
                         element_key = stat['element'].lower()
-                        # Ensure the distribution is an array of 11 values for 0-10 scale
+                        # Ensure the distribution is an array of 10 values for 1-10 scale
                         dist_data = stat['distribution']
-                        if isinstance(dist_data, list) and len(dist_data) == 11:
+                        if isinstance(dist_data, list) and len(dist_data) == 10:
                             national_distributions[element_key] = dist_data
                         else:
                             app.logger.warning(f"Invalid distribution data for {element_key}: {dist_data}")
                 
-                # Also extract the mean values for the national averages if not already set
-                if not comparison_national:  # Only if we haven't set national data yet
+                                # Also extract the mean values for the national averages if not already set
+                if not comparison_national or all(v == 0 for v in comparison_national):  # If we haven't set national data yet or it's all zeros
+                    app.logger.info(f"Extracting means from distribution query as fallback")
                     for stat in national_dist_result.data:
                         if stat['element'] and stat.get('mean') is not None:
                             element_key = stat['element'].lower()
                             # Store the mean for use in comparison
                             if element_key in ['vision', 'effort', 'systems', 'practice', 'attitude']:
-                                if element_key not in nat_stats_by_element:
+                                if element_key not in nat_stats_by_element or nat_stats_by_element[element_key] == 0:
                                     nat_stats_by_element[element_key] = float(stat['mean'])
+                                    app.logger.info(f"Setting national {element_key} = {stat['mean']} from distribution query")
                     
                     # Recalculate comparison_national if we got new data
-                    if nat_stats_by_element:
+                    if nat_stats_by_element and any(v > 0 for v in nat_stats_by_element.values()):
                         comparison_national = []
                         for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']:
                             national_score = round(nat_stats_by_element.get(elem, 0), 2)
                             comparison_national.append(national_score)
                         response_data['comparison']['national'] = comparison_national
+                        app.logger.info(f"Updated comparison_national to: {comparison_national}")
                 
                 response_data['nationalDistributions'] = national_distributions
                 app.logger.info(f"Returning national distributions for {len(national_distributions)} elements: {list(national_distributions.keys())}")
