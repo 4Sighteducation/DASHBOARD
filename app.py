@@ -4725,21 +4725,51 @@ def get_trust_statistics(trust_id):
         raise ApiError(f"Failed to fetch trust statistics: {str(e)}", 500)
 
 @app.route('/api/academic-years', methods=['GET'])
-@cached(ttl_key='academic_years', ttl_seconds=3600)
 def get_academic_years():
-    """Get distinct academic years from national_statistics"""
+    """Get distinct academic years, optionally filtered by establishment"""
     try:
         if not SUPABASE_ENABLED:
             raise ApiError("Supabase not configured", 503)
         
-        # Get distinct academic years from national_statistics
+        establishment_id = request.args.get('establishment_id')
+        
+        if establishment_id:
+            # Convert Knack ID to UUID if needed
+            establishment_uuid = convert_knack_id_to_uuid(establishment_id)
+            
+            # Get students for this establishment
+            students_result = supabase_client.table('students')\
+                .select('id')\
+                .eq('establishment_id', establishment_uuid)\
+                .execute()
+            
+            if students_result.data:
+                student_ids = [s['id'] for s in students_result.data]
+                
+                # Get distinct academic years from vespa_scores for these students
+                result = supabase_client.table('vespa_scores')\
+                    .select('academic_year')\
+                    .in_('student_id', student_ids)\
+                    .execute()
+                
+                # Extract unique years
+                years = list(set([r['academic_year'] for r in result.data if r.get('academic_year')]))
+                if years:
+                    years.sort(reverse=True)  # Most recent first
+                    return jsonify(years)
+        
+        # Fall back to national statistics
         result = supabase_client.table('national_statistics')\
             .select('academic_year')\
             .execute()
         
         # Extract unique years
-        years = list(set([r['academic_year'] for r in result.data if r['academic_year']]))
+        years = list(set([r['academic_year'] for r in result.data if r.get('academic_year')]))
         years.sort(reverse=True)  # Most recent first
+        
+        # Add "All Years" option at the beginning
+        if years:
+            years.insert(0, 'all')
         
         return jsonify(years)
         
@@ -4749,13 +4779,76 @@ def get_academic_years():
 
 @app.route('/api/key-stages', methods=['GET'])
 def get_key_stages():
-    """Return available key stages"""
-    return jsonify(['KS3', 'KS4', 'KS5'])
+    """Return available key stages, optionally filtered by establishment"""
+    try:
+        establishment_id = request.args.get('establishment_id')
+        
+        if establishment_id and SUPABASE_ENABLED:
+            # Convert Knack ID to UUID if needed
+            establishment_uuid = convert_knack_id_to_uuid(establishment_id)
+            
+            # Get distinct year groups for this establishment
+            result = supabase_client.table('students')\
+                .select('year_group')\
+                .eq('establishment_id', establishment_uuid)\
+                .execute()
+            
+            if result.data:
+                # Map year groups to key stages
+                key_stages = set()
+                for r in result.data:
+                    year_group = r.get('year_group')
+                    if year_group:
+                        if year_group in ['7', '8', '9']:
+                            key_stages.add('KS3')
+                        elif year_group in ['10', '11']:
+                            key_stages.add('KS4')
+                        elif year_group in ['12', '13']:
+                            key_stages.add('KS5')
+                
+                # Sort key stages
+                sorted_stages = sorted(list(key_stages))
+                if sorted_stages:
+                    return jsonify(sorted_stages)
+        
+        # Default key stages if no establishment specified or no data
+        return jsonify(['KS3', 'KS4', 'KS5'])
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch key stages: {e}")
+        # Return default on error
+        return jsonify(['KS3', 'KS4', 'KS5'])
 
 @app.route('/api/year-groups', methods=['GET'])
 def get_year_groups():
-    """Return available year groups"""
-    return jsonify(['7', '8', '9', '10', '11', '12', '13'])
+    """Return available year groups, optionally filtered by establishment"""
+    try:
+        establishment_id = request.args.get('establishment_id')
+        
+        if establishment_id and SUPABASE_ENABLED:
+            # Convert Knack ID to UUID if needed
+            establishment_uuid = convert_knack_id_to_uuid(establishment_id)
+            
+            # Get distinct year groups for this establishment
+            result = supabase_client.table('students')\
+                .select('year_group')\
+                .eq('establishment_id', establishment_uuid)\
+                .execute()
+            
+            if result.data:
+                # Extract unique year groups and sort them
+                year_groups = list(set(r['year_group'] for r in result.data if r.get('year_group')))
+                # Sort numerically
+                year_groups.sort(key=lambda x: int(x) if x.isdigit() else 99)
+                return jsonify(year_groups)
+        
+        # Default year groups if no establishment specified or no data
+        return jsonify(['7', '8', '9', '10', '11', '12', '13'])
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch year groups: {e}")
+        # Return default on error
+        return jsonify(['7', '8', '9', '10', '11', '12', '13'])
 
 @app.route('/api/establishment/<establishment_id>', methods=['GET'])
 @cached(ttl_key='establishment', ttl_seconds=3600)
@@ -4890,6 +4983,9 @@ def get_school_statistics_query():
         # Get VESPA scores for these students
         vespa_result = supabase_client.table('vespa_scores').select('*').in_('student_id', student_ids).eq('cycle', cycle).execute()
         
+        # Initialize distributions variable
+        vespa_distributions = None
+        
         if not vespa_result.data:
             # Try to get data from school_statistics as fallback
             stats_result = supabase_client.table('school_statistics').select('*').eq('establishment_id', establishment_uuid).eq('cycle', cycle).execute()
@@ -5016,10 +5112,40 @@ def get_school_statistics_query():
             # Add national overall
             vespa_scores['nationalOverall'] = round(nat_stats_by_element.get('overall', 0), 2)
         
-        # Calculate ERI from outcome questions (if available)
-        # For now, use average of VESPA scores
-        school_eri = sum(comparison_school) / len(comparison_school) if comparison_school else 0
-        national_eri = sum(comparison_national) / len(comparison_national) if comparison_national else 0
+        # Calculate ERI from outcome questions
+        eri_calculated = False
+        school_eri = 0
+        national_eri = 0
+        
+        if student_ids:
+            # Get outcome question responses for these students
+            outcome_questions = ['outcome_q_confident', 'outcome_q_equipped', 'outcome_q_support']
+            
+            # Get question responses for outcome questions
+            outcome_responses = supabase_client.table('question_responses').select('*').in_('student_id', student_ids).in_('question_id', outcome_questions).eq('cycle', cycle).execute()
+            
+            if outcome_responses.data:
+                # Calculate average ERI from outcome questions (1-5 scale)
+                eri_sum = 0
+                eri_count = 0
+                
+                for response in outcome_responses.data:
+                    if response.get('response_value') is not None:
+                        eri_sum += int(response['response_value'])
+                        eri_count += 1
+                
+                if eri_count > 0:
+                    school_eri = eri_sum / eri_count
+                    eri_calculated = True
+                    
+                    # Get national ERI (you may want to pre-calculate this)
+                    # For now, use a placeholder
+                    national_eri = 3.5  # Typical middle value for 1-5 scale
+        
+        # Fallback to VESPA average if no outcome data
+        if not eri_calculated:
+            school_eri = sum(comparison_school) / len(comparison_school) if comparison_school else 0
+            national_eri = sum(comparison_national) / len(comparison_national) if comparison_national else 0
         
         # Calculate completion rate
         completion_rate = (total_students / len(student_ids) * 100) if student_ids else 0
@@ -5034,7 +5160,7 @@ def get_school_statistics_query():
             'averageERI': round(school_eri, 1),
             'eriChange': round(eri_diff, 1),
             'completionRate': round(completion_rate, 0),
-            'averageScore': round(school_eri, 1),
+            'averageScore': round(sum(comparison_school) / len(comparison_school), 1) if comparison_school else 0,
             'scoreChange': round(eri_diff, 1),
             'nationalERI': round(national_eri, 1),
             'eriTrend': eri_trend,
@@ -5052,9 +5178,10 @@ def get_school_statistics_query():
             'academic_year': academic_year
         }
         
-        # Add distributions if we have vespa data
-        if 'vespa_distributions' in locals():
+        # Add distributions if we calculated them from actual vespa data
+        if vespa_distributions is not None:
             response_data['distributions'] = vespa_distributions
+            app.logger.info(f"Returning distributions for {len(vespa_distributions)} elements")
         
         return jsonify(response_data)
         
