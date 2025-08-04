@@ -5106,7 +5106,9 @@ def get_school_statistics_query():
                 })
         else:
             # Calculate averages from actual VESPA scores
-            total_students = len(vespa_result.data)
+            # Use the total count of all students, not just those with VESPA scores
+            total_students = len(student_ids)
+            students_with_vespa_scores = len(vespa_result.data)
             
             # Calculate averages and distributions
             vespa_sums = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0, 'overall': 0}
@@ -5208,9 +5210,9 @@ def get_school_statistics_query():
             national_eri = sum(comparison_national) / len(comparison_national) if comparison_national else 0
         
         # Calculate completion rate
-        # total_students is the count of students with vespa scores for this cycle
-        # student_ids is all students in the establishment
-        completion_rate = (total_students / len(student_ids) * 100) if len(student_ids) > 0 else 0
+        # students_with_vespa_scores is the count of students with vespa scores for this cycle
+        # total_students is all students in the establishment
+        completion_rate = (students_with_vespa_scores / total_students * 100) if total_students > 0 else 0
         
         # Determine ERI trend
         eri_diff = school_eri - national_eri
@@ -5258,10 +5260,16 @@ def get_school_statistics_query():
                 for stat in national_dist_result.data:
                     if stat['element'] and stat['distribution']:
                         # Distribution is stored as JSONB, should be an array
-                        national_distributions[stat['element']] = stat['distribution']
+                        element_key = stat['element'].lower()
+                        # Ensure the distribution is an array of 11 values for 0-10 scale
+                        dist_data = stat['distribution']
+                        if isinstance(dist_data, list) and len(dist_data) == 11:
+                            national_distributions[element_key] = dist_data
+                        else:
+                            app.logger.warning(f"Invalid distribution data for {element_key}: {dist_data}")
                 
                 response_data['nationalDistributions'] = national_distributions
-                app.logger.info(f"Returning national distributions for {len(national_distributions)} elements")
+                app.logger.info(f"Returning national distributions for {len(national_distributions)} elements: {list(national_distributions.keys())}")
         except Exception as e:
             app.logger.error(f"Failed to fetch national distributions: {e}")
         
