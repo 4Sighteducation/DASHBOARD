@@ -4847,33 +4847,6 @@ def get_school_statistics_query():
         cycle = request.args.get('cycle', type=int, default=1)
         academic_year = request.args.get('academic_year')
         
-        # Get VESPA scores for all students in this establishment
-        vespa_query = """
-            SELECT 
-                COUNT(DISTINCT vs.student_id) as total_students,
-                AVG(vs.vision) as avg_vision,
-                AVG(vs.effort) as avg_effort,
-                AVG(vs.systems) as avg_systems,
-                AVG(vs.practice) as avg_practice,
-                AVG(vs.attitude) as avg_attitude,
-                AVG(vs.overall) as avg_overall,
-                vs.academic_year,
-                vs.cycle
-            FROM vespa_scores vs
-            JOIN students s ON vs.student_id = s.id
-            WHERE s.establishment_id = %s
-            AND vs.cycle = %s
-            GROUP BY vs.academic_year, vs.cycle
-        """
-        
-        # Execute raw SQL query
-        from psycopg2 import sql
-        result = supabase_client.postgrest.session.execute(
-            vespa_query,
-            (establishment_uuid, cycle)
-        )
-        
-        # If that doesn't work, try the table query approach
         # Get students for this establishment
         students_result = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid).execute()
         student_ids = [s['id'] for s in students_result.data]
@@ -4993,17 +4966,26 @@ def get_school_statistics_query():
             # Calculate averages from actual VESPA scores
             total_students = len(vespa_result.data)
             
-            # Calculate averages
-            vespa_sums = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0}
-            vespa_counts = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0}
+            # Calculate averages and distributions
+            vespa_sums = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0, 'overall': 0}
+            vespa_counts = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0, 'overall': 0}
+            
+            # Initialize distributions (0-10 scale)
+            vespa_distributions = {}
+            for elem in ['vision', 'effort', 'systems', 'practice', 'attitude', 'overall']:
+                vespa_distributions[elem] = [0] * 11  # 11 slots for scores 0-10
             
             for score in vespa_result.data:
                 for elem in vespa_sums:
                     if score.get(elem) is not None:
-                        vespa_sums[elem] += score[elem]
+                        score_value = score[elem]
+                        vespa_sums[elem] += score_value
                         vespa_counts[elem] += 1
+                        # Add to distribution (round to nearest integer for histogram)
+                        if 0 <= score_value <= 10:
+                            vespa_distributions[elem][round(score_value)] += 1
             
-            # Calculate school averages (already on 5-point scale)
+            # Calculate school averages (already on correct scale)
             vespa_scores = {}
             comparison_school = []
             
@@ -5012,14 +4994,17 @@ def get_school_statistics_query():
                 vespa_scores[elem] = round(avg, 2)
                 comparison_school.append(round(avg, 2))
             
+            # Add overall average
+            overall_avg = vespa_sums['overall'] / vespa_counts['overall'] if vespa_counts['overall'] > 0 else 0
+            vespa_scores['overall'] = round(overall_avg, 2)
+            
             # Get national statistics
             nat_result = supabase_client.table('national_statistics').select('*').eq('cycle', cycle).execute()
             nat_stats_by_element = {}
             for stat in nat_result.data:
                 element = stat['element'].lower()
-                # Convert from 10-point to 5-point scale if needed
                 value = float(stat['mean']) if stat['mean'] else 0
-                nat_stats_by_element[element] = value / 2.0 if value > 5 else value
+                nat_stats_by_element[element] = value
             
             # Add national scores
             comparison_national = []
@@ -5027,6 +5012,9 @@ def get_school_statistics_query():
                 national_score = round(nat_stats_by_element.get(elem, 0), 2)
                 vespa_scores[f'national{elem.capitalize()}'] = national_score
                 comparison_national.append(national_score)
+            
+            # Add national overall
+            vespa_scores['nationalOverall'] = round(nat_stats_by_element.get('overall', 0), 2)
         
         # Calculate ERI from outcome questions (if available)
         # For now, use average of VESPA scores
@@ -5040,7 +5028,8 @@ def get_school_statistics_query():
         eri_diff = school_eri - national_eri
         eri_trend = 'up' if eri_diff > 0.1 else 'down' if eri_diff < -0.1 else 'stable'
         
-        return jsonify({
+        # Build response with distributions
+        response_data = {
             'totalStudents': total_students,
             'averageERI': round(school_eri, 1),
             'eriChange': round(eri_diff, 1),
@@ -5061,7 +5050,13 @@ def get_school_statistics_query():
             'establishment_id': establishment_id,
             'cycle': cycle,
             'academic_year': academic_year
-        })
+        }
+        
+        # Add distributions if we have vespa data
+        if 'vespa_distributions' in locals():
+            response_data['distributions'] = vespa_distributions
+        
+        return jsonify(response_data)
         
     except Exception as e:
         app.logger.error(f"Failed to fetch school statistics: {e}")
