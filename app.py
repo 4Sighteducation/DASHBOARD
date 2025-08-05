@@ -5808,62 +5808,74 @@ def get_qla_data_query():
             'growth_mindset': {
                 'title': 'Growth Mindset',
                 'question_ids': ['q5', 'q26'],
-                'icon': '🌱'
+                'icon': '🌱',
+                'question': 'What percentage believe intelligence can be developed?'
             },
             'academic_momentum': {
                 'title': 'Academic Momentum',
                 'question_ids': ['q14', 'q16', 'q17', 'q9'],
-                'icon': '🚀'
+                'icon': '🚀',
+                'question': 'What percentage show strong drive and engagement?'
             },
             'study_effectiveness': {
                 'title': 'Study Effectiveness',
                 'question_ids': ['q7', 'q12', 'q15'],
-                'icon': '📚'
+                'icon': '📚',
+                'question': 'What percentage use proven study techniques?'
             },
             'exam_confidence': {
                 'title': 'Exam Confidence',
                 'question_ids': ['outcome_q_confident'],
-                'icon': '🎯'
+                'icon': '🎯',
+                'question': 'What percentage feel confident about exams?'
             },
             'organization_skills': {
                 'title': 'Organization Skills',
                 'question_ids': ['q2', 'q22', 'q11'],
-                'icon': '📋'
+                'icon': '📋',
+                'question': 'What percentage are well-organized?'
             },
             'resilience_factor': {
                 'title': 'Resilience',
                 'question_ids': ['q13', 'q8', 'q27'],
-                'icon': '💪'
+                'icon': '💪',
+                'question': 'What percentage show academic resilience?'
             },
             'stress_management': {
                 'title': 'Stress Management',
                 'question_ids': ['q20', 'q28'],
-                'icon': '😌'
+                'icon': '😌',
+                'question': 'What percentage handle pressure well?'
             },
             'active_learning': {
                 'title': 'Active Learning',
                 'question_ids': ['q7', 'q23', 'q19'],
-                'icon': '🎓'
+                'icon': '🎓',
+                'question': 'What percentage engage in active learning?'
             },
             'support_readiness': {
                 'title': 'Support Readiness',
                 'question_ids': ['outcome_q_support'],
-                'icon': '🤝'
+                'icon': '🤝',
+                'question': 'What percentage feel supported this year?'
             },
             'time_management': {
                 'title': 'Time Management',
                 'question_ids': ['q2', 'q4', 'q11'],
-                'icon': '⏰'
+                'icon': '⏰',
+                'question': 'What percentage manage time effectively?'
             },
             'academic_confidence': {
                 'title': 'Academic Confidence',
                 'question_ids': ['q10', 'q8'],
-                'icon': '⭐'
+                'icon': '⭐',
+                'question': 'What percentage are confident in their ability?'
             },
             'revision_readiness': {
                 'title': 'Revision Ready',
                 'question_ids': ['outcome_q_equipped'],
-                'icon': '📖'
+                'icon': '📖',
+                'question': 'What percentage feel equipped for revision challenges?'
             }
         }
         
@@ -6021,7 +6033,9 @@ def get_qla_data_query():
                 'score': float(stat['mean']) if stat.get('mean') else 0,
                 'n': stat.get('count', 0),
                 'std_dev': float(stat['std_dev']) if stat.get('std_dev') else 0,
-                'distribution': stat.get('distribution', [])
+                'distribution': stat.get('distribution', []),
+                'count': stat.get('count', 0),
+                'mode': stat.get('mode', 0)
             })
         
         bottom_questions = []
@@ -6034,7 +6048,9 @@ def get_qla_data_query():
                 'score': float(stat['mean']) if stat.get('mean') else 0,
                 'n': stat.get('count', 0),
                 'std_dev': float(stat['std_dev']) if stat.get('std_dev') else 0,
-                'distribution': stat.get('distribution', [])
+                'distribution': stat.get('distribution', []),
+                'count': stat.get('count', 0),
+                'mode': stat.get('mode', 0)
             })
         
         # Calculate insights
@@ -6063,7 +6079,8 @@ def get_qla_data_query():
                 'percentageAgreement': round(percentage_agreement, 1),
                 'questionIds': config['question_ids'],
                 'icon': config['icon'],
-                'totalResponses': total_responses
+                'totalResponses': total_responses,
+                'question': config.get('question', f'What percentage show {config["title"].lower()}?')
             })
         
         # Sort insights by percentage agreement (high to low)
