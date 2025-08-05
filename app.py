@@ -5283,7 +5283,10 @@ def get_school_statistics_query():
                     stats_by_element[element] = float(stat['mean']) if stat['mean'] else 0
                 
                 # Get national statistics
-                nat_result = supabase_client.table('national_statistics').select('*').eq('cycle', cycle).execute()
+                nat_query = supabase_client.table('national_statistics').select('*').eq('cycle', cycle)
+                if academic_year:
+                    nat_query = nat_query.eq('academic_year', academic_year)
+                nat_result = nat_query.execute()
                 for stat in nat_result.data:
                     element = stat['element'].lower()
                     nat_stats_by_element[element] = float(stat['mean']) if stat['mean'] else 0
@@ -5535,6 +5538,11 @@ def get_school_statistics_query():
         eri_trend = 'up' if eri_diff > 0.1 else 'down' if eri_diff < -0.1 else 'stable'
         
         # Build response with distributions
+        app.logger.info(f"Building response - Cycle: {cycle}, Academic Year: {academic_year}")
+        app.logger.info(f"Total Students: {total_students}, Students with VESPA: {students_with_vespa_scores}")
+        app.logger.info(f"National ERI: {national_eri}, School ERI: {school_eri}")
+        app.logger.info(f"Has other filters: {has_other_filters}, Total enrolled: {total_enrolled_students}")
+        
         response_data = {
             'totalStudents': total_students,  # Total enrolled (if only cycle) or filtered total (if other filters)
             'totalResponses': students_with_vespa_scores,  # Students who completed VESPA in this cycle
