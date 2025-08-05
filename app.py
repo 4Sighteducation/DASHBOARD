@@ -6059,8 +6059,9 @@ def get_qla_data_query():
         
         for insight_id, config in insight_configs.items():
             # Calculate percentage agreement (scores 4-5)
-            total_responses = 0
+            total_responses_sum = 0
             agreement_count = 0
+            student_count = 0
             
             for q_id in config['question_ids']:
                 if q_id in question_stats_by_id:
@@ -6069,9 +6070,12 @@ def get_qla_data_query():
                     if distribution and len(distribution) >= 5:
                         # Sum responses for scores 4 and 5
                         agreement_count += distribution[3] + distribution[4]  # indices 3,4 for scores 4,5
-                        total_responses += sum(distribution)
+                        total_responses_sum += sum(distribution)
+                        # Use the count from the first question as the student count
+                        if student_count == 0:
+                            student_count = stat.get('count', 0)
             
-            percentage_agreement = (agreement_count / total_responses * 100) if total_responses > 0 else 0
+            percentage_agreement = (agreement_count / total_responses_sum * 100) if total_responses_sum > 0 else 0
             
             insights.append({
                 'id': insight_id,
@@ -6079,7 +6083,7 @@ def get_qla_data_query():
                 'percentageAgreement': round(percentage_agreement, 1),
                 'questionIds': config['question_ids'],
                 'icon': config['icon'],
-                'totalResponses': total_responses,
+                'totalResponses': student_count,  # Use student count instead of total responses
                 'question': config.get('question', f'What percentage show {config["title"].lower()}?')
             })
         
