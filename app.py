@@ -5170,15 +5170,16 @@ def get_school_statistics_query():
         student_ids = [s['id'] for s in all_students]
         app.logger.info(f"Found {len(student_ids)} students for establishment {establishment_id}")
         
-        # Get total enrolled students if only cycle filter is applied
+        # Get total enrolled students - but we'll calculate the actual total based on who has VESPA scores for this cycle
         total_enrolled_students = len(student_ids)  # Default to filtered count
         if not has_other_filters:
-            # Get total enrolled students (ignore filters)
+            # When no filters except cycle, we want to show total students who could have responses for this cycle
+            # This will be recalculated later based on actual VESPA scores
             total_query = supabase_client.table('students').select('id', count='exact').eq('establishment_id', establishment_uuid)
             total_result = total_query.execute()
             if hasattr(total_result, 'count') and total_result.count is not None:
                 total_enrolled_students = total_result.count
-                app.logger.info(f"Total enrolled students (no filters): {total_enrolled_students}")
+                app.logger.info(f"Total enrolled students in establishment: {total_enrolled_students}")
             else:
                 # Fallback: count all students manually
                 all_enrolled = []
@@ -5192,7 +5193,7 @@ def get_school_statistics_query():
                         break
                     offset += 1000
                 total_enrolled_students = len(all_enrolled)
-                app.logger.info(f"Total enrolled students (counted): {total_enrolled_students}")
+                app.logger.info(f"Total enrolled students in establishment (counted): {total_enrolled_students}")
         
         if not student_ids:
             # No students, return empty data
@@ -5233,6 +5234,7 @@ def get_school_statistics_query():
         # Get VESPA scores for these students in batches to avoid URL length limits
         BATCH_SIZE = 50  # Process 50 students at a time to stay well under URL limits
         all_vespa_scores = []
+        seen_student_ids = set()  # Track unique students to avoid duplicates
             
         # Also filter by academic_year if provided
         for i in range(0, len(student_ids), BATCH_SIZE):
@@ -5247,7 +5249,22 @@ def get_school_statistics_query():
                 
             batch_result = vespa_query.execute()
             if batch_result.data:
-                all_vespa_scores.extend(batch_result.data)
+                # Deduplicate by student_id - only keep one record per student per cycle
+                # Also filter out records with all NULL scores
+                for score in batch_result.data:
+                    if score['student_id'] not in seen_student_ids:
+                        # Check if the student has at least one non-NULL VESPA score
+                        has_scores = any([
+                            score.get('vision'),
+                            score.get('effort'),
+                            score.get('systems'),
+                            score.get('practice'),
+                            score.get('attitude'),
+                            score.get('overall')
+                        ])
+                        if has_scores:
+                            seen_student_ids.add(score['student_id'])
+                            all_vespa_scores.append(score)
             
         app.logger.info(f"VESPA scores: Found {len(all_vespa_scores)} scores for {len(student_ids)} students")
         
@@ -5371,13 +5388,15 @@ def get_school_statistics_query():
         # Process VESPA data if we have it and not using school stats
         elif vespa_result.data and not using_school_stats:
             # Calculate averages from actual VESPA scores
-            # Use the count of students with VESPA scores for display
-            students_with_vespa_scores = len(vespa_result.data)
+            # Use the count of unique students with VESPA scores for display
+            students_with_vespa_scores = len(seen_student_ids)
             # Use the appropriate total based on whether filters are applied
             if has_other_filters:
                 total_students = len(student_ids)  # Filtered total
             else:
-                total_students = total_enrolled_students  # Total enrolled (no filters)
+                # When no filters except cycle, use the maximum students across all cycles as the baseline
+                # This gives us the "100%" reference point
+                total_students = total_enrolled_students  # Total enrolled in establishment
             
             app.logger.info(f"Students analysis - Total: {total_students} (filtered: {has_other_filters}), With VESPA scores: {students_with_vespa_scores})")
             
@@ -5523,11 +5542,26 @@ def get_school_statistics_query():
                         .select('eri_score, academic_year')\
                         .eq('cycle', cycle)\
                         .eq('element', 'ERI')
+                    
                     if academic_year:
                         eri_query = eri_query.eq('academic_year', academic_year)
+                        app.logger.info(f"Querying national ERI for cycle {cycle}, academic_year {academic_year}")
                     else:
-                        # If no academic year specified, get the most recent one
-                        eri_query = eri_query.order('academic_year', desc=True).limit(1)
+                        # If no academic year specified, first get the most recent academic year for this cycle
+                        app.logger.info(f"No academic year specified for national ERI, fetching most recent for cycle {cycle}")
+                        recent_year_query = supabase_client.table('national_statistics')\
+                            .select('academic_year')\
+                            .eq('cycle', cycle)\
+                            .eq('element', 'ERI')\
+                            .order('academic_year', desc=True)\
+                            .limit(1)\
+                            .execute()
+                        
+                        if recent_year_query.data and recent_year_query.data[0]['academic_year']:
+                            most_recent_year = recent_year_query.data[0]['academic_year']
+                            eri_query = eri_query.eq('academic_year', most_recent_year)
+                            app.logger.info(f"Using most recent academic year for national ERI: {most_recent_year}")
+                    
                     eri_result = eri_query.execute()
                     
                     if eri_result.data and eri_result.data[0].get('eri_score'):
@@ -5535,7 +5569,7 @@ def get_school_statistics_query():
                         app.logger.info(f"Found national ERI: {national_eri} for cycle {cycle}, academic_year: {eri_result.data[0].get('academic_year')}")
                     else:
                         # Fallback to calculated average from national VESPA scores
-                        app.logger.warning(f"No national ERI found in database for cycle {cycle}, academic_year {academic_year}, using fallback calculation")
+                        app.logger.warning(f"No national ERI found in database for cycle {cycle}, using fallback calculation")
                         national_eri = sum(comparison_national) / len(comparison_national) if comparison_national else 3.5
         
         # Fallback to VESPA average if no outcome data
@@ -5547,17 +5581,32 @@ def get_school_statistics_query():
                     .select('eri_score, academic_year')\
                     .eq('cycle', cycle)\
                     .eq('element', 'ERI')
+                    
                 if academic_year:
                     eri_query = eri_query.eq('academic_year', academic_year)
                 else:
-                    # If no academic year specified, get the most recent one
-                    eri_query = eri_query.order('academic_year', desc=True).limit(1)
+                    # If no academic year specified, first get the most recent academic year for this cycle
+                    recent_year_query = supabase_client.table('national_statistics')\
+                        .select('academic_year')\
+                        .eq('cycle', cycle)\
+                        .eq('element', 'ERI')\
+                        .order('academic_year', desc=True)\
+                        .limit(1)\
+                        .execute()
+                    
+                    if recent_year_query.data and recent_year_query.data[0]['academic_year']:
+                        most_recent_year = recent_year_query.data[0]['academic_year']
+                        eri_query = eri_query.eq('academic_year', most_recent_year)
+                        app.logger.info(f"Using most recent academic year for fallback national ERI: {most_recent_year}")
+                
                 eri_result = eri_query.execute()
                 
                 if eri_result.data and eri_result.data[0].get('eri_score'):
                     national_eri = float(eri_result.data[0]['eri_score'])
+                    app.logger.info(f"Found fallback national ERI: {national_eri} for cycle {cycle}")
                 else:
                     # Final fallback to VESPA average
+                    app.logger.warning(f"No national ERI found even in fallback, calculating from VESPA averages")
                     national_eri = sum(comparison_national) / len(comparison_national) if comparison_national else 0
         
         # Calculate completion rate
@@ -5616,6 +5665,9 @@ def get_school_statistics_query():
             
             if academic_year:
                 school_avg_query = school_avg_query.eq('academic_year', academic_year)
+            else:
+                # If no academic year specified, get the most recent data for this cycle
+                app.logger.info(f"No academic year specified, fetching most recent data for cycle {cycle}")
                 
             school_avg_result = school_avg_query.execute()
             
@@ -5661,12 +5713,28 @@ def get_school_statistics_query():
             
             # Then get distributions from national_statistics
             query = supabase_client.table('national_statistics')\
-                .select('element,distribution,mean')\
+                .select('element,distribution,mean,academic_year')\
                 .eq('cycle', cycle)
             
             # Only filter by academic_year if provided
             if academic_year:
                 query = query.eq('academic_year', academic_year)
+                app.logger.info(f"Querying national distributions for cycle {cycle}, academic_year {academic_year}")
+            else:
+                # If no academic year specified, get the most recent data for this cycle
+                app.logger.info(f"No academic year specified for national distributions, fetching most recent for cycle {cycle}")
+                # First find the most recent academic year for this cycle
+                recent_year_query = supabase_client.table('national_statistics')\
+                    .select('academic_year')\
+                    .eq('cycle', cycle)\
+                    .order('academic_year', desc=True)\
+                    .limit(1)\
+                    .execute()
+                
+                if recent_year_query.data and recent_year_query.data[0]['academic_year']:
+                    most_recent_year = recent_year_query.data[0]['academic_year']
+                    query = query.eq('academic_year', most_recent_year)
+                    app.logger.info(f"Using most recent academic year for national distributions: {most_recent_year}")
             
             national_dist_result = query.execute()
             
