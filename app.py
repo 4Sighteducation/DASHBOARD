@@ -6218,7 +6218,7 @@ def get_qla_data_query():
 def get_student_responses():
     """Get all question responses for an individual student"""
     try:
-        student_id = request.args.get('studentId')
+        student_id = request.args.get('student_id')
         cycle = request.args.get('cycle', type=int, default=1)
         
         if not student_id:
