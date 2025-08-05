@@ -5170,29 +5170,41 @@ def get_school_statistics_query():
         student_ids = [s['id'] for s in all_students]
         app.logger.info(f"Found {len(student_ids)} students for establishment {establishment_id}")
         
-        # Get total enrolled students if only cycle filter is applied
-        total_enrolled_students = len(student_ids)  # Default to filtered count
+        # Get the maximum student count across all cycles from school_statistics
+        # This will be our 100% reference point
+        max_students_across_cycles = 0
+        
         if not has_other_filters:
-            # Get total enrolled students (ignore filters)
-            total_query = supabase_client.table('students').select('id', count='exact').eq('establishment_id', establishment_uuid)
-            total_result = total_query.execute()
-            if hasattr(total_result, 'count') and total_result.count is not None:
-                total_enrolled_students = total_result.count
-                app.logger.info(f"Total enrolled students (no filters): {total_enrolled_students}")
-            else:
-                # Fallback: count all students manually
-                all_enrolled = []
-                offset = 0
-                while True:
-                    batch = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid).limit(1000).offset(offset).execute()
-                    if not batch.data:
-                        break
-                    all_enrolled.extend(batch.data)
-                    if len(batch.data) < 1000:
-                        break
-                    offset += 1000
-                total_enrolled_students = len(all_enrolled)
-                app.logger.info(f"Total enrolled students (counted): {total_enrolled_students}")
+            # Query school_statistics to get counts for all cycles
+            all_cycles_query = supabase_client.table('school_statistics')\
+                .select('cycle, count')\
+                .eq('establishment_id', establishment_uuid)\
+                .eq('element', 'overall')
+            
+            if academic_year:
+                all_cycles_query = all_cycles_query.eq('academic_year', academic_year)
+                
+            all_cycles_result = all_cycles_query.execute()
+            
+            if all_cycles_result.data:
+                # Find the maximum count across all cycles
+                for stat in all_cycles_result.data:
+                    if stat.get('count', 0) > max_students_across_cycles:
+                        max_students_across_cycles = stat['count']
+                app.logger.info(f"Maximum students across all cycles: {max_students_across_cycles}")
+            
+            # If we couldn't get from school_statistics, fallback to total enrolled
+            if max_students_across_cycles == 0:
+                total_query = supabase_client.table('students').select('id', count='exact').eq('establishment_id', establishment_uuid)
+                total_result = total_query.execute()
+                if hasattr(total_result, 'count') and total_result.count is not None:
+                    max_students_across_cycles = total_result.count
+                    app.logger.info(f"Fallback to total enrolled students: {max_students_across_cycles}")
+        else:
+            # With filters, use the filtered count as max
+            max_students_across_cycles = len(student_ids)
+        
+        total_enrolled_students = max_students_across_cycles
         
         if not student_ids:
             # No students, return empty data
@@ -5316,11 +5328,7 @@ def get_school_statistics_query():
                     comparison_school.append(round(school_score, 2))
                     comparison_national.append(round(national_score, 2))
                 
-                # Get total students - use appropriate count based on filters
-                if has_other_filters:
-                    total_students = len(student_ids)  # Filtered total
-                else:
-                    total_students = total_enrolled_students  # Total enrolled (no filters)
+                # Get students with vespa scores for this cycle
                 students_with_vespa_scores = stats_result.data[0].get('count', 0) if stats_result.data else 0
                 
                 # Calculate overall average for school_statistics path
@@ -5373,13 +5381,8 @@ def get_school_statistics_query():
             # Calculate averages from actual VESPA scores
             # Use the count of students with VESPA scores for display
             students_with_vespa_scores = len(vespa_result.data)
-            # Use the appropriate total based on whether filters are applied
-            if has_other_filters:
-                total_students = len(student_ids)  # Filtered total
-            else:
-                total_students = total_enrolled_students  # Total enrolled (no filters)
             
-            app.logger.info(f"Students analysis - Total: {total_students} (filtered: {has_other_filters}), With VESPA scores: {students_with_vespa_scores})")
+            app.logger.info(f"Students analysis - Max students (across cycles): {total_enrolled_students}, With VESPA scores in cycle {cycle}: {students_with_vespa_scores}, Has filters: {has_other_filters}")
             
             # Check if this is for a single student
             if student_id and students_with_vespa_scores == 1:
@@ -5562,8 +5565,8 @@ def get_school_statistics_query():
         
         # Calculate completion rate
         # students_with_vespa_scores is the count of students with vespa scores for this cycle
-        # total_students is either all enrolled (if only cycle filter) or filtered total (if other filters applied)
-        completion_rate = (students_with_vespa_scores / total_students * 100) if total_students > 0 else 0
+        # total_enrolled_students is the max across all cycles (100% reference)
+        completion_rate = (students_with_vespa_scores / total_enrolled_students * 100) if total_enrolled_students > 0 else 0
         
         # Determine ERI trend
         eri_diff = school_eri - national_eri
@@ -5571,12 +5574,12 @@ def get_school_statistics_query():
         
         # Build response with distributions
         app.logger.info(f"Building response - Cycle: {cycle}, Academic Year: {academic_year}")
-        app.logger.info(f"Total Students: {total_students}, Students with VESPA: {students_with_vespa_scores}")
+        app.logger.info(f"Max Students (across all cycles): {total_enrolled_students}, Students with VESPA in cycle {cycle}: {students_with_vespa_scores}")
         app.logger.info(f"National ERI: {national_eri}, School ERI: {school_eri}")
-        app.logger.info(f"Has other filters: {has_other_filters}, Total enrolled: {total_enrolled_students}")
+        app.logger.info(f"Has other filters: {has_other_filters}, Completion rate: {completion_rate}%")
         
         response_data = {
-            'totalStudents': total_students,  # Total enrolled (if only cycle) or filtered total (if other filters)
+            'totalStudents': total_enrolled_students,  # Max students across all cycles (100% reference)
             'totalResponses': students_with_vespa_scores,  # Students who completed VESPA in this cycle
             'averageERI': round(school_eri, 1),
             'eriChange': round(eri_diff, 1),
