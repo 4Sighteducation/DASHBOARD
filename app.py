@@ -5286,6 +5286,17 @@ def get_school_statistics_query():
                 nat_query = supabase_client.table('national_statistics').select('*').eq('cycle', cycle)
                 if academic_year:
                     nat_query = nat_query.eq('academic_year', academic_year)
+                else:
+                    # If no academic year specified, get the most recent data for this cycle
+                    recent_year_query = supabase_client.table('national_statistics')\
+                        .select('academic_year')\
+                        .eq('cycle', cycle)\
+                        .order('academic_year', desc=True)\
+                        .limit(1)\
+                        .execute()
+                    if recent_year_query.data:
+                        most_recent_year = recent_year_query.data[0]['academic_year']
+                        nat_query = nat_query.eq('academic_year', most_recent_year)
                 nat_result = nat_query.execute()
                 for stat in nat_result.data:
                     element = stat['element'].lower()
@@ -5431,6 +5442,19 @@ def get_school_statistics_query():
             nat_query = supabase_client.table('national_statistics').select('*').eq('cycle', cycle)
             if academic_year:
                 nat_query = nat_query.eq('academic_year', academic_year)
+            else:
+                # If no academic year specified, get the most recent data for this cycle
+                # First get the most recent academic year for this cycle
+                recent_year_query = supabase_client.table('national_statistics')\
+                    .select('academic_year')\
+                    .eq('cycle', cycle)\
+                    .order('academic_year', desc=True)\
+                    .limit(1)\
+                    .execute()
+                if recent_year_query.data:
+                    most_recent_year = recent_year_query.data[0]['academic_year']
+                    nat_query = nat_query.eq('academic_year', most_recent_year)
+                    app.logger.info(f"Using most recent academic year for national stats: {most_recent_year}")
             nat_result = nat_query.execute()
             
             app.logger.info(f"National statistics query returned {len(nat_result.data)} records")
@@ -5496,17 +5520,22 @@ def get_school_statistics_query():
                     
                     # Get national ERI from national_statistics
                     eri_query = supabase_client.table('national_statistics')\
-                        .select('eri_score')\
+                        .select('eri_score, academic_year')\
                         .eq('cycle', cycle)\
                         .eq('element', 'ERI')
                     if academic_year:
                         eri_query = eri_query.eq('academic_year', academic_year)
+                    else:
+                        # If no academic year specified, get the most recent one
+                        eri_query = eri_query.order('academic_year', desc=True).limit(1)
                     eri_result = eri_query.execute()
                     
                     if eri_result.data and eri_result.data[0].get('eri_score'):
                         national_eri = float(eri_result.data[0]['eri_score'])
+                        app.logger.info(f"Found national ERI: {national_eri} for cycle {cycle}, academic_year: {eri_result.data[0].get('academic_year')}")
                     else:
                         # Fallback to calculated average from national VESPA scores
+                        app.logger.warning(f"No national ERI found in database for cycle {cycle}, academic_year {academic_year}, using fallback calculation")
                         national_eri = sum(comparison_national) / len(comparison_national) if comparison_national else 3.5
         
         # Fallback to VESPA average if no outcome data
@@ -5515,11 +5544,14 @@ def get_school_statistics_query():
             # Try to get national ERI from database first
             if not national_eri or national_eri == 0:
                 eri_query = supabase_client.table('national_statistics')\
-                    .select('eri_score')\
+                    .select('eri_score, academic_year')\
                     .eq('cycle', cycle)\
                     .eq('element', 'ERI')
                 if academic_year:
                     eri_query = eri_query.eq('academic_year', academic_year)
+                else:
+                    # If no academic year specified, get the most recent one
+                    eri_query = eri_query.order('academic_year', desc=True).limit(1)
                 eri_result = eri_query.execute()
                 
                 if eri_result.data and eri_result.data[0].get('eri_score'):
