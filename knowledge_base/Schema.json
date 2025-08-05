@@ -205,6 +205,31 @@
     "data_type": "character varying"
   },
   {
+    "table_name": "national_eri_by_cycle",
+    "column_name": "cycle",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "national_eri_by_cycle",
+    "column_name": "academic_year",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "national_eri_by_cycle",
+    "column_name": "national_eri",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "national_eri_by_cycle",
+    "column_name": "student_count",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "national_eri_by_cycle",
+    "column_name": "calculated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
     "table_name": "national_question_statistics",
     "column_name": "id",
     "data_type": "uuid"
@@ -323,6 +348,11 @@
     "table_name": "national_statistics",
     "column_name": "calculated_at",
     "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "national_statistics",
+    "column_name": "eri_score",
+    "data_type": "numeric"
   },
   {
     "table_name": "qla_question_performance",
@@ -543,6 +573,11 @@
     "table_name": "question_responses",
     "column_name": "created_at",
     "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "question_responses",
+    "column_name": "academic_year",
+    "data_type": "character varying"
   },
   {
     "table_name": "question_statistics",

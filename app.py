@@ -5170,41 +5170,29 @@ def get_school_statistics_query():
         student_ids = [s['id'] for s in all_students]
         app.logger.info(f"Found {len(student_ids)} students for establishment {establishment_id}")
         
-        # Get the maximum student count across all cycles from school_statistics
-        # This will be our 100% reference point
-        max_students_across_cycles = 0
-        
+        # Get total enrolled students if only cycle filter is applied
+        total_enrolled_students = len(student_ids)  # Default to filtered count
         if not has_other_filters:
-            # Query school_statistics to get counts for all cycles
-            all_cycles_query = supabase_client.table('school_statistics')\
-                .select('cycle, count')\
-                .eq('establishment_id', establishment_uuid)\
-                .eq('element', 'overall')
-            
-            if academic_year:
-                all_cycles_query = all_cycles_query.eq('academic_year', academic_year)
-                
-            all_cycles_result = all_cycles_query.execute()
-            
-            if all_cycles_result.data:
-                # Find the maximum count across all cycles
-                for stat in all_cycles_result.data:
-                    if stat.get('count', 0) > max_students_across_cycles:
-                        max_students_across_cycles = stat['count']
-                app.logger.info(f"Maximum students across all cycles: {max_students_across_cycles}")
-            
-            # If we couldn't get from school_statistics, fallback to total enrolled
-            if max_students_across_cycles == 0:
-                total_query = supabase_client.table('students').select('id', count='exact').eq('establishment_id', establishment_uuid)
-                total_result = total_query.execute()
-                if hasattr(total_result, 'count') and total_result.count is not None:
-                    max_students_across_cycles = total_result.count
-                    app.logger.info(f"Fallback to total enrolled students: {max_students_across_cycles}")
-        else:
-            # With filters, use the filtered count as max
-            max_students_across_cycles = len(student_ids)
-        
-        total_enrolled_students = max_students_across_cycles
+            # Get total enrolled students (ignore filters)
+            total_query = supabase_client.table('students').select('id', count='exact').eq('establishment_id', establishment_uuid)
+            total_result = total_query.execute()
+            if hasattr(total_result, 'count') and total_result.count is not None:
+                total_enrolled_students = total_result.count
+                app.logger.info(f"Total enrolled students (no filters): {total_enrolled_students}")
+            else:
+                # Fallback: count all students manually
+                all_enrolled = []
+                offset = 0
+                while True:
+                    batch = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid).limit(1000).offset(offset).execute()
+                    if not batch.data:
+                        break
+                    all_enrolled.extend(batch.data)
+                    if len(batch.data) < 1000:
+                        break
+                    offset += 1000
+                total_enrolled_students = len(all_enrolled)
+                app.logger.info(f"Total enrolled students (counted): {total_enrolled_students}")
         
         if not student_ids:
             # No students, return empty data
@@ -5245,7 +5233,6 @@ def get_school_statistics_query():
         # Get VESPA scores for these students in batches to avoid URL length limits
         BATCH_SIZE = 50  # Process 50 students at a time to stay well under URL limits
         all_vespa_scores = []
-        seen_student_ids = set()  # Track unique students to avoid duplicates
             
         # Also filter by academic_year if provided
         for i in range(0, len(student_ids), BATCH_SIZE):
@@ -5260,21 +5247,7 @@ def get_school_statistics_query():
                 
             batch_result = vespa_query.execute()
             if batch_result.data:
-                # Deduplicate by student_id - only keep one record per student per cycle
-                # Also filter out records with all NULL scores
-                for score in batch_result.data:
-                    if score['student_id'] not in seen_student_ids:
-                        # Check if the student has at least one non-NULL VESPA score
-                        has_scores = any([
-                            score.get('vision') is not None,
-                            score.get('effort') is not None,
-                            score.get('systems') is not None,
-                            score.get('practice') is not None,
-                            score.get('attitude') is not None
-                        ])
-                        if has_scores:
-                            seen_student_ids.add(score['student_id'])
-                            all_vespa_scores.append(score)
+                all_vespa_scores.extend(batch_result.data)
             
         app.logger.info(f"VESPA scores: Found {len(all_vespa_scores)} scores for {len(student_ids)} students")
         
@@ -5343,7 +5316,11 @@ def get_school_statistics_query():
                     comparison_school.append(round(school_score, 2))
                     comparison_national.append(round(national_score, 2))
                 
-                # Get students with vespa scores for this cycle
+                # Get total students - use appropriate count based on filters
+                if has_other_filters:
+                    total_students = len(student_ids)  # Filtered total
+                else:
+                    total_students = total_enrolled_students  # Total enrolled (no filters)
                 students_with_vespa_scores = stats_result.data[0].get('count', 0) if stats_result.data else 0
                 
                 # Calculate overall average for school_statistics path
@@ -5396,8 +5373,13 @@ def get_school_statistics_query():
             # Calculate averages from actual VESPA scores
             # Use the count of students with VESPA scores for display
             students_with_vespa_scores = len(vespa_result.data)
+            # Use the appropriate total based on whether filters are applied
+            if has_other_filters:
+                total_students = len(student_ids)  # Filtered total
+            else:
+                total_students = total_enrolled_students  # Total enrolled (no filters)
             
-            app.logger.info(f"Students analysis - Max students (across cycles): {total_enrolled_students}, With VESPA scores in cycle {cycle}: {students_with_vespa_scores}, Has filters: {has_other_filters}")
+            app.logger.info(f"Students analysis - Total: {total_students} (filtered: {has_other_filters}), With VESPA scores: {students_with_vespa_scores})")
             
             # Check if this is for a single student
             if student_id and students_with_vespa_scores == 1:
@@ -5580,8 +5562,8 @@ def get_school_statistics_query():
         
         # Calculate completion rate
         # students_with_vespa_scores is the count of students with vespa scores for this cycle
-        # total_enrolled_students is the max across all cycles (100% reference)
-        completion_rate = (students_with_vespa_scores / total_enrolled_students * 100) if total_enrolled_students > 0 else 0
+        # total_students is either all enrolled (if only cycle filter) or filtered total (if other filters applied)
+        completion_rate = (students_with_vespa_scores / total_students * 100) if total_students > 0 else 0
         
         # Determine ERI trend
         eri_diff = school_eri - national_eri
@@ -5589,12 +5571,12 @@ def get_school_statistics_query():
         
         # Build response with distributions
         app.logger.info(f"Building response - Cycle: {cycle}, Academic Year: {academic_year}")
-        app.logger.info(f"Max Students (across all cycles): {total_enrolled_students}, Students with VESPA in cycle {cycle}: {students_with_vespa_scores}")
+        app.logger.info(f"Total Students: {total_students}, Students with VESPA: {students_with_vespa_scores}")
         app.logger.info(f"National ERI: {national_eri}, School ERI: {school_eri}")
-        app.logger.info(f"Has other filters: {has_other_filters}, Completion rate: {completion_rate}%")
+        app.logger.info(f"Has other filters: {has_other_filters}, Total enrolled: {total_enrolled_students}")
         
         response_data = {
-            'totalStudents': total_enrolled_students,  # Max students across all cycles (100% reference)
+            'totalStudents': total_students,  # Total enrolled (if only cycle) or filtered total (if other filters)
             'totalResponses': students_with_vespa_scores,  # Students who completed VESPA in this cycle
             'averageERI': round(school_eri, 1),
             'eriChange': round(eri_diff, 1),
@@ -5797,7 +5779,7 @@ def get_school_statistics_query():
 
 @app.route('/api/qla', methods=['GET'])
 def get_qla_data_query():
-    """Get QLA data with query parameters"""
+    """Get QLA data with comprehensive filtering and insights"""
     try:
         establishment_id = request.args.get('establishment_id')
         if not establishment_id:
@@ -5806,43 +5788,170 @@ def get_qla_data_query():
         if not SUPABASE_ENABLED:
             raise ApiError("Supabase not configured", 503)
         
-        # Convert Knack ID to Supabase UUID if needed
-        # Check if it's a valid UUID format
-        import uuid
-        try:
-            uuid.UUID(establishment_id)
-            # It's already a UUID, use as is
-            establishment_uuid = establishment_id
-        except ValueError:
-            # It's a Knack ID, need to convert
-            est_result = supabase_client.table('establishments').select('id').eq('knack_id', establishment_id).execute()
-            if not est_result.data:
-                raise ApiError(f"Establishment not found with ID: {establishment_id}", 404)
-            establishment_uuid = est_result.data[0]['id']
+        # Convert establishment ID
+        establishment_uuid = convert_knack_id_to_uuid(establishment_id, 'establishments')
+        if not establishment_uuid:
+            raise ApiError(f"Establishment not found with ID: {establishment_id}", 404)
         
+        # Get filter parameters
         cycle = request.args.get('cycle', type=int, default=1)
+        academic_year = request.args.get('academicYear')
+        year_group = request.args.get('yearGroup')
+        group = request.args.get('group')
+        faculty = request.args.get('faculty')
+        student_id = request.args.get('studentId')
         
-        # Get question statistics
-        query = supabase_client.table('question_statistics').select('*').eq('establishment_id', establishment_uuid)
+        # Define insight configurations
+        insight_configs = {
+            'growth_mindset': {
+                'title': 'Growth Mindset',
+                'question_ids': ['Q5', 'Q26'],
+                'icon': '🌱'
+            },
+            'academic_momentum': {
+                'title': 'Academic Momentum',
+                'question_ids': ['Q14', 'Q16', 'Q17', 'Q9'],
+                'icon': '🚀'
+            },
+            'study_effectiveness': {
+                'title': 'Study Effectiveness',
+                'question_ids': ['Q7', 'Q12', 'Q15'],
+                'icon': '📚'
+            },
+            'exam_confidence': {
+                'title': 'Exam Confidence',
+                'question_ids': ['OUTCOME_Q_CONFIDENT'],
+                'icon': '🎯'
+            },
+            'organization_skills': {
+                'title': 'Organization Skills',
+                'question_ids': ['Q2', 'Q22', 'Q11'],
+                'icon': '📋'
+            },
+            'resilience_factor': {
+                'title': 'Resilience',
+                'question_ids': ['Q13', 'Q8', 'Q27'],
+                'icon': '💪'
+            },
+            'stress_management': {
+                'title': 'Stress Management',
+                'question_ids': ['Q20', 'Q28'],
+                'icon': '😌'
+            },
+            'active_learning': {
+                'title': 'Active Learning',
+                'question_ids': ['Q7', 'Q23', 'Q19'],
+                'icon': '🎓'
+            },
+            'support_readiness': {
+                'title': 'Support Readiness',
+                'question_ids': ['OUTCOME_Q_SUPPORT'],
+                'icon': '🤝'
+            },
+            'time_management': {
+                'title': 'Time Management',
+                'question_ids': ['Q2', 'Q4', 'Q11'],
+                'icon': '⏰'
+            },
+            'academic_confidence': {
+                'title': 'Academic Confidence',
+                'question_ids': ['Q10', 'Q8'],
+                'icon': '⭐'
+            },
+            'revision_readiness': {
+                'title': 'Revision Ready',
+                'question_ids': ['OUTCOME_Q_EQUIPPED'],
+                'icon': '📖'
+            }
+        }
         
-        if cycle:
-            query = query.eq('cycle', cycle)
+        # Get QLA performance data from the optimized table
+        qla_query = supabase_client.table('qla_question_performance').select('*')\
+            .eq('establishment_id', establishment_uuid)\
+            .eq('cycle', cycle)
+        
+        if academic_year:
+            qla_query = qla_query.eq('academic_year', academic_year)
             
-        result = query.execute()
+        qla_result = qla_query.execute()
         
-        # Get questions data
+        # If we have filters, we need to calculate filtered data
+        if year_group or group or faculty or student_id:
+            # Get filtered student IDs first
+            students_query = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid)
+            if year_group:
+                students_query = students_query.eq('year_group', year_group)
+            if group:
+                students_query = students_query.eq('group', group)
+            if faculty:
+                students_query = students_query.eq('faculty', faculty)
+            if student_id:
+                # Convert student ID if needed
+                student_uuid = convert_knack_id_to_uuid(student_id, 'students')
+                if student_uuid:
+                    students_query = students_query.eq('id', student_uuid)
+            
+            students_result = students_query.execute()
+            student_ids = [s['id'] for s in students_result.data]
+            
+            # Get question responses for filtered students
+            if student_ids:
+                # Process in batches
+                BATCH_SIZE = 50
+                filtered_responses = []
+                
+                for i in range(0, len(student_ids), BATCH_SIZE):
+                    batch_ids = student_ids[i:i + BATCH_SIZE]
+                    responses_result = supabase_client.table('question_responses')\
+                        .select('question_id, response')\
+                        .in_('student_id', batch_ids)\
+                        .eq('cycle', cycle)\
+                        .execute()
+                    filtered_responses.extend(responses_result.data)
+                
+                # Calculate statistics for filtered data
+                question_stats = {}
+                for response in filtered_responses:
+                    q_id = response['question_id']
+                    if q_id not in question_stats:
+                        question_stats[q_id] = {
+                            'responses': [],
+                            'distribution': [0] * 5  # 1-5 scale
+                        }
+                    if response['response'] is not None:
+                        question_stats[q_id]['responses'].append(response['response'])
+                        if 1 <= response['response'] <= 5:
+                            question_stats[q_id]['distribution'][response['response'] - 1] += 1
+                
+                # Calculate mean, std_dev for each question
+                import statistics
+                qla_data_filtered = []
+                for q_id, stats in question_stats.items():
+                    if stats['responses']:
+                        mean = statistics.mean(stats['responses'])
+                        std_dev = statistics.stdev(stats['responses']) if len(stats['responses']) > 1 else 0
+                        qla_data_filtered.append({
+                            'question_id': q_id,
+                            'mean': mean,
+                            'std_dev': std_dev,
+                            'count': len(stats['responses']),
+                            'distribution': stats['distribution']
+                        })
+                
+                # Use filtered data instead of pre-aggregated
+                qla_data = qla_data_filtered
+            else:
+                qla_data = []
+        else:
+            # Use pre-aggregated data from qla_question_performance
+            qla_data = qla_result.data
+        
+        # Get questions metadata
         questions_result = supabase_client.table('questions').select('*').eq('is_active', True).execute()
         questions_by_id = {q['question_id']: q for q in questions_result.data}
         
-        # Format for dashboard4a.js
-        qla_data = {
-            'top_questions': [],
-            'bottom_questions': [],
-            'all_questions': []
-        }
-        
         # Sort by mean score
-        sorted_stats = sorted(result.data, key=lambda x: float(x.get('mean', 0)) if x.get('mean') else 0)
+        sorted_stats = sorted(qla_data, key=lambda x: float(x.get('mean', 0)) if x.get('mean') else 0)
         
         # Get top 5 and bottom 5
         if len(sorted_stats) >= 10:
@@ -5853,46 +5962,87 @@ def get_qla_data_query():
             bottom_5 = sorted_stats[:half]
             top_5 = sorted_stats[half:][::-1]
         
-        # Format top questions
+        # Format high/low questions
+        top_questions = []
         for i, stat in enumerate(top_5):
             question_info = questions_by_id.get(stat['question_id'], {})
-            qla_data['top_questions'].append({
+            top_questions.append({
+                'id': stat['question_id'],
                 'rank': i + 1,
-                'question_id': stat['question_id'],
-                'question_text': question_info.get('text', f"Question {stat['question_id']}"),
-                'category': question_info.get('category', 'Unknown'),
-                'mean_score': float(stat['mean']) if stat['mean'] else 0,
-                'response_count': stat['count'] or 0,
-                'std_dev': float(stat['std_dev']) if stat['std_dev'] else 0
+                'text': question_info.get('question_text', f"Question {stat['question_id']}"),
+                'score': float(stat['mean']) if stat.get('mean') else 0,
+                'n': stat.get('count', 0),
+                'std_dev': float(stat['std_dev']) if stat.get('std_dev') else 0,
+                'distribution': stat.get('distribution', [])
             })
         
-        # Format bottom questions
+        bottom_questions = []
         for i, stat in enumerate(bottom_5):
             question_info = questions_by_id.get(stat['question_id'], {})
-            qla_data['bottom_questions'].append({
+            bottom_questions.append({
+                'id': stat['question_id'],
                 'rank': i + 1,
-                'question_id': stat['question_id'],
-                'question_text': question_info.get('text', f"Question {stat['question_id']}"),
-                'category': question_info.get('category', 'Unknown'),
-                'mean_score': float(stat['mean']) if stat['mean'] else 0,
-                'response_count': stat['count'] or 0,
-                'std_dev': float(stat['std_dev']) if stat['std_dev'] else 0
+                'text': question_info.get('question_text', f"Question {stat['question_id']}"),
+                'score': float(stat['mean']) if stat.get('mean') else 0,
+                'n': stat.get('count', 0),
+                'std_dev': float(stat['std_dev']) if stat.get('std_dev') else 0,
+                'distribution': stat.get('distribution', [])
             })
         
-        # Add all questions
-        for stat in result.data:
-            question_info = questions_by_id.get(stat['question_id'], {})
-            qla_data['all_questions'].append({
-                'question_id': stat['question_id'],
-                'question_text': question_info.get('text', f"Question {stat['question_id']}"),
-                'category': question_info.get('category', 'Unknown'),
-                'mean_score': float(stat['mean']) if stat['mean'] else 0,
-                'response_count': stat['count'] or 0,
-                'std_dev': float(stat['std_dev']) if stat['std_dev'] else 0,
-                'distribution': stat.get('distribution', {})
+        # Calculate insights
+        insights = []
+        question_stats_by_id = {stat['question_id']: stat for stat in qla_data}
+        
+        for insight_id, config in insight_configs.items():
+            # Calculate percentage agreement (scores 4-5)
+            total_responses = 0
+            agreement_count = 0
+            
+            for q_id in config['question_ids']:
+                if q_id in question_stats_by_id:
+                    stat = question_stats_by_id[q_id]
+                    distribution = stat.get('distribution', [])
+                    if distribution and len(distribution) >= 5:
+                        # Sum responses for scores 4 and 5
+                        agreement_count += distribution[3] + distribution[4]  # indices 3,4 for scores 4,5
+                        total_responses += sum(distribution)
+            
+            percentage_agreement = (agreement_count / total_responses * 100) if total_responses > 0 else 0
+            
+            insights.append({
+                'id': insight_id,
+                'title': config['title'],
+                'percentageAgreement': round(percentage_agreement, 1),
+                'questionIds': config['question_ids'],
+                'icon': config['icon'],
+                'totalResponses': total_responses
             })
         
-        return jsonify(qla_data)
+        # Sort insights by percentage agreement (high to low)
+        insights.sort(key=lambda x: x['percentageAgreement'], reverse=True)
+        
+        # Prepare response
+        response_data = {
+            'highLowQuestions': {
+                'topQuestions': top_questions,
+                'bottomQuestions': bottom_questions
+            },
+            'insights': insights,
+            'metadata': {
+                'totalQuestions': len(qla_data),
+                'cycle': cycle,
+                'filters': {
+                    'yearGroup': year_group,
+                    'group': group,
+                    'faculty': faculty,
+                    'studentId': student_id,
+                    'academicYear': academic_year
+                }
+            }
+        }
+        
+        app.logger.info(f"QLA data retrieved successfully for establishment {establishment_id}")
+        return jsonify(response_data)
         
     except Exception as e:
         app.logger.error(f"Failed to fetch QLA data: {e}")
