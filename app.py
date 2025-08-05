@@ -5245,6 +5245,7 @@ def get_school_statistics_query():
         # Get VESPA scores for these students in batches to avoid URL length limits
         BATCH_SIZE = 50  # Process 50 students at a time to stay well under URL limits
         all_vespa_scores = []
+        seen_student_ids = set()  # Track unique students to avoid duplicates
             
         # Also filter by academic_year if provided
         for i in range(0, len(student_ids), BATCH_SIZE):
@@ -5259,7 +5260,21 @@ def get_school_statistics_query():
                 
             batch_result = vespa_query.execute()
             if batch_result.data:
-                all_vespa_scores.extend(batch_result.data)
+                # Deduplicate by student_id - only keep one record per student per cycle
+                # Also filter out records with all NULL scores
+                for score in batch_result.data:
+                    if score['student_id'] not in seen_student_ids:
+                        # Check if the student has at least one non-NULL VESPA score
+                        has_scores = any([
+                            score.get('vision') is not None,
+                            score.get('effort') is not None,
+                            score.get('systems') is not None,
+                            score.get('practice') is not None,
+                            score.get('attitude') is not None
+                        ])
+                        if has_scores:
+                            seen_student_ids.add(score['student_id'])
+                            all_vespa_scores.append(score)
             
         app.logger.info(f"VESPA scores: Found {len(all_vespa_scores)} scores for {len(student_ids)} students")
         
