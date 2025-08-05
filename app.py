@@ -5789,7 +5789,7 @@ def get_qla_data_query():
             raise ApiError("Supabase not configured", 503)
         
         # Convert establishment ID
-        establishment_uuid = convert_knack_id_to_uuid(establishment_id, 'establishments')
+        establishment_uuid = convert_knack_id_to_uuid(establishment_id)
         if not establishment_uuid:
             raise ApiError(f"Establishment not found with ID: {establishment_id}", 404)
         
@@ -5887,9 +5887,16 @@ def get_qla_data_query():
                 students_query = students_query.eq('faculty', faculty)
             if student_id:
                 # Convert student ID if needed
-                student_uuid = convert_knack_id_to_uuid(student_id, 'students')
-                if student_uuid:
-                    students_query = students_query.eq('id', student_uuid)
+                import uuid
+                try:
+                    uuid.UUID(student_id)
+                    # It's already a UUID, use as is
+                    students_query = students_query.eq('id', student_id)
+                except ValueError:
+                    # It's a Knack ID, need to convert
+                    student_result = supabase_client.table('students').select('id').eq('knack_id', student_id).execute()
+                    if student_result.data:
+                        students_query = students_query.eq('id', student_result.data[0]['id'])
             
             students_result = students_query.execute()
             student_ids = [s['id'] for s in students_result.data]
