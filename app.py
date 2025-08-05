@@ -6262,7 +6262,7 @@ def get_student_responses():
             
         # Get questions metadata
         questions_result = supabase_client.table('questions')\
-            .select('question_id, question_text, category')\
+            .select('question_id, question_text, vespa_category')\
             .eq('is_active', True)\
             .execute()
         
@@ -6288,7 +6288,7 @@ def get_student_responses():
             formatted_responses.append({
                 'questionId': response['question_id'],
                 'questionText': question_info.get('question_text', f"Question {response['question_id']}"),
-                'category': question_info.get('category', 'General'),
+                'category': question_info.get('vespa_category', 'General'),
                 'responseValue': score,
                 'ragRating': rag_rating,
                 'timestamp': response.get('created_at', '')
