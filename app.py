@@ -4935,12 +4935,33 @@ def search_students():
         
         # Search for students by name or email (case-insensitive)
         # Using ilike for case-insensitive partial matching
-        result = supabase_client.table('students')\
+        # Search by name first
+        name_result = supabase_client.table('students')\
             .select('id, name, email, year_group, group, faculty')\
             .eq('establishment_id', establishment_uuid)\
-            .or_(f"name.ilike.%{search_term}%,email.ilike.%{search_term}%")\
+            .ilike('name', f'%{search_term}%')\
             .limit(20)\
             .execute()
+        
+        # Search by email
+        email_result = supabase_client.table('students')\
+            .select('id, name, email, year_group, group, faculty')\
+            .eq('establishment_id', establishment_uuid)\
+            .ilike('email', f'%{search_term}%')\
+            .limit(20)\
+            .execute()
+        
+        # Combine results and remove duplicates
+        all_students = []
+        seen_ids = set()
+        
+        for student in (name_result.data or []) + (email_result.data or []):
+            if student['id'] not in seen_ids:
+                seen_ids.add(student['id'])
+                all_students.append(student)
+        
+        # Limit to 20 results
+        result = SimpleNamespace(data=all_students[:20])
         
         if result.data:
             # Format results for frontend
@@ -5362,7 +5383,8 @@ def get_school_statistics_query():
         
         # Build response with distributions
         response_data = {
-            'totalStudents': students_with_vespa_scores,  # Show students with VESPA scores
+            'totalStudents': total_students,  # Total enrolled students
+            'totalResponses': students_with_vespa_scores,  # Students who completed VESPA in this cycle
             'averageERI': round(school_eri, 1),
             'eriChange': round(eri_diff, 1),
             'completionRate': round(completion_rate, 0),
