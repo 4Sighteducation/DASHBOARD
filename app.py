@@ -5262,39 +5262,62 @@ def get_school_statistics_query():
             
             app.logger.info(f"Students analysis - Total in establishment: {total_students}, With VESPA scores: {students_with_vespa_scores}")
             
-            # Calculate averages and distributions
-            vespa_sums = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0, 'overall': 0}
-            vespa_counts = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0, 'overall': 0}
-            
-            # Initialize distributions (1-10 scale)
-            vespa_distributions = {}
-            for elem in ['vision', 'effort', 'systems', 'practice', 'attitude', 'overall']:
-                vespa_distributions[elem] = [0] * 10  # 10 slots for scores 1-10
-            
-            for score in vespa_result.data:
-                for elem in vespa_sums:
-                    if score.get(elem) is not None:
-                        score_value = score[elem]
-                        vespa_sums[elem] += score_value
-                        vespa_counts[elem] += 1
-                        # Add to distribution (round to nearest integer for histogram)
-                        # VESPA scores are 1-10, so subtract 1 for array index
-                        rounded_score = round(score_value)
-                        if 1 <= rounded_score <= 10:
-                            vespa_distributions[elem][rounded_score - 1] += 1
-            
-            # Calculate school averages (already on correct scale)
-            vespa_scores = {}
-            comparison_school = []
-            
-            for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']:
-                avg = vespa_sums[elem] / vespa_counts[elem] if vespa_counts[elem] > 0 else 0
-                vespa_scores[elem] = round(avg, 2)
-                comparison_school.append(round(avg, 2))
-            
-            # Add overall average
-            overall_avg = vespa_sums['overall'] / vespa_counts['overall'] if vespa_counts['overall'] > 0 else 0
-            vespa_scores['overall'] = round(overall_avg, 2)
+            # Check if this is for a single student
+            if student_id and students_with_vespa_scores == 1:
+                # Individual student view - return their actual scores
+                individual_scores = vespa_result.data[0]
+                vespa_scores = {
+                    'vision': individual_scores.get('vision', 0),
+                    'effort': individual_scores.get('effort', 0),
+                    'systems': individual_scores.get('systems', 0),
+                    'practice': individual_scores.get('practice', 0),
+                    'attitude': individual_scores.get('attitude', 0),
+                    'overall': individual_scores.get('overall', 0)
+                }
+                comparison_school = [
+                    vespa_scores['vision'],
+                    vespa_scores['effort'],
+                    vespa_scores['systems'],
+                    vespa_scores['practice'],
+                    vespa_scores['attitude']
+                ]
+                overall_avg = vespa_scores['overall']
+                # No distributions for individual student
+                vespa_distributions = None
+            else:
+                # Multiple students - calculate averages and distributions
+                vespa_sums = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0, 'overall': 0}
+                vespa_counts = {'vision': 0, 'effort': 0, 'systems': 0, 'practice': 0, 'attitude': 0, 'overall': 0}
+                
+                # Initialize distributions (1-10 scale)
+                vespa_distributions = {}
+                for elem in ['vision', 'effort', 'systems', 'practice', 'attitude', 'overall']:
+                    vespa_distributions[elem] = [0] * 10  # 10 slots for scores 1-10
+                
+                for score in vespa_result.data:
+                    for elem in vespa_sums:
+                        if score.get(elem) is not None:
+                            score_value = score[elem]
+                            vespa_sums[elem] += score_value
+                            vespa_counts[elem] += 1
+                            # Add to distribution (round to nearest integer for histogram)
+                            # VESPA scores are 1-10, so subtract 1 for array index
+                            rounded_score = round(score_value)
+                            if 1 <= rounded_score <= 10:
+                                vespa_distributions[elem][rounded_score - 1] += 1
+                
+                # Calculate school averages (already on correct scale)
+                vespa_scores = {}
+                comparison_school = []
+                
+                for elem in ['vision', 'effort', 'systems', 'practice', 'attitude']:
+                    avg = vespa_sums[elem] / vespa_counts[elem] if vespa_counts[elem] > 0 else 0
+                    vespa_scores[elem] = round(avg, 2)
+                    comparison_school.append(round(avg, 2))
+                
+                # Add overall average
+                overall_avg = vespa_sums['overall'] / vespa_counts['overall'] if vespa_counts['overall'] > 0 else 0
+                vespa_scores['overall'] = round(overall_avg, 2)
             
             # Get national statistics
             nat_query = supabase_client.table('national_statistics').select('*').eq('cycle', cycle)
