@@ -5805,68 +5805,68 @@ def get_qla_data_query():
         insight_configs = {
             'growth_mindset': {
                 'title': 'Growth Mindset',
-                'question_ids': ['Q5', 'Q26'],
+                'question_ids': ['q5', 'q26'],
                 'icon': '🌱'
             },
             'academic_momentum': {
                 'title': 'Academic Momentum',
-                'question_ids': ['Q14', 'Q16', 'Q17', 'Q9'],
+                'question_ids': ['q14', 'q16', 'q17', 'q9'],
                 'icon': '🚀'
             },
             'study_effectiveness': {
                 'title': 'Study Effectiveness',
-                'question_ids': ['Q7', 'Q12', 'Q15'],
+                'question_ids': ['q7', 'q12', 'q15'],
                 'icon': '📚'
             },
             'exam_confidence': {
                 'title': 'Exam Confidence',
-                'question_ids': ['OUTCOME_Q_CONFIDENT'],
+                'question_ids': ['outcome_q_confident'],
                 'icon': '🎯'
             },
             'organization_skills': {
                 'title': 'Organization Skills',
-                'question_ids': ['Q2', 'Q22', 'Q11'],
+                'question_ids': ['q2', 'q22', 'q11'],
                 'icon': '📋'
             },
             'resilience_factor': {
                 'title': 'Resilience',
-                'question_ids': ['Q13', 'Q8', 'Q27'],
+                'question_ids': ['q13', 'q8', 'q27'],
                 'icon': '💪'
             },
             'stress_management': {
                 'title': 'Stress Management',
-                'question_ids': ['Q20', 'Q28'],
+                'question_ids': ['q20', 'q28'],
                 'icon': '😌'
             },
             'active_learning': {
                 'title': 'Active Learning',
-                'question_ids': ['Q7', 'Q23', 'Q19'],
+                'question_ids': ['q7', 'q23', 'q19'],
                 'icon': '🎓'
             },
             'support_readiness': {
                 'title': 'Support Readiness',
-                'question_ids': ['OUTCOME_Q_SUPPORT'],
+                'question_ids': ['outcome_q_support'],
                 'icon': '🤝'
             },
             'time_management': {
                 'title': 'Time Management',
-                'question_ids': ['Q2', 'Q4', 'Q11'],
+                'question_ids': ['q2', 'q4', 'q11'],
                 'icon': '⏰'
             },
             'academic_confidence': {
                 'title': 'Academic Confidence',
-                'question_ids': ['Q10', 'Q8'],
+                'question_ids': ['q10', 'q8'],
                 'icon': '⭐'
             },
             'revision_readiness': {
                 'title': 'Revision Ready',
-                'question_ids': ['OUTCOME_Q_EQUIPPED'],
+                'question_ids': ['outcome_q_equipped'],
                 'icon': '📖'
             }
         }
         
-        # Get QLA performance data from the optimized table
-        qla_query = supabase_client.table('qla_question_performance').select('*')\
+        # Try question_statistics table first (more likely to have data)
+        qla_query = supabase_client.table('question_statistics').select('*')\
             .eq('establishment_id', establishment_uuid)\
             .eq('cycle', cycle)
         
@@ -5874,6 +5874,22 @@ def get_qla_data_query():
             qla_query = qla_query.eq('academic_year', academic_year)
             
         qla_result = qla_query.execute()
+        
+        app.logger.info(f"question_statistics result count: {len(qla_result.data) if qla_result.data else 0}")
+        if qla_result.data:
+            app.logger.info(f"Sample question_statistics data: {qla_result.data[0] if qla_result.data else 'None'}")
+        
+        # If no data in question_statistics, try qla_question_performance
+        if not qla_result.data:
+            qla_query = supabase_client.table('qla_question_performance').select('*')\
+                .eq('establishment_id', establishment_uuid)\
+                .eq('cycle', cycle)
+            
+            if academic_year:
+                qla_query = qla_query.eq('academic_year', academic_year)
+                
+            qla_result = qla_query.execute()
+            app.logger.info(f"qla_question_performance result count: {len(qla_result.data) if qla_result.data else 0}")
         
         # If we have filters, we need to calculate filtered data
         if year_group or group or faculty or student_id:
@@ -5910,7 +5926,7 @@ def get_qla_data_query():
                 for i in range(0, len(student_ids), BATCH_SIZE):
                     batch_ids = student_ids[i:i + BATCH_SIZE]
                     responses_result = supabase_client.table('question_responses')\
-                        .select('question_id, response')\
+                        .select('question_id, response_value')\
                         .in_('student_id', batch_ids)\
                         .eq('cycle', cycle)\
                         .execute()
@@ -5925,10 +5941,10 @@ def get_qla_data_query():
                             'responses': [],
                             'distribution': [0] * 5  # 1-5 scale
                         }
-                    if response['response'] is not None:
-                        question_stats[q_id]['responses'].append(response['response'])
-                        if 1 <= response['response'] <= 5:
-                            question_stats[q_id]['distribution'][response['response'] - 1] += 1
+                    if response['response_value'] is not None:
+                        question_stats[q_id]['responses'].append(response['response_value'])
+                        if 1 <= response['response_value'] <= 5:
+                            question_stats[q_id]['distribution'][response['response_value'] - 1] += 1
                 
                 # Calculate mean, std_dev for each question
                 import statistics
@@ -6049,6 +6065,7 @@ def get_qla_data_query():
         }
         
         app.logger.info(f"QLA data retrieved successfully for establishment {establishment_id}")
+        app.logger.info(f"QLA response - top questions count: {len(top_questions)}, bottom questions count: {len(bottom_questions)}, insights count: {len(insights)}")
         return jsonify(response_data)
         
     except Exception as e:
