@@ -6125,11 +6125,16 @@ def get_qla_data_query():
         insights = []
         question_stats_by_id = {stat['question_id']: stat for stat in qla_data}
         
+        # Check if this is an individual student (only one student in results)
+        is_individual_student = student_id is not None
+        
         for insight_id, config in insight_configs.items():
-            # Calculate percentage agreement (scores 4-5)
+            # Calculate percentage agreement (scores 4-5) or average for individual
             total_responses_sum = 0
             agreement_count = 0
             student_count = 0
+            scores_sum = 0
+            scores_count = 0
             
             for q_id in config['question_ids']:
                 if q_id in question_stats_by_id:
@@ -6142,18 +6147,41 @@ def get_qla_data_query():
                         # Use the count from the first question as the student count
                         if student_count == 0:
                             student_count = stat.get('count', 0)
+                    
+                    # For individual students, also calculate average score
+                    if is_individual_student and stat.get('mean'):
+                        scores_sum += stat['mean']
+                        scores_count += 1
             
-            percentage_agreement = (agreement_count / total_responses_sum * 100) if total_responses_sum > 0 else 0
-            
-            insights.append({
-                'id': insight_id,
-                'title': config['title'],
-                'percentageAgreement': round(percentage_agreement, 1),
-                'questionIds': config['question_ids'],
-                'icon': config['icon'],
-                'totalResponses': student_count,  # Use student count instead of total responses
-                'question': config.get('question', f'What percentage show {config["title"].lower()}?')
-            })
+            if is_individual_student and scores_count > 0:
+                # For individual students, convert average score to percentage
+                # Score 1 = 0%, Score 2 = 25%, Score 3 = 50%, Score 4 = 75%, Score 5 = 100%
+                average_score = scores_sum / scores_count
+                # Convert 1-5 scale to 0-100% scale: (score - 1) * 25
+                percentage_from_score = (average_score - 1) * 25
+                
+                insights.append({
+                    'id': insight_id,
+                    'title': config['title'],
+                    'percentageAgreement': round(percentage_from_score, 1),
+                    'questionIds': config['question_ids'],
+                    'icon': config['icon'],
+                    'totalResponses': 1,
+                    'question': config.get('question', f'What percentage show {config["title"].lower()}?')
+                })
+            else:
+                # For groups, show percentage agreement as before
+                percentage_agreement = (agreement_count / total_responses_sum * 100) if total_responses_sum > 0 else 0
+                
+                insights.append({
+                    'id': insight_id,
+                    'title': config['title'],
+                    'percentageAgreement': round(percentage_agreement, 1),
+                    'questionIds': config['question_ids'],
+                    'icon': config['icon'],
+                    'totalResponses': student_count,  # Use student count instead of total responses
+                    'question': config.get('question', f'What percentage show {config["title"].lower()}?')
+                })
         
         # Sort insights by percentage agreement (high to low)
         insights.sort(key=lambda x: x['percentageAgreement'], reverse=True)
@@ -6185,6 +6213,119 @@ def get_qla_data_query():
     except Exception as e:
         app.logger.error(f"Failed to fetch QLA data: {e}")
         raise ApiError(f"Failed to fetch QLA data: {str(e)}", 500)
+
+@app.route('/api/student-responses', methods=['GET'])
+def get_student_responses():
+    """Get all question responses for an individual student"""
+    try:
+        student_id = request.args.get('studentId')
+        cycle = request.args.get('cycle', type=int, default=1)
+        
+        if not student_id:
+            raise ApiError("studentId is required", 400)
+            
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        # Convert student ID if needed
+        import uuid
+        student_uuid = None
+        try:
+            uuid.UUID(student_id)
+            student_uuid = student_id
+        except ValueError:
+            # It's a Knack ID, need to convert
+            student_result = supabase_client.table('students').select('id, name, email').eq('knack_id', student_id).execute()
+            if student_result.data:
+                student_uuid = student_result.data[0]['id']
+                student_info = student_result.data[0]
+            else:
+                raise ApiError(f"Student not found with ID: {student_id}", 404)
+        
+        if not student_uuid:
+            raise ApiError(f"Could not convert student ID: {student_id}", 400)
+            
+        # Get student info if we don't have it
+        if 'student_info' not in locals():
+            student_result = supabase_client.table('students').select('name, email').eq('id', student_uuid).execute()
+            if student_result.data:
+                student_info = student_result.data[0]
+            else:
+                student_info = {'name': 'Unknown', 'email': ''}
+        
+        # Get all question responses for this student and cycle
+        responses_result = supabase_client.table('question_responses')\
+            .select('question_id, response_value, created_at')\
+            .eq('student_id', student_uuid)\
+            .eq('cycle', cycle)\
+            .execute()
+            
+        # Get questions metadata
+        questions_result = supabase_client.table('questions')\
+            .select('question_id, question_text, category')\
+            .eq('is_active', True)\
+            .execute()
+        
+        questions_by_id = {q['question_id']: q for q in questions_result.data}
+        
+        # Format responses with question text and RAG rating
+        formatted_responses = []
+        for response in responses_result.data:
+            question_info = questions_by_id.get(response['question_id'], {})
+            
+            # Determine RAG rating
+            score = response['response_value']
+            if score:
+                if score >= 4:
+                    rag_rating = 'green'
+                elif score == 3:
+                    rag_rating = 'amber'
+                else:
+                    rag_rating = 'red'
+            else:
+                rag_rating = 'none'
+            
+            formatted_responses.append({
+                'questionId': response['question_id'],
+                'questionText': question_info.get('question_text', f"Question {response['question_id']}"),
+                'category': question_info.get('category', 'General'),
+                'responseValue': score,
+                'ragRating': rag_rating,
+                'timestamp': response.get('created_at', '')
+            })
+        
+        # Sort by question ID
+        formatted_responses.sort(key=lambda x: x['questionId'])
+        
+        # Group by category
+        categories = {}
+        for response in formatted_responses:
+            cat = response['category']
+            if cat not in categories:
+                categories[cat] = []
+            categories[cat].append(response)
+        
+        return jsonify({
+            'student': {
+                'name': student_info.get('name', 'Unknown'),
+                'email': student_info.get('email', ''),
+                'id': student_uuid
+            },
+            'responses': formatted_responses,
+            'categorizedResponses': categories,
+            'cycle': cycle,
+            'totalQuestions': len(formatted_responses),
+            'summary': {
+                'green': len([r for r in formatted_responses if r['ragRating'] == 'green']),
+                'amber': len([r for r in formatted_responses if r['ragRating'] == 'amber']),
+                'red': len([r for r in formatted_responses if r['ragRating'] == 'red']),
+                'none': len([r for r in formatted_responses if r['ragRating'] == 'none'])
+            }
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch student responses: {e}")
+        raise ApiError(f"Failed to fetch student responses: {str(e)}", 500)
 
 @app.route('/api/word-cloud', methods=['GET'])
 def get_word_cloud_data():
