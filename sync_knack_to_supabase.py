@@ -1254,6 +1254,189 @@ def calculate_question_statistics():
             sync_report['errors'].append(f"Question statistics calculation failed: {e}")
             return False
 
+def update_question_responses_academic_year():
+    """Update academic_year in question_responses based on VESPA scores"""
+    logging.info("Updating academic_year in question_responses...")
+    
+    # Track in sync report
+    sync_report['operations'] = sync_report.get('operations', {})
+    sync_report['operations']['update_academic_year'] = {
+        'start_time': datetime.now(),
+        'status': 'started'
+    }
+    
+    try:
+        # This will match question_responses to VESPA scores by student_id and cycle
+        update_query = """
+        UPDATE question_responses qr
+        SET academic_year = vs.academic_year
+        FROM vespa_scores vs
+        WHERE qr.student_id = vs.student_id
+        AND qr.cycle = vs.cycle
+        AND qr.academic_year IS NULL;
+        """
+        
+        # Execute via RPC or direct query would be needed here
+        # For now, we'll do it in batches using the Supabase client
+        
+        # Get all question_responses without academic_year
+        offset = 0
+        limit = 1000
+        updated_count = 0
+        
+        while True:
+            # Get batch of responses without academic_year
+            responses = supabase.table('question_responses')\
+                .select('id, student_id, cycle')\
+                .is_('academic_year', 'null')\
+                .limit(limit)\
+                .offset(offset)\
+                .execute()
+            
+            if not responses.data:
+                break
+            
+            # For each response, find the matching VESPA score
+            for response in responses.data:
+                vespa = supabase.table('vespa_scores')\
+                    .select('academic_year')\
+                    .eq('student_id', response['student_id'])\
+                    .eq('cycle', response['cycle'])\
+                    .execute()
+                
+                if vespa.data and vespa.data[0].get('academic_year'):
+                    # Update the question_response
+                    supabase.table('question_responses')\
+                        .update({'academic_year': vespa.data[0]['academic_year']})\
+                        .eq('id', response['id'])\
+                        .execute()
+                    updated_count += 1
+            
+            if len(responses.data) < limit:
+                break
+            offset += limit
+            
+        logging.info(f"Updated academic_year for {updated_count} question_responses")
+        sync_report['operations']['update_academic_year']['status'] = 'completed'
+        sync_report['operations']['update_academic_year']['records_updated'] = updated_count
+        sync_report['operations']['update_academic_year']['end_time'] = datetime.now()
+        return True
+        
+    except Exception as e:
+        logging.error(f"Error updating question_responses academic_year: {e}")
+        sync_report['operations']['update_academic_year']['status'] = 'failed'
+        sync_report['operations']['update_academic_year']['error'] = str(e)
+        sync_report['errors'].append(f"Academic year update failed: {e}")
+        return False
+
+def calculate_national_eri():
+    """Calculate national ERI from outcome questions and update national_statistics"""
+    logging.info("Calculating national ERI...")
+    
+    # Track in sync report
+    sync_report['operations'] = sync_report.get('operations', {})
+    sync_report['operations']['calculate_eri'] = {
+        'start_time': datetime.now(),
+        'status': 'started',
+        'eri_records': 0
+    }
+    
+    try:
+        # Get all outcome question responses with academic_year
+        outcome_questions = ['outcome_q_confident', 'outcome_q_equipped', 'outcome_q_support']
+        
+        # Execute the SQL that calculates ERI
+        # This matches what we did in the SQL script
+        eri_query = """
+        SELECT 
+            qr.cycle,
+            qr.academic_year,
+            AVG(CAST(qr.response_value AS numeric)) as eri_score,
+            COUNT(DISTINCT qr.student_id) as student_count
+        FROM question_responses qr
+        WHERE qr.question_id IN ('outcome_q_confident', 'outcome_q_equipped', 'outcome_q_support')
+        AND qr.response_value IS NOT NULL
+        AND qr.academic_year IS NOT NULL
+        GROUP BY qr.cycle, qr.academic_year
+        HAVING COUNT(DISTINCT qr.student_id) > 10;
+        """
+        
+        # Since we can't execute raw SQL directly, let's do it with the client
+        # Fetch all outcome responses
+        all_responses = []
+        for question_id in outcome_questions:
+            responses = supabase.table('question_responses')\
+                .select('student_id, cycle, response_value, academic_year')\
+                .eq('question_id', question_id)\
+                .not_('response_value', 'is', 'null')\
+                .not_('academic_year', 'is', 'null')\
+                .execute()
+            all_responses.extend(responses.data)
+        
+        # Group by cycle and academic_year
+        from collections import defaultdict
+        import statistics
+        
+        eri_groups = defaultdict(lambda: {'values': [], 'students': set()})
+        
+        for resp in all_responses:
+            key = (resp['cycle'], resp['academic_year'])
+            eri_groups[key]['values'].append(int(resp['response_value']))
+            eri_groups[key]['students'].add(resp['student_id'])
+        
+        # Calculate ERI for each group
+        for (cycle, academic_year), data in eri_groups.items():
+            student_count = len(data['students'])
+            if student_count > 10:  # Only process if we have enough students
+                eri_score = sum(data['values']) / len(data['values'])
+                
+                # Update or insert into national_statistics
+                existing = supabase.table('national_statistics')\
+                    .select('id')\
+                    .eq('cycle', cycle)\
+                    .eq('academic_year', academic_year)\
+                    .eq('element', 'ERI')\
+                    .execute()
+                
+                eri_data = {
+                    'cycle': cycle,
+                    'academic_year': academic_year,
+                    'element': 'ERI',
+                    'mean': round(eri_score, 2),
+                    'std_dev': round(statistics.stdev(data['values']), 2) if len(data['values']) > 1 else 0,
+                    'count': student_count,
+                    'eri_score': round(eri_score, 2),
+                    'percentile_25': round(statistics.quantiles(sorted(data['values']), n=4)[0], 2) if len(data['values']) > 3 else data['values'][0],
+                    'percentile_50': round(statistics.median(data['values']), 2),
+                    'percentile_75': round(statistics.quantiles(sorted(data['values']), n=4)[2], 2) if len(data['values']) > 3 else data['values'][-1]
+                }
+                
+                if existing.data:
+                    # Update existing record
+                    supabase.table('national_statistics')\
+                        .update(eri_data)\
+                        .eq('id', existing.data[0]['id'])\
+                        .execute()
+                else:
+                    # Insert new record
+                    supabase.table('national_statistics')\
+                        .insert(eri_data)\
+                        .execute()
+                
+                logging.info(f"Calculated ERI for cycle {cycle}, academic year {academic_year}: {eri_score:.2f}")
+                sync_report['operations']['calculate_eri']['eri_records'] += 1
+        
+        sync_report['operations']['calculate_eri']['status'] = 'completed'
+        sync_report['operations']['calculate_eri']['end_time'] = datetime.now()
+        return True
+        
+    except Exception as e:
+        logging.error(f"Error calculating national ERI: {e}")
+        sync_report['operations']['calculate_eri']['status'] = 'failed'
+        sync_report['operations']['calculate_eri']['error'] = str(e)
+        sync_report['errors'].append(f"National ERI calculation failed: {e}")
+        return False
+
 def calculate_national_statistics():
     """Calculate national statistics across all schools"""
     logging.info("Calculating national statistics...")
@@ -1431,6 +1614,20 @@ def generate_sync_report():
         else:
             report_lines.append(f"  Status: ⚠ WARNINGS")
     
+    # Operations summary
+    if 'operations' in sync_report and sync_report['operations']:
+        report_lines.append("\n=== OPERATIONS ===")
+        for op_name, op_data in sync_report['operations'].items():
+            report_lines.append(f"\n{op_name.replace('_', ' ').title()}:")
+            report_lines.append(f"  Status: {op_data.get('status', 'unknown')}")
+            if 'records_updated' in op_data:
+                report_lines.append(f"  Records updated: {op_data['records_updated']:,}")
+            if 'eri_records' in op_data:
+                report_lines.append(f"  ERI records calculated: {op_data['eri_records']}")
+            if 'start_time' in op_data and 'end_time' in op_data:
+                op_duration = op_data['end_time'] - op_data['start_time']
+                report_lines.append(f"  Duration: {op_duration}")
+    
     # Issues requiring attention
     if sync_report['warnings'] or sync_report['errors']:
         report_lines.append("\n=== ISSUES REQUIRING ATTENTION ===")
@@ -1470,6 +1667,12 @@ def main():
         sync_super_users()   # Added
         sync_question_responses()
         
+        # Update academic_year in question_responses
+        update_question_responses_academic_year()
+        
+        # Calculate national ERI
+        calculate_national_eri()
+        
         # Calculate all statistics
         if calculate_statistics():
             # Calculate question-level statistics
@@ -1488,7 +1691,8 @@ def main():
             'completed_at': end_time.isoformat(),
             'metadata': {
                 'duration_seconds': (end_time - start_time).total_seconds(),
-                'tables_synced': ['establishments', 'students', 'vespa_scores', 'staff_admins', 'super_users', 'question_responses', 'school_statistics', 'national_statistics']
+                'tables_synced': ['establishments', 'students', 'vespa_scores', 'staff_admins', 'super_users', 'question_responses', 'school_statistics', 'national_statistics'],
+                'operations': ['update_question_responses_academic_year', 'calculate_national_eri']
             }
         }).eq('id', sync_log_id).execute()
         

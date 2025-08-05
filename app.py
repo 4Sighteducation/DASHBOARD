@@ -4573,6 +4573,53 @@ def get_national_statistics():
         app.logger.error(f"Failed to fetch national statistics: {e}")
         raise ApiError(f"Failed to fetch national statistics: {str(e)}", 500)
 
+@app.route('/api/national-eri/<int:cycle>', methods=['GET'])
+@cached(ttl_key='national_eri', ttl_seconds=3600)
+def get_national_eri(cycle):
+    """Get national ERI for a specific cycle"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        academic_year = request.args.get('academic_year')
+        
+        # Query national statistics for ERI
+        query = supabase_client.table('national_statistics')\
+            .select('eri_score, count, std_dev, percentile_25, percentile_50, percentile_75')\
+            .eq('cycle', cycle)\
+            .eq('element', 'ERI')
+        
+        if academic_year:
+            query = query.eq('academic_year', academic_year)
+            
+        result = query.execute()
+        
+        if result.data and result.data[0]:
+            eri_data = result.data[0]
+            return jsonify({
+                'cycle': cycle,
+                'academic_year': academic_year,
+                'national_eri': float(eri_data.get('eri_score', 0)),
+                'student_count': eri_data.get('count', 0),
+                'std_dev': float(eri_data.get('std_dev', 0)) if eri_data.get('std_dev') else 0,
+                'percentile_25': float(eri_data.get('percentile_25', 0)) if eri_data.get('percentile_25') else 0,
+                'percentile_50': float(eri_data.get('percentile_50', 0)) if eri_data.get('percentile_50') else 0,
+                'percentile_75': float(eri_data.get('percentile_75', 0)) if eri_data.get('percentile_75') else 0
+            })
+        else:
+            # No data found - return default
+            return jsonify({
+                'cycle': cycle,
+                'academic_year': academic_year,
+                'national_eri': 0,
+                'student_count': 0,
+                'message': 'No national ERI data available for this cycle'
+            })
+        
+    except Exception as e:
+        app.logger.error(f"Failed to fetch national ERI: {e}")
+        raise ApiError(f"Failed to fetch national ERI: {str(e)}", 500)
+
 @app.route('/api/qla-data', methods=['POST'])
 def get_qla_data():
     """Get Question Level Analysis data from Supabase"""
@@ -5078,7 +5125,13 @@ def get_school_statistics_query():
         faculty = request.args.get('faculty')
         student_id = request.args.get('studentId')
         
-        # Get ALL students for this establishment (paginate to avoid 1000 limit)
+        # Check if we have any filters other than cycle
+        has_other_filters = (year_group and year_group != 'all') or \
+                           (group and group != 'all') or \
+                           (faculty and faculty != 'all') or \
+                           student_id
+        
+        # Get filtered students for queries
         all_students = []
         offset = 0
         limit = 1000
@@ -5116,6 +5169,30 @@ def get_school_statistics_query():
         
         student_ids = [s['id'] for s in all_students]
         app.logger.info(f"Found {len(student_ids)} students for establishment {establishment_id}")
+        
+        # Get total enrolled students if only cycle filter is applied
+        total_enrolled_students = len(student_ids)  # Default to filtered count
+        if not has_other_filters:
+            # Get total enrolled students (ignore filters)
+            total_query = supabase_client.table('students').select('id', count='exact').eq('establishment_id', establishment_uuid)
+            total_result = total_query.execute()
+            if hasattr(total_result, 'count') and total_result.count is not None:
+                total_enrolled_students = total_result.count
+                app.logger.info(f"Total enrolled students (no filters): {total_enrolled_students}")
+            else:
+                # Fallback: count all students manually
+                all_enrolled = []
+                offset = 0
+                while True:
+                    batch = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid).limit(1000).offset(offset).execute()
+                    if not batch.data:
+                        break
+                    all_enrolled.extend(batch.data)
+                    if len(batch.data) < 1000:
+                        break
+                    offset += 1000
+                total_enrolled_students = len(all_enrolled)
+                app.logger.info(f"Total enrolled students (counted): {total_enrolled_students}")
         
         if not student_ids:
             # No students, return empty data
@@ -5182,11 +5259,23 @@ def get_school_statistics_query():
         nat_stats_by_element = {}
         comparison_national = []
         
+        # Initialize variables for all paths
+        vespa_scores = {}
+        comparison_school = []
+        comparison_national = []
+        vespa_distributions = None
+        nat_stats_by_element = {}
+        overall_avg = 0
+        
+        # Flag to track which data source we're using
+        using_school_stats = False
+        
         if not vespa_result.data:
             # Try to get data from school_statistics as fallback
             stats_result = supabase_client.table('school_statistics').select('*').eq('establishment_id', establishment_uuid).eq('cycle', cycle).execute()
             
             if stats_result.data:
+                using_school_stats = True
                 # Use school_statistics data
                 stats_by_element = {}
                 for stat in stats_result.data:
@@ -5195,16 +5284,12 @@ def get_school_statistics_query():
                 
                 # Get national statistics
                 nat_result = supabase_client.table('national_statistics').select('*').eq('cycle', cycle).execute()
-                nat_stats_by_element = {}
                 for stat in nat_result.data:
                     element = stat['element'].lower()
                     nat_stats_by_element[element] = float(stat['mean']) if stat['mean'] else 0
                 
                 # Convert 10-point scale to 5-point scale
                 vespa_elements = ['vision', 'effort', 'systems', 'practice', 'attitude']
-                vespa_scores = {}
-                comparison_school = []
-                comparison_national = []
                 
                 for elem in vespa_elements:
                     # Convert from 10-point to 5-point scale
@@ -5217,12 +5302,26 @@ def get_school_statistics_query():
                     comparison_school.append(round(school_score, 2))
                     comparison_national.append(round(national_score, 2))
                 
-                # Get total students from first stat
-                total_students = stats_result.data[0].get('count', 0) if stats_result.data else 0
+                # Get total students - use appropriate count based on filters
+                if has_other_filters:
+                    total_students = len(student_ids)  # Filtered total
+                else:
+                    total_students = total_enrolled_students  # Total enrolled (no filters)
+                students_with_vespa_scores = stats_result.data[0].get('count', 0) if stats_result.data else 0
+                
+                # Calculate overall average for school_statistics path
+                overall_avg = stats_by_element.get('overall', sum(comparison_school) / len(comparison_school)) if comparison_school else 0
+                vespa_scores['overall'] = round(overall_avg, 2)
             else:
                 # No data at all
+                # Still return the total enrolled/filtered count even if no VESPA data
+                if has_other_filters:
+                    no_data_total = len(student_ids)  # Filtered total
+                else:
+                    no_data_total = total_enrolled_students  # Total enrolled
                 return jsonify({
-                    'totalStudents': 0,
+                    'totalStudents': no_data_total,
+                    'totalResponses': 0,
                     'averageERI': 0,
                     'eriChange': 0,
                     'completionRate': 0,
@@ -5254,13 +5353,19 @@ def get_school_statistics_query():
                     'cycle': cycle,
                     'academic_year': academic_year
                 })
-        else:
+        
+        # Process VESPA data if we have it and not using school stats
+        elif vespa_result.data and not using_school_stats:
             # Calculate averages from actual VESPA scores
             # Use the count of students with VESPA scores for display
             students_with_vespa_scores = len(vespa_result.data)
-            total_students = len(student_ids)
+            # Use the appropriate total based on whether filters are applied
+            if has_other_filters:
+                total_students = len(student_ids)  # Filtered total
+            else:
+                total_students = total_enrolled_students  # Total enrolled (no filters)
             
-            app.logger.info(f"Students analysis - Total in establishment: {total_students}, With VESPA scores: {students_with_vespa_scores}")
+            app.logger.info(f"Students analysis - Total: {total_students} (filtered: {has_other_filters}), With VESPA scores: {students_with_vespa_scores})")
             
             # Check if this is for a single student
             if student_id and students_with_vespa_scores == 1:
@@ -5386,18 +5491,43 @@ def get_school_statistics_query():
                     school_eri = eri_sum / eri_count
                     eri_calculated = True
                     
-                    # Get national ERI (you may want to pre-calculate this)
-                    # For now, use a placeholder
-                    national_eri = 3.5  # Typical middle value for 1-5 scale
+                    # Get national ERI from national_statistics
+                    eri_query = supabase_client.table('national_statistics')\
+                        .select('eri_score')\
+                        .eq('cycle', cycle)\
+                        .eq('element', 'ERI')
+                    if academic_year:
+                        eri_query = eri_query.eq('academic_year', academic_year)
+                    eri_result = eri_query.execute()
+                    
+                    if eri_result.data and eri_result.data[0].get('eri_score'):
+                        national_eri = float(eri_result.data[0]['eri_score'])
+                    else:
+                        # Fallback to calculated average from national VESPA scores
+                        national_eri = sum(comparison_national) / len(comparison_national) if comparison_national else 3.5
         
         # Fallback to VESPA average if no outcome data
         if not eri_calculated:
             school_eri = sum(comparison_school) / len(comparison_school) if comparison_school else 0
-            national_eri = sum(comparison_national) / len(comparison_national) if comparison_national else 0
+            # Try to get national ERI from database first
+            if not national_eri or national_eri == 0:
+                eri_query = supabase_client.table('national_statistics')\
+                    .select('eri_score')\
+                    .eq('cycle', cycle)\
+                    .eq('element', 'ERI')
+                if academic_year:
+                    eri_query = eri_query.eq('academic_year', academic_year)
+                eri_result = eri_query.execute()
+                
+                if eri_result.data and eri_result.data[0].get('eri_score'):
+                    national_eri = float(eri_result.data[0]['eri_score'])
+                else:
+                    # Final fallback to VESPA average
+                    national_eri = sum(comparison_national) / len(comparison_national) if comparison_national else 0
         
         # Calculate completion rate
         # students_with_vespa_scores is the count of students with vespa scores for this cycle
-        # total_students is all students in the establishment
+        # total_students is either all enrolled (if only cycle filter) or filtered total (if other filters applied)
         completion_rate = (students_with_vespa_scores / total_students * 100) if total_students > 0 else 0
         
         # Determine ERI trend
@@ -5406,7 +5536,7 @@ def get_school_statistics_query():
         
         # Build response with distributions
         response_data = {
-            'totalStudents': total_students,  # Total enrolled students
+            'totalStudents': total_students,  # Total enrolled (if only cycle) or filtered total (if other filters)
             'totalResponses': students_with_vespa_scores,  # Students who completed VESPA in this cycle
             'averageERI': round(school_eri, 1),
             'eriChange': round(eri_diff, 1),
