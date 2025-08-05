@@ -5801,6 +5801,8 @@ def get_qla_data_query():
         faculty = request.args.get('faculty')
         student_id = request.args.get('studentId')
         
+        app.logger.info(f"QLA endpoint called with establishment_id={establishment_id}, cycle={cycle}, academic_year={academic_year}")
+        
         # Define insight configurations
         insight_configs = {
             'growth_mindset': {
@@ -5871,7 +5873,19 @@ def get_qla_data_query():
             .eq('cycle', cycle)
         
         if academic_year:
-            qla_query = qla_query.eq('academic_year', academic_year)
+            # Handle different academic year formats (2025-26 vs 2024/2025)
+            if '-' in academic_year:
+                # Convert 2025-26 to 2024/2025
+                year_parts = academic_year.split('-')
+                if len(year_parts) == 2:
+                    start_year = int(year_parts[0]) - 1
+                    formatted_year = f"{start_year}/{start_year + 1}"
+                    app.logger.info(f"Converting academic year from {academic_year} to {formatted_year}")
+                    qla_query = qla_query.eq('academic_year', formatted_year)
+                else:
+                    qla_query = qla_query.eq('academic_year', academic_year)
+            else:
+                qla_query = qla_query.eq('academic_year', academic_year)
             
         qla_result = qla_query.execute()
         
@@ -5886,7 +5900,18 @@ def get_qla_data_query():
                 .eq('cycle', cycle)
             
             if academic_year:
-                qla_query = qla_query.eq('academic_year', academic_year)
+                # Handle different academic year formats (2025-26 vs 2024/2025)
+                if '-' in academic_year:
+                    # Convert 2025-26 to 2024/2025
+                    year_parts = academic_year.split('-')
+                    if len(year_parts) == 2:
+                        start_year = int(year_parts[0]) - 1
+                        formatted_year = f"{start_year}/{start_year + 1}"
+                        qla_query = qla_query.eq('academic_year', formatted_year)
+                    else:
+                        qla_query = qla_query.eq('academic_year', academic_year)
+                else:
+                    qla_query = qla_query.eq('academic_year', academic_year)
                 
             qla_result = qla_query.execute()
             app.logger.info(f"qla_question_performance result count: {len(qla_result.data) if qla_result.data else 0}")
