@@ -4575,7 +4575,7 @@ def get_national_statistics():
 
 @app.route('/api/national-eri/<int:cycle>', methods=['GET'])
 @cached(ttl_key='national_eri', ttl_seconds=3600)
-def get_national_eri(cycle):
+def get_national_eri_by_cycle(cycle):
     """Get national ERI for a specific cycle"""
     try:
         if not SUPABASE_ENABLED:
