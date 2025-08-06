@@ -2656,6 +2656,386 @@ def analyze_sentiment():
         app.logger.error(f"Sentiment analysis error: {e}")
         raise ApiError(f"Failed to analyze sentiment: {str(e)}", 500)
 
+# --- Supabase Comment Analysis Endpoints ---
+@app.route('/api/comments/word-cloud', methods=['GET'])
+def get_comments_word_cloud():
+    """Generate word cloud data from student comments in Supabase"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        # Get filters from query params - BE CAREFUL WITH FIELD NAMES!
+        establishment_id = request.args.get('establishment_id')
+        cycle = request.args.get('cycle', type=int)
+        academic_year = request.args.get('academic_year')
+        year_group = request.args.get('year_group')
+        group = request.args.get('group')
+        faculty = request.args.get('faculty')
+        student_id = request.args.get('student_id')  # NOT student_ID!
+        
+        app.logger.info(f"Word cloud request - establishment: {establishment_id}, cycle: {cycle}, academic_year: {academic_year}")
+        
+        # Convert establishment_id if it's a Knack ID
+        if establishment_id:
+            establishment_id = convert_knack_id_to_uuid(establishment_id)
+        
+        # Convert student_id if provided
+        if student_id:
+            student_id = convert_knack_id_to_uuid(student_id)
+        
+        # If no academic year specified, use current
+        if not academic_year:
+            academic_year = get_current_academic_year()
+        
+        # Build query for comments
+        comments = []
+        
+        # First, get relevant student IDs based on filters
+        students_query = supabase_client.table('students').select('id')
+        
+        if establishment_id:
+            students_query = students_query.eq('establishment_id', establishment_id)
+        if year_group:
+            students_query = students_query.eq('year_group', year_group)
+        if group:
+            students_query = students_query.eq('group', group)
+        if faculty:
+            students_query = students_query.eq('faculty', faculty)
+        if student_id:
+            students_query = students_query.eq('id', student_id)
+        
+        # Fetch all students with pagination
+        all_students = []
+        page = 0
+        PAGE_SIZE = 1000
+        
+        while True:
+            students_result = students_query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1).execute()
+            if not students_result.data:
+                break
+            all_students.extend(students_result.data)
+            if len(students_result.data) < PAGE_SIZE:
+                break
+            page += 1
+        
+        if not all_students:
+            return jsonify({
+                'wordCloudData': [],
+                'totalComments': 0,
+                'uniqueWords': 0,
+                'topWord': None,
+                'message': 'No students found for the selected filters'
+            })
+        
+        student_ids = [s['id'] for s in all_students]
+        app.logger.info(f"Found {len(student_ids)} students matching filters")
+        
+        # Now fetch comments for these students
+        # Use batching to avoid URL length issues
+        BATCH_SIZE = 50
+        all_comments = []
+        
+        for i in range(0, len(student_ids), BATCH_SIZE):
+            batch_ids = student_ids[i:i + BATCH_SIZE]
+            
+            # Query student_comments table - CAREFUL WITH FIELD NAMES!
+            comments_query = supabase_client.table('student_comments')\
+                .select('comment_text, comment_type, cycle')\
+                .in_('student_id', batch_ids)  # student_id NOT student_ID!
+            
+            # Apply cycle filter if specified, otherwise get all cycles
+            if cycle:
+                comments_query = comments_query.eq('cycle', cycle)
+            
+            batch_result = comments_query.execute()
+            
+            if batch_result.data:
+                for comment in batch_result.data:
+                    if comment.get('comment_text'):
+                        all_comments.append(comment['comment_text'])
+        
+        app.logger.info(f"Collected {len(all_comments)} comments")
+        
+        if not all_comments:
+            return jsonify({
+                'wordCloudData': [],
+                'totalComments': 0,
+                'uniqueWords': 0,
+                'topWord': None,
+                'message': 'No comments found for the selected filters'
+            })
+        
+        # Process comments for word cloud
+        import nltk
+        from textblob import TextBlob
+        from collections import Counter
+        import re
+        
+        # Download required NLTK data if needed
+        try:
+            nltk.data.find('corpora/stopwords')
+        except LookupError:
+            nltk.download('stopwords', quiet=True)
+        
+        from nltk.corpus import stopwords
+        stop_words = set(stopwords.words('english'))
+        
+        # Add educational context stop words
+        custom_stop_words = {
+            'need', 'needs', 'would', 'could', 'should', 'think', 'feel', 'feels',
+            'really', 'much', 'many', 'also', 'well', 'good', 'better', 'best',
+            'help', 'helps', 'make', 'makes', 'get', 'gets', 'know', 'knows',
+            'want', 'wants', 'like', 'likes', 'time', 'year', 'work', 'works',
+            'will', 'can', 'able', 'try', 'trying', 'going', 'way', 'thing', 'things'
+        }
+        stop_words.update(custom_stop_words)
+        
+        word_freq = Counter()
+        
+        for comment in all_comments:
+            # Clean and process comment text
+            comment = re.sub(r'http\S+|www.\S+|@\S+', '', comment)
+            comment = re.sub(r'[^\w\s]', ' ', comment)
+            
+            # Tokenize and filter
+            blob = TextBlob(comment.lower())
+            words = blob.words
+            
+            for word in words:
+                if (len(word) > 2 and 
+                    word not in stop_words and 
+                    not word.isdigit()):
+                    word_freq[word] += 1
+        
+        # Get top words for word cloud
+        top_words = word_freq.most_common(100)
+        
+        if not top_words:
+            return jsonify({
+                'wordCloudData': [],
+                'totalComments': len(all_comments),
+                'uniqueWords': 0,
+                'topWord': None,
+                'message': 'No meaningful words found in comments'
+            })
+        
+        # Calculate relative sizes for word cloud
+        max_count = top_words[0][1] if top_words else 1
+        min_size = 10
+        max_size = 60
+        
+        word_cloud_data = []
+        for word, count in top_words:
+            # Scale size between min_size and max_size
+            relative_size = min_size + ((count / max_count) * (max_size - min_size))
+            word_cloud_data.append({
+                'text': word,
+                'size': int(relative_size),
+                'count': count
+            })
+        
+        return jsonify({
+            'wordCloudData': word_cloud_data,
+            'totalComments': len(all_comments),
+            'uniqueWords': len(word_freq),
+            'topWord': top_words[0] if top_words else None,
+            'academicYear': academic_year,
+            'cycle': cycle if cycle else 'All Cycles'
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Word cloud generation error: {e}")
+        import traceback
+        app.logger.error(traceback.format_exc())
+        raise ApiError(f"Failed to generate word cloud: {str(e)}", 500)
+
+@app.route('/api/comments/themes', methods=['GET'])
+def get_comments_themes():
+    """Get themes and sample comments from student comments"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+        
+        # Get filters - CAREFUL WITH FIELD NAMES!
+        establishment_id = request.args.get('establishment_id')
+        cycle = request.args.get('cycle', type=int)
+        academic_year = request.args.get('academic_year')
+        year_group = request.args.get('year_group')
+        group = request.args.get('group')
+        faculty = request.args.get('faculty')
+        student_id = request.args.get('student_id')
+        
+        # Convert IDs if needed
+        if establishment_id:
+            establishment_id = convert_knack_id_to_uuid(establishment_id)
+        if student_id:
+            student_id = convert_knack_id_to_uuid(student_id)
+        
+        if not academic_year:
+            academic_year = get_current_academic_year()
+        
+        # Get students matching filters
+        students_query = supabase_client.table('students').select('id, year_group')
+        
+        if establishment_id:
+            students_query = students_query.eq('establishment_id', establishment_id)
+        if year_group:
+            students_query = students_query.eq('year_group', year_group)
+        if group:
+            students_query = students_query.eq('group', group)
+        if faculty:
+            students_query = students_query.eq('faculty', faculty)
+        if student_id:
+            students_query = students_query.eq('id', student_id)
+        
+        # Fetch students
+        all_students = []
+        page = 0
+        PAGE_SIZE = 1000
+        
+        while True:
+            students_result = students_query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1).execute()
+            if not students_result.data:
+                break
+            all_students.extend(students_result.data)
+            if len(students_result.data) < PAGE_SIZE:
+                break
+            page += 1
+        
+        if not all_students:
+            return jsonify({
+                'themes': {
+                    'positive': [],
+                    'improvement': []
+                },
+                'sampleComments': [],
+                'totalComments': 0,
+                'message': 'No students found for the selected filters'
+            })
+        
+        # Create student ID to year group mapping
+        student_year_map = {s['id']: s.get('year_group', 'Unknown') for s in all_students}
+        student_ids = list(student_year_map.keys())
+        
+        # Fetch comments with batching
+        BATCH_SIZE = 50
+        all_comments_with_meta = []
+        
+        for i in range(0, len(student_ids), BATCH_SIZE):
+            batch_ids = student_ids[i:i + BATCH_SIZE]
+            
+            comments_query = supabase_client.table('student_comments')\
+                .select('comment_text, comment_type, cycle, student_id, created_at')\
+                .in_('student_id', batch_ids)
+            
+            if cycle:
+                comments_query = comments_query.eq('cycle', cycle)
+            
+            batch_result = comments_query.execute()
+            
+            if batch_result.data:
+                for comment in batch_result.data:
+                    if comment.get('comment_text'):
+                        all_comments_with_meta.append({
+                            'text': comment['comment_text'],
+                            'type': comment.get('comment_type', 'general'),
+                            'cycle': comment.get('cycle'),
+                            'yearGroup': student_year_map.get(comment['student_id'], 'Unknown'),
+                            'date': comment.get('created_at', '')[:10] if comment.get('created_at') else ''
+                        })
+        
+        app.logger.info(f"Found {len(all_comments_with_meta)} comments for theme analysis")
+        
+        if not all_comments_with_meta:
+            return jsonify({
+                'themes': {
+                    'positive': [],
+                    'improvement': []
+                },
+                'sampleComments': [],
+                'totalComments': 0,
+                'message': 'No comments found for the selected filters'
+            })
+        
+        # Analyze comments for themes using simple keyword matching
+        # (In production, you might want to use AI here)
+        positive_keywords = {
+            'excellent': 'Excellence in Learning',
+            'amazing': 'Exceptional Performance',
+            'confident': 'Strong Confidence',
+            'improved': 'Significant Improvement',
+            'understanding': 'Deep Understanding',
+            'focused': 'Strong Focus',
+            'motivated': 'High Motivation',
+            'organized': 'Good Organization',
+            'progress': 'Good Progress',
+            'achieved': 'Achievement'
+        }
+        
+        improvement_keywords = {
+            'struggle': 'Academic Challenges',
+            'difficult': 'Finding Topics Difficult',
+            'help': 'Needs Support',
+            'practice': 'More Practice Needed',
+            'revision': 'Revision Strategies',
+            'time management': 'Time Management',
+            'focus': 'Focus and Concentration',
+            'confidence': 'Building Confidence',
+            'homework': 'Homework Completion',
+            'attendance': 'Attendance Issues'
+        }
+        
+        positive_counts = Counter()
+        improvement_counts = Counter()
+        
+        for comment in all_comments_with_meta:
+            text_lower = comment['text'].lower()
+            
+            # Check for positive themes
+            for keyword, theme in positive_keywords.items():
+                if keyword in text_lower:
+                    positive_counts[theme] += 1
+            
+            # Check for improvement themes
+            for keyword, theme in improvement_keywords.items():
+                if keyword in text_lower:
+                    improvement_counts[theme] += 1
+        
+        # Format themes
+        positive_themes = [
+            {'name': theme, 'count': count, 'id': f'pos_{i}'}
+            for i, (theme, count) in enumerate(positive_counts.most_common(5))
+        ]
+        
+        improvement_themes = [
+            {'name': theme, 'count': count, 'id': f'imp_{i}'}
+            for i, (theme, count) in enumerate(improvement_counts.most_common(5))
+        ]
+        
+        # Get sample comments (latest 5)
+        sample_comments = sorted(
+            all_comments_with_meta,
+            key=lambda x: x['date'],
+            reverse=True
+        )[:5]
+        
+        return jsonify({
+            'themes': {
+                'positive': positive_themes,
+                'improvement': improvement_themes
+            },
+            'sampleComments': sample_comments,
+            'totalComments': len(all_comments_with_meta),
+            'academicYear': academic_year,
+            'cycle': cycle if cycle else 'All Cycles'
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Theme analysis error: {e}")
+        import traceback
+        app.logger.error(traceback.format_exc())
+        raise ApiError(f"Failed to analyze themes: {str(e)}", 500)
+
 # --- Test Endpoint for CORS and Connection Verification ---
 @app.route('/api/test', methods=['GET', 'OPTIONS'])
 def test_endpoint():
