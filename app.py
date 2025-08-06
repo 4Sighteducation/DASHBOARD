@@ -2957,6 +2957,9 @@ def get_comments_themes():
                 'message': 'No comments found for the selected filters'
             })
         
+        # Import Counter for theme counting
+        from collections import Counter
+        
         # Analyze comments for themes using simple keyword matching
         # (In production, you might want to use AI here)
         positive_keywords = {
