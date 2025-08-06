@@ -2732,7 +2732,7 @@ def get_comments_word_cloud():
         
         # Now fetch comments for these students
         # Use batching to avoid URL length issues
-        BATCH_SIZE = 50
+        BATCH_SIZE = 75  # Increased from 50 for better performance
         all_comments = []
         
         for i in range(0, len(student_ids), BATCH_SIZE):
