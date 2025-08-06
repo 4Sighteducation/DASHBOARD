@@ -2732,7 +2732,7 @@ def get_comments_word_cloud():
         
         # Now fetch comments for these students
         # Use batching to avoid URL length issues
-        BATCH_SIZE = 75  # Increased from 50 for better performance
+        BATCH_SIZE = 100  # Increased from 50 for better performance (50% fewer requests)
         all_comments = []
         
         for i in range(0, len(student_ids), BATCH_SIZE):
@@ -2918,7 +2918,7 @@ def get_comments_themes():
         student_ids = list(student_year_map.keys())
         
         # Fetch comments with batching
-        BATCH_SIZE = 50
+        BATCH_SIZE = 100  # Increased from 50 for better performance
         all_comments_with_meta = []
         
         for i in range(0, len(student_ids), BATCH_SIZE):
@@ -5615,7 +5615,7 @@ def get_school_statistics_query():
             })
         
         # Get VESPA scores for these students in batches to avoid URL length limits
-        BATCH_SIZE = 50  # Process 50 students at a time to stay well under URL limits
+        BATCH_SIZE = 100  # Increased from 50 for better performance (50% fewer requests)
         all_vespa_scores = []
         seen_student_ids = set()  # Track unique students to avoid duplicates
             
@@ -5890,7 +5890,7 @@ def get_school_statistics_query():
             outcome_questions = ['outcome_q_confident', 'outcome_q_equipped', 'outcome_q_support']
             
             # Get question responses for outcome questions in batches
-            BATCH_SIZE = 50
+            BATCH_SIZE = 100  # Increased from 50 for better performance
             all_outcome_responses = []
             
             for i in range(0, len(student_ids), BATCH_SIZE):
@@ -6408,7 +6408,7 @@ def get_qla_data_query():
             # Get question responses for filtered students
             if student_ids:
                 # Process in batches
-                BATCH_SIZE = 50
+                BATCH_SIZE = 100  # Increased from 50 for better performance
                 filtered_responses = []
                 
                 for i in range(0, len(student_ids), BATCH_SIZE):
