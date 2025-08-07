@@ -6833,7 +6833,7 @@ def get_staff_admin_by_email(email):
 
 @app.route('/api/comparative-report', methods=['POST', 'OPTIONS'])
 def generate_comparative_report():
-    """Generate a context-aware comparative report with enhanced AI insights"""
+    """Generate an interactive HTML comparative report that can be edited in-browser"""
     
     # Handle preflight OPTIONS request
     if request.method == 'OPTIONS':
@@ -6864,7 +6864,7 @@ def generate_comparative_report():
         establishment_logo_url = config.get('establishmentLogoUrl', '')
         primary_color = config.get('primaryColor', '#667eea')
         
-        app.logger.info(f"Generating comparative report for {establishment_name}")
+        app.logger.info(f"Generating interactive HTML report for {establishment_name}")
         app.logger.info(f"Report type: {report_type}")
         app.logger.info(f"Has context: {bool(organizational_context)}")
         
@@ -6886,22 +6886,24 @@ def generate_comparative_report():
             establishment_name
         )
         
-        # Create PDF with custom branding
-        pdf_buffer = create_branded_pdf(
+        # Create interactive HTML report (not PDF)
+        html_content = create_interactive_html_report(
             establishment_name,
             establishment_logo_url,
             primary_color,
             comparison_data,
             ai_insights,
-            config
+            config,
+            report_type
         )
         
-        return send_file(
-            pdf_buffer,
-            mimetype='application/pdf',
-            as_attachment=True,
-            download_name=f'Comparative_Report_{establishment_name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d")}.pdf'
-        )
+        # Return HTML content that can be displayed and edited
+        return jsonify({
+            'success': True,
+            'html': html_content,
+            'data': comparison_data,
+            'insights': ai_insights
+        })
         
     except Exception as e:
         app.logger.error(f"Failed to generate comparative report: {e}")
@@ -7137,99 +7139,304 @@ def extract_bullet_points(text, section_type):
     
     return bullets[:5]  # Return top 5
 
-def create_branded_pdf(school_name, logo_url, primary_color, data, insights, config):
-    """Create a professionally branded PDF report"""
+def create_interactive_html_report(school_name, logo_url, primary_color, data, insights, config, report_type):
+    """Create an interactive HTML report that can be edited in-browser"""
     
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.75*inch)
-    elements = []
+    # Read the mockup template and customize it with real data
+    html_template = create_html_template()
     
-    # Define styles
-    styles = getSampleStyleSheet()
+    # Prepare chart data
+    chart_data = prepare_chart_data(data, report_type)
     
-    # Custom title style with primary color
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        textColor=colors.HexColor(primary_color),
-        spaceAfter=30,
-        alignment=TA_CENTER
+    # Format the comparison title
+    comparison_title = get_comparison_title(report_type, config)
+    
+    # Build the interactive HTML
+    html_content = html_template.format(
+        school_name=school_name,
+        comparison_title=comparison_title,
+        report_date=datetime.now().strftime('%B %d, %Y'),
+        primary_color=primary_color,
+        logo_url=logo_url or 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24"%3E%3Cpath fill="%23667eea" d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72L5.18 9L12 5.28L18.82 9zM17 15.99l-5 2.73l-5-2.73v-3.72L12 15l5-2.73v3.72z"/%3E%3C/svg%3E',
+        organizational_context=config.get('organizationalContext', 'No specific organizational context provided.'),
+        executive_summary=insights.get('summary', 'Executive summary will be generated based on the data analysis.'),
+        key_findings_html=generate_key_findings_html(insights.get('key_findings', [])),
+        recommendations_html=generate_recommendations_html(insights.get('recommendations', [])),
+        data_table_html=generate_data_table_html(data),
+        chart_data_json=json.dumps(chart_data),
+        vespa_colors=json.dumps({
+            'vision': '#e59437',
+            'effort': '#86b4f0', 
+            'systems': '#72cb44',
+            'practice': '#7f31a4',
+            'attitude': '#f032e6',
+            'overall': '#667eea'
+        }),
+        qla_insights_html=generate_qla_insights_html(data, report_type)
     )
     
-    # Header with title
-    elements.append(Paragraph(f"<b>{school_name}</b><br/>Comparative Analysis Report", title_style))
-    elements.append(Spacer(1, 0.5*inch))
+    return html_content
+
+def create_html_template():
+    """Create the HTML template based on the mockup"""
+    return '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparative Report - {school_name}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/timdream/wordcloud2.js@gh-pages/src/wordcloud2.js"></script>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }}
+        .report-container {{ max-width: 1200px; margin: 0 auto; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.1); }}
+        .control-panel {{ position: fixed; right: 20px; top: 20px; background: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; max-height: 80vh; overflow-y: auto; width: 280px; }}
+        .control-panel h3 {{ margin-bottom: 15px; color: {primary_color}; font-size: 18px; }}
+        .control-group {{ margin-bottom: 15px; }}
+        .control-group label {{ display: flex; align-items: center; margin-bottom: 8px; cursor: pointer; font-size: 14px; }}
+        .control-group input[type="checkbox"] {{ margin-right: 8px; }}
+        .report-header {{ background: linear-gradient(135deg, {primary_color}, {primary_color}dd); color: white; padding: 40px; display: flex; align-items: center; justify-content: space-between; }}
+        .header-title h1 {{ font-size: 28px; margin-bottom: 10px; }}
+        .header-logo {{ width: 80px; height: 80px; border-radius: 8px; background: white; padding: 10px; }}
+        .report-section {{ padding: 30px 40px; border-bottom: 1px solid #eee; }}
+        .section-title {{ color: {primary_color}; font-size: 24px; margin-bottom: 20px; font-weight: 600; }}
+        .editable {{ border: 1px dashed transparent; padding: 2px 4px; border-radius: 4px; transition: all 0.2s; }}
+        .editable:hover {{ border-color: {primary_color}; background: #f0f0f0; cursor: text; }}
+        .editable:focus {{ outline: none; border-color: {primary_color}; background: white; }}
+        .key-finding {{ background: #f8f9fa; padding: 15px; margin-bottom: 10px; border-left: 4px solid {primary_color}; border-radius: 4px; }}
+        .recommendation {{ background: #e6f7ff; padding: 15px; margin-bottom: 10px; border-left: 4px solid #1890ff; border-radius: 4px; }}
+        .data-table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+        .data-table th {{ background: {primary_color}; color: white; padding: 12px; text-align: left; }}
+        .data-table td {{ padding: 12px; border-bottom: 1px solid #eee; }}
+        .data-table tr:hover {{ background: #f5f5f5; }}
+        .charts-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; margin-top: 20px; }}
+        .chart-container {{ background: #f8f9fa; padding: 20px; border-radius: 8px; }}
+        .btn {{ padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s; }}
+        .btn-primary {{ background: {primary_color}; color: white; }}
+        .btn-primary:hover {{ background: {primary_color}dd; }}
+        @media print {{ .control-panel {{ display: none; }} }}
+    </style>
+</head>
+<body>
+    <!-- Control Panel -->
+    <div class="control-panel" id="controlPanel">
+        <h3>🎨 Report Customization</h3>
+        <div class="control-group">
+            <label style="font-weight: bold; margin-bottom: 10px;">Show/Hide Sections:</label>
+            <label><input type="checkbox" checked onchange="toggleSection(\'executive-summary\')" /> Executive Summary</label>
+            <label><input type="checkbox" checked onchange="toggleSection(\'key-findings\')" /> Key Findings</label>
+            <label><input type="checkbox" checked onchange="toggleSection(\'data-analysis\')" /> Data Analysis</label>
+            <label><input type="checkbox" checked onchange="toggleSection(\'recommendations\')" /> Recommendations</label>
+        </div>
+        <div class="btn-group" style="margin-top: 20px;">
+            <button class="btn btn-primary" onclick="window.print()">🖨️ Print Report</button>
+            <button class="btn btn-primary" onclick="exportHTML()">💾 Save HTML</button>
+        </div>
+    </div>
     
-    # Report date
-    elements.append(Paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y')}", styles['Normal']))
-    elements.append(Spacer(1, 0.3*inch))
+    <!-- Report Content -->
+    <div class="report-container">
+        <!-- Header -->
+        <div class="report-header">
+            <img src="{logo_url}" alt="School Logo" class="header-logo" onerror="this.style.display=\'none\'" />
+            <div class="header-title">
+                <h1 class="editable" contenteditable="true">{school_name}</h1>
+                <p class="editable" contenteditable="true">{comparison_title}</p>
+                <p>Generated: {report_date}</p>
+            </div>
+            <img src="https://vespa.academy/_astro/vespalogo.BGrK1ARl.png" alt="VESPA Logo" class="header-logo" />
+        </div>
+        
+        <!-- Organizational Context -->
+        <div class="report-section" id="context">
+            <h2 class="section-title">Organizational Context</h2>
+            <p class="editable" contenteditable="true">{organizational_context}</p>
+        </div>
+        
+        <!-- Executive Summary -->
+        <div class="report-section" id="executive-summary">
+            <h2 class="section-title">Executive Summary</h2>
+            <div class="editable" contenteditable="true">
+                {executive_summary}
+            </div>
+        </div>
+        
+        <!-- Key Findings -->
+        <div class="report-section" id="key-findings">
+            <h2 class="section-title">Key Findings</h2>
+            {key_findings_html}
+        </div>
+        
+        <!-- Data Analysis -->
+        <div class="report-section" id="data-analysis">
+            <h2 class="section-title">Data Analysis</h2>
+            {data_table_html}
+            <div class="charts-grid" id="chartsContainer"></div>
+        </div>
+        
+        <!-- Recommendations -->
+        <div class="report-section" id="recommendations">
+            <h2 class="section-title">Recommendations</h2>
+            {recommendations_html}
+        </div>
+    </div>
     
-    # Executive Summary with AI insights
-    elements.append(Paragraph("<b>Executive Summary</b>", styles['Heading2']))
-    elements.append(Spacer(1, 0.2*inch))
-    elements.append(Paragraph(insights.get('summary', 'No summary available'), styles['BodyText']))
-    elements.append(Spacer(1, 0.3*inch))
+    <script>
+        const chartData = {chart_data_json};
+        const vespaColors = {vespa_colors};
+        
+        function toggleSection(sectionId) {{
+            const section = document.getElementById(sectionId);
+            section.style.display = section.style.display === \'none\' ? \'block\' : \'none\';
+        }}
+        
+        function exportHTML() {{
+            const html = document.documentElement.outerHTML;
+            const blob = new Blob([html], {{type: \'text/html\'}}); 
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement(\'a\');
+            a.href = url;
+            a.download = \'comparative_report.html\';
+            a.click();
+        }}
+        
+        // Initialize charts when page loads
+        window.addEventListener(\'load\', () => {{
+            if (chartData && chartData.datasets) {{
+                createCharts();
+            }}
+        }});
+        
+        function createCharts() {{
+            // Implementation would create Chart.js charts based on chartData
+            console.log(\'Charts would be created here with:\', chartData);
+        }}
+    </script>
+</body>
+</html>'''
+
+def generate_key_findings_html(findings):
+    """Generate HTML for key findings"""
+    if not findings:
+        return '<div class="key-finding editable" contenteditable="true">Key findings will appear here based on the data analysis.</div>'
     
-    # Data Summary Section
-    elements.append(Paragraph("<b>Data Analysis</b>", styles['Heading2']))
-    elements.append(Spacer(1, 0.2*inch))
+    html = ''
+    for finding in findings:
+        html += f'<div class="key-finding editable" contenteditable="true">{finding}</div>'
+    return html
+
+def generate_recommendations_html(recommendations):
+    """Generate HTML for recommendations"""
+    if not recommendations:
+        return '<div class="recommendation editable" contenteditable="true">Recommendations will appear here based on the analysis.</div>'
     
-    # Create data table
-    table_data = [['Group', 'Mean Score', 'Std Dev', 'Sample Size']]
+    html = ''
+    for rec in recommendations:
+        html += f'<div class="recommendation editable" contenteditable="true">{rec}</div>'
+    return html
+
+def generate_data_table_html(data):
+    """Generate HTML table for data comparison"""
+    html = '<table class="data-table">'
+    html += '<thead><tr><th>Group</th><th>Mean Score</th><th>Std Dev</th><th>Sample Size</th></tr></thead>'
+    html += '<tbody>'
+    
     for key, values in data.items():
         if isinstance(values, dict) and 'mean' in values:
-            table_data.append([
-                key.replace('_', ' ').title(),
-                f"{values['mean']:.2f}",
-                f"{values['std']:.2f}",
-                str(values['count'])
-            ])
+            group_name = key.replace('_', ' ').title()
+            html += f'<tr>'
+            html += f'<td>{group_name}</td>'
+            html += f'<td>{values["mean"]:.2f}</td>'
+            html += f'<td>{values["std"]:.2f}</td>'
+            html += f'<td>{values["count"]}</td>'
+            html += f'</tr>'
     
-    if len(table_data) > 1:
-        data_table = Table(table_data, colWidths=[2*inch, 1.5*inch, 1.5*inch, 1.5*inch])
-        data_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor(primary_color)),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black)
-        ]))
-        elements.append(data_table)
-        elements.append(Spacer(1, 0.3*inch))
+    html += '</tbody></table>'
+    return html
+
+def prepare_chart_data(data, report_type):
+    """Prepare data for Chart.js visualization"""
+    chart_data = {
+        'labels': [],
+        'datasets': []
+    }
     
-    # Key Findings
-    if insights.get('key_findings'):
-        elements.append(Paragraph("<b>Key Findings</b>", styles['Heading2']))
-        elements.append(Spacer(1, 0.1*inch))
-        for finding in insights['key_findings']:
-            elements.append(Paragraph(f"• {finding}", styles['BodyText']))
-        elements.append(Spacer(1, 0.3*inch))
+    # Extract labels and values from comparison data
+    for key, values in data.items():
+        if isinstance(values, dict) and 'mean' in values:
+            chart_data['labels'].append(key.replace('_', ' ').title())
     
-    # Recommendations
-    if insights.get('recommendations'):
-        elements.append(Paragraph("<b>Recommendations</b>", styles['Heading2']))
-        elements.append(Spacer(1, 0.1*inch))
-        for rec in insights['recommendations']:
-            elements.append(Paragraph(f"• {rec}", styles['BodyText']))
-        elements.append(Spacer(1, 0.3*inch))
+    return chart_data
+
+def get_comparison_title(report_type, config):
+    """Generate appropriate title based on report type"""
+    if report_type == 'cycle_progression':
+        cycles = config.get('cycles', [])
+        if len(cycles) >= 2:
+            return f"Cycle {cycles[0]} vs Cycle {cycles[-1]} Comparative Analysis"
+        return "Cycle Progression Analysis"
+    elif report_type == 'group_comparison':
+        dimension = config.get('groupDimension', 'group')
+        return f"{dimension.replace('_', ' ').title()} Comparison Analysis"
+    return "Comparative Analysis Report"
+
+def generate_qla_insights_html(data, report_type):
+    """Generate Question Level Analysis insights HTML"""
+    # This would generate the QLA section with questionnaire insights
+    return ''
+
+@app.route('/api/comparative-report/export-pdf', methods=['POST', 'OPTIONS'])
+def export_comparative_report_pdf():
+    """Export the edited HTML report as a PDF"""
     
-    # Footer with context note
-    if config.get('organizationalContext'):
-        elements.append(HRFlowable(width="100%", thickness=1, color=colors.grey))
-        elements.append(Spacer(1, 0.2*inch))
-        elements.append(Paragraph("<i>This report was generated with consideration of the following organizational context:</i>", styles['Normal']))
-        context_text = config['organizationalContext'][:200] + ('...' if len(config['organizationalContext']) > 200 else '')
-        elements.append(Paragraph(f"<i>{context_text}</i>", styles['Normal']))
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Knack-Application-Id, X-Knack-REST-API-Key, x-knack-application-id, x-knack-rest-api-key')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        return response, 200
     
-    # Build PDF
-    doc.build(elements)
-    buffer.seek(0)
-    
-    return buffer
+    try:
+        data = request.get_json()
+        if not data:
+            raise ApiError("Missing request body", 400)
+        
+        # Get the edited HTML content
+        html_content = data.get('html', '')
+        establishment_name = data.get('establishmentName', 'Report')
+        
+        if not html_content:
+            raise ApiError("No HTML content provided", 400)
+        
+        # Convert HTML to PDF using a library like weasyprint or pdfkit
+        # For now, return a simple PDF with the content
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        elements = []
+        
+        # Parse key content from HTML (simplified for now)
+        styles = getSampleStyleSheet()
+        elements.append(Paragraph(f"<b>{establishment_name} - Comparative Report</b>", styles['Title']))
+        elements.append(Spacer(1, 0.5*inch))
+        elements.append(Paragraph("This PDF was exported from the interactive HTML report editor.", styles['Normal']))
+        elements.append(Paragraph("Full HTML-to-PDF conversion would require additional libraries like weasyprint.", styles['Normal']))
+        
+        doc.build(elements)
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'Comparative_Report_{establishment_name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d")}.pdf'
+        )
+        
+    except Exception as e:
+        app.logger.error(f"Failed to export PDF: {e}")
+        traceback.print_exc()
+        raise ApiError(f"PDF export failed: {str(e)}", 500)
 
 # ===== END COMPARATIVE REPORT ENDPOINT =====
 
