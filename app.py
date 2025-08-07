@@ -26,9 +26,11 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+from reportlab.platypus import HRFlowable
 from io import BytesIO
 import base64
 from supabase import create_client, Client
+import numpy as np
 
 # Download NLTK data at startup
 import nltk
@@ -308,6 +310,16 @@ def convert_knack_id_to_uuid(establishment_id):
         return est_result.data[0]['id']
 
 # --- Academic Year Helper ---
+def get_current_academic_year():
+    """Get the current academic year string (e.g., '2024/2025')"""
+    today = datetime.now()
+    # August to December: Current year / Next year (e.g., 2024/2025)
+    if today.month >= 8:
+        return f"{today.year}/{today.year + 1}"
+    # January to July: Previous year / Current year (e.g., 2023/2024)
+    else:
+        return f"{today.year - 1}/{today.year}"
+
 def get_academic_year_filters(establishment_id=None, date_field='field_855', australian_field='field_3511'):
     """
     Generate academic year date filters for UK/Australian schools.
@@ -6817,6 +6829,409 @@ def get_staff_admin_by_email(email):
         app.logger.error(f"Failed to fetch staff admin: {e}")
         raise ApiError(f"Failed to fetch staff admin: {str(e)}", 500)
 
+# ===== COMPARATIVE REPORT ENDPOINT =====
+
+@app.route('/api/comparative-report', methods=['POST', 'OPTIONS'])
+def generate_comparative_report():
+    """Generate a context-aware comparative report with enhanced AI insights"""
+    
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Knack-Application-Id, X-Knack-REST-API-Key, x-knack-application-id, x-knack-rest-api-key')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        return response, 200
+    
+    try:
+        data = request.get_json()
+        if not data:
+            raise ApiError("Missing request body", 400)
+        
+        # Extract configuration
+        establishment_id = data.get('establishmentId')
+        establishment_name = data.get('establishmentName', 'Unknown School')
+        report_type = data.get('reportType')
+        config = data.get('config', {})
+        filters = data.get('filters', {})
+        
+        # Extract context fields
+        organizational_context = config.get('organizationalContext', '')
+        specific_questions = config.get('specificQuestions', '')
+        historical_context = config.get('historicalContext', '')
+        
+        # Extract branding
+        establishment_logo_url = config.get('establishmentLogoUrl', '')
+        primary_color = config.get('primaryColor', '#667eea')
+        
+        app.logger.info(f"Generating comparative report for {establishment_name}")
+        app.logger.info(f"Report type: {report_type}")
+        app.logger.info(f"Has context: {bool(organizational_context)}")
+        
+        # Fetch comparison data from Supabase
+        comparison_data = fetch_comparison_data(
+            establishment_id, 
+            report_type, 
+            config,
+            filters
+        )
+        
+        # Generate AI insights with context
+        ai_insights = generate_contextual_insights(
+            comparison_data, 
+            organizational_context,
+            specific_questions,
+            historical_context,
+            report_type,
+            establishment_name
+        )
+        
+        # Create PDF with custom branding
+        pdf_buffer = create_branded_pdf(
+            establishment_name,
+            establishment_logo_url,
+            primary_color,
+            comparison_data,
+            ai_insights,
+            config
+        )
+        
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'Comparative_Report_{establishment_name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d")}.pdf'
+        )
+        
+    except Exception as e:
+        app.logger.error(f"Failed to generate comparative report: {e}")
+        traceback.print_exc()
+        raise ApiError(f"Report generation failed: {str(e)}", 500)
+
+def fetch_comparison_data(establishment_id, report_type, config, filters):
+    """Fetch data from comparative_metrics view or raw tables"""
+    try:
+        if not SUPABASE_ENABLED:
+            raise ApiError("Supabase not configured", 503)
+            
+        # Convert Knack ID to UUID if needed
+        if establishment_id and not establishment_id.startswith('00000000'):
+            establishment_id = convert_knack_id_to_uuid(establishment_id)
+            
+        if report_type == 'cycle_progression':
+            cycles = config.get('cycles', [1, 2, 3])
+            
+            # Query data for each cycle
+            data = {}
+            for cycle in cycles:
+                # Get vespa_scores for this cycle
+                students_result = supabase_client.table('students')\
+                    .select('id')\
+                    .eq('establishment_id', establishment_id)\
+                    .execute()
+                
+                if students_result.data:
+                    student_ids = [s['id'] for s in students_result.data]
+                    
+                    # Batch fetch vespa scores
+                    all_scores = []
+                    BATCH_SIZE = 50
+                    for i in range(0, len(student_ids), BATCH_SIZE):
+                        batch_ids = student_ids[i:i + BATCH_SIZE]
+                        batch_result = supabase_client.table('vespa_scores')\
+                            .select('*')\
+                            .in_('student_id', batch_ids)\
+                            .eq('cycle', cycle)\
+                            .execute()
+                        if batch_result.data:
+                            all_scores.extend(batch_result.data)
+                    
+                    if all_scores:
+                        # Calculate statistics
+                        overall_scores = [s['overall'] for s in all_scores if s.get('overall') is not None]
+                        vision_scores = [s['vision'] for s in all_scores if s.get('vision') is not None]
+                        effort_scores = [s['effort'] for s in all_scores if s.get('effort') is not None]
+                        systems_scores = [s['systems'] for s in all_scores if s.get('systems') is not None]
+                        practice_scores = [s['practice'] for s in all_scores if s.get('practice') is not None]
+                        attitude_scores = [s['attitude'] for s in all_scores if s.get('attitude') is not None]
+                        
+                        data[f'cycle_{cycle}'] = {
+                            'mean': float(np.mean(overall_scores)) if overall_scores else 0,
+                            'std': float(np.std(overall_scores)) if overall_scores else 0,
+                            'count': len(overall_scores),
+                            'vespa_breakdown': {
+                                'vision': float(np.mean(vision_scores)) if vision_scores else 0,
+                                'effort': float(np.mean(effort_scores)) if effort_scores else 0,
+                                'systems': float(np.mean(systems_scores)) if systems_scores else 0,
+                                'practice': float(np.mean(practice_scores)) if practice_scores else 0,
+                                'attitude': float(np.mean(attitude_scores)) if attitude_scores else 0
+                            },
+                            'raw_data': all_scores[:10]  # Sample for debugging
+                        }
+            
+            return data
+            
+        elif report_type == 'group_comparison':
+            dimension = config.get('groupDimension', 'year_group')
+            groups = config.get('groups', [])
+            
+            data = {}
+            for group in groups:
+                # Get students in this group
+                students_query = supabase_client.table('students')\
+                    .select('id')\
+                    .eq('establishment_id', establishment_id)
+                
+                if dimension == 'year_group':
+                    students_query = students_query.eq('year_group', group)
+                elif dimension == 'faculty':
+                    students_query = students_query.eq('faculty', group)
+                elif dimension == 'group':
+                    students_query = students_query.eq('group', group)
+                    
+                students_result = students_query.execute()
+                
+                if students_result.data:
+                    student_ids = [s['id'] for s in students_result.data]
+                    
+                    # Get vespa scores for these students
+                    all_scores = []
+                    BATCH_SIZE = 50
+                    for i in range(0, len(student_ids), BATCH_SIZE):
+                        batch_ids = student_ids[i:i + BATCH_SIZE]
+                        batch_result = supabase_client.table('vespa_scores')\
+                            .select('*')\
+                            .in_('student_id', batch_ids)\
+                            .execute()
+                        if batch_result.data:
+                            all_scores.extend(batch_result.data)
+                    
+                    if all_scores:
+                        overall_scores = [s['overall'] for s in all_scores if s.get('overall') is not None]
+                        data[group] = {
+                            'mean': float(np.mean(overall_scores)) if overall_scores else 0,
+                            'std': float(np.std(overall_scores)) if overall_scores else 0,
+                            'count': len(overall_scores),
+                            'raw_data': all_scores[:10]
+                        }
+            
+            return data
+            
+        else:
+            # Default/custom report type
+            return {}
+            
+    except Exception as e:
+        app.logger.error(f"Failed to fetch comparison data: {e}")
+        traceback.print_exc()
+        return {}
+
+def generate_contextual_insights(comparison_data, org_context, questions, historical, report_type, school_name):
+    """Generate AI insights with organizational context"""
+    
+    if not OPENAI_API_KEY:
+        return {
+            'summary': 'AI insights not available - API key not configured',
+            'key_findings': [],
+            'recommendations': []
+        }
+    
+    try:
+        import openai
+        openai.api_key = OPENAI_API_KEY
+        
+        # Build comprehensive context
+        data_summary = summarize_comparison_data(comparison_data)
+        
+        # Enhanced system prompt with context awareness
+        system_prompt = """You are an expert educational data analyst specializing in VESPA metrics and student performance analysis. 
+        You provide evidence-based, actionable insights that are specific to the school's context and concerns.
+        Focus on practical recommendations that can be implemented immediately.
+        When the user provides organizational context, pay special attention to addressing their specific concerns and questions."""
+        
+        # Build user prompt with all context
+        user_prompt = f"""
+        School: {school_name}
+        Report Type: {report_type}
+        
+        DATA SUMMARY:
+        {data_summary}
+        
+        ORGANIZATIONAL CONTEXT:
+        {org_context if org_context else 'No specific context provided'}
+        
+        SPECIFIC QUESTIONS TO ADDRESS:
+        {questions if questions else 'No specific questions provided'}
+        
+        HISTORICAL CONTEXT:
+        {historical if historical else 'No historical context provided'}
+        
+        Please provide:
+        1. An executive summary (2-3 paragraphs) that directly addresses the organizational context
+        2. 3-5 key findings with statistical support
+        3. 3-5 specific, actionable recommendations
+        4. If questions were provided, ensure each is answered with data-driven insights
+        
+        Focus especially on:
+        - Explaining unexpected patterns (e.g., if Year 13 shows lower confidence than Year 12)
+        - Identifying root causes based on the data
+        - Providing practical interventions
+        """
+        
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # Use gpt-3.5-turbo for reliability
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1500
+        )
+        
+        # Parse the response
+        ai_text = response.choices[0].message['content']
+        
+        # Extract sections (basic parsing)
+        sections = ai_text.split('\n\n')
+        
+        return {
+            'summary': sections[0] if sections else '',
+            'key_findings': extract_bullet_points(ai_text, 'findings'),
+            'recommendations': extract_bullet_points(ai_text, 'recommendations'),
+            'full_analysis': ai_text
+        }
+        
+    except Exception as e:
+        app.logger.error(f"AI generation failed: {e}")
+        traceback.print_exc()
+        return {
+            'summary': 'Unable to generate AI insights',
+            'key_findings': [],
+            'recommendations': [],
+            'error': str(e)
+        }
+
+def summarize_comparison_data(data):
+    """Create a text summary of comparison data for AI context"""
+    summary = []
+    
+    for key, values in data.items():
+        if isinstance(values, dict) and 'mean' in values:
+            summary.append(f"{key}: Mean={values['mean']:.2f}, StdDev={values['std']:.2f}, N={values['count']}")
+            
+            # Add VESPA breakdowns if available
+            if 'vespa_breakdown' in values:
+                vespa = values['vespa_breakdown']
+                summary.append(f"  VESPA breakdown: Vision={vespa.get('vision', 0):.2f}, Effort={vespa.get('effort', 0):.2f}, Systems={vespa.get('systems', 0):.2f}, Practice={vespa.get('practice', 0):.2f}, Attitude={vespa.get('attitude', 0):.2f}")
+    
+    return '\n'.join(summary)
+
+def extract_bullet_points(text, section_type):
+    """Extract bullet points from AI response"""
+    lines = text.split('\n')
+    bullets = []
+    
+    for line in lines:
+        if line.strip().startswith(('-', '•', '*', '1.', '2.', '3.', '4.', '5.')):
+            bullets.append(line.strip().lstrip('-•*0123456789. '))
+    
+    return bullets[:5]  # Return top 5
+
+def create_branded_pdf(school_name, logo_url, primary_color, data, insights, config):
+    """Create a professionally branded PDF report"""
+    
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.75*inch)
+    elements = []
+    
+    # Define styles
+    styles = getSampleStyleSheet()
+    
+    # Custom title style with primary color
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor(primary_color),
+        spaceAfter=30,
+        alignment=TA_CENTER
+    )
+    
+    # Header with title
+    elements.append(Paragraph(f"<b>{school_name}</b><br/>Comparative Analysis Report", title_style))
+    elements.append(Spacer(1, 0.5*inch))
+    
+    # Report date
+    elements.append(Paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y')}", styles['Normal']))
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Executive Summary with AI insights
+    elements.append(Paragraph("<b>Executive Summary</b>", styles['Heading2']))
+    elements.append(Spacer(1, 0.2*inch))
+    elements.append(Paragraph(insights.get('summary', 'No summary available'), styles['BodyText']))
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Data Summary Section
+    elements.append(Paragraph("<b>Data Analysis</b>", styles['Heading2']))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Create data table
+    table_data = [['Group', 'Mean Score', 'Std Dev', 'Sample Size']]
+    for key, values in data.items():
+        if isinstance(values, dict) and 'mean' in values:
+            table_data.append([
+                key.replace('_', ' ').title(),
+                f"{values['mean']:.2f}",
+                f"{values['std']:.2f}",
+                str(values['count'])
+            ])
+    
+    if len(table_data) > 1:
+        data_table = Table(table_data, colWidths=[2*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+        data_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor(primary_color)),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        elements.append(data_table)
+        elements.append(Spacer(1, 0.3*inch))
+    
+    # Key Findings
+    if insights.get('key_findings'):
+        elements.append(Paragraph("<b>Key Findings</b>", styles['Heading2']))
+        elements.append(Spacer(1, 0.1*inch))
+        for finding in insights['key_findings']:
+            elements.append(Paragraph(f"• {finding}", styles['BodyText']))
+        elements.append(Spacer(1, 0.3*inch))
+    
+    # Recommendations
+    if insights.get('recommendations'):
+        elements.append(Paragraph("<b>Recommendations</b>", styles['Heading2']))
+        elements.append(Spacer(1, 0.1*inch))
+        for rec in insights['recommendations']:
+            elements.append(Paragraph(f"• {rec}", styles['BodyText']))
+        elements.append(Spacer(1, 0.3*inch))
+    
+    # Footer with context note
+    if config.get('organizationalContext'):
+        elements.append(HRFlowable(width="100%", thickness=1, color=colors.grey))
+        elements.append(Spacer(1, 0.2*inch))
+        elements.append(Paragraph("<i>This report was generated with consideration of the following organizational context:</i>", styles['Normal']))
+        context_text = config['organizationalContext'][:200] + ('...' if len(config['organizationalContext']) > 200 else '')
+        elements.append(Paragraph(f"<i>{context_text}</i>", styles['Normal']))
+    
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return buffer
+
+# ===== END COMPARATIVE REPORT ENDPOINT =====
 
 
 if __name__ == '__main__':
