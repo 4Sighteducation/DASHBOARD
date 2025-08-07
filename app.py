@@ -7146,7 +7146,12 @@ def create_interactive_html_report(school_name, logo_url, primary_color, data, i
     try:
         # Read the mockup HTML file
         import os
-        mockup_path = os.path.join(os.path.dirname(__file__), 'comparative_report_mockup.html')
+        # Try heroku_backend folder first (for deployment), then root folder (for local)
+        mockup_path = os.path.join(os.path.dirname(__file__), 'heroku_backend', 'comparative_report_mockup.html')
+        if not os.path.exists(mockup_path):
+            # Try root directory as fallback
+            mockup_path = os.path.join(os.path.dirname(__file__), 'comparative_report_mockup.html')
+        
         if os.path.exists(mockup_path):
             with open(mockup_path, 'r', encoding='utf-8') as f:
                 html_content = f.read()
@@ -7161,6 +7166,10 @@ def create_interactive_html_report(school_name, logo_url, primary_color, data, i
     # Replace placeholders with real data
     comparison_title = get_comparison_title(report_type, config)
     
+    app.logger.info(f"Loaded HTML template with length: {len(html_content)}")
+    app.logger.info(f"Report type: {report_type}, Config: {config}")
+    app.logger.info(f"Data keys: {data.keys() if data else 'No data'}")
+    
     # Inject real data into the HTML
     replacements = {
         'Rochdale Sixth Form College': school_name,
@@ -7169,7 +7178,7 @@ def create_interactive_html_report(school_name, logo_url, primary_color, data, i
         '<!-- EXECUTIVE_SUMMARY_PLACEHOLDER -->': insights.get('summary', 'Executive summary based on data analysis.'),
         '<!-- KEY_FINDINGS_PLACEHOLDER -->': generate_key_findings_html(insights.get('key_findings', [])),
         '<!-- RECOMMENDATIONS_PLACEHOLDER -->': generate_recommendations_html(insights.get('recommendations', [])),
-        '<!-- DATA_JSON_PLACEHOLDER -->': json.dumps(prepare_chart_data(data, report_type)),
+        '<!-- DATA_JSON_PLACEHOLDER -->': json.dumps(prepare_chart_data(data, report_type)) if data else '{}',
         '#667eea': primary_color
     }
     
