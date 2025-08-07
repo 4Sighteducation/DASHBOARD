@@ -7142,7 +7142,80 @@ def extract_bullet_points(text, section_type):
 def create_interactive_html_report(school_name, logo_url, primary_color, data, insights, config, report_type):
     """Create an interactive HTML report that can be edited in-browser"""
     
-    # Read the mockup template and customize it with real data
+    # Try to read the full mockup HTML if available
+    try:
+        # Read the mockup HTML file
+        import os
+        mockup_path = os.path.join(os.path.dirname(__file__), 'comparative_report_mockup.html')
+        if os.path.exists(mockup_path):
+            with open(mockup_path, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+        else:
+            # Fall back to creating from template
+            html_content = create_html_from_template(school_name, logo_url, primary_color, data, insights, config, report_type)
+    except Exception as e:
+        app.logger.warning(f"Could not read mockup file: {e}")
+        # Fall back to creating from template
+        html_content = create_html_from_template(school_name, logo_url, primary_color, data, insights, config, report_type)
+    
+    # Replace placeholders with real data
+    comparison_title = get_comparison_title(report_type, config)
+    
+    # Inject real data into the HTML
+    replacements = {
+        'Rochdale Sixth Form College': school_name,
+        'Year 12 vs Year 13 Comparative Analysis': comparison_title,
+        'This analysis compares VESPA scores between Year 12 and Year 13 students': config.get('organizationalContext', 'This analysis compares VESPA scores to identify trends and opportunities.'),
+        '<!-- EXECUTIVE_SUMMARY_PLACEHOLDER -->': insights.get('summary', 'Executive summary based on data analysis.'),
+        '<!-- KEY_FINDINGS_PLACEHOLDER -->': generate_key_findings_html(insights.get('key_findings', [])),
+        '<!-- RECOMMENDATIONS_PLACEHOLDER -->': generate_recommendations_html(insights.get('recommendations', [])),
+        '<!-- DATA_JSON_PLACEHOLDER -->': json.dumps(prepare_chart_data(data, report_type)),
+        '#667eea': primary_color
+    }
+    
+    for old_text, new_text in replacements.items():
+        html_content = html_content.replace(old_text, new_text)
+    
+    # Add logo URL if provided
+    if logo_url:
+        html_content = html_content.replace(
+            'src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\'',
+            f'src="{logo_url}"'
+        )
+    
+    # Inject real data as JavaScript
+    data_script = f"""
+    <script>
+        // Real data from backend
+        window.realReportData = {json.dumps(data)};
+        window.realInsights = {json.dumps(insights)};
+        window.vespaColors = {{
+            'vision': '#e59437',
+            'effort': '#86b4f0', 
+            'systems': '#72cb44',
+            'practice': '#7f31a4',
+            'attitude': '#f032e6',
+            'overall': '#667eea'
+        }};
+        
+        // Initialize with real data when page loads
+        document.addEventListener('DOMContentLoaded', function() {{
+            console.log('Real data loaded:', window.realReportData);
+            // Update charts and visualizations with real data
+            if (typeof updateChartsWithRealData === 'function') {{
+                updateChartsWithRealData(window.realReportData);
+            }}
+        }});
+    </script>
+    """
+    
+    # Inject the data script before closing body tag
+    html_content = html_content.replace('</body>', data_script + '\n</body>')
+    
+    return html_content
+
+def create_html_from_template(school_name, logo_url, primary_color, data, insights, config, report_type):
+    """Create HTML from template if mockup file is not available"""
     html_template = create_html_template()
     
     # Prepare chart data

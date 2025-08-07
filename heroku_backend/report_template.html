@@ -1,0 +1,45 @@
+<!-- This file contains the template for the comparative report HTML -->
+<!-- It will be populated with real data by the backend -->
+<!-- Based on comparative_report_mockup.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparative Report - {{school_name}}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/timdream/wordcloud2.js@gh-pages/src/wordcloud2.js"></script>
+    <style>
+        /* CSS from mockup - will be embedded */
+        {{css_content}}
+    </style>
+</head>
+<body>
+    <!-- Control Panel -->
+    <div class="control-panel" id="controlPanel">
+        {{control_panel_html}}
+    </div>
+    
+    <!-- Report Container -->
+    <div class="report-container">
+        {{report_content_html}}
+    </div>
+    
+    <script>
+        // JavaScript from mockup - will be embedded
+        {{javascript_content}}
+        
+        // Initialize with real data
+        const reportData = {{report_data_json}};
+        const reportInsights = {{report_insights_json}};
+        
+        // Initialize charts with real data
+        window.addEventListener('DOMContentLoaded', function() {
+            if (reportData) {
+                initializeChartsWithData(reportData);
+            }
+        });
+    </script>
+</body>
+</html>
