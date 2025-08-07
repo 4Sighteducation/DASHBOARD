@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparative Report Mock-up - Rochdale Sixth Form College</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/timdream/wordcloud2.js@gh-pages/src/wordcloud2.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .report-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Control Panel */
+        .control-panel {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 280px;
+        }
+        
+        .control-panel h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+            font-size: 18px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .control-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        
+        .control-group input[type="text"],
+        .control-group input[type="url"],
+        .control-group textarea {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .control-group textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        
+        .color-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .color-input-group input[type="color"] {
+            width: 50px;
+            height: 30px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        /* Report Header */
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .header-logo {
+            height: 80px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .header-title {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .header-title h1 {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .header-title p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        
+        /* Report Sections */
+        .report-section {
+            padding: 40px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .report-section.hidden {
+            display: none;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            color: #667eea;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: #667eea;
+            margin-right: 12px;
+        }
+        
+        /* Context Box */
+        .context-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .context-box h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .context-text {
+            font-style: italic;
+            color: #666;
+            white-space: pre-wrap;
+        }
+        
+        /* Executive Summary */
+        .executive-summary {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #444;
+        }
+        
+        .key-findings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .finding-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .finding-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        /* Charts Container */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .chart-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .chart-container h4 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .chart-canvas {
+            max-height: 300px;
+        }
+        
+        /* QLA Section */
+        .qla-grid {
+            display: grid;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .question-diff-card {
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            gap: 15px;
+        }
+        
+        .question-diff-card.high-diff {
+            border-left: 4px solid #ef4444;
+            background: #fef2f2;
+        }
+        
+        .question-diff-card.medium-diff {
+            border-left: 4px solid #f59e0b;
+            background: #fffbeb;
+        }
+        
+        .diff-rank {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .question-text {
+            flex: 1;
+            font-size: 14px;
+        }
+        
+        .diff-scores {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .score-group {
+            text-align: center;
+        }
+        
+        .score-label {
+            font-size: 12px;
+            color: #666;
+            display: block;
+        }
+        
+        .score-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .diff-arrow {
+            font-size: 24px;
+        }
+        
+        .diff-arrow.up {
+            color: #10b981;
+        }
+        
+        .diff-arrow.down {
+            color: #ef4444;
+        }
+        
+        /* Heat Map */
+        .heatmap-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        .heatmap-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .heatmap-table th,
+        .heatmap-table td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        .heatmap-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .heatmap-cell {
+            position: relative;
+            color: white;
+            font-weight: bold;
+        }
+        
+        /* Recommendations */
+        .recommendations-list {
+            list-style: none;
+            margin-top: 20px;
+        }
+        
+        .recommendations-list li {
+            padding: 15px;
+            background: #f8f9fa;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #10b981;
+            display: flex;
+            align-items: start;
+            gap: 10px;
+        }
+        
+        .recommendations-list li::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        /* Print Styles */
+        @media print {
+            .control-panel {
+                display: none;
+            }
+            
+            .report-container {
+                box-shadow: none;
+            }
+            
+            .report-section {
+                page-break-inside: avoid;
+            }
+        }
+        
+        /* Editable Fields */
+        .editable {
+            border: 1px dashed transparent;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .editable:hover {
+            border-color: #667eea;
+            background: #f0f0f0;
+            cursor: text;
+        }
+        
+        .editable:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+        
+        .btn-group {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+        
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+        
+        /* Toggle Panel Button */
+        .toggle-panel-btn {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px 0 0 8px;
+            padding: 15px 8px;
+            cursor: pointer;
+            z-index: 1001;
+            font-size: 18px;
+            transition: all 0.3s;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+        }
+        
+        .toggle-panel-btn:hover {
+            background: #5a67d8;
+            padding-right: 12px;
+        }
+        
+        .control-panel.hidden {
+            right: -320px;
+        }
+        
+        /* Cycle Selector */
+        .cycle-selector {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .cycle-selector label {
+            color: white;
+            margin: 0 8px;
+            cursor: pointer;
+        }
+        
+        .cycle-selector input[type="radio"] {
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        
+        /* Insights Styles */
+        .insight-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid;
+            transition: all 0.3s;
+        }
+        
+        .insight-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+        
+        .insight-card.vision { border-left-color: #e59437; }
+        .insight-card.effort { border-left-color: #86b4f0; }
+        .insight-card.systems { border-left-color: #72cb44; }
+        .insight-card.practice { border-left-color: #7f31a4; }
+        .insight-card.attitude { border-left-color: #f032e6; }
+        .insight-card.overall { border-left-color: #667eea; }
+        
+        .insight-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .insight-title {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .insight-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .insight-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #444;
+            margin-bottom: 15px;
+        }
+        
+        .insight-metrics {
+            display: flex;
+            gap: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .metric-item {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toggle Button for Control Panel -->
+    <button class="toggle-panel-btn" onclick="toggleControlPanel()" title="Toggle Settings Panel">
+        <span id="toggleIcon">◀</span>
+    </button>
+    
+    <!-- Control Panel -->
+    <div class="control-panel" id="controlPanel">
+        <h3>🎨 Report Customization</h3>
+        
+        <div class="control-group">
+            <label style="font-weight: bold; margin-bottom: 10px;">Show/Hide Sections:</label>
+            <label>
+                <input type="checkbox" checked onchange="toggleSection('executive-summary')">
+                Executive Summary
+            </label>
+            <label>
+                <input type="checkbox" checked onchange="toggleSection('context')">
+                Organizational Context
+            </label>
+            <label>
+                <input type="checkbox" checked onchange="toggleSection('key-findings')">
+                Key Findings
+            </label>
+            <label>
+                <input type="checkbox" checked onchange="toggleSection('vespa-charts')">
+                VESPA Charts
+            </label>
+            <label>
+                <input type="checkbox" checked onchange="toggleSection('histograms')">
+                VESPA Histograms
+            </label>
+            <label>
+                <input type="checkbox" checked onchange="toggleSection('top-bottom')">
+                Top-Bottom Analysis
+            </label>
+            <label>
+                <input type="checkbox" checked onchange="toggleSection('word-cloud')">
+                Word Cloud
+            </label>
+            <label>
+                <input type="checkbox" checked onchange="toggleSection('insights')">
+                AI Insights
+            </label>
+            <label>
+                <input type="checkbox" checked onchange="toggleSection('qla')">
+                Question Level Analysis
+            </label>
+            <label>
+                <input type="checkbox" checked onchange="toggleSection('heatmap')">
+                Performance Heat Map
+            </label>
+            <label>
+                <input type="checkbox" checked onchange="toggleSection('recommendations')">
+                Recommendations
+            </label>
+        </div>
+        
+        <div class="control-group" style="margin-top: 20px;">
+            <label style="font-weight: bold; margin-bottom: 10px;">Individual QLA Items:</label>
+            <label style="font-size: 12px;">
+                <input type="checkbox" checked onchange="toggleQLAItem(1)">
+                Q1: Exam preparation
+            </label>
+            <label style="font-size: 12px;">
+                <input type="checkbox" checked onchange="toggleQLAItem(2)">
+                Q2: Assessment understanding
+            </label>
+            <label style="font-size: 12px;">
+                <input type="checkbox" checked onchange="toggleQLAItem(3)">
+                Q3: Time management
+            </label>
+        </div>
+        
+        <div class="control-group" style="margin-top: 20px;">
+            <label style="font-weight: bold; margin-bottom: 10px;">Individual Recommendations:</label>
+            <label style="font-size: 12px;">
+                <input type="checkbox" checked onchange="toggleRecommendation(1)">
+                Rec 1: Organizational skills
+            </label>
+            <label style="font-size: 12px;">
+                <input type="checkbox" checked onchange="toggleRecommendation(2)">
+                Rec 2: Peer mentoring
+            </label>
+            <label style="font-size: 12px;">
+                <input type="checkbox" checked onchange="toggleRecommendation(3)">
+                Rec 3: Assessment schedule
+            </label>
+            <label style="font-size: 12px;">
+                <input type="checkbox" checked onchange="toggleRecommendation(4)">
+                Rec 4: Confidence check-ins
+            </label>
+            <label style="font-size: 12px;">
+                <input type="checkbox" checked onchange="toggleRecommendation(5)">
+                Rec 5: Revision resources
+            </label>
+        </div>
+        
+        <div class="control-group">
+            <label style="font-weight: bold;">School Name:</label>
+            <input type="text" id="schoolName" value="Rochdale Sixth Form College" onchange="updateSchoolName()">
+        </div>
+        
+        <div class="control-group">
+            <label style="font-weight: bold;">Report Title:</label>
+            <input type="text" id="reportTitle" value="Year 12 vs Year 13 Comparative Analysis" onchange="updateReportTitle()">
+        </div>
+        
+        <div class="control-group">
+            <label style="font-weight: bold;">Context/Narrative:</label>
+            <textarea id="contextText" onchange="updateContext()">This analysis compares VESPA scores between Year 12 and Year 13 students to understand how student self-assessment evolves across year groups. The comparison provides insights into areas where students feel more or less confident as they progress through their studies.</textarea>
+        </div>
+        
+        <div class="control-group">
+            <label style="font-weight: bold;">Primary Color:</label>
+            <div class="color-input-group">
+                <input type="color" id="primaryColor" value="#667eea" onchange="updatePrimaryColor()">
+                <span id="colorValue">#667eea</span>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label style="font-weight: bold;">Logo URL:</label>
+            <input type="url" id="logoUrl" placeholder="https://example.com/logo.png" onchange="updateLogo()">
+        </div>
+        
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="window.print()">🖨️ Print Report</button>
+            <button class="btn btn-secondary" onclick="exportHTML()">💾 Save HTML</button>
+        </div>
+        
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+            <p style="font-size: 12px; color: #666;">
+                <strong>Tips:</strong><br>
+                • Click any text to edit directly<br>
+                • Toggle sections on/off<br>
+                • Use comparison views for charts<br>
+                • Individual items can be hidden<br>
+                • Print or save as PDF<br>
+                • Charts are interactive
+            </p>
+        </div>
+        
+        <div style="margin-top: 15px; padding: 10px; background: #e6f2ff; border-radius: 4px;">
+            <p style="font-size: 11px; color: #0066cc; margin: 0;">
+                <strong>New Features:</strong><br>
+                • Compare Cycle 1 vs Cycle 2 data<br>
+                • Side-by-side chart views<br>
+                • Individual control over QLA items<br>
+                • Neutral, non-judgmental language<br>
+                • Flexible visualization options
+            </p>
+        </div>
+    </div>
+    
+    <!-- Report Content -->
+    <div class="report-container">
+        <!-- Header -->
+        <div class="report-header">
+            <img id="schoolLogo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24'%3E%3Cpath fill='%23667eea' d='M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72L5.18 9L12 5.28L18.82 9zM17 15.99l-5 2.73l-5-2.73v-3.72L12 15l5-2.73v3.72z'/%3E%3C/svg%3E" alt="School Logo" class="header-logo">
+            <div class="header-title">
+                <h1 class="editable" contenteditable="true" id="schoolNameHeader">Rochdale Sixth Form College</h1>
+                <p class="editable" contenteditable="true" id="reportTitleHeader">Year 12 vs Year 13 Comparative Analysis</p>
+                <p>Generated: <span id="reportDate"></span></p>
+            </div>
+            <img src="https://vespa.academy/_astro/vespalogo.BGrK1ARl.png" alt="VESPA Logo" class="header-logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\' viewBox=\'0 0 24 24\'%3E%3Cpath fill=\'%23764ba2\' d=\'M12 2l3.09 6.26L22 9.27l-5 4.87l1.18 6.88L12 17.77l-6.18 3.25L7 14.14L2 9.27l6.91-1.01L12 2z\'/%3E%3C/svg%3E'">
+        </div>
+        
+        <!-- Organizational Context -->
+        <div class="report-section" id="context">
+            <h2 class="section-title">Organizational Context</h2>
+            <div class="context-box">
+                <h4>Analysis Context</h4>
+                <p class="context-text editable" contenteditable="true" id="contextDisplay">This analysis compares VESPA scores between Year 12 and Year 13 students to understand how student self-assessment evolves across year groups. The comparison provides insights into areas where students feel more or less confident as they progress through their studies.</p>
+            </div>
+        </div>
+        
+        <!-- Executive Summary -->
+        <div class="report-section" id="executive-summary">
+            <h2 class="section-title">Executive Summary</h2>
+            <div class="executive-summary">
+                <p class="editable" contenteditable="true">
+                    This comparative analysis examines VESPA scores between Year 12 and Year 13 students. The data shows that Year 13 students have lower average scores across several VESPA dimensions, with notable differences in Systems (-12.3%) and Practice (-10.8%) categories. Year 12 students show higher scores in 89% of measured questions.
+                </p>
+                <br>
+                <p class="editable" contenteditable="true">
+                    The most substantial differences appear in questions related to exam preparation (Δ = -0.9, p < 0.001) and time management (Δ = -0.7, p < 0.01). Interestingly, both cohorts demonstrate similar scores in effort-related questions, suggesting comparable motivation levels. The consistency of these patterns across multiple measurement points provides valuable insights into student progression.
+                </p>
+                <br>
+                <p class="editable" contenteditable="true">
+                    These findings highlight opportunities to explore support strategies that could benefit Year 13 students, particularly in areas of organizational systems and exam preparation. The analysis provides a baseline for understanding how student confidence and skills evolve between year groups, which may inform future curriculum and support planning.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Key Findings -->
+        <div class="report-section" id="key-findings">
+            <h2 class="section-title">Key Findings</h2>
+            <div class="cycle-selector">
+                <label>
+                    <input type="radio" name="findingsCycle" value="yearComparison" checked onchange="updateKeyFindings('yearComparison')">
+                    Year 12 vs Year 13
+                </label>
+                <label>
+                    <input type="radio" name="findingsCycle" value="cycleComparison" onchange="updateKeyFindings('cycleComparison')">
+                    Cycle 1 vs Cycle 2
+                </label>
+                <label>
+                    <input type="radio" name="findingsCycle" value="both" onchange="updateKeyFindings('both')">
+                    Both Comparisons
+                </label>
+                <label>
+                    <input type="radio" name="findingsCycle" value="cycle1" onchange="updateKeyFindings('cycle1')">
+                    Cycle 1 Only
+                </label>
+                <label>
+                    <input type="radio" name="findingsCycle" value="cycle2" onchange="updateKeyFindings('cycle2')">
+                    Cycle 2 Only
+                </label>
+            </div>
+            <div class="key-findings" id="keyFindingsContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- VESPA Charts -->
+        <div class="report-section" id="vespa-charts">
+            <h2 class="section-title">VESPA Analysis</h2>
+            <div class="cycle-selector">
+                <label>
+                    <input type="radio" name="vespaCycle" value="yearComparison" checked onchange="updateVespaCharts('yearComparison')">
+                    Year 12 vs Year 13
+                </label>
+                <label>
+                    <input type="radio" name="vespaCycle" value="cycleComparison" onchange="updateVespaCharts('cycleComparison')">
+                    Cycle 1 vs Cycle 2
+                </label>
+                <label>
+                    <input type="radio" name="vespaCycle" value="both" onchange="updateVespaCharts('both')">
+                    Both Comparisons
+                </label>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h4>VESPA Comparison</h4>
+                    <canvas id="vespaBarChart" class="chart-canvas"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h4>VESPA Profile</h4>
+                    <canvas id="vespaRadarChart" class="chart-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- VESPA Histograms (from Dashboard) -->
+        <div class="report-section" id="histograms">
+            <h2 class="section-title">VESPA Score Distributions</h2>
+            <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <label style="margin-right: 15px;"><strong>Show:</strong></label>
+                <label style="margin-right: 10px;">
+                    <input type="radio" name="histogramCycle" value="both" checked onchange="updateHistogramDisplay('both')"> Both Cycles
+                </label>
+                <label style="margin-right: 10px;">
+                    <input type="radio" name="histogramCycle" value="cycle1" onchange="updateHistogramDisplay('cycle1')"> Cycle 1 Only
+                </label>
+                <label style="margin-right: 10px;">
+                    <input type="radio" name="histogramCycle" value="cycle2" onchange="updateHistogramDisplay('cycle2')"> Cycle 2 Only
+                </label>
+            </div>
+            <div class="charts-grid" id="histogramGrid" style="grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                <div class="chart-container" style="padding: 15px;">
+                    <h4 style="color: #e59437; font-size: 14px; margin-bottom: 10px;">Vision Distribution</h4>
+                    <canvas id="visionHistogram" class="chart-canvas" style="max-height: 200px;"></canvas>
+                </div>
+                <div class="chart-container" style="padding: 15px;">
+                    <h4 style="color: #86b4f0; font-size: 14px; margin-bottom: 10px;">Effort Distribution</h4>
+                    <canvas id="effortHistogram" class="chart-canvas" style="max-height: 200px;"></canvas>
+                </div>
+                <div class="chart-container" style="padding: 15px;">
+                    <h4 style="color: #72cb44; font-size: 14px; margin-bottom: 10px;">Systems Distribution</h4>
+                    <canvas id="systemsHistogram" class="chart-canvas" style="max-height: 200px;"></canvas>
+                </div>
+                <div class="chart-container" style="padding: 15px;">
+                    <h4 style="color: #7f31a4; font-size: 14px; margin-bottom: 10px;">Practice Distribution</h4>
+                    <canvas id="practiceHistogram" class="chart-canvas" style="max-height: 200px;"></canvas>
+                </div>
+                <div class="chart-container" style="padding: 15px;">
+                    <h4 style="color: #f032e6; font-size: 14px; margin-bottom: 10px;">Attitude Distribution</h4>
+                    <canvas id="attitudeHistogram" class="chart-canvas" style="max-height: 200px;"></canvas>
+                </div>
+                <div class="chart-container" style="padding: 15px;">
+                    <h4 style="color: #667eea; font-size: 14px; margin-bottom: 10px;">Overall Distribution</h4>
+                    <canvas id="overallHistogram" class="chart-canvas" style="max-height: 200px;"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top-Bottom Analysis (from Dashboard) -->
+        <div class="report-section" id="top-bottom">
+            <h2 class="section-title">Top & Bottom Performing Questions - Comparative View</h2>
+            <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <label style="margin-right: 15px;"><strong>Compare:</strong></label>
+                <label style="margin-right: 10px;">
+                    <input type="radio" name="topBottomView" value="yr12" checked onchange="updateTopBottomView('yr12')"> Year 12
+                </label>
+                <label style="margin-right: 10px;">
+                    <input type="radio" name="topBottomView" value="yr13" onchange="updateTopBottomView('yr13')"> Year 13
+                </label>
+                <label style="margin-right: 10px;">
+                    <input type="radio" name="topBottomView" value="sidebyside" onchange="updateTopBottomView('sidebyside')"> Side by Side
+                </label>
+            </div>
+            <div id="topBottomContent">
+                <div class="key-findings">
+                    <div class="finding-card" style="border-left-color: #10b981;">
+                        <h4>🎯 Highest Scoring Questions - Year 12</h4>
+                        <ol style="margin-top: 10px; padding-left: 20px;">
+                            <li class="editable" contenteditable="true">I put effort into my studies (4.2/5)</li>
+                            <li class="editable" contenteditable="true">I attend all my classes regularly (4.1/5)</li>
+                            <li class="editable" contenteditable="true">I complete homework on time (3.9/5)</li>
+                        </ol>
+                    </div>
+                    <div class="finding-card" style="border-left-color: #f59e0b;">
+                        <h4>📊 Lowest Scoring Questions - Year 12</h4>
+                        <ol style="margin-top: 10px; padding-left: 20px;">
+                            <li class="editable" contenteditable="true">I have effective revision strategies (2.3/5)</li>
+                            <li class="editable" contenteditable="true">I manage exam stress well (2.5/5)</li>
+                            <li class="editable" contenteditable="true">I use past papers effectively (2.6/5)</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Word Cloud (from Dashboard) -->
+        <div class="report-section" id="word-cloud">
+            <h2 class="section-title">Student Comment Analysis</h2>
+            <div class="context-box">
+                <h4>📊 Analysis Summary</h4>
+                <p class="context-text">Total Comments: 247 | Unique Words: 892 | Most Frequent: "exam" (45 times)</p>
+                <p style="font-size: 12px; color: #666; margin-top: 8px; font-style: italic;">
+                    Live data will be pulled from actual student comments in your dashboard
+                </p>
+            </div>
+            <div class="chart-container" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); height: 400px; position: relative; border-radius: 8px; overflow: hidden;">
+                <canvas id="wordCloudCanvas" style="width: 100%; height: 100%;"></canvas>
+            </div>
+            <div class="key-findings" style="margin-top: 20px;">
+                <div class="finding-card">
+                    <h4>🔑 Key Themes</h4>
+                    <ul style="margin-top: 10px; list-style: none;">
+                        <li class="editable" contenteditable="true">• <strong>Exam Anxiety:</strong> Most common theme (32% of comments)</li>
+                        <li class="editable" contenteditable="true">• <strong>Time Management:</strong> Second most mentioned (28%)</li>
+                        <li class="editable" contenteditable="true">• <strong>Teacher Support:</strong> Positive sentiment (24%)</li>
+                        <li class="editable" contenteditable="true">• <strong>Resources:</strong> Request for more materials (16%)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Questionnaire Insights Section -->
+        <div class="report-section" id="insights">
+            <h2 class="section-title">Questionnaire Insights Analysis</h2>
+            <div style="margin-bottom: 15px; padding: 12px; background: #e6f2ff; border-radius: 6px; border-left: 3px solid #0066cc;">
+                <p style="font-size: 13px; color: #0066cc; margin: 0;">
+                    <strong>Note:</strong> These 12 insights are calculated from grouped questions in your questionnaire. The AI will analyze these patterns to provide recommendations.
+                </p>
+            </div>
+            <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <label style="margin-right: 15px;"><strong>View:</strong></label>
+                <label style="margin-right: 10px;">
+                    <input type="radio" name="insightsView" value="current" checked onchange="updateQuestionnaireInsights('current')"> Current Snapshot
+                </label>
+                <label style="margin-right: 10px;">
+                    <input type="radio" name="insightsView" value="yearComparison" onchange="updateQuestionnaireInsights('yearComparison')"> Year 12 vs Year 13
+                </label>
+                <label style="margin-right: 10px;">
+                    <input type="radio" name="insightsView" value="cycleComparison" onchange="updateQuestionnaireInsights('cycleComparison')"> Cycle 1 vs Cycle 2
+                </label>
+            </div>
+            <div id="insightsContent" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Question Level Analysis -->
+        <div class="report-section" id="qla">
+            <h2 class="section-title">Question Level Analysis</h2>
+            <div class="qla-grid">
+                <div class="question-diff-card high-diff" id="qla-item-1">
+                    <div class="diff-rank">1</div>
+                    <div class="question-text editable" contenteditable="true">I feel well prepared for my upcoming exams</div>
+                    <div class="diff-scores">
+                        <div class="score-group">
+                            <span class="score-label">Year 12</span>
+                            <span class="score-value">3.8</span>
+                        </div>
+                        <span class="diff-arrow down">↓</span>
+                        <div class="score-group">
+                            <span class="score-label">Year 13</span>
+                            <span class="score-value">2.9</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="question-diff-card high-diff" id="qla-item-2">
+                    <div class="diff-rank">2</div>
+                    <div class="question-text editable" contenteditable="true">I understand what is expected of me in assessments</div>
+                    <div class="diff-scores">
+                        <div class="score-group">
+                            <span class="score-label">Year 12</span>
+                            <span class="score-value">4.1</span>
+                        </div>
+                        <span class="diff-arrow down">↓</span>
+                        <div class="score-group">
+                            <span class="score-label">Year 13</span>
+                            <span class="score-value">3.2</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="question-diff-card medium-diff" id="qla-item-3">
+                    <div class="diff-rank">3</div>
+                    <div class="question-text editable" contenteditable="true">I manage my time effectively between subjects</div>
+                    <div class="diff-scores">
+                        <div class="score-group">
+                            <span class="score-label">Year 12</span>
+                            <span class="score-value">3.5</span>
+                        </div>
+                        <span class="diff-arrow down">↓</span>
+                        <div class="score-group">
+                            <span class="score-label">Year 13</span>
+                            <span class="score-value">2.8</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Heat Map -->
+        <div class="report-section" id="heatmap">
+            <h2 class="section-title">Performance Heat Map</h2>
+            <div class="heatmap-container">
+                <table class="heatmap-table">
+                    <thead>
+                        <tr>
+                            <th>Question Category</th>
+                            <th>Year 12</th>
+                            <th>Year 13</th>
+                            <th>Difference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Vision</td>
+                            <td class="heatmap-cell" style="background: #84cc16;">72%</td>
+                            <td class="heatmap-cell" style="background: #fb923c;">65%</td>
+                            <td class="heatmap-cell" style="background: #fbbf24;">-7%</td>
+                        </tr>
+                        <tr>
+                            <td>Effort</td>
+                            <td class="heatmap-cell" style="background: #22c55e;">78%</td>
+                            <td class="heatmap-cell" style="background: #84cc16;">76%</td>
+                            <td class="heatmap-cell" style="background: #84cc16;">-2%</td>
+                        </tr>
+                        <tr>
+                            <td>Systems</td>
+                            <td class="heatmap-cell" style="background: #84cc16;">71%</td>
+                            <td class="heatmap-cell" style="background: #ef4444;">58%</td>
+                            <td class="heatmap-cell" style="background: #ef4444;">-13%</td>
+                        </tr>
+                        <tr>
+                            <td>Practice</td>
+                            <td class="heatmap-cell" style="background: #84cc16;">69%</td>
+                            <td class="heatmap-cell" style="background: #fb923c;">61%</td>
+                            <td class="heatmap-cell" style="background: #fb923c;">-8%</td>
+                        </tr>
+                        <tr>
+                            <td>Attitude</td>
+                            <td class="heatmap-cell" style="background: #22c55e;">75%</td>
+                            <td class="heatmap-cell" style="background: #fbbf24;">68%</td>
+                            <td class="heatmap-cell" style="background: #fbbf24;">-7%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Recommendations -->
+        <div class="report-section" id="recommendations">
+            <h2 class="section-title">Suggested Areas for Exploration</h2>
+            <ul class="recommendations-list">
+                <li class="editable" contenteditable="true" id="rec-item-1">
+                    Consider exploring organizational skills support for Year 13 students. The data suggests this cohort may benefit from additional guidance in time management and exam preparation techniques suited to their curriculum level.
+                </li>
+                <li class="editable" contenteditable="true" id="rec-item-2">
+                    Peer support systems could be worth investigating. Some institutions have found value in connecting students who demonstrate strong organizational skills with peers seeking to develop these areas.
+                </li>
+                <li class="editable" contenteditable="true" id="rec-item-3">
+                    It may be helpful to review the assessment timeline and workload distribution. The data patterns suggest Year 13 students experience different pressures compared to Year 12, which could inform scheduling decisions.
+                </li>
+                <li class="editable" contenteditable="true" id="rec-item-4">
+                    Regular check-ins between students and tutors might provide valuable insights. This could help identify evolving student needs and confidence levels throughout the academic year.
+                </li>
+                <li class="editable" contenteditable="true" id="rec-item-5">
+                    Exploring subject-specific revision resources could be beneficial. The variance in scores suggests students may respond well to targeted support materials aligned with their specific study areas.
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize date
+        document.getElementById('reportDate').textContent = new Date().toLocaleDateString('en-GB', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        
+        // Toggle sections
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.classList.toggle('hidden');
+        }
+        
+        // Toggle individual QLA items
+        function toggleQLAItem(itemNumber) {
+            const item = document.getElementById(`qla-item-${itemNumber}`);
+            if (item) {
+                item.style.display = item.style.display === 'none' ? 'flex' : 'none';
+            }
+        }
+        
+        // Toggle individual recommendations
+        function toggleRecommendation(itemNumber) {
+            const item = document.getElementById(`rec-item-${itemNumber}`);
+            if (item) {
+                item.style.display = item.style.display === 'none' ? 'flex' : 'none';
+            }
+        }
+        
+        // Update Top-Bottom View
+        function updateTopBottomView(view) {
+            const content = document.getElementById('topBottomContent');
+            
+            if (view === 'yr12') {
+                content.innerHTML = `
+                    <div class="key-findings">
+                        <div class="finding-card" style="border-left-color: #10b981;">
+                            <h4>🎯 Highest Scoring Questions - Year 12</h4>
+                            <ol style="margin-top: 10px; padding-left: 20px;">
+                                <li>I put effort into my studies (4.2/5)</li>
+                                <li>I attend all my classes regularly (4.1/5)</li>
+                                <li>I complete homework on time (3.9/5)</li>
+                            </ol>
+                        </div>
+                        <div class="finding-card" style="border-left-color: #f59e0b;">
+                            <h4>📊 Lowest Scoring Questions - Year 12</h4>
+                            <ol style="margin-top: 10px; padding-left: 20px;">
+                                <li>I have effective revision strategies (2.3/5)</li>
+                                <li>I manage exam stress well (2.5/5)</li>
+                                <li>I use past papers effectively (2.6/5)</li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
+            } else if (view === 'yr13') {
+                content.innerHTML = `
+                    <div class="key-findings">
+                        <div class="finding-card" style="border-left-color: #10b981;">
+                            <h4>🎯 Highest Scoring Questions - Year 13</h4>
+                            <ol style="margin-top: 10px; padding-left: 20px;">
+                                <li>I attend all my classes regularly (3.9/5)</li>
+                                <li>I put effort into my studies (3.8/5)</li>
+                                <li>I work well with others (3.6/5)</li>
+                            </ol>
+                        </div>
+                        <div class="finding-card" style="border-left-color: #f59e0b;">
+                            <h4>📊 Lowest Scoring Questions - Year 13</h4>
+                            <ol style="margin-top: 10px; padding-left: 20px;">
+                                <li>I feel confident about exams (2.1/5)</li>
+                                <li>I have effective revision strategies (2.2/5)</li>
+                                <li>I manage my time well (2.3/5)</li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
+            } else if (view === 'sidebyside') {
+                content.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h4 style="color: #667eea; margin-bottom: 15px;">Year 12</h4>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                <strong style="color: #10b981;">Top 3:</strong>
+                                <ol style="margin-top: 8px; padding-left: 20px; font-size: 14px;">
+                                    <li>Effort in studies (4.2)</li>
+                                    <li>Class attendance (4.1)</li>
+                                    <li>Homework completion (3.9)</li>
+                                </ol>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                <strong style="color: #f59e0b;">Bottom 3:</strong>
+                                <ol style="margin-top: 8px; padding-left: 20px; font-size: 14px;">
+                                    <li>Revision strategies (2.3)</li>
+                                    <li>Exam stress (2.5)</li>
+                                    <li>Past papers (2.6)</li>
+                                </ol>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="color: #764ba2; margin-bottom: 15px;">Year 13</h4>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                <strong style="color: #10b981;">Top 3:</strong>
+                                <ol style="margin-top: 8px; padding-left: 20px; font-size: 14px;">
+                                    <li>Class attendance (3.9)</li>
+                                    <li>Effort in studies (3.8)</li>
+                                    <li>Team work (3.6)</li>
+                                </ol>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                <strong style="color: #f59e0b;">Bottom 3:</strong>
+                                <ol style="margin-top: 8px; padding-left: 20px; font-size: 14px;">
+                                    <li>Exam confidence (2.1)</li>
+                                    <li>Revision strategies (2.2)</li>
+                                    <li>Time management (2.3)</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Toggle Control Panel
+        function toggleControlPanel() {
+            const panel = document.getElementById('controlPanel');
+            const icon = document.getElementById('toggleIcon');
+            panel.classList.toggle('hidden');
+            icon.textContent = panel.classList.contains('hidden') ? '▶' : '◀';
+        }
+        
+        // Update Key Findings
+        function updateKeyFindings(view) {
+            const content = document.getElementById('keyFindingsContent');
+            
+            if (view === 'yearComparison') {
+                content.innerHTML = `
+                    <div class="finding-card">
+                        <h4>📊 Overall Comparison</h4>
+                        <p>Year 13 students average 11.2% lower scores than Year 12 across VESPA dimensions. This pattern appears in 89% of measured questions, providing a clear trend for further investigation.</p>
+                    </div>
+                    <div class="finding-card">
+                        <h4>🎯 Notable Differences</h4>
+                        <p>The largest differences occur in Systems (-12.3%) and Practice (-10.8%) categories. These areas relate to organizational skills and exam preparation techniques.</p>
+                    </div>
+                    <div class="finding-card">
+                        <h4>📈 Statistical Patterns</h4>
+                        <p>23 out of 30 questions show statistically significant differences (p < 0.05) with moderate to large effect sizes (Cohen's d > 0.5), suggesting meaningful variations between groups.</p>
+                    </div>
+                    <div class="finding-card">
+                        <h4>💡 Areas of Similarity</h4>
+                        <p>Both cohorts demonstrate comparable scores in effort-related questions, with differences under 2%. This suggests similar engagement levels across year groups.</p>
+                    </div>
+                `;
+            } else if (view === 'cycle1') {
+                content.innerHTML = `
+                    <div class="finding-card">
+                        <h4>📊 Cycle 1 Overview</h4>
+                        <p>In Cycle 1, students demonstrate strong initial engagement with average VESPA scores of 72%. Vision and Effort dimensions show the highest scores at 75% and 78% respectively.</p>
+                    </div>
+                    <div class="finding-card">
+                        <h4>🎯 Cycle 1 Strengths</h4>
+                        <p>Students show high attendance rates (92%) and homework completion (88%). These foundational behaviors provide a solid base for academic progress.</p>
+                    </div>
+                    <div class="finding-card">
+                        <h4>📈 Areas for Development</h4>
+                        <p>Exam preparation strategies score lowest at 58%, followed by time management at 62%. These areas present opportunities for targeted support early in the academic year.</p>
+                    </div>
+                    <div class="finding-card">
+                        <h4>💡 Student Confidence</h4>
+                        <p>Overall confidence levels are at 68%, with variation across different subject areas. STEM subjects show higher confidence (71%) compared to humanities (65%).</p>
+                    </div>
+                `;
+            } else if (view === 'cycle2') {
+                content.innerHTML = `
+                    <div class="finding-card">
+                        <h4>📊 Cycle 2 Overview</h4>
+                        <p>Cycle 2 shows an overall average VESPA score of 69%, a slight decrease from Cycle 1. This pattern is typical as academic demands increase throughout the year.</p>
+                    </div>
+                    <div class="finding-card">
+                        <h4>🎯 Progress Areas</h4>
+                        <p>Practice scores improved by 5% as students develop better study habits. Systems scores, however, decreased by 8%, suggesting increased pressure affecting organization.</p>
+                    </div>
+                    <div class="finding-card">
+                        <h4>📈 Exam Readiness</h4>
+                        <p>With exams approaching, readiness scores vary significantly. 42% of students report feeling well-prepared, while 35% express concerns about time management.</p>
+                    </div>
+                    <div class="finding-card">
+                        <h4>💡 Support Needs</h4>
+                        <p>Stress management emerges as a key theme, with 48% of students requesting additional support. Revision technique workshops show high demand (67% interest).</p>
+                    </div>
+                `;
+            } else if (view === 'cycleComparison') {
+                content.innerHTML = `
+                    <div class="finding-card">
+                        <h4>📊 Cycle Progression</h4>
+                        <p>Comparing Cycle 1 to Cycle 2 reveals a 3% overall decrease in VESPA scores. This follows typical patterns as academic year progresses and demands increase.</p>
+                    </div>
+                    <div class="finding-card">
+                        <h4>🎯 Changed Dynamics</h4>
+                        <p>Most notable changes: Systems (-8%), Attitude (-5%), while Practice improved (+5%). This suggests students are working harder but feeling less organized.</p>
+                    </div>
+                    <div class="finding-card">
+                        <h4>📈 Confidence Trends</h4>
+                        <p>Exam confidence decreased by 12% from Cycle 1 to Cycle 2, while effort levels remained stable. This indicates maintained engagement despite growing concerns.</p>
+                    </div>
+                    <div class="finding-card">
+                        <h4>💡 Intervention Impact</h4>
+                        <p>Students who received Cycle 1 interventions show 7% better retention of scores in Cycle 2, validating the effectiveness of early support strategies.</p>
+                    </div>
+                `;
+            } else if (view === 'both') {
+                content.innerHTML = `
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="color: #667eea; margin-bottom: 15px;">Year Group Comparison</h3>
+                        <div class="key-findings">
+                            <div class="finding-card">
+                                <h4>📊 Year Groups</h4>
+                                <p>Year 13 averages 11.2% lower than Year 12, with largest gaps in Systems (-12.3%) and Practice (-10.8%).</p>
+                            </div>
+                            <div class="finding-card">
+                                <h4>🎯 Pattern Analysis</h4>
+                                <p>89% of questions show Year 12 scoring higher, suggesting systematic differences between cohorts.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="color: #764ba2; margin-bottom: 15px;">Cycle Progression</h3>
+                        <div class="key-findings">
+                            <div class="finding-card">
+                                <h4>📈 Temporal Changes</h4>
+                                <p>3% decrease from Cycle 1 to Cycle 2, with Practice improving (+5%) while Systems decline (-8%).</p>
+                            </div>
+                            <div class="finding-card">
+                                <h4>💡 Combined Insight</h4>
+                                <p>Year 13's larger Cycle 2 decline (-5% vs Year 12's -2%) suggests cumulative pressure effects.</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Update VESPA Charts
+        function updateVespaCharts(view) {
+            // Update bar chart data based on selection
+            if (view === 'yearComparison') {
+                vespaBarChart.data.datasets = [
+                    {
+                        label: 'Year 12',
+                        data: [72, 78, 71, 69, 75, 73],
+                        backgroundColor: [
+                            'rgba(229, 148, 55, 0.8)',  // Vision
+                            'rgba(134, 180, 240, 0.8)', // Effort
+                            'rgba(114, 203, 68, 0.8)',  // Systems
+                            'rgba(127, 49, 164, 0.8)',  // Practice
+                            'rgba(240, 50, 230, 0.8)',  // Attitude
+                            'rgba(102, 126, 234, 0.8)'  // Overall
+                        ],
+                        borderColor: [
+                            '#e59437', '#86b4f0', '#72cb44', 
+                            '#7f31a4', '#f032e6', '#667eea'
+                        ],
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Year 13',
+                        data: [65, 76, 58, 61, 68, 65],
+                        backgroundColor: [
+                            'rgba(229, 148, 55, 0.4)',  // Vision
+                            'rgba(134, 180, 240, 0.4)', // Effort
+                            'rgba(114, 203, 68, 0.4)',  // Systems
+                            'rgba(127, 49, 164, 0.4)',  // Practice
+                            'rgba(240, 50, 230, 0.4)',  // Attitude
+                            'rgba(102, 126, 234, 0.4)'  // Overall
+                        ],
+                        borderColor: [
+                            '#e59437', '#86b4f0', '#72cb44', 
+                            '#7f31a4', '#f032e6', '#667eea'
+                        ],
+                        borderWidth: 2
+                    }
+                ];
+            } else if (view === 'cycle1') {
+                vespaBarChart.data.datasets = [
+                    {
+                        label: 'Cycle 1',
+                        data: [75, 78, 72, 67, 76, 74],
+                        backgroundColor: [
+                            'rgba(229, 148, 55, 0.8)',  // Vision
+                            'rgba(134, 180, 240, 0.8)', // Effort
+                            'rgba(114, 203, 68, 0.8)',  // Systems
+                            'rgba(127, 49, 164, 0.8)',  // Practice
+                            'rgba(240, 50, 230, 0.8)',  // Attitude
+                            'rgba(102, 126, 234, 0.8)'  // Overall
+                        ],
+                        borderColor: [
+                            '#e59437', '#86b4f0', '#72cb44', 
+                            '#7f31a4', '#f032e6', '#667eea'
+                        ],
+                        borderWidth: 2
+                    }
+                ];
+            } else if (view === 'cycle2') {
+                vespaBarChart.data.datasets = [
+                    {
+                        label: 'Cycle 2',
+                        data: [71, 77, 64, 72, 71, 71],
+                        backgroundColor: [
+                            'rgba(229, 148, 55, 0.8)',  // Vision
+                            'rgba(134, 180, 240, 0.8)', // Effort
+                            'rgba(114, 203, 68, 0.8)',  // Systems
+                            'rgba(127, 49, 164, 0.8)',  // Practice
+                            'rgba(240, 50, 230, 0.8)',  // Attitude
+                            'rgba(102, 126, 234, 0.8)'  // Overall
+                        ],
+                        borderColor: [
+                            '#e59437', '#86b4f0', '#72cb44', 
+                            '#7f31a4', '#f032e6', '#667eea'
+                        ],
+                        borderWidth: 2
+                    }
+                ];
+            } else if (view === 'cycleComparison') {
+                vespaBarChart.data.datasets = [
+                    {
+                        label: 'Cycle 1',
+                        data: [75, 78, 72, 67, 76, 74],
+                        backgroundColor: [
+                            'rgba(229, 148, 55, 0.8)',  // Vision
+                            'rgba(134, 180, 240, 0.8)', // Effort
+                            'rgba(114, 203, 68, 0.8)',  // Systems
+                            'rgba(127, 49, 164, 0.8)',  // Practice
+                            'rgba(240, 50, 230, 0.8)',  // Attitude
+                            'rgba(102, 126, 234, 0.8)'  // Overall
+                        ],
+                        borderColor: [
+                            '#e59437', '#86b4f0', '#72cb44', 
+                            '#7f31a4', '#f032e6', '#667eea'
+                        ],
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Cycle 2',
+                        data: [71, 77, 64, 72, 71, 71],
+                        backgroundColor: [
+                            'rgba(229, 148, 55, 0.4)',  // Vision
+                            'rgba(134, 180, 240, 0.4)', // Effort
+                            'rgba(114, 203, 68, 0.4)',  // Systems
+                            'rgba(127, 49, 164, 0.4)',  // Practice
+                            'rgba(240, 50, 230, 0.4)',  // Attitude
+                            'rgba(102, 126, 234, 0.4)'  // Overall
+                        ],
+                        borderColor: [
+                            '#e59437', '#86b4f0', '#72cb44', 
+                            '#7f31a4', '#f032e6', '#667eea'
+                        ],
+                        borderWidth: 2
+                    }
+                ];
+            } else if (view === 'both') {
+                // Show both comparisons side by side or in a combined view
+                vespaBarChart.data.datasets = [
+                    {
+                        label: 'Year 12 - Cycle 1',
+                        data: [74, 79, 73, 70, 76, 74],
+                        backgroundColor: [
+                            'rgba(229, 148, 55, 0.8)',  // Vision
+                            'rgba(134, 180, 240, 0.8)', // Effort
+                            'rgba(114, 203, 68, 0.8)',  // Systems
+                            'rgba(127, 49, 164, 0.8)',  // Practice
+                            'rgba(240, 50, 230, 0.8)',  // Attitude
+                            'rgba(102, 126, 234, 0.8)'  // Overall
+                        ],
+                        borderColor: [
+                            '#e59437', '#86b4f0', '#72cb44', 
+                            '#7f31a4', '#f032e6', '#667eea'
+                        ],
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Year 12 - Cycle 2',
+                        data: [70, 77, 69, 68, 74, 72],
+                        backgroundColor: [
+                            'rgba(229, 148, 55, 0.6)',  // Vision
+                            'rgba(134, 180, 240, 0.6)', // Effort
+                            'rgba(114, 203, 68, 0.6)',  // Systems
+                            'rgba(127, 49, 164, 0.6)',  // Practice
+                            'rgba(240, 50, 230, 0.6)',  // Attitude
+                            'rgba(102, 126, 234, 0.6)'  // Overall
+                        ],
+                        borderColor: [
+                            '#e59437', '#86b4f0', '#72cb44', 
+                            '#7f31a4', '#f032e6', '#667eea'
+                        ],
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Year 13 - Cycle 1',
+                        data: [68, 77, 61, 64, 70, 66],
+                        backgroundColor: [
+                            'rgba(229, 148, 55, 0.4)',  // Vision
+                            'rgba(134, 180, 240, 0.4)', // Effort
+                            'rgba(114, 203, 68, 0.4)',  // Systems
+                            'rgba(127, 49, 164, 0.4)',  // Practice
+                            'rgba(240, 50, 230, 0.4)',  // Attitude
+                            'rgba(102, 126, 234, 0.4)'  // Overall
+                        ],
+                        borderColor: [
+                            '#e59437', '#86b4f0', '#72cb44', 
+                            '#7f31a4', '#f032e6', '#667eea'
+                        ],
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Year 13 - Cycle 2',
+                        data: [62, 75, 55, 60, 66, 63],
+                        backgroundColor: [
+                            'rgba(229, 148, 55, 0.2)',  // Vision
+                            'rgba(134, 180, 240, 0.2)', // Effort
+                            'rgba(114, 203, 68, 0.2)',  // Systems
+                            'rgba(127, 49, 164, 0.2)',  // Practice
+                            'rgba(240, 50, 230, 0.2)',  // Attitude
+                            'rgba(102, 126, 234, 0.2)'  // Overall
+                        ],
+                        borderColor: [
+                            '#e59437', '#86b4f0', '#72cb44', 
+                            '#7f31a4', '#f032e6', '#667eea'
+                        ],
+                        borderWidth: 1
+                    }
+                ];
+            }
+            
+            vespaBarChart.update();
+            
+            // Update radar chart with VESPA colors
+            if (view === 'yearComparison' || view === 'cycleComparison' || view === 'both') {
+                vespaRadarChart.data.datasets = vespaBarChart.data.datasets.map((ds, index) => ({
+                    ...ds,
+                    data: ds.data.slice(0, 5), // Remove 'Overall' for radar
+                    backgroundColor: index % 2 === 0 ? 'rgba(102, 126, 234, 0.2)' : 'rgba(118, 75, 162, 0.2)',
+                    borderColor: index % 2 === 0 ? '#667eea' : '#764ba2',
+                    pointBackgroundColor: ['#e59437', '#86b4f0', '#72cb44', '#7f31a4', '#f032e6'],
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: ['#e59437', '#86b4f0', '#72cb44', '#7f31a4', '#f032e6'],
+                    pointRadius: 6
+                }));
+            } else {
+                vespaRadarChart.data.datasets = vespaBarChart.data.datasets.map((ds, index) => ({
+                    ...ds,
+                    data: ds.data.slice(0, 5),
+                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    borderColor: '#667eea',
+                    pointBackgroundColor: ['#e59437', '#86b4f0', '#72cb44', '#7f31a4', '#f032e6'],
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: ['#e59437', '#86b4f0', '#72cb44', '#7f31a4', '#f032e6'],
+                    pointRadius: 6
+                }));
+            }
+            
+            vespaRadarChart.update();
+        }
+        
+        // Update Questionnaire Insights Display (12 fixed insights)
+        function updateQuestionnaireInsights(view) {
+            const content = document.getElementById('insightsContent');
+            
+            // Define the 12 insights with their data (from dashboard)
+            const insights = [
+                { id: 'support_readiness', icon: '🤝', title: 'Support Readiness', question: 'What percentage feel supported this year?', current: 61.8, yr12: 64.2, yr13: 59.3, cycle1: 63.5, cycle2: 60.1 },
+                { id: 'academic_momentum', icon: '🚀', title: 'Academic Momentum', question: 'What percentage show strong drive and engagement?', current: 59.7, yr12: 62.1, yr13: 57.3, cycle1: 61.2, cycle2: 58.2 },
+                { id: 'growth_mindset', icon: '🌱', title: 'Growth Mindset', question: 'What percentage believe intelligence can be developed?', current: 54.5, yr12: 56.8, yr13: 52.2, cycle1: 55.9, cycle2: 53.1 },
+                { id: 'resilience_factor', icon: '💪', title: 'Resilience', question: 'What percentage show academic resilience?', current: 53.7, yr12: 55.4, yr13: 52.0, cycle1: 54.8, cycle2: 52.6 },
+                { id: 'time_management', icon: '⏰', title: 'Time Management', question: 'What percentage manage time effectively?', current: 50.7, yr12: 53.2, yr13: 48.2, cycle1: 52.4, cycle2: 49.0 },
+                { id: 'stress_management', icon: '😌', title: 'Stress Management', question: 'What percentage handle pressure well?', current: 50.3, yr12: 52.8, yr13: 47.8, cycle1: 54.1, cycle2: 46.5 },
+                { id: 'revision_readiness', icon: '📖', title: 'Revision Readiness', question: 'What percentage feel equipped for revision challenges?', current: 44.4, yr12: 46.7, yr13: 42.1, cycle1: 47.2, cycle2: 41.6 },
+                { id: 'academic_confidence', icon: '⭐', title: 'Academic Confidence', question: 'What percentage are confident in their ability?', current: 42.0, yr12: 44.5, yr13: 39.5, cycle1: 44.8, cycle2: 39.2 },
+                { id: 'organization_skills', icon: '📋', title: 'Organization Skills', question: 'What percentage are well-organized?', current: 41.4, yr12: 44.2, yr13: 38.6, cycle1: 43.7, cycle2: 39.1 },
+                { id: 'exam_confidence', icon: '🎯', title: 'Exam Confidence', question: 'What percentage feel confident about exams?', current: 40.3, yr12: 43.1, yr13: 37.5, cycle1: 44.2, cycle2: 36.4 },
+                { id: 'study_effectiveness', icon: '📚', title: 'Study Effectiveness', question: 'What percentage use proven study techniques?', current: 31.5, yr12: 33.8, yr13: 29.2, cycle1: 30.1, cycle2: 32.9 },
+                { id: 'active_learning', icon: '🎓', title: 'Active Learning', question: 'What percentage engage in active learning?', current: 24.3, yr12: 25.9, yr13: 22.7, cycle1: 23.1, cycle2: 25.5 }
+            ];
+            
+            let html = '';
+            
+            if (view === 'current') {
+                // Current snapshot view - show all 12 insights with their current values
+                insights.forEach(insight => {
+                    const color = getInsightColor(insight.current);
+                    html += `
+                        <div class="insight-card" style="background: linear-gradient(135deg, ${color}15 0%, ${color}08 100%); border-left: 3px solid ${color};">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <span style="font-size: 24px;">${insight.icon}</span>
+                                <h4 style="margin: 0; flex: 1;">${insight.title}</h4>
+                                <span style="font-size: 24px; font-weight: bold; color: ${color};">${insight.current}%</span>
+                            </div>
+                            <p style="margin: 0; color: #666; font-size: 13px;">${insight.question}</p>
+                        </div>
+                    `;
+                });
+            } else if (view === 'yearComparison') {
+                // Year 12 vs Year 13 comparison
+                insights.forEach(insight => {
+                    const diff = insight.yr13 - insight.yr12;
+                    const color = diff >= 0 ? '#72cb44' : '#e59437';
+                    const arrow = diff >= 0 ? '↑' : '↓';
+                    html += `
+                        <div class="insight-card" style="background: white; border-left: 3px solid ${color};">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <span style="font-size: 20px;">${insight.icon}</span>
+                                <h4 style="margin: 0; flex: 1; font-size: 14px;">${insight.title}</h4>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center;">
+                                <div>
+                                    <span style="color: #999; font-size: 11px;">Year 12</span><br>
+                                    <span style="font-weight: bold;">${insight.yr12}%</span>
+                                </div>
+                                <div>
+                                    <span style="color: #999; font-size: 11px;">Year 13</span><br>
+                                    <span style="font-weight: bold;">${insight.yr13}%</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="color: ${color}; font-weight: bold;">${arrow} ${Math.abs(diff).toFixed(1)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else if (view === 'cycleComparison') {
+                // Cycle 1 vs Cycle 2 comparison
+                insights.forEach(insight => {
+                    const diff = insight.cycle2 - insight.cycle1;
+                    const color = diff >= 0 ? '#72cb44' : '#e59437';
+                    const arrow = diff >= 0 ? '↑' : '↓';
+                    html += `
+                        <div class="insight-card" style="background: white; border-left: 3px solid ${color};">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <span style="font-size: 20px;">${insight.icon}</span>
+                                <h4 style="margin: 0; flex: 1; font-size: 14px;">${insight.title}</h4>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center;">
+                                <div>
+                                    <span style="color: #999; font-size: 11px;">Cycle 1</span><br>
+                                    <span style="font-weight: bold;">${insight.cycle1}%</span>
+                                </div>
+                                <div>
+                                    <span style="color: #999; font-size: 11px;">Cycle 2</span><br>
+                                    <span style="font-weight: bold;">${insight.cycle2}%</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="color: ${color}; font-weight: bold;">${arrow} ${Math.abs(diff).toFixed(1)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            content.innerHTML = html;
+        }
+        
+        // Helper function to get color based on percentage
+        function getInsightColor(percentage) {
+            if (percentage >= 60) return '#72cb44'; // Green
+            if (percentage >= 45) return '#f0ad4e'; // Orange
+            return '#d9534f'; // Red
+        }
+        
+        // Initial call
+        updateQuestionnaireInsights('current');
+        
+        // Update Histogram Display
+        function updateHistogramDisplay(view) {
+            const histograms = [visionHistChart, effortHistChart, systemsHistChart, practiceHistChart, attitudeHistChart, overallHistChart];
+            
+            histograms.forEach(chart => {
+                if (view === 'both') {
+                    chart.data.datasets = [
+                        {
+                            label: 'Cycle 1',
+                            data: [2, 3, 5, 8, 15, 22, 18, 14, 8, 5],
+                            backgroundColor: chart.data.datasets[0].backgroundColor,
+                            borderColor: chart.data.datasets[0].borderColor,
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Cycle 2',
+                            data: [3, 5, 8, 12, 18, 16, 15, 11, 7, 5],
+                            backgroundColor: chart.data.datasets[0].backgroundColor.replace('0.8', '0.4'),
+                            borderColor: chart.data.datasets[0].borderColor,
+                            borderWidth: 1
+                        }
+                    ];
+                } else if (view === 'cycle1') {
+                    chart.data.datasets = [{
+                        label: 'Cycle 1',
+                        data: [2, 3, 5, 8, 15, 22, 18, 14, 8, 5],
+                        backgroundColor: chart.data.datasets[0].backgroundColor,
+                        borderColor: chart.data.datasets[0].borderColor,
+                        borderWidth: 1
+                    }];
+                } else if (view === 'cycle2') {
+                    chart.data.datasets = [{
+                        label: 'Cycle 2',
+                        data: [3, 5, 8, 12, 18, 16, 15, 11, 7, 5],
+                        backgroundColor: chart.data.datasets[0].backgroundColor,
+                        borderColor: chart.data.datasets[0].borderColor,
+                        borderWidth: 1
+                    }];
+                }
+                chart.update();
+            });
+        }
+        
+        // Update functions
+        function updateSchoolName() {
+            const name = document.getElementById('schoolName').value;
+            document.getElementById('schoolNameHeader').textContent = name;
+        }
+        
+        function updateReportTitle() {
+            const title = document.getElementById('reportTitle').value;
+            document.getElementById('reportTitleHeader').textContent = title;
+        }
+        
+        function updateContext() {
+            const context = document.getElementById('contextText').value;
+            document.getElementById('contextDisplay').textContent = context;
+        }
+        
+        function updatePrimaryColor() {
+            const color = document.getElementById('primaryColor').value;
+            document.getElementById('colorValue').textContent = color;
+            
+            // Update all primary color elements
+            document.querySelectorAll('.section-title').forEach(el => {
+                el.style.color = color;
+            });
+            document.querySelectorAll('.finding-card h4').forEach(el => {
+                el.style.color = color;
+            });
+            document.querySelector('.report-header').style.background = `linear-gradient(135deg, ${color} 0%, #764ba2 100%)`;
+        }
+        
+        function updateLogo() {
+            const url = document.getElementById('logoUrl').value;
+            if (url) {
+                document.getElementById('schoolLogo').src = url;
+            }
+        }
+        
+        // Export HTML
+        function exportHTML() {
+            const html = document.documentElement.outerHTML;
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'comparative_report.html';
+            a.click();
+        }
+        
+        // Initialize Charts with VESPA Colors
+        const vespaColors = {
+            vision: '#e59437',
+            effort: '#86b4f0',
+            systems: '#72cb44',
+            practice: '#7f31a4',
+            attitude: '#f032e6',
+            overall: '#667eea'
+        };
+        
+        // VESPA Bar Chart
+        const vespaBarCtx = document.getElementById('vespaBarChart').getContext('2d');
+        const vespaBarChart = new Chart(vespaBarCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude', 'Overall'],
+                datasets: [
+                    {
+                        label: 'Year 12',
+                        data: [72, 78, 71, 69, 75, 73],
+                        backgroundColor: [
+                            'rgba(229, 148, 55, 0.8)',  // Vision
+                            'rgba(134, 180, 240, 0.8)', // Effort
+                            'rgba(114, 203, 68, 0.8)',  // Systems
+                            'rgba(127, 49, 164, 0.8)',  // Practice
+                            'rgba(240, 50, 230, 0.8)',  // Attitude
+                            'rgba(102, 126, 234, 0.8)'  // Overall
+                        ],
+                        borderColor: [
+                            '#e59437', '#86b4f0', '#72cb44', 
+                            '#7f31a4', '#f032e6', '#667eea'
+                        ],
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Year 13',
+                        data: [65, 76, 58, 61, 68, 65],
+                        backgroundColor: [
+                            'rgba(229, 148, 55, 0.4)',  // Vision
+                            'rgba(134, 180, 240, 0.4)', // Effort
+                            'rgba(114, 203, 68, 0.4)',  // Systems
+                            'rgba(127, 49, 164, 0.4)',  // Practice
+                            'rgba(240, 50, 230, 0.4)',  // Attitude
+                            'rgba(102, 126, 234, 0.4)'  // Overall
+                        ],
+                        borderColor: [
+                            '#e59437', '#86b4f0', '#72cb44', 
+                            '#7f31a4', '#f032e6', '#667eea'
+                        ],
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // VESPA Radar Chart  
+        const vespaRadarCtx = document.getElementById('vespaRadarChart').getContext('2d');
+        const vespaRadarChart = new Chart(vespaRadarCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude'],
+                datasets: [
+                    {
+                        label: 'Year 12',
+                        data: [72, 78, 71, 69, 75],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        pointBackgroundColor: ['#e59437', '#86b4f0', '#72cb44', '#7f31a4', '#f032e6'],
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: ['#e59437', '#86b4f0', '#72cb44', '#7f31a4', '#f032e6'],
+                        pointRadius: 6
+                    },
+                    {
+                        label: 'Year 13',
+                        data: [65, 76, 58, 61, 68],
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.2)',
+                        pointBackgroundColor: ['#e59437', '#86b4f0', '#72cb44', '#7f31a4', '#f032e6'],
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: ['#e59437', '#86b4f0', '#72cb44', '#7f31a4', '#f032e6'],
+                        pointRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+        
+        // Initialize VESPA Histograms with correct colors
+        // Vision Histogram
+        const visionHistCtx = document.getElementById('visionHistogram').getContext('2d');
+        const visionHistChart = new Chart(visionHistCtx, {
+            type: 'bar',
+            data: {
+                labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                datasets: [{
+                    label: 'Cycle 1',
+                    data: [2, 3, 5, 8, 15, 22, 18, 14, 8, 5],
+                    backgroundColor: 'rgba(229, 148, 55, 0.8)',  // Vision orange
+                    borderColor: '#e59437',
+                    borderWidth: 1
+                }, {
+                    label: 'Cycle 2',
+                    data: [3, 5, 8, 12, 18, 16, 15, 11, 7, 5],
+                    backgroundColor: 'rgba(229, 148, 55, 0.4)',
+                    borderColor: '#e59437',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Students'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Score'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Effort Histogram
+        const effortHistCtx = document.getElementById('effortHistogram').getContext('2d');
+        const effortHistChart = new Chart(effortHistCtx, {
+            type: 'bar',
+            data: {
+                labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                datasets: [{
+                    label: 'Cycle 1',
+                    data: [1, 2, 4, 6, 10, 20, 25, 18, 10, 4],
+                    backgroundColor: 'rgba(134, 180, 240, 0.8)',  // Effort blue
+                    borderColor: '#86b4f0',
+                    borderWidth: 1
+                }, {
+                    label: 'Cycle 2',
+                    data: [2, 3, 5, 8, 12, 18, 22, 15, 10, 5],
+                    backgroundColor: 'rgba(134, 180, 240, 0.4)',
+                    borderColor: '#86b4f0',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Students'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Score'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+        
+        // Systems Histogram
+        const systemsHistCtx = document.getElementById('systemsHistogram').getContext('2d');
+        const systemsHistChart = new Chart(systemsHistCtx, {
+            type: 'bar',
+            data: {
+                labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                datasets: [{
+                    label: 'Cycle 1',
+                    data: [2, 3, 5, 8, 12, 20, 22, 16, 8, 4],
+                    backgroundColor: 'rgba(114, 203, 68, 0.8)',  // Systems green
+                    borderColor: '#72cb44',
+                    borderWidth: 1
+                }, {
+                    label: 'Cycle 2',
+                    data: [5, 8, 12, 15, 18, 15, 12, 8, 5, 2],
+                    backgroundColor: 'rgba(114, 203, 68, 0.4)',
+                    borderColor: '#72cb44',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Students'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Score'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+        
+        // Practice Histogram
+        const practiceHistCtx = document.getElementById('practiceHistogram').getContext('2d');
+        const practiceHistChart = new Chart(practiceHistCtx, {
+            type: 'bar',
+            data: {
+                labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                datasets: [{
+                    label: 'Cycle 1',
+                    data: [2, 4, 6, 10, 14, 18, 20, 14, 8, 4],
+                    backgroundColor: 'rgba(127, 49, 164, 0.8)',  // Practice purple
+                    borderColor: '#7f31a4',
+                    borderWidth: 1
+                }, {
+                    label: 'Cycle 2',
+                    data: [4, 7, 10, 14, 16, 14, 12, 10, 8, 5],
+                    backgroundColor: 'rgba(127, 49, 164, 0.4)',
+                    borderColor: '#7f31a4',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Students'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Score'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+        
+        // Attitude Histogram
+        const attitudeHistCtx = document.getElementById('attitudeHistogram').getContext('2d');
+        const attitudeHistChart = new Chart(attitudeHistCtx, {
+            type: 'bar',
+            data: {
+                labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                datasets: [{
+                    label: 'Cycle 1',
+                    data: [1, 3, 5, 7, 11, 19, 24, 16, 9, 5],
+                    backgroundColor: 'rgba(240, 50, 230, 0.8)',  // Attitude pink
+                    borderColor: '#f032e6',
+                    borderWidth: 1
+                }, {
+                    label: 'Cycle 2',
+                    data: [2, 4, 7, 10, 15, 17, 20, 13, 8, 4],
+                    backgroundColor: 'rgba(240, 50, 230, 0.4)',
+                    borderColor: '#f032e6',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Students'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Score'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+        
+        // Overall Histogram
+        const overallHistCtx = document.getElementById('overallHistogram').getContext('2d');
+        const overallHistChart = new Chart(overallHistCtx, {
+            type: 'bar',
+            data: {
+                labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                datasets: [{
+                    label: 'Cycle 1',
+                    data: [2, 3, 6, 9, 13, 21, 22, 15, 7, 2],
+                    backgroundColor: 'rgba(102, 126, 234, 0.8)',  // Overall blue
+                    borderColor: '#667eea',
+                    borderWidth: 1
+                }, {
+                    label: 'Cycle 2',
+                    data: [3, 5, 8, 11, 16, 18, 19, 12, 6, 2],
+                    backgroundColor: 'rgba(102, 126, 234, 0.4)',
+                    borderColor: '#667eea',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Students'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Score'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+        
+        // Initialize Word Cloud with WordCloud2 or fallback
+        function initWordCloud() {
+            const wordCloudCanvas = document.getElementById('wordCloudCanvas');
+            const ctx = wordCloudCanvas.getContext('2d');
+            
+            // Set canvas size
+            wordCloudCanvas.width = wordCloudCanvas.offsetWidth || 800;
+            wordCloudCanvas.height = 400;
+            
+            // Word data with VESPA-themed colors
+            const wordList = [
+                ['exam', 48],
+                ['stress', 42],
+                ['time', 38],
+                ['management', 35],
+                ['revision', 34],
+                ['support', 32],
+                ['teachers', 30],
+                ['resources', 28],
+                ['difficult', 26],
+                ['help', 25],
+                ['understand', 24],
+                ['practice', 23],
+                ['questions', 22],
+                ['confident', 21],
+                ['preparation', 20],
+                ['anxiety', 19],
+                ['workload', 18],
+                ['study', 17],
+                ['homework', 16],
+                ['feedback', 15],
+                ['motivation', 14],
+                ['focus', 13],
+                ['organization', 12],
+                ['deadline', 11],
+                ['pressure', 10]
+            ];
+            
+            // Try WordCloud2 if available, otherwise use fallback
+            if (typeof WordCloud !== 'undefined') {
+                WordCloud(wordCloudCanvas, {
+                    list: wordList,
+                    gridSize: 8,
+                    weightFactor: 3,
+                    fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+                    color: function(word, weight) {
+                        const colors = [
+                            '#e59437', // Vision
+                            '#86b4f0', // Effort
+                            '#72cb44', // Systems
+                            '#7f31a4', // Practice
+                            '#f032e6', // Attitude
+                            '#667eea'  // Overall
+                        ];
+                        return colors[Math.floor(Math.random() * colors.length)];
+                    },
+                    rotateRatio: 0.3,
+                    rotationSteps: 2,
+                    backgroundColor: 'transparent',
+                    drawOutOfBound: false,
+                    shrinkToFit: true
+                });
+            } else {
+                // Fallback: Simple canvas rendering
+                console.log('WordCloud2 not loaded, using fallback visualization');
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, wordCloudCanvas.width, wordCloudCanvas.height);
+                
+                // Draw words manually with better layout
+                const colors = ['#e59437', '#86b4f0', '#72cb44', '#7f31a4', '#f032e6', '#667eea'];
+                let x = 50, y = 50, row = 0;
+                
+                wordList.forEach((item, index) => {
+                    const [word, size] = item;
+                    const fontSize = Math.min(size * 1.5, 60);
+                    ctx.font = `${fontSize}px 'Segoe UI', sans-serif`;
+                    ctx.fillStyle = colors[index % colors.length];
+                    
+                    // Calculate position
+                    if (x + ctx.measureText(word).width > wordCloudCanvas.width - 50) {
+                        x = 50;
+                        y += fontSize + 10;
+                    }
+                    
+                    // Random rotation for some words
+                    if (Math.random() > 0.7) {
+                        ctx.save();
+                        ctx.translate(x + ctx.measureText(word).width/2, y);
+                        ctx.rotate(-Math.PI / 12);
+                        ctx.fillText(word, -ctx.measureText(word).width/2, 0);
+                        ctx.restore();
+                    } else {
+                        ctx.fillText(word, x, y);
+                    }
+                    
+                    x += ctx.measureText(word).width + 20;
+                });
+            }
+        }
+        
+        // Initialize word cloud after a short delay
+        setTimeout(initWordCloud, 500);
+        
+        // Make all editable fields save their state
+        document.querySelectorAll('.editable').forEach(el => {
+            el.addEventListener('blur', function() {
+                // In a real implementation, this would save to localStorage or a database
+                console.log('Content updated:', this.textContent);
+            });
+        });
+        
+        // Initialize with default views AFTER all charts are created
+        updateKeyFindings('yearComparison');
+        updateVespaCharts('yearComparison');
+        // Note: Questionnaire insights start with 'current' view by default
+    </script>
+</body>
+</html>
