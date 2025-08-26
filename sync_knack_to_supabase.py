@@ -158,7 +158,7 @@ def make_knack_request(object_key, page=1, rows_per_page=1000, filters=None):
         params['filters'] = json.dumps(filters)
     
     try:
-        response = requests.get(url, headers=headers, params=params, timeout=30)
+        response = requests.get(url, headers=headers, params=params, timeout=90)
         response.raise_for_status()
         return response.json()
     except Exception as e:
