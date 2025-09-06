@@ -6868,13 +6868,21 @@ def generate_comparative_report():
         app.logger.info(f"Report type: {report_type}")
         app.logger.info(f"Has context: {bool(organizational_context)}")
         
-        # Fetch comparison data from Supabase
-        comparison_data = fetch_comparison_data(
-            establishment_id, 
-            report_type, 
-            config,
-            filters
-        )
+        # Use data passed from frontend if available, otherwise fetch from Supabase
+        frontend_data = data.get('data', {})
+        if frontend_data and any(frontend_data.values()):
+            # Use the data already loaded in the dashboard
+            app.logger.info("Using data from frontend dashboard")
+            comparison_data = process_frontend_data(frontend_data, report_type, config)
+        else:
+            # Fallback to fetching from Supabase
+            app.logger.info("Fetching fresh data from Supabase")
+            comparison_data = fetch_comparison_data(
+                establishment_id, 
+                report_type, 
+                config,
+                filters
+            )
         
         # Generate AI insights with context
         ai_insights = generate_contextual_insights(
@@ -6909,6 +6917,87 @@ def generate_comparative_report():
         app.logger.error(f"Failed to generate comparative report: {e}")
         traceback.print_exc()
         raise ApiError(f"Report generation failed: {str(e)}", 500)
+
+def process_frontend_data(frontend_data, report_type, config):
+    """Process data from frontend dashboard for report generation"""
+    try:
+        app.logger.info(f"Processing frontend data for report type: {report_type}")
+        app.logger.info(f"Frontend data keys: {frontend_data.keys()}")
+        
+        statistics = frontend_data.get('statistics', {})
+        qla_data = frontend_data.get('qlaData', {})
+        
+        if report_type == 'cycle_vs_cycle':
+            # Extract cycle data from statistics
+            cycles = config.get('cycles', ['Cycle 1', 'Cycle 2'])
+            data = {}
+            
+            # Get VESPA scores for each cycle
+            vespa_scores = statistics.get('vespaScores', {})
+            comparison = statistics.get('comparison', {})
+            
+            for i, cycle in enumerate(cycles):
+                cycle_num = int(cycle.split()[-1]) if 'Cycle' in cycle else i + 1
+                cycle_key = f'cycle_{cycle_num}'
+                
+                # Use comparison data if available
+                if comparison and 'school' in comparison:
+                    school_data = comparison['school']
+                    if isinstance(school_data, list) and len(school_data) > i:
+                        data[cycle_key] = {
+                            'mean': school_data[i],
+                            'vespa_breakdown': {
+                                'vision': vespa_scores.get('vision', 0),
+                                'effort': vespa_scores.get('effort', 0),
+                                'systems': vespa_scores.get('systems', 0),
+                                'practice': vespa_scores.get('practice', 0),
+                                'attitude': vespa_scores.get('attitude', 0)
+                            },
+                            'count': statistics.get('totalResponses', 0)
+                        }
+                
+            app.logger.info(f"Processed cycle data: {data}")
+            return data
+            
+        elif report_type == 'year_vs_year':
+            # Process year group comparison
+            year_groups = config.get('yearGroups', [])
+            data = {}
+            
+            for year_group in year_groups:
+                # This would need actual year group data from statistics
+                data[year_group] = {
+                    'mean': statistics.get('averageScore', 0),
+                    'count': statistics.get('totalResponses', 0),
+                    'vespa_breakdown': statistics.get('vespaScores', {})
+                }
+            
+            return data
+            
+        elif report_type == 'group_vs_group':
+            # Process group comparison
+            groups = config.get('groups', [])
+            data = {}
+            
+            for group in groups:
+                # This would need actual group data
+                data[group] = {
+                    'mean': statistics.get('averageScore', 0),
+                    'count': statistics.get('totalResponses', 0)
+                }
+            
+            return data
+            
+        else:
+            # Default: return statistics as-is
+            return {
+                'statistics': statistics,
+                'qla': qla_data
+            }
+            
+    except Exception as e:
+        app.logger.error(f"Error processing frontend data: {e}")
+        return {}
 
 def fetch_comparison_data(establishment_id, report_type, config, filters):
     """Fetch data from comparative_metrics view or raw tables"""

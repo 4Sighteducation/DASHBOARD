@@ -314,21 +314,25 @@ def sync_students_and_vespa_scores():
     # Pre-fetch all Australian establishments to avoid repeated queries
     australian_ests = {e['id']: e.get('is_australian', False) for e in establishments.data}
     
-    # Pre-fetch existing students to build knack_id -> student_id mapping
+    # Pre-fetch existing students to build both email -> student_id and knack_id -> student_id mappings
     logging.info("Loading existing student mappings...")
-    student_id_map = {}
+    student_id_map = {}  # knack_id -> student_id
+    student_email_map = {}  # email -> student_id
     offset = 0
     limit = 1000
     while True:
-        existing_students = supabase.table('students').select('id', 'knack_id').limit(limit).offset(offset).execute()
+        existing_students = supabase.table('students').select('id', 'knack_id', 'email').limit(limit).offset(offset).execute()
         if not existing_students.data:
             break
         for student in existing_students.data:
             student_id_map[student['knack_id']] = student['id']
+            # Also map by email for better matching when students are re-uploaded
+            if student.get('email'):
+                student_email_map[student['email'].lower()] = student['id']
         if len(existing_students.data) < limit:
             break
         offset += limit
-    logging.info(f"Loaded {len(student_id_map)} existing student mappings")
+    logging.info(f"Loaded {len(student_id_map)} knack_id mappings and {len(student_email_map)} email mappings")
     
     scores_synced = 0
     students_synced = 0
@@ -393,6 +397,9 @@ def sync_students_and_vespa_scores():
                     else:
                         student_name = ''
                     
+                    # Check if student exists by email (handles re-uploaded students with new knack_ids)
+                    existing_student_id = student_email_map.get(student_email.lower())
+                    
                     student_data = {
                         'knack_id': record['id'],
                         'email': student_email,
@@ -404,26 +411,35 @@ def sync_students_and_vespa_scores():
                         'faculty': record.get('field_782', '')  # Corrected: field_782 is faculty
                     }
                     
+                    # If student exists by email, preserve their ID for upsert
+                    if existing_student_id:
+                        student_data['id'] = existing_student_id
+                        # Update our maps with the new knack_id
+                        student_id_map[record['id']] = existing_student_id
+                    
                     student_batch.append(student_data)
                     students_processed.add(student_email)
                     
                     # Process batch if it reaches the limit
                     if len(student_batch) >= BATCH_SIZES['students']:
                         logging.info(f"Processing batch of {len(student_batch)} students...")
+                        # Use email as conflict resolution first, then knack_id
                         result = supabase.table('students').upsert(
                             student_batch,
-                            on_conflict='knack_id'
+                            on_conflict='email'  # Changed from knack_id to email
                         ).execute()
                         
-                        # Update the student_id_map with the newly inserted/updated students
+                        # Update both maps with the newly inserted/updated students
                         for student in result.data:
                             student_id_map[student['knack_id']] = student['id']
+                            if student.get('email'):
+                                student_email_map[student['email'].lower()] = student['id']
                         
                         students_synced += len(student_batch)
                         student_batch = []
                 
-                # Get student ID from map (avoid individual lookups)
-                student_id = student_id_map.get(record['id'])
+                # Get student ID from map (check email map first, then knack_id map)
+                student_id = student_email_map.get(student_email.lower()) or student_id_map.get(record['id'])
                 if not student_id:
                     # Student might be in the current batch but not yet in database
                     # Skip for now, it will be processed in the next sync run
@@ -521,12 +537,14 @@ def sync_students_and_vespa_scores():
         logging.info(f"Processing final batch of {len(student_batch)} students...")
         result = supabase.table('students').upsert(
             student_batch,
-            on_conflict='knack_id'
+            on_conflict='email'  # Changed from knack_id to email
         ).execute()
         
-        # Update the student_id_map with the newly inserted/updated students
+        # Update both maps with the newly inserted/updated students
         for student in result.data:
             student_id_map[student['knack_id']] = student['id']
+            if student.get('email'):
+                student_email_map[student['email'].lower()] = student['id']
         
         students_synced += len(student_batch)
     
@@ -751,42 +769,53 @@ def deduplicate_response_batch(batch):
     return deduped
 
 def calculate_academic_year(date_str, establishment_id=None, is_australian=None):
-    """Calculate academic year based on date and establishment location"""
-    if not date_str:
-        return None
+    """Calculate academic year based on date and establishment location
     
-    try:
-        # Parse date (Knack format: DD/MM/YYYY - UK format)
-        date = datetime.strptime(date_str, '%d/%m/%Y')
-        
-        # Check if Australian school
-        if is_australian is None and establishment_id:
-            # Only do API call if is_australian not provided (backward compatibility)
+    Returns academic year in format YYYY/YYYY (e.g., "2025/2026")
+    - For non-Australian schools: August 1st cutoff (Aug-Jul academic year)
+    - For Australian schools: January 1st cutoff (Jan-Dec academic year)
+    """
+    if not date_str:
+        # If no date provided, use current date
+        date = datetime.now()
+    else:
+        try:
+            # Parse date (Knack format: DD/MM/YYYY - UK format)
+            date = datetime.strptime(date_str, '%d/%m/%Y')
+        except:
+            # Try ISO format as fallback
             try:
-                est = supabase.table('establishments').select('is_australian').eq('id', establishment_id).execute()
-                if est.data and len(est.data) > 0:
-                    is_australian = est.data[0].get('is_australian', False)
-                else:
-                    is_australian = False
-            except Exception as e:
-                logging.warning(f"Could not determine if establishment is Australian: {e}")
-                is_australian = False
-        elif is_australian is None:
-            is_australian = False
-        
-        if is_australian:
-            # Australian: Calendar year
-            return str(date.year)
-        else:
-            # UK: Academic year (Aug-Jul)
-            if date.month >= 8:
-                return f"{date.year}-{str(date.year + 1)[2:]}"
+                date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+            except:
+                logging.error(f"Could not parse date: {date_str}")
+                date = datetime.now()
+    
+    # Check if Australian school
+    if is_australian is None and establishment_id:
+        # Only do API call if is_australian not provided (backward compatibility)
+        try:
+            est = supabase.table('establishments').select('is_australian').eq('id', establishment_id).execute()
+            if est.data and len(est.data) > 0:
+                is_australian = est.data[0].get('is_australian', False)
             else:
-                return f"{date.year - 1}-{str(date.year)[2:]}"
-                
-    except Exception as e:
-        logging.error(f"Error calculating academic year: {e}")
-        return None
+                is_australian = False
+        except Exception as e:
+            logging.warning(f"Could not determine if establishment is Australian: {e}")
+            is_australian = False
+    elif is_australian is None:
+        is_australian = False
+    
+    if is_australian:
+        # Australian: Calendar year (Jan-Dec)
+        # Academic year 2025 = "2025/2025"
+        return f"{date.year}/{date.year}"
+    else:
+        # Rest of world: Academic year (Aug-Jul)
+        # August 1st is the cutoff
+        if date.month >= 8:  # August onwards
+            return f"{date.year}/{date.year + 1}"
+        else:
+            return f"{date.year - 1}/{date.year}"
 
 def sync_staff_admins():
     """Sync staff admins from object_5 with establishment connections"""
@@ -1166,12 +1195,8 @@ def calculate_question_statistics():
             # Clear existing statistics
             supabase.table('question_statistics').delete().neq('id', '00000000-0000-0000-0000-000000000000').execute()
             
-            # Get current academic year (matching format used in school_statistics)
-            now = datetime.now()
-            if now.month >= 8:  # August onwards
-                current_year = f"{now.year}-{str(now.year + 1)[2:]}"  # e.g., "2025-26"
-            else:
-                current_year = f"{now.year - 1}-{str(now.year)[2:]}"  # e.g., "2024-25"
+            # Get current academic year using the standard function
+            current_year = calculate_academic_year(None)  # Will use current date
             
             # Get all establishments
             establishments = supabase.table('establishments').select('id', 'is_australian').execute()
