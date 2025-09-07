@@ -1,0 +1,25 @@
+# VESPA Dashboard Environment Variables Template
+# Copy this file to .env and fill in your actual values
+
+# Knack API Credentials
+KNACK_APP_ID=your_knack_app_id_here
+KNACK_API_KEY=your_knack_api_key_here
+# Note: Some scripts may use these alternative names
+KNACK_APPLICATION_ID=your_knack_app_id_here
+
+# Supabase Credentials
+SUPABASE_URL=https://wyddnfeuvligdolpbgod.supabase.co
+SUPABASE_KEY=your_supabase_anon_key_here
+# Note: Some scripts may use this alternative name
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Heroku API URL (if using deployed version)
+HEROKU_API_URL=https://vespa-dashboard-9a1f84ee5341.herokuapp.com
+
+# SendGrid (for email reports - optional)
+SENDGRID_API_KEY=your_sendgrid_api_key_here
+SENDGRID_FROM_EMAIL=your_from_email@example.com
+SENDGRID_TO_EMAIL=your_to_email@example.com
+
+# Database URL (for direct database access - optional)
+DATABASE_URL=your_supabase_database_url_here

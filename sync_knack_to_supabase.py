@@ -411,10 +411,9 @@ def sync_students_and_vespa_scores():
                         'faculty': record.get('field_782', '')  # Corrected: field_782 is faculty
                     }
                     
-                    # If student exists by email, preserve their ID for upsert
+                    # Don't include the id field - let Supabase handle it via email conflict resolution
+                    # If student exists by email, update our maps with the new knack_id
                     if existing_student_id:
-                        student_data['id'] = existing_student_id
-                        # Update our maps with the new knack_id
                         student_id_map[record['id']] = existing_student_id
                     
                     student_batch.append(student_data)

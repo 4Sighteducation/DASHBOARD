@@ -320,6 +320,42 @@ def get_current_academic_year():
     else:
         return f"{today.year - 1}/{today.year}"
 
+def convert_academic_year_format(year_str, to_database=True):
+    """
+    Convert academic year between frontend format (2025-26) and database format (2025/2026)
+    
+    Args:
+        year_str: The academic year string to convert
+        to_database: If True, convert from frontend to database format. If False, convert from database to frontend.
+    
+    Returns:
+        Converted academic year string, or original if no conversion needed
+    """
+    if not year_str or year_str == 'all':
+        return year_str
+    
+    if to_database:
+        # Convert from 2025-26 to 2025/2026
+        if '-' in year_str:
+            parts = year_str.split('-')
+            if len(parts) == 2:
+                start_year = parts[0]
+                short_end = parts[1]
+                # Reconstruct full end year
+                if len(short_end) == 2:
+                    end_year = start_year[:2] + short_end
+                else:
+                    end_year = short_end
+                return f"{start_year}/{end_year}"
+    else:
+        # Convert from 2025/2026 to 2025-26
+        if '/' in year_str:
+            parts = year_str.split('/')
+            if len(parts) == 2:
+                return f"{parts[0]}-{parts[1][-2:]}"
+    
+    return year_str
+
 def get_academic_year_filters(establishment_id=None, date_field='field_855', australian_field='field_3511'):
     """
     Generate academic year date filters for UK/Australian schools.
@@ -2680,6 +2716,9 @@ def get_comments_word_cloud():
         establishment_id = request.args.get('establishment_id')
         cycle = request.args.get('cycle', type=int)
         academic_year = request.args.get('academic_year')
+        # Convert academic year from frontend format (2025-26) to database format (2025/2026)
+        if academic_year:
+            academic_year = convert_academic_year_format(academic_year, to_database=True)
         year_group = request.args.get('year_group')
         group = request.args.get('group')
         faculty = request.args.get('faculty')
@@ -4924,6 +4963,9 @@ def get_school_statistics(school_id):
         
         cycle = request.args.get('cycle', type=int)
         academic_year = request.args.get('academic_year')
+        # Convert academic year from frontend format (2025-26) to database format (2025/2026)
+        if academic_year:
+            academic_year = convert_academic_year_format(academic_year, to_database=True)
         
         # Build query
         query = supabase_client.table('school_statistics').select('*').eq('establishment_id', school_uuid)
@@ -5207,8 +5249,21 @@ def get_academic_years():
                 
                 # Convert set to sorted list
                 years = sorted(list(all_years), reverse=True)  # Most recent first
-                if years:
-                    return jsonify(years)
+                
+                # Convert format from 2025/2026 to 2025-26 for frontend compatibility
+                formatted_years = []
+                for year in years:
+                    if '/' in year:
+                        # Convert 2025/2026 to 2025-26
+                        parts = year.split('/')
+                        if len(parts) == 2:
+                            formatted_years.append(f"{parts[0]}-{parts[1][-2:]}")
+                    else:
+                        # Already in correct format or keep as-is
+                        formatted_years.append(year)
+                
+                if formatted_years:
+                    return jsonify(formatted_years)
         
         # Fall back to national statistics
         result = supabase_client.table('national_statistics')\
@@ -5219,11 +5274,23 @@ def get_academic_years():
         years = list(set([r['academic_year'] for r in result.data if r.get('academic_year')]))
         years.sort(reverse=True)  # Most recent first
         
-        # Add "All Years" option at the beginning
-        if years:
-            years.insert(0, 'all')
+        # Convert format from 2025/2026 to 2025-26 for frontend compatibility
+        formatted_years = []
+        for year in years:
+            if '/' in year:
+                # Convert 2025/2026 to 2025-26
+                parts = year.split('/')
+                if len(parts) == 2:
+                    formatted_years.append(f"{parts[0]}-{parts[1][-2:]}")
+            else:
+                # Already in correct format or keep as-is
+                formatted_years.append(year)
         
-        return jsonify(years)
+        # Add "All Years" option at the beginning
+        if formatted_years:
+            formatted_years.insert(0, 'all')
+        
+        return jsonify(formatted_years)
         
     except Exception as e:
         app.logger.error(f"Failed to fetch academic years: {e}")
@@ -5515,6 +5582,9 @@ def get_school_statistics_query():
         
         cycle = request.args.get('cycle', type=int, default=1)
         academic_year = request.args.get('academic_year')
+        # Convert academic year from frontend format (2025-26) to database format (2025/2026)
+        if academic_year:
+            academic_year = convert_academic_year_format(academic_year, to_database=True)
         year_group = request.args.get('yearGroup')
         group = request.args.get('group')
         faculty = request.args.get('faculty')
