@@ -5262,6 +5262,9 @@ def get_academic_years():
                         # Already in correct format or keep as-is
                         formatted_years.append(year)
                 
+                # Remove duplicates while preserving order
+                formatted_years = list(dict.fromkeys(formatted_years))
+                
                 if formatted_years:
                     return jsonify(formatted_years)
         
@@ -5285,6 +5288,9 @@ def get_academic_years():
             else:
                 # Already in correct format or keep as-is
                 formatted_years.append(year)
+        
+        # Remove duplicates while preserving order
+        formatted_years = list(dict.fromkeys(formatted_years))
         
         # Add "All Years" option at the beginning
         if formatted_years:
