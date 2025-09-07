@@ -509,12 +509,19 @@ def sync_students_and_vespa_scores():
                         
                         # Process batch if it reaches the limit
                         if len(vespa_batch) >= BATCH_SIZES['vespa_scores']:
-                            logging.info(f"Processing batch of {len(vespa_batch)} VESPA scores...")
+                            # Deduplicate batch by (student_id, cycle) - keep last occurrence
+                            deduplicated = {}
+                            for score in vespa_batch:
+                                key = (score['student_id'], score['cycle'])
+                                deduplicated[key] = score
+                            
+                            unique_batch = list(deduplicated.values())
+                            logging.info(f"Processing batch of {len(unique_batch)} VESPA scores (deduplicated from {len(vespa_batch)})...")
                             supabase.table('vespa_scores').upsert(
-                                vespa_batch,
+                                unique_batch,
                                 on_conflict='student_id,cycle'
                             ).execute()
-                            scores_synced += len(vespa_batch)
+                            scores_synced += len(unique_batch)
                             vespa_batch = []
                         
             except Exception as e:
@@ -549,12 +556,19 @@ def sync_students_and_vespa_scores():
     
     # Process any remaining VESPA scores in the batch
     if vespa_batch:
-        logging.info(f"Processing final batch of {len(vespa_batch)} VESPA scores...")
+        # Deduplicate final batch by (student_id, cycle) - keep last occurrence
+        deduplicated = {}
+        for score in vespa_batch:
+            key = (score['student_id'], score['cycle'])
+            deduplicated[key] = score
+        
+        unique_batch = list(deduplicated.values())
+        logging.info(f"Processing final batch of {len(unique_batch)} VESPA scores (deduplicated from {len(vespa_batch)})...")
         supabase.table('vespa_scores').upsert(
-            vespa_batch,
+            unique_batch,
             on_conflict='student_id,cycle'
         ).execute()
-        scores_synced += len(vespa_batch)
+        scores_synced += len(unique_batch)
     
     # Get final counts
     for table_name in ['students', 'vespa_scores']:
