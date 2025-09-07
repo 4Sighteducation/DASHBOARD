@@ -2922,7 +2922,10 @@ def get_comments_themes():
         if student_id:
             student_id = convert_knack_id_to_uuid(student_id)
         
-        if not academic_year:
+        # Convert academic year from frontend format (2025-26) to database format (2025/2026)
+        if academic_year:
+            academic_year = convert_academic_year_format(academic_year, to_database=True)
+        else:
             academic_year = get_current_academic_year()
         
         # Get students matching filters
@@ -2976,11 +2979,13 @@ def get_comments_themes():
             batch_ids = student_ids[i:i + BATCH_SIZE]
             
             comments_query = supabase_client.table('student_comments')\
-                .select('comment_text, comment_type, cycle, student_id, created_at')\
+                .select('comment_text, comment_type, cycle, student_id, created_at, academic_year')\
                 .in_('student_id', batch_ids)
             
             if cycle:
                 comments_query = comments_query.eq('cycle', cycle)
+            if academic_year:
+                comments_query = comments_query.eq('academic_year', academic_year)
             
             batch_result = comments_query.execute()
             
@@ -6372,9 +6377,9 @@ def get_qla_data_query():
         if not establishment_uuid:
             raise ApiError(f"Establishment not found with ID: {establishment_id}", 404)
         
-        # Get filter parameters
+        # Get filter parameters - note camelCase from frontend
         cycle = request.args.get('cycle', type=int, default=1)
-        academic_year = request.args.get('academicYear')
+        academic_year = request.args.get('academic_year')  # Changed to snake_case for consistency
         year_group = request.args.get('yearGroup')
         group = request.args.get('group')
         faculty = request.args.get('faculty')
@@ -6464,19 +6469,10 @@ def get_qla_data_query():
             .eq('cycle', cycle)
         
         if academic_year:
-            # Handle different academic year formats (2025-26 vs 2024/2025)
-            if '-' in academic_year:
-                # Convert 2025-26 to 2024/2025
-                year_parts = academic_year.split('-')
-                if len(year_parts) == 2:
-                    start_year = int(year_parts[0]) - 1
-                    formatted_year = f"{start_year}/{start_year + 1}"
-                    app.logger.info(f"Converting academic year from {academic_year} to {formatted_year}")
-                    qla_query = qla_query.eq('academic_year', formatted_year)
-                else:
-                    qla_query = qla_query.eq('academic_year', academic_year)
-            else:
-                qla_query = qla_query.eq('academic_year', academic_year)
+            # Convert academic year from frontend format (2025-26) to database format (2025/2026)
+            formatted_year = convert_academic_year_format(academic_year, to_database=True)
+            app.logger.info(f"Converting academic year from {academic_year} to {formatted_year}")
+            qla_query = qla_query.eq('academic_year', formatted_year)
             
         qla_result = qla_query.execute()
         
@@ -6491,18 +6487,9 @@ def get_qla_data_query():
                 .eq('cycle', cycle)
             
             if academic_year:
-                # Handle different academic year formats (2025-26 vs 2024/2025)
-                if '-' in academic_year:
-                    # Convert 2025-26 to 2024/2025
-                    year_parts = academic_year.split('-')
-                    if len(year_parts) == 2:
-                        start_year = int(year_parts[0]) - 1
-                        formatted_year = f"{start_year}/{start_year + 1}"
-                        qla_query = qla_query.eq('academic_year', formatted_year)
-                    else:
-                        qla_query = qla_query.eq('academic_year', academic_year)
-                else:
-                    qla_query = qla_query.eq('academic_year', academic_year)
+                # Convert academic year from frontend format (2025-26) to database format (2025/2026)
+                formatted_year = convert_academic_year_format(academic_year, to_database=True)
+                qla_query = qla_query.eq('academic_year', formatted_year)
                 
             qla_result = qla_query.execute()
             app.logger.info(f"qla_question_performance result count: {len(qla_result.data) if qla_result.data else 0}")
