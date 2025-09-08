@@ -1,0 +1,106 @@
+============================================================
+VESPA SYNC REPORT
+============================================================
+Date: 2025-09-08 15:18:52
+Duration: 0:18:05.687670
+
+=== TABLE SUMMARY ===
+
+ESTABLISHMENTS:
+  Records before: 118
+  Records after: 118
+  New records: 0
+  Errors: 0
+  Duration: 0:00:13.660137
+  Status: ✓ OK
+
+STUDENTS:
+  Records before: 27,510
+  Records after: 27,511
+  New records: 1
+  Errors: 0
+  Duration: 0:05:55.201785
+  Status: ✓ OK
+
+VESPA_SCORES:
+  Records before: 82,128
+  Records after: 82,530
+  New records: 402
+  Errors: 0
+  Duration: 0:05:55.166600
+  Status: ✓ OK
+
+STAFF_ADMINS:
+  Records before: 462
+  Records after: 462
+  New records: 0
+  Errors: 0
+  Duration: 0:00:42.610425
+  Status: ✓ OK
+
+SUPER_USERS:
+  Records before: 9
+  Records after: 9
+  New records: 0
+  Errors: 0
+  Duration: 0:00:01.440418
+  Status: ✓ OK
+
+QUESTION_RESPONSES:
+  Records before: 767,572
+  Records after: 769,011
+  New records: 1,439
+  Skipped: 13,771
+  Errors: 6
+  Duration: 0:09:14.934768
+  Status: ⚠ WARNINGS
+
+SCHOOL_STATISTICS:
+  Records before: 1,176
+  Records after: 1,176
+  New records: 0
+  Errors: 0
+  Duration: 0:01:46.886694
+  Status: ✓ OK
+
+QUESTION_STATISTICS:
+  Records before: 7,473
+  Records after: 7,505
+  New records: 32
+  Errors: 0
+  Duration: 0:00:01.381820
+  Status: ✓ OK
+
+NATIONAL_STATISTICS:
+  Records before: 15
+  Records after: 9
+  New records: -6
+  Errors: 0
+  Duration: 0:00:06.736291
+  Status: ✓ OK
+
+=== OPERATIONS ===
+
+Update Academic Year:
+  Status: completed
+  Records updated: 0
+  Duration: 0:00:00.131922
+
+Calculate Eri:
+  Status: completed
+  ERI records calculated: 6
+  Duration: 0:00:01.829491
+
+=== ISSUES REQUIRING ATTENTION ===
+WARNING: Only 44.8% of staff admins have establishment connections
+WARNING: Some question responses skipped due to missing student links
+WARNING: 13771 question responses skipped due to missing student links
+WARNING: 320 duplicate responses removed (multiple Object_29 records for same student)
+ERROR: Error syncing psychometric record 66dee7ff1e8e08017fa0da1c: [WinError 10054] An existing connection was forcibly closed by the remote host
+ERROR: Error syncing psychometric record 66ed6810df04f902cbd50c66: [SSL: SSLV3_ALERT_BAD_RECORD_MAC] sslv3 alert bad record mac (_ssl.c:2648)
+ERROR: Error syncing psychometric record 66dee7fe1e8e08017fa0d994: [SSL: SSLV3_ALERT_BAD_RECORD_MAC] sslv3 alert bad record mac (_ssl.c:2648)
+ERROR: Error syncing psychometric record 66e2de7b22129302ca9f6562: [WinError 10054] An existing connection was forcibly closed by the remote host
+ERROR: Error syncing psychometric record 6564972f0cbd0b1c0ae62dc1: [SSL: SSLV3_ALERT_BAD_RECORD_MAC] sslv3 alert bad record mac (_ssl.c:2648)
+ERROR: Error syncing psychometric record 656497200cbd0b1c0ae62587: [WinError 10054] An existing connection was forcibly closed by the remote host
+
+=== END OF REPORT ===

@@ -488,24 +488,43 @@ def sync_students_and_vespa_scores():
                             # Skip this entire VESPA score entry if overall is invalid
                             continue
                         
-                        vespa_data = {
-                            'student_id': student_id,
-                            'cycle': cycle,
-                            'vision': vision,
-                            'effort': effort,
-                            'systems': systems,
-                            'practice': practice,
-                            'attitude': attitude,
-                            'overall': overall,
-                            'completion_date': completion_date,
-                            'academic_year': calculate_academic_year(
-                                record.get('field_855'),
-                                establishment_id,
-                                australian_ests.get(establishment_id, False)
-                            )
-                        }
+                        # Check if we're about to overwrite non-null data with nulls
+                        # This protects archived data from being wiped
+                        skip_record = False
+                        if all(v is None for v in [vision, effort, systems, practice, attitude]):
+                            # All new values are null - check if existing record has data
+                            existing = supabase.table('vespa_scores')\
+                                .select('vision, effort, systems, practice, attitude')\
+                                .eq('student_id', student_id)\
+                                .eq('cycle', cycle)\
+                                .execute()
+                            
+                            if existing.data and existing.data[0]:
+                                # Check if any existing values are non-null
+                                existing_record = existing.data[0]
+                                if any(existing_record.get(field) for field in ['vision', 'effort', 'systems', 'practice', 'attitude']):
+                                    logging.warning(f"Skipping null update for student {student_id[:8]}... cycle {cycle} - preserving existing data")
+                                    skip_record = True
                         
-                        vespa_batch.append(vespa_data)
+                        if not skip_record:
+                            vespa_data = {
+                                'student_id': student_id,
+                                'cycle': cycle,
+                                'vision': vision,
+                                'effort': effort,
+                                'systems': systems,
+                                'practice': practice,
+                                'attitude': attitude,
+                                'overall': overall,
+                                'completion_date': completion_date,
+                                'academic_year': calculate_academic_year(
+                                    record.get('field_855'),
+                                    establishment_id,
+                                    australian_ests.get(establishment_id, False)
+                                )
+                            }
+                            
+                            vespa_batch.append(vespa_data)
                         
                         # Process batch if it reaches the limit
                         if len(vespa_batch) >= BATCH_SIZES['vespa_scores']:
@@ -696,7 +715,7 @@ def sync_question_responses():
                                         logging.warning(f"Found value > 5: {int_value} for {q_detail['questionId']} (field: {field_id}, record: {record.get('id')})")
                                     
                                     # Skip responses with value 0 or > 5 (violates DB constraint)
-                                    if int_value > 0 and int_value <= 5:
+                                    if int_value > 0 and int_value <= 5
                                         response_data = {
                                             'student_id': student_id,
                                             'cycle': cycle,
