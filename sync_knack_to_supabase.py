@@ -1406,9 +1406,10 @@ def calculate_national_eri():
             responses = supabase.table('question_responses')\
                 .select('student_id, cycle, response_value, academic_year')\
                 .eq('question_id', question_id)\
-                .not_('response_value', 'is', 'null')\
-                .not_('academic_year', 'is', 'null')\
                 .execute()
+            
+            # Filter out null values in Python
+            responses.data = [r for r in responses.data if r.get('response_value') is not None and r.get('academic_year') is not None]
             all_responses.extend(responses.data)
         
         # Group by cycle and academic_year
