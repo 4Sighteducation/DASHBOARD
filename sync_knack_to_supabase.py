@@ -19,6 +19,7 @@ import pickle
 from pathlib import Path
 import signal
 import threading
+import uuid
 
 # Load environment variables
 load_dotenv()
@@ -303,6 +304,32 @@ def sync_students_and_vespa_scores():
         except:
             pass
     
+    # Check which constraint exists in the database
+    use_new_constraint = False
+    try:
+        # Try a small test with the new constraint
+        test_record = [{
+            'student_id': 'test-' + str(uuid.uuid4()),
+            'cycle': 1,
+            'academic_year': '2024/2025',
+            'overall': 0
+        }]
+        supabase.table('vespa_scores').upsert(
+            test_record,
+            on_conflict='student_id,cycle,academic_year'
+        ).execute()
+        # If we get here, the new constraint exists
+        use_new_constraint = True
+        # Clean up test record
+        supabase.table('vespa_scores').delete().eq('student_id', test_record[0]['student_id']).execute()
+        logging.info("Using new constraint: student_id,cycle,academic_year")
+    except Exception as e:
+        if 'no unique or exclusion constraint' in str(e):
+            logging.info("Using old constraint: student_id,cycle")
+        else:
+            # Some other error, but let's proceed with old constraint
+            logging.warning(f"Constraint test failed: {e}. Using old constraint.")
+    
     # Initialize tracking variables
     page = 1
     students_processed = set()
@@ -528,30 +555,34 @@ def sync_students_and_vespa_scores():
                         
                         # Process batch if it reaches the limit
                         if len(vespa_batch) >= BATCH_SIZES['vespa_scores']:
-                            # Deduplicate batch by (student_id, cycle, academic_year) - keep last occurrence
+                            # Deduplicate based on which constraint we're using
                             deduplicated = {}
-                            for score in vespa_batch:
-                                key = (score['student_id'], score['cycle'], score.get('academic_year'))
-                                deduplicated[key] = score
+                            if use_new_constraint:
+                                # Deduplicate by (student_id, cycle, academic_year)
+                                for score in vespa_batch:
+                                    key = (score['student_id'], score['cycle'], score.get('academic_year'))
+                                    deduplicated[key] = score
+                            else:
+                                # Deduplicate by (student_id, cycle) - keep the most recent academic year
+                                for score in vespa_batch:
+                                    key = (score['student_id'], score['cycle'])
+                                    if key not in deduplicated or score.get('academic_year', '') > deduplicated[key].get('academic_year', ''):
+                                        deduplicated[key] = score
                             
                             unique_batch = list(deduplicated.values())
                             logging.info(f"Processing batch of {len(unique_batch)} VESPA scores (deduplicated from {len(vespa_batch)})...")
-                            # Try with new constraint, fall back to old if needed
-                            try:
+                            
+                            # Use the appropriate constraint
+                            if use_new_constraint:
                                 supabase.table('vespa_scores').upsert(
                                     unique_batch,
                                     on_conflict='student_id,cycle,academic_year'
                                 ).execute()
-                            except Exception as e:
-                                if 'no unique or exclusion constraint' in str(e):
-                                    # Fall back to old constraint
-                                    logging.warning("New constraint not found, using old constraint")
-                                    supabase.table('vespa_scores').upsert(
-                                        unique_batch,
-                                        on_conflict='student_id,cycle'
-                                    ).execute()
-                                else:
-                                    raise e
+                            else:
+                                supabase.table('vespa_scores').upsert(
+                                    unique_batch,
+                                    on_conflict='student_id,cycle'
+                                ).execute()
                             scores_synced += len(unique_batch)
                             vespa_batch = []
                         
@@ -587,30 +618,34 @@ def sync_students_and_vespa_scores():
     
     # Process any remaining VESPA scores in the batch
     if vespa_batch:
-        # Deduplicate final batch by (student_id, cycle, academic_year) - keep last occurrence
+        # Deduplicate based on which constraint we're using
         deduplicated = {}
-        for score in vespa_batch:
-            key = (score['student_id'], score['cycle'], score.get('academic_year'))
-            deduplicated[key] = score
+        if use_new_constraint:
+            # Deduplicate by (student_id, cycle, academic_year)
+            for score in vespa_batch:
+                key = (score['student_id'], score['cycle'], score.get('academic_year'))
+                deduplicated[key] = score
+        else:
+            # Deduplicate by (student_id, cycle) - keep the most recent academic year
+            for score in vespa_batch:
+                key = (score['student_id'], score['cycle'])
+                if key not in deduplicated or score.get('academic_year', '') > deduplicated[key].get('academic_year', ''):
+                    deduplicated[key] = score
         
         unique_batch = list(deduplicated.values())
         logging.info(f"Processing final batch of {len(unique_batch)} VESPA scores (deduplicated from {len(vespa_batch)})...")
-        # Try with new constraint, fall back to old if needed
-        try:
+        
+        # Use the appropriate constraint
+        if use_new_constraint:
             supabase.table('vespa_scores').upsert(
                 unique_batch,
                 on_conflict='student_id,cycle,academic_year'
             ).execute()
-        except Exception as e:
-            if 'no unique or exclusion constraint' in str(e):
-                # Fall back to old constraint
-                logging.warning("New constraint not found, using old constraint")
-                supabase.table('vespa_scores').upsert(
-                    unique_batch,
-                    on_conflict='student_id,cycle'
-                ).execute()
-            else:
-                raise e
+        else:
+            supabase.table('vespa_scores').upsert(
+                unique_batch,
+                on_conflict='student_id,cycle'
+            ).execute()
         scores_synced += len(unique_batch)
     
     # Get final counts
