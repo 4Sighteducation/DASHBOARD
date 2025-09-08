@@ -528,17 +528,17 @@ def sync_students_and_vespa_scores():
                         
                         # Process batch if it reaches the limit
                         if len(vespa_batch) >= BATCH_SIZES['vespa_scores']:
-                            # Deduplicate batch by (student_id, cycle) - keep last occurrence
+                            # Deduplicate batch by (student_id, cycle, academic_year) - keep last occurrence
                             deduplicated = {}
                             for score in vespa_batch:
-                                key = (score['student_id'], score['cycle'])
+                                key = (score['student_id'], score['cycle'], score.get('academic_year'))
                                 deduplicated[key] = score
                             
                             unique_batch = list(deduplicated.values())
                             logging.info(f"Processing batch of {len(unique_batch)} VESPA scores (deduplicated from {len(vespa_batch)})...")
                             supabase.table('vespa_scores').upsert(
                                 unique_batch,
-                                on_conflict='student_id,cycle'
+                                on_conflict='student_id,cycle,academic_year'
                             ).execute()
                             scores_synced += len(unique_batch)
                             vespa_batch = []
@@ -575,17 +575,17 @@ def sync_students_and_vespa_scores():
     
     # Process any remaining VESPA scores in the batch
     if vespa_batch:
-        # Deduplicate final batch by (student_id, cycle) - keep last occurrence
+        # Deduplicate final batch by (student_id, cycle, academic_year) - keep last occurrence
         deduplicated = {}
         for score in vespa_batch:
-            key = (score['student_id'], score['cycle'])
+            key = (score['student_id'], score['cycle'], score.get('academic_year'))
             deduplicated[key] = score
         
         unique_batch = list(deduplicated.values())
         logging.info(f"Processing final batch of {len(unique_batch)} VESPA scores (deduplicated from {len(vespa_batch)})...")
         supabase.table('vespa_scores').upsert(
             unique_batch,
-            on_conflict='student_id,cycle'
+            on_conflict='student_id,cycle,academic_year'
         ).execute()
         scores_synced += len(unique_batch)
     
@@ -715,7 +715,7 @@ def sync_question_responses():
                                         logging.warning(f"Found value > 5: {int_value} for {q_detail['questionId']} (field: {field_id}, record: {record.get('id')})")
                                     
                                     # Skip responses with value 0 or > 5 (violates DB constraint)
-                                    if int_value > 0 and int_value <= 5
+                                    if int_value > 0 and int_value <= 5:
                                         response_data = {
                                             'student_id': student_id,
                                             'cycle': cycle,
