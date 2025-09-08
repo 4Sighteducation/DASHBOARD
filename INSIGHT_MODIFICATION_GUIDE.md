@@ -150,3 +150,78 @@ After making changes:
 1. Check the insight modal displays the correct question text
 2. Verify the percentage calculations use the new questions
 3. Test on different academic years/cycles to ensure consistency
+
+## Current Insight Configurations
+
+Here are all the current insights and their questions as configured in the system:
+
+### 1. Growth Mindset 🌱
+- **Questions**: `q5`, `q26`
+- **q5**: No matter who you are, you can change your intelligence a lot
+- **q26**: Your intelligence is something about you that you can change very much
+
+### 2. Academic Momentum 🚀
+- **Questions**: `q14`, `q16`, `q17`, `q9`
+- **q14**: I strive to achieve the goals I set for myself
+- **q16**: I enjoy learning new things
+- **q17**: I'm not happy unless my work is the best it can be
+- **q9**: I am a hard working student
+
+### 3. Study Effectiveness 📚
+- **Questions**: `q7`, `q12`, `q15`
+- **q7**: I test myself on important topics until I remember them
+- **q12**: I spread out my revision, rather than cramming at the last minute
+- **q15**: I summarise important information in diagrams, tables or lists
+
+### 4. Exam Confidence 🎯
+- **Questions**: `outcome_q_confident`
+- **outcome_q_confident**: I am confident I will achieve my potential in my final exams
+
+### 5. Organization Skills 📋
+- **Questions**: `q2`, `q22`, `q11`
+- **q2**: I complete all my homework on time
+- **q22**: My books/files are organised
+- **q11**: I plan and organise my time to get my work done
+
+### 6. Resilience Factor 💪
+- **Questions**: `q13`, `q8`, `q27`
+- **q13**: I don't let a poor test/assessment result get me down for too long
+- **q8**: I have a positive view of myself
+- **q27**: I like hearing feedback about how I can improve
+
+### 7. Stress Management 😌
+- **Questions**: `q20`, `q28`
+- **q20**: I feel I can cope with the pressure at school/college/University
+- **q28**: I can control my nerves in tests/practical assessments
+
+### 8. Active Learning 🎓
+- **Questions**: `q7`, `q23`, `q19`
+- **q7**: I test myself on important topics until I remember them
+- **q23**: When preparing for a test/exam I teach someone else the material
+- **q19**: When revising I mix different kinds of topics/subjects in one study session
+
+### 9. Support Readiness 🤝
+- **Questions**: `outcome_q_support`
+- **outcome_q_support**: I have the support I need to achieve this year
+
+### 10. Time Management ⏰
+- **Questions**: `q2`, `q4`, `q11`
+- **q2**: I complete all my homework on time
+- **q4**: I start my work promptly rather than procrastinating
+- **q11**: I plan and organise my time to get my work done
+
+### 11. Academic Confidence ⭐
+- **Questions**: `q10`, `q8`
+- **q10**: I am confident in my academic ability
+- **q8**: I have a positive view of myself
+
+### 12. Revision Readiness 📖
+- **Questions**: `outcome_q_equipped`
+- **outcome_q_equipped**: I feel equipped to face the study and revision challenges this year
+
+## Notes on Current Configuration
+- **q7** appears in both "Study Effectiveness" and "Active Learning"
+- **q8** appears in both "Resilience Factor" and "Academic Confidence"
+- **q2** appears in both "Organization Skills" and "Time Management"
+- **q11** appears in both "Organization Skills" and "Time Management"
+- This overlap is intentional as these questions contribute to multiple psychological constructs
