@@ -690,8 +690,26 @@ def sync_question_responses():
                             if response_value is not None and response_value != '':
                                 try:
                                     int_value = int(response_value)
-                                    # Skip responses with value 0 (violates DB constraint)
-                                    if int_value > 0:
+                                    
+                                    # Special handling for q29_vision_grades if it's a percentage
+                                    if q_detail['questionId'] == 'q29_vision_grades' and int_value > 5:
+                                        # Convert percentage to 1-5 scale
+                                        # 0-20% = 1, 21-40% = 2, 41-60% = 3, 61-80% = 4, 81-100% = 5
+                                        original_value = int_value
+                                        if int_value <= 20:
+                                            int_value = 1
+                                        elif int_value <= 40:
+                                            int_value = 2
+                                        elif int_value <= 60:
+                                            int_value = 3
+                                        elif int_value <= 80:
+                                            int_value = 4
+                                        else:
+                                            int_value = 5
+                                        logging.debug(f"Converted q29_vision_grades from {original_value}% to scale {int_value}")
+                                    
+                                    # Validate response value is within 1-5 range
+                                    if int_value > 0 and int_value <= 5:
                                         response_data = {
                                             'student_id': student_id,
                                             'cycle': cycle,
@@ -700,27 +718,29 @@ def sync_question_responses():
                                         }
                                         
                                         response_batch.append(response_data)
+                                    elif int_value > 5:
+                                        logging.warning(f"Skipping invalid response value {int_value} for question {q_detail['questionId']} (student: {student_id[:8]}...)")
                                         
-                                        # Process batch if it reaches the limit
-                                        if len(response_batch) >= BATCH_SIZES['question_responses']:
-                                            # Deduplicate batch before sending
-                                            deduped_batch = deduplicate_response_batch(response_batch)
-                                            duplicates_removed = len(response_batch) - len(deduped_batch)
-                                            if duplicates_removed > 0:
-                                                logging.warning(f"Removed {duplicates_removed} duplicate responses from batch")
-                                                sync_report['tables'][table_name]['duplicates_handled'] += duplicates_removed
-                                            
-                                            logging.info(f"Processing batch of {len(deduped_batch)} question responses...")
-                                            supabase.table('question_responses').upsert(
-                                                deduped_batch,
-                                                on_conflict='student_id,cycle,question_id'
-                                            ).execute()
-                                            responses_synced += len(deduped_batch)
-                                            response_batch = []
-                                            
                                 except (ValueError, TypeError):
                                     # Skip if can't convert to int
                                     pass
+                                    
+                # Process batch if it reaches the limit
+                if len(response_batch) >= BATCH_SIZES['question_responses']:
+                    # Deduplicate batch before sending
+                    deduped_batch = deduplicate_response_batch(response_batch)
+                    duplicates_removed = len(response_batch) - len(deduped_batch)
+                    if duplicates_removed > 0:
+                        logging.warning(f"Removed {duplicates_removed} duplicate responses from batch")
+                        sync_report['tables'][table_name]['duplicates_handled'] += duplicates_removed
+                    
+                    logging.info(f"Processing batch of {len(deduped_batch)} question responses...")
+                    supabase.table('question_responses').upsert(
+                        deduped_batch,
+                        on_conflict='student_id,cycle,question_id'
+                    ).execute()
+                    responses_synced += len(deduped_batch)
+                    response_batch = []
                                     
             except Exception as e:
                 error_msg = f"Error syncing psychometric record {record.get('id')}: {e}"
