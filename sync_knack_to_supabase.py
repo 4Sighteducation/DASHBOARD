@@ -691,24 +691,11 @@ def sync_question_responses():
                                 try:
                                     int_value = int(response_value)
                                     
-                                    # Special handling for q29_vision_grades if it's a percentage
-                                    if q_detail['questionId'] == 'q29_vision_grades' and int_value > 5:
-                                        # Convert percentage to 1-5 scale
-                                        # 0-20% = 1, 21-40% = 2, 41-60% = 3, 61-80% = 4, 81-100% = 5
-                                        original_value = int_value
-                                        if int_value <= 20:
-                                            int_value = 1
-                                        elif int_value <= 40:
-                                            int_value = 2
-                                        elif int_value <= 60:
-                                            int_value = 3
-                                        elif int_value <= 80:
-                                            int_value = 4
-                                        else:
-                                            int_value = 5
-                                        logging.debug(f"Converted q29_vision_grades from {original_value}% to scale {int_value}")
+                                    # Log any suspicious values
+                                    if int_value > 5:
+                                        logging.warning(f"Found value > 5: {int_value} for {q_detail['questionId']} (field: {field_id}, record: {record.get('id')})")
                                     
-                                    # Validate response value is within 1-5 range
+                                    # Skip responses with value 0 or > 5 (violates DB constraint)
                                     if int_value > 0 and int_value <= 5:
                                         response_data = {
                                             'student_id': student_id,
@@ -718,8 +705,11 @@ def sync_question_responses():
                                         }
                                         
                                         response_batch.append(response_data)
-                                    elif int_value > 5:
-                                        logging.warning(f"Skipping invalid response value {int_value} for question {q_detail['questionId']} (student: {student_id[:8]}...)")
+                                    else:
+                                        if int_value == 0:
+                                            logging.debug(f"Skipping zero value for {q_detail['questionId']}")
+                                        else:
+                                            logging.warning(f"Skipping invalid value {int_value} for {q_detail['questionId']} in record {record.get('id')}")
                                         
                                 except (ValueError, TypeError):
                                     # Skip if can't convert to int
