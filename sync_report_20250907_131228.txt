@@ -1,0 +1,100 @@
+============================================================
+VESPA SYNC REPORT
+============================================================
+Date: 2025-09-07 13:12:28
+Duration: 0:17:12.949554
+
+=== TABLE SUMMARY ===
+
+ESTABLISHMENTS:
+  Records before: 118
+  Records after: 118
+  New records: 0
+  Errors: 0
+  Duration: 0:00:12.231419
+  Status: ✓ OK
+
+STUDENTS:
+  Records before: 27,210
+  Records after: 27,210
+  New records: 0
+  Errors: 0
+  Duration: 0:05:38.662126
+  Status: ✓ OK
+
+VESPA_SCORES:
+  Records before: 81,630
+  Records after: 81,630
+  New records: 0
+  Errors: 0
+  Duration: 0:05:38.675238
+  Status: ✓ OK
+
+STAFF_ADMINS:
+  Records before: 462
+  Records after: 462
+  New records: 0
+  Errors: 0
+  Duration: 0:00:57.568094
+  Status: ✓ OK
+
+SUPER_USERS:
+  Records before: 9
+  Records after: 9
+  New records: 0
+  Errors: 0
+  Duration: 0:00:02.111073
+  Status: ✓ OK
+
+QUESTION_RESPONSES:
+  Records before: 758,449
+  Records after: 758,481
+  New records: 32
+  Skipped: 13,772
+  Errors: 0
+  Duration: 0:08:29.792413
+  Status: ✓ OK
+
+SCHOOL_STATISTICS:
+  Records before: 1,164
+  Records after: 1,176
+  New records: 12
+  Errors: 0
+  Duration: 0:01:42.599604
+  Status: ✓ OK
+
+QUESTION_STATISTICS:
+  Records before: 6,294
+  Records after: 6,294
+  New records: 0
+  Errors: 0
+  Duration: 0:00:03.093237
+  Status: ✓ OK
+
+NATIONAL_STATISTICS:
+  Records before: 9
+  Records after: 9
+  New records: 0
+  Errors: 0
+  Duration: 0:00:05.766209
+  Status: ✓ OK
+
+=== OPERATIONS ===
+
+Update Academic Year:
+  Status: completed
+  Records updated: 0
+  Duration: 0:00:00.089474
+
+Calculate Eri:
+  Status: failed
+  ERI records calculated: 0
+
+=== ISSUES REQUIRING ATTENTION ===
+WARNING: Only 44.8% of staff admins have establishment connections
+WARNING: Some question responses skipped due to missing student links
+WARNING: 13772 question responses skipped due to missing student links
+WARNING: 320 duplicate responses removed (multiple Object_29 records for same student)
+ERROR: National ERI calculation failed: 'SyncSelectRequestBuilder' object is not callable
+
+=== END OF REPORT ===

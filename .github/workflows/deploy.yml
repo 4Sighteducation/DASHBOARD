@@ -1,0 +1,32 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.19.0'  # Updated from 18.x to meet Vite requirements
+    
+    - name: Install dependencies
+      run: |
+        cd DASHBOARD-Vue
+        npm ci || npm install
+    
+    - name: Build project
+      run: |
+        cd DASHBOARD-Vue
+        npm run build
+    
+    # Add deployment steps here if needed
+    # For example, deploying to GitHub Pages, Netlify, etc.
