@@ -6391,7 +6391,7 @@ def get_qla_data_query():
         insight_configs = {
             'growth_mindset': {
                 'title': 'Growth Mindset',
-                'question_ids': ['q5', 'q26'],
+                'question_ids': ['q5', 'q26', 'q27', 'q16'],
                 'icon': '🌱',
                 'question': 'What percentage believe intelligence can be developed?'
             },
@@ -6401,47 +6401,47 @@ def get_qla_data_query():
                 'icon': '🚀',
                 'question': 'What percentage show strong drive and engagement?'
             },
-            'study_effectiveness': {
-                'title': 'Study Effectiveness',
-                'question_ids': ['q7', 'q12', 'q15'],
+            'vision_purpose': {
+                'title': 'Vision & Purpose',
+                'question_ids': ['q1', 'q3', 'q29'],
+                'icon': '🎯',
+                'question': 'What percentage have clear educational purpose?'
+            },
+            'study_strategies': {
+                'title': 'Study Strategies',
+                'question_ids': ['q7', 'q12', 'q15', 'q18'],
                 'icon': '📚',
-                'question': 'What percentage use proven study techniques?'
+                'question': 'What percentage use effective study techniques?'
             },
             'exam_confidence': {
                 'title': 'Exam Confidence',
-                'question_ids': ['outcome_q_confident'],
-                'icon': '🎯',
+                'question_ids': ['outcome_q_confident', 'q10', 'q28'],
+                'icon': '⭐',
                 'question': 'What percentage feel confident about exams?'
             },
-            'organization_skills': {
-                'title': 'Organization Skills',
-                'question_ids': ['q2', 'q22', 'q11'],
-                'icon': '📋',
+            'organization_materials': {
+                'title': 'Organization & Materials',
+                'question_ids': ['q22', 'q18', 'q25'],
+                'icon': '📦',
                 'question': 'What percentage are well-organized?'
             },
             'resilience_factor': {
-                'title': 'Resilience',
-                'question_ids': ['q13', 'q8', 'q27'],
+                'title': 'Resilience Factor',
+                'question_ids': ['q13', 'q27', 'q8'],
                 'icon': '💪',
                 'question': 'What percentage show academic resilience?'
             },
             'stress_management': {
                 'title': 'Stress Management',
-                'question_ids': ['q20', 'q28'],
+                'question_ids': ['q20', 'q28', 'q24'],
                 'icon': '😌',
                 'question': 'What percentage handle pressure well?'
             },
-            'active_learning': {
-                'title': 'Active Learning',
-                'question_ids': ['q7', 'q23', 'q19'],
-                'icon': '🎓',
-                'question': 'What percentage engage in active learning?'
-            },
-            'support_readiness': {
-                'title': 'Support Readiness',
-                'question_ids': ['outcome_q_support'],
+            'support_help_seeking': {
+                'title': 'Support & Help-Seeking',
+                'question_ids': ['outcome_q_support', 'q24', 'q27'],
                 'icon': '🤝',
-                'question': 'What percentage feel supported this year?'
+                'question': 'What percentage feel supported and seek help?'
             },
             'time_management': {
                 'title': 'Time Management',
@@ -6449,15 +6449,15 @@ def get_qla_data_query():
                 'icon': '⏰',
                 'question': 'What percentage manage time effectively?'
             },
-            'academic_confidence': {
-                'title': 'Academic Confidence',
-                'question_ids': ['q10', 'q8'],
-                'icon': '⭐',
-                'question': 'What percentage are confident in their ability?'
+            'active_learning': {
+                'title': 'Active Learning',
+                'question_ids': ['q23', 'q19', 'q7'],
+                'icon': '🎓',
+                'question': 'What percentage engage in active learning?'
             },
             'revision_readiness': {
-                'title': 'Revision Ready',
-                'question_ids': ['outcome_q_equipped'],
+                'title': 'Revision Readiness',
+                'question_ids': ['outcome_q_equipped', 'q7', 'q12', 'q18'],
                 'icon': '📖',
                 'question': 'What percentage feel equipped for revision challenges?'
             }

@@ -15,9 +15,9 @@ time_management: {
   description: 'Students ability to effectively plan...',
   importance: 'Good time management reduces stress...',
   questions: {
-    'q2': 'I complete all my homework on time',
-    'q4': 'I start my work promptly rather than procrastinating', 
-    'q11': 'I plan and organise my time to get my work done'
+    'q2': 'I plan and organise my time to get my work done',
+    'q4': 'I complete all my homework on time', 
+    'q11': 'I always meet deadlines'
   }
 }
 ```
@@ -59,35 +59,37 @@ This provides fallback data if the API fails.
 ## Available Questions
 Here are all questions you can use (must use lowercase IDs):
 
-### Standard Questions (q1-q28)
-- **q1**: I work as hard as I can in most classes
-- **q2**: I complete all my homework on time
-- **q3**: I enjoy studying  
-- **q4**: I start my work promptly rather than procrastinating
+### Standard Questions (q1-q29)
+- **q1**: I've worked out the next steps in my life
+- **q2**: I plan and organise my time to get my work done
+- **q3**: I give a lot of attention to my career planning
+- **q4**: I complete all my homework on time
 - **q5**: No matter who you are, you can change your intelligence a lot
-- **q6**: I always use comments from my teacher when preparing for tests
+- **q6**: I use all my independent study time effectively
 - **q7**: I test myself on important topics until I remember them
 - **q8**: I have a positive view of myself
 - **q9**: I am a hard working student
 - **q10**: I am confident in my academic ability
-- **q11**: I plan and organise my time to get my work done
+- **q11**: I always meet deadlines
 - **q12**: I spread out my revision, rather than cramming at the last minute
 - **q13**: I don't let a poor test/assessment result get me down for too long
 - **q14**: I strive to achieve the goals I set for myself
 - **q15**: I summarise important information in diagrams, tables or lists
 - **q16**: I enjoy learning new things
 - **q17**: I'm not happy unless my work is the best it can be
-- **q18**: I ask my teachers when I don't understand something
+- **q18**: I take good notes in class which are useful for revision
 - **q19**: When revising I mix different kinds of topics/subjects in one study session
 - **q20**: I feel I can cope with the pressure at school/college/University
-- **q21**: I track how well I'm doing in each of my subjects
+- **q21**: I work as hard as I can in most classes
 - **q22**: My books/files are organised
 - **q23**: When preparing for a test/exam I teach someone else the material
-- **q24**: I always study in places where I can concentrate
-- **q25**: If I become confused when studying, I go back and try to figure it out
+- **q24**: I'm happy to ask questions in front of a group
+- **q25**: I use highlighting/colour coding for revision
 - **q26**: Your intelligence is something about you that you can change very much
 - **q27**: I like hearing feedback about how I can improve
 - **q28**: I can control my nerves in tests/practical assessments
+- **q29**: I understand why education is important for my future
+
 
 ### Outcome Questions
 - **outcome_q_confident**: I am confident I will achieve my potential in my final exams
@@ -96,14 +98,14 @@ Here are all questions you can use (must use lowercase IDs):
 
 ## Steps to Modify an Insight
 
-### Example: Changing Time Management to focus on procrastination
+### Example: Changing Time Management to include independent study
 1. **Update Frontend Display** (`InsightDetailModal.vue`):
 ```javascript
 time_management: {
   questions: {
-    'q4': 'I start my work promptly rather than procrastinating',
-    'q11': 'I plan and organise my time to get my work done',
-    'q24': 'I always study in places where I can concentrate'
+    'q2': 'I plan and organise my time to get my work done',
+    'q6': 'I use all my independent study time effectively',
+    'q11': 'I always meet deadlines'
   }
 }
 ```
@@ -111,7 +113,7 @@ time_management: {
 2. **Update Backend API** (`app.py`):
 ```python
 'time_management': {
-    'question_ids': ['q4', 'q11', 'q24'],
+    'question_ids': ['q2', 'q6', 'q11'],
     # ... rest stays the same
 }
 ```
@@ -120,7 +122,7 @@ time_management: {
 ```javascript
 { 
   id: 'time_management',
-  questionIds: ['q4', 'q11', 'q24'],
+  questionIds: ['q2', 'q6', 'q11'],
   // ... rest stays the same
 }
 ```
@@ -156,9 +158,11 @@ After making changes:
 Here are all the current insights and their questions as configured in the system:
 
 ### 1. Growth Mindset 🌱
-- **Questions**: `q5`, `q26`
+- **Questions**: `q5`, `q26`, `q27`, `q16`
 - **q5**: No matter who you are, you can change your intelligence a lot
 - **q26**: Your intelligence is something about you that you can change very much
+- **q27**: I like hearing feedback about how I can improve
+- **q16**: I enjoy learning new things
 
 ### 2. Academic Momentum 🚀
 - **Questions**: `q14`, `q16`, `q17`, `q9`
@@ -167,61 +171,74 @@ Here are all the current insights and their questions as configured in the syste
 - **q17**: I'm not happy unless my work is the best it can be
 - **q9**: I am a hard working student
 
-### 3. Study Effectiveness 📚
-- **Questions**: `q7`, `q12`, `q15`
+### 3. Vision & Purpose 🎯
+- **Questions**: `q1`, `q3`, `q29`
+- **q1**: I've worked out the next steps in my life
+- **q3**: I give a lot of attention to my career planning
+- **q29**: I understand why education is important for my future
+
+### 4. Study Strategies 📚
+- **Questions**: `q7`, `q12`, `q15`, `q18`
 - **q7**: I test myself on important topics until I remember them
 - **q12**: I spread out my revision, rather than cramming at the last minute
 - **q15**: I summarise important information in diagrams, tables or lists
+- **q18**: I take good notes in class which are useful for revision
 
-### 4. Exam Confidence 🎯
-- **Questions**: `outcome_q_confident`
+### 5. Exam Confidence ⭐
+- **Questions**: `outcome_q_confident`, `q10`, `q28`
 - **outcome_q_confident**: I am confident I will achieve my potential in my final exams
-
-### 5. Organization Skills 📋
-- **Questions**: `q2`, `q22`, `q11`
-- **q2**: I complete all my homework on time
-- **q22**: My books/files are organised
-- **q11**: I plan and organise my time to get my work done
-
-### 6. Resilience Factor 💪
-- **Questions**: `q13`, `q8`, `q27`
-- **q13**: I don't let a poor test/assessment result get me down for too long
-- **q8**: I have a positive view of myself
-- **q27**: I like hearing feedback about how I can improve
-
-### 7. Stress Management 😌
-- **Questions**: `q20`, `q28`
-- **q20**: I feel I can cope with the pressure at school/college/University
+- **q10**: I am confident in my academic ability
 - **q28**: I can control my nerves in tests/practical assessments
 
-### 8. Active Learning 🎓
-- **Questions**: `q7`, `q23`, `q19`
-- **q7**: I test myself on important topics until I remember them
-- **q23**: When preparing for a test/exam I teach someone else the material
-- **q19**: When revising I mix different kinds of topics/subjects in one study session
+### 6. Organization & Materials 📦
+- **Questions**: `q22`, `q18`, `q25`
+- **q22**: My books/files are organised
+- **q18**: I take good notes in class which are useful for revision
+- **q25**: I use highlighting/colour coding for revision
 
-### 9. Support Readiness 🤝
-- **Questions**: `outcome_q_support`
+### 7. Resilience Factor 💪
+- **Questions**: `q13`, `q27`, `q8`
+- **q13**: I don't let a poor test/assessment result get me down for too long
+- **q27**: I like hearing feedback about how I can improve
+- **q8**: I have a positive view of myself
+
+### 8. Stress Management 😌
+- **Questions**: `q20`, `q28`, `q24`
+- **q20**: I feel I can cope with the pressure at school/college/University
+- **q28**: I can control my nerves in tests/practical assessments
+- **q24**: I'm happy to ask questions in front of a group
+
+### 9. Support & Help-Seeking 🤝
+- **Questions**: `outcome_q_support`, `q24`, `q27`
 - **outcome_q_support**: I have the support I need to achieve this year
+- **q24**: I'm happy to ask questions in front of a group
+- **q27**: I like hearing feedback about how I can improve
 
 ### 10. Time Management ⏰
 - **Questions**: `q2`, `q4`, `q11`
-- **q2**: I complete all my homework on time
-- **q4**: I start my work promptly rather than procrastinating
-- **q11**: I plan and organise my time to get my work done
+- **q2**: I plan and organise my time to get my work done
+- **q4**: I complete all my homework on time
+- **q11**: I always meet deadlines
 
-### 11. Academic Confidence ⭐
-- **Questions**: `q10`, `q8`
-- **q10**: I am confident in my academic ability
-- **q8**: I have a positive view of myself
+### 11. Active Learning 🎓
+- **Questions**: `q23`, `q19`, `q7`
+- **q23**: When preparing for a test/exam I teach someone else the material
+- **q19**: When revising I mix different kinds of topics/subjects in one study session
+- **q7**: I test myself on important topics until I remember them
 
 ### 12. Revision Readiness 📖
-- **Questions**: `outcome_q_equipped`
+- **Questions**: `outcome_q_equipped`, `q7`, `q12`, `q18`
 - **outcome_q_equipped**: I feel equipped to face the study and revision challenges this year
+- **q7**: I test myself on important topics until I remember them
+- **q12**: I spread out my revision, rather than cramming at the last minute
+- **q18**: I take good notes in class which are useful for revision
 
 ## Notes on Current Configuration
-- **q7** appears in both "Study Effectiveness" and "Active Learning"
-- **q8** appears in both "Resilience Factor" and "Academic Confidence"
-- **q2** appears in both "Organization Skills" and "Time Management"
-- **q11** appears in both "Organization Skills" and "Time Management"
+- **q7** appears in "Study Strategies", "Active Learning", and "Revision Readiness"
+- **q12** appears in "Study Strategies" and "Revision Readiness"
+- **q16** appears in "Growth Mindset" and "Academic Momentum"
+- **q18** appears in "Study Strategies", "Organization & Materials", and "Revision Readiness"
+- **q24** appears in "Stress Management" and "Support & Help-Seeking"
+- **q27** appears in "Growth Mindset", "Resilience Factor", and "Support & Help-Seeking"
+- **q28** appears in "Exam Confidence" and "Stress Management"
 - This overlap is intentional as these questions contribute to multiple psychological constructs
