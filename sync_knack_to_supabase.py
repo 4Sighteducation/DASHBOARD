@@ -427,11 +427,30 @@ def sync_students_and_vespa_scores():
                     # Check if student exists by email (handles re-uploaded students with new knack_ids)
                     existing_student_id = student_email_map.get(student_email.lower())
                     
+                    # Calculate academic year for this student
+                    # Use completion date if available, otherwise use current date
+                    completion_date_raw = record.get('field_855')
+                    if completion_date_raw and completion_date_raw.strip():
+                        academic_year = calculate_academic_year(
+                            completion_date_raw,
+                            establishment_id,
+                            is_uk_school=True  # You may need to determine this based on establishment
+                        )
+                    else:
+                        # No completion date, use current academic year
+                        from datetime import datetime
+                        academic_year = calculate_academic_year(
+                            datetime.now().strftime('%d/%m/%Y'),
+                            establishment_id,
+                            is_uk_school=True
+                        )
+                    
                     student_data = {
                         'knack_id': record['id'],
                         'email': student_email,
                         'name': student_name,
                         'establishment_id': establishment_id,
+                        'academic_year': academic_year,  # NEW FIELD
                         'group': record.get('field_223', ''),  # field_223 is group
                         'year_group': record.get('field_144', ''),  # Corrected: field_144 is year_group
                         'course': record.get('field_2299', ''),

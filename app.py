@@ -2746,6 +2746,8 @@ def get_comments_word_cloud():
         
         if establishment_id:
             students_query = students_query.eq('establishment_id', establishment_id)
+        if academic_year:
+            students_query = students_query.eq('academic_year', academic_year)
         if year_group:
             students_query = students_query.eq('year_group', year_group)
         if group:
@@ -2933,6 +2935,8 @@ def get_comments_themes():
         
         if establishment_id:
             students_query = students_query.eq('establishment_id', establishment_id)
+        if academic_year:
+            students_query = students_query.eq('academic_year', academic_year)
         if year_group:
             students_query = students_query.eq('year_group', year_group)
         if group:
@@ -5616,7 +5620,11 @@ def get_school_statistics_query():
             # Build query with filters
             query = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid)
             
-            # Apply filters
+            # IMPORTANT: Filter by academic_year if provided
+            if academic_year:
+                query = query.eq('academic_year', academic_year)
+            
+            # Apply other filters
             if student_id:
                 query = query.eq('id', student_id)
             else:
@@ -5649,44 +5657,45 @@ def get_school_statistics_query():
         # Get total enrolled students - but we'll calculate the actual total based on who has VESPA scores for this cycle
         total_enrolled_students = len(student_ids)  # Default to filtered count
         
-        # If academic_year is specified, only count students who have data for that year
+        # If academic_year is specified, count students in that academic year
         if academic_year and not has_other_filters:
-            # Get all students who have VESPA scores for this academic year and cycle
-            students_with_year_data = set()
-            offset = 0
-            limit = 1000
+            # NEW: Count students directly from their academic_year field
+            # This gives us the EXACT enrollment count for that academic year
+            total_query = supabase_client.table('students')\
+                .select('id', count='exact')\
+                .eq('establishment_id', establishment_uuid)\
+                .eq('academic_year', academic_year)
             
-            while True:
-                # Get all students in this establishment
-                batch_query = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid).limit(limit).offset(offset)
-                batch_result = batch_query.execute()
+            total_result = total_query.execute()
+            
+            if hasattr(total_result, 'count') and total_result.count is not None:
+                total_enrolled_students = total_result.count
+                app.logger.info(f"Total students enrolled for academic year {academic_year}: {total_enrolled_students}")
+            else:
+                # Fallback: count manually
+                all_year_students = []
+                offset = 0
+                limit = 1000
                 
-                if not batch_result.data:
-                    break
+                while True:
+                    batch_query = supabase_client.table('students')\
+                        .select('id')\
+                        .eq('establishment_id', establishment_uuid)\
+                        .eq('academic_year', academic_year)\
+                        .limit(limit).offset(offset)
+                    batch_result = batch_query.execute()
                     
-                batch_student_ids = [s['id'] for s in batch_result.data]
+                    if not batch_result.data:
+                        break
+                    
+                    all_year_students.extend(batch_result.data)
+                    
+                    if len(batch_result.data) < limit:
+                        break
+                    offset += limit
                 
-                # Check which of these students have VESPA scores for the selected academic year
-                if batch_student_ids:
-                    # Process in smaller chunks to avoid URL limits
-                    for i in range(0, len(batch_student_ids), 50):
-                        chunk_ids = batch_student_ids[i:i + 50]
-                        vespa_check = supabase_client.table('vespa_scores')\
-                            .select('student_id')\
-                            .in_('student_id', chunk_ids)\
-                            .eq('academic_year', academic_year)\
-                            .execute()
-                        
-                        if vespa_check.data:
-                            for record in vespa_check.data:
-                                students_with_year_data.add(record['student_id'])
-                
-                if len(batch_result.data) < limit:
-                    break
-                offset += limit
-            
-            total_enrolled_students = len(students_with_year_data)
-            app.logger.info(f"Total students with data for academic year {academic_year}: {total_enrolled_students}")
+                total_enrolled_students = len(all_year_students)
+                app.logger.info(f"Total students enrolled for academic year {academic_year} (counted): {total_enrolled_students}")
         elif not has_other_filters:
             # No academic year filter - count all students in establishment (old behavior)
             # When no filters except cycle, we want to show total students who could have responses for this cycle
@@ -6498,6 +6507,11 @@ def get_qla_data_query():
         if year_group or group or faculty or student_id:
             # Get filtered student IDs first
             students_query = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid)
+            
+            # IMPORTANT: Filter by academic_year if provided
+            if academic_year:
+                students_query = students_query.eq('academic_year', academic_year)
+            
             if year_group:
                 students_query = students_query.eq('year_group', year_group)
             if group:
