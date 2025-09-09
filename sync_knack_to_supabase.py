@@ -434,15 +434,14 @@ def sync_students_and_vespa_scores():
                         academic_year = calculate_academic_year(
                             completion_date_raw,
                             establishment_id,
-                            is_uk_school=True  # You may need to determine this based on establishment
+                            is_australian=False  # UK schools use August cutoff
                         )
                     else:
                         # No completion date, use current academic year
-                        from datetime import datetime
                         academic_year = calculate_academic_year(
                             datetime.now().strftime('%d/%m/%Y'),
                             establishment_id,
-                            is_uk_school=True
+                            is_australian=False  # UK schools use August cutoff
                         )
                     
                     student_data = {
