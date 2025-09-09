@@ -887,6 +887,28 @@ def deduplicate_response_batch(batch):
     
     return deduped
 
+def normalize_academic_year_for_benchmark(academic_year):
+    """Normalize academic year for benchmark comparisons
+    
+    Australian schools: 2025/2025 -> 2025/2026 (treated as same period as UK)
+    UK schools: 2025/2026 -> 2025/2026 (unchanged)
+    
+    This allows all schools to be compared in the same benchmark period.
+    """
+    if not academic_year or '/' not in academic_year:
+        return academic_year
+    
+    parts = academic_year.split('/')
+    if len(parts) != 2:
+        return academic_year
+    
+    # If it's Australian format (same year repeated), convert to UK format
+    if parts[0] == parts[1]:
+        year = int(parts[0])
+        return f"{year}/{year + 1}"
+    
+    return academic_year
+
 def calculate_academic_year(date_str, establishment_id=None, is_australian=None):
     """Calculate academic year based on date and establishment location
     
@@ -1474,8 +1496,12 @@ def update_question_responses_academic_year():
         return False
 
 def calculate_national_eri():
-    """Calculate national ERI from outcome questions and update national_statistics"""
-    logging.info("Calculating national ERI...")
+    """Calculate global benchmark ERI from outcome questions and update national_statistics
+    
+    Note: Table still called national_statistics for backward compatibility,
+    but represents global benchmarks across all schools worldwide.
+    """
+    logging.info("Calculating global benchmark ERI...")
     
     # Track in sync report
     sync_report['operations'] = sync_report.get('operations', {})
@@ -1535,17 +1561,20 @@ def calculate_national_eri():
             if student_count > 10:  # Only process if we have enough students
                 eri_score = sum(data['values']) / len(data['values'])
                 
-                # Update or insert into national_statistics
+                # Normalize academic year for benchmark
+                normalized_year = normalize_academic_year_for_benchmark(academic_year)
+                
+                # Update or insert into national_statistics (benchmark data)
                 existing = supabase.table('national_statistics')\
                     .select('id')\
                     .eq('cycle', cycle)\
-                    .eq('academic_year', academic_year)\
+                    .eq('academic_year', normalized_year)\
                     .eq('element', 'ERI')\
                     .execute()
                 
                 eri_data = {
                     'cycle': cycle,
-                    'academic_year': academic_year,
+                    'academic_year': normalized_year,  # Use normalized year for benchmarks
                     'element': 'ERI',
                     'mean': round(eri_score, 2),
                     'std_dev': round(statistics.stdev(data['values']), 2) if len(data['values']) > 1 else 0,
@@ -1568,7 +1597,7 @@ def calculate_national_eri():
                         .insert(eri_data)\
                         .execute()
                 
-                logging.info(f"Calculated ERI for cycle {cycle}, academic year {academic_year}: {eri_score:.2f}")
+                logging.info(f"Calculated benchmark ERI for cycle {cycle}, normalized year {normalized_year}: {eri_score:.2f}")
                 sync_report['operations']['calculate_eri']['eri_records'] += 1
         
         sync_report['operations']['calculate_eri']['status'] = 'completed'
@@ -1583,11 +1612,16 @@ def calculate_national_eri():
         return False
 
 def calculate_national_statistics():
-    """Calculate national statistics across all schools"""
-    logging.info("Calculating national statistics...")
+    """Calculate benchmark statistics across all schools worldwide
+    
+    Note: Now calculates global benchmarks combining all schools regardless of location.
+    Australian academic years (2025/2025) are normalized to match UK format (2025/2026)
+    for benchmark comparison purposes.
+    """
+    logging.info("Calculating global benchmark statistics...")
     
     # Track metrics
-    table_name = 'national_statistics'
+    table_name = 'national_statistics'  # Keep table name for backward compatibility
     sync_report['tables'][table_name] = {
         'start_time': datetime.now(),
         'records_before': 0,
@@ -1604,37 +1638,57 @@ def calculate_national_statistics():
         pass
     
     try:
-        # Get distinct academic years from school_statistics
+        # Get all school statistics
         academic_years_result = supabase.table('school_statistics')\
             .select('academic_year')\
             .execute()
         
-        # Get unique academic years
-        academic_years = list(set([r['academic_year'] for r in academic_years_result.data if r['academic_year']]))
+        # Normalize and get unique academic years
+        normalized_years = set()
+        year_mapping = {}  # Maps original years to normalized years
         
-        if not academic_years:
+        for r in academic_years_result.data:
+            if r.get('academic_year'):
+                original = r['academic_year']
+                normalized = normalize_academic_year_for_benchmark(original)
+                normalized_years.add(normalized)
+                if original not in year_mapping:
+                    year_mapping[original] = normalized
+        
+        normalized_years = list(normalized_years)
+        
+        if not normalized_years:
             logging.warning("No academic years found in school_statistics")
             return False
         
-        logging.info(f"Calculating national statistics for academic years: {academic_years}")
+        logging.info(f"Calculating benchmark statistics for normalized years: {normalized_years}")
+        logging.info(f"Year mapping: {year_mapping}")
         
-        # Clear existing national statistics for all found academic years
-        for academic_year in academic_years:
-            supabase.table('national_statistics').delete().eq('academic_year', academic_year).execute()
+        # Clear existing statistics for normalized years
+        for normalized_year in normalized_years:
+            supabase.table('national_statistics').delete().eq('academic_year', normalized_year).execute()
         
-        # For each academic year
+        # For each normalized academic year
         national_count = 0
-        for academic_year in academic_years:
+        for normalized_year in normalized_years:
+            # Get all original years that map to this normalized year
+            original_years = [orig for orig, norm in year_mapping.items() if norm == normalized_year]
+            
             # For each cycle and element combination
             for cycle in [1, 2, 3]:
                 for element in ['vision', 'effort', 'systems', 'practice', 'attitude', 'overall']:
-                    # Get all school statistics for this combination
-                    school_stats = supabase.table('school_statistics')\
-                        .select('mean, count, percentile_25, percentile_50, percentile_75, distribution')\
-                        .eq('cycle', cycle)\
-                        .eq('element', element)\
-                        .eq('academic_year', academic_year)\
-                        .execute()
+                    # Get all school statistics for this combination from ALL matching years
+                    all_school_stats = []
+                    for original_year in original_years:
+                        school_stats = supabase.table('school_statistics')\
+                            .select('mean, count, percentile_25, percentile_50, percentile_75, distribution')\
+                            .eq('cycle', cycle)\
+                            .eq('element', element)\
+                            .eq('academic_year', original_year)\
+                            .execute()
+                        all_school_stats.extend(school_stats.data)
+                    
+                    school_stats = type('obj', (object,), {'data': all_school_stats})()
                 
                 if not school_stats.data:
                     continue
@@ -1676,10 +1730,10 @@ def calculate_national_statistics():
                         for i in range(min(len(school_dist), len(national_distribution))):
                             national_distribution[i] += school_dist[i]
                 
-                # Insert national statistics
+                # Insert benchmark statistics (still called national_statistics for backward compatibility)
                 national_data = {
                     'cycle': cycle,
-                    'academic_year': academic_year,
+                    'academic_year': normalized_year,  # Use normalized year
                     'element': element,
                     'mean': round(national_mean, 2),
                     'std_dev': round(national_std, 2),
@@ -1702,12 +1756,12 @@ def calculate_national_statistics():
         except:
             pass
         
-        logging.info(f"National statistics calculation complete - {national_count} entries created")
+        logging.info(f"Global benchmark statistics calculation complete - {national_count} entries created")
         return True
         
     except Exception as e:
-        logging.error(f"Error calculating national statistics: {e}")
-        sync_report['errors'].append(f"National statistics calculation failed: {e}")
+        logging.error(f"Error calculating benchmark statistics: {e}")
+        sync_report['errors'].append(f"Benchmark statistics calculation failed: {e}")
         return False
 
 def refresh_materialized_views():

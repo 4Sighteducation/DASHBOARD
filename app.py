@@ -130,10 +130,33 @@ except Exception as e:
     CACHE_ENABLED = False
     app.logger.warning(f"Redis cache not available - caching disabled. Error: {str(e)}")
 
+# Academic year normalization for global benchmarks
+def normalize_academic_year_for_benchmark(academic_year):
+    """Normalize academic year for benchmark comparisons
+    
+    Australian schools: 2025/2025 -> 2025/2026 (treated as same period as UK)
+    UK schools: 2025/2026 -> 2025/2026 (unchanged)
+    
+    This allows all schools to be compared in the same benchmark period.
+    """
+    if not academic_year or '/' not in academic_year:
+        return academic_year
+    
+    parts = academic_year.split('/')
+    if len(parts) != 2:
+        return academic_year
+    
+    # If it's Australian format (same year repeated), convert to UK format
+    if parts[0] == parts[1]:
+        year = int(parts[0])
+        return f"{year}/{year + 1}"
+    
+    return academic_year
+
 # Cache TTL settings (in seconds)
 CACHE_TTL = {
     'vespa_results': 300,  # 5 minutes for VESPA results
-    'national_data': 3600,  # 1 hour for national benchmarks
+    'national_data': 3600,  # 1 hour for global benchmarks (was national)
     'filter_options': 600,  # 10 minutes for filter options
     'establishments': 3600,  # 1 hour for establishments
     'question_mappings': 86400,  # 24 hours for static mappings
@@ -5029,14 +5052,16 @@ def get_national_eri_by_cycle(cycle):
         
         academic_year = request.args.get('academic_year')
         
-        # Query national statistics for ERI
+        # Query benchmark statistics for ERI (still called national_statistics for backward compatibility)
+        # Normalize the academic year for benchmark comparisons
+        normalized_year = normalize_academic_year_for_benchmark(academic_year) if academic_year else None
         query = supabase_client.table('national_statistics')\
             .select('eri_score, count, std_dev, percentile_25, percentile_50, percentile_75')\
             .eq('cycle', cycle)\
             .eq('element', 'ERI')
         
-        if academic_year:
-            query = query.eq('academic_year', academic_year)
+        if normalized_year:
+            query = query.eq('academic_year', normalized_year)
             
         result = query.execute()
         
@@ -5824,10 +5849,12 @@ def get_school_statistics_query():
                     element = stat['element'].lower()
                     stats_by_element[element] = float(stat['mean']) if stat['mean'] else 0
                 
-                # Get national statistics
+                # Get benchmark statistics (still called national_statistics for backward compatibility)
+                # Normalize the academic year for benchmark comparisons
+                normalized_year = normalize_academic_year_for_benchmark(academic_year) if academic_year else None
                 nat_query = supabase_client.table('national_statistics').select('*').eq('cycle', cycle)
-                if academic_year:
-                    nat_query = nat_query.eq('academic_year', academic_year)
+                if normalized_year:
+                    nat_query = nat_query.eq('academic_year', normalized_year)
                 else:
                     # If no academic year specified, get the most recent data for this cycle
                     recent_year_query = supabase_client.table('national_statistics')\
@@ -5982,10 +6009,12 @@ def get_school_statistics_query():
                 overall_avg = vespa_sums['overall'] / vespa_counts['overall'] if vespa_counts['overall'] > 0 else 0
                 vespa_scores['overall'] = round(overall_avg, 2)
             
-            # Get national statistics
+            # Get benchmark statistics (still called national_statistics for backward compatibility)
+            # Normalize the academic year for benchmark comparisons
+            normalized_year = normalize_academic_year_for_benchmark(academic_year) if academic_year else None
             nat_query = supabase_client.table('national_statistics').select('*').eq('cycle', cycle)
-            if academic_year:
-                nat_query = nat_query.eq('academic_year', academic_year)
+            if normalized_year:
+                nat_query = nat_query.eq('academic_year', normalized_year)
             else:
                 # If no academic year specified, get the most recent data for this cycle
                 # First get the most recent academic year for this cycle
@@ -6062,15 +6091,17 @@ def get_school_statistics_query():
                     school_eri = eri_sum / eri_count
                     eri_calculated = True
                     
-                    # Get national ERI from national_statistics
+                    # Get benchmark ERI from national_statistics (global benchmarks)
+                    # Normalize the academic year for benchmark comparisons
+                    normalized_year = normalize_academic_year_for_benchmark(academic_year) if academic_year else None
                     eri_query = supabase_client.table('national_statistics')\
                         .select('eri_score, academic_year')\
                         .eq('cycle', cycle)\
                         .eq('element', 'ERI')
                     
-                    if academic_year:
-                        eri_query = eri_query.eq('academic_year', academic_year)
-                        app.logger.info(f"Querying national ERI for cycle {cycle}, academic_year {academic_year}")
+                    if normalized_year:
+                        eri_query = eri_query.eq('academic_year', normalized_year)
+                        app.logger.info(f"Querying benchmark ERI for cycle {cycle}, normalized_year {normalized_year}")
                     else:
                         # If no academic year specified, first get the most recent academic year for this cycle
                         app.logger.info(f"No academic year specified for national ERI, fetching most recent for cycle {cycle}")
