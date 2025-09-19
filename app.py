@@ -5645,9 +5645,9 @@ def get_school_statistics_query():
             # Build query with filters
             query = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid)
             
-            # IMPORTANT: Filter by academic_year if provided
-            if academic_year:
-                query = query.eq('academic_year', academic_year)
+            # DON'T filter by academic_year on students table - we'll check VESPA data instead
+            # if academic_year:
+            #     query = query.eq('academic_year', academic_year)  # REMOVED - this was the bug
             
             # Apply other filters
             if student_id:
@@ -5677,6 +5677,32 @@ def get_school_statistics_query():
             offset += limit
         
         student_ids = [s['id'] for s in all_students]
+        
+        # NEW: Filter by who has VESPA data for the selected academic year
+        if academic_year:
+            students_with_vespa = []
+            
+            # Check in batches who has VESPA data for this year
+            for i in range(0, len(student_ids), 50):
+                batch_ids = student_ids[i:i+50]
+                
+                # Check which students have VESPA data for the selected year
+                vespa_check = supabase_client.table('vespa_scores')\
+                    .select('student_id')\
+                    .in_('student_id', batch_ids)\
+                    .eq('academic_year', academic_year)\
+                    .eq('cycle', cycle)\
+                    .limit(1000)\
+                    .execute()
+                
+                students_with_vespa_ids = set(v['student_id'] for v in vespa_check.data)
+                
+                # Keep only students who have VESPA data
+                students_with_vespa.extend([sid for sid in batch_ids if sid in students_with_vespa_ids])
+            
+            student_ids = students_with_vespa
+            app.logger.info(f"After academic year filter: {len(student_ids)} students have data for {academic_year} cycle {cycle}")
+        
         app.logger.info(f"Found {len(student_ids)} students for establishment {establishment_id}")
         
         # Get total enrolled students - but we'll calculate the actual total based on who has VESPA scores for this cycle
@@ -6539,9 +6565,9 @@ def get_qla_data_query():
             # Get filtered student IDs first
             students_query = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid)
             
-            # IMPORTANT: Filter by academic_year if provided
-            if academic_year:
-                students_query = students_query.eq('academic_year', academic_year)
+            # DON'T filter by academic_year on students table - check VESPA data instead
+            # if academic_year:
+            #     students_query = students_query.eq('academic_year', academic_year)  # REMOVED - same bug
             
             if year_group:
                 students_query = students_query.eq('year_group', year_group)
@@ -6564,6 +6590,31 @@ def get_qla_data_query():
             
             students_result = students_query.execute()
             student_ids = [s['id'] for s in students_result.data]
+            
+            # NEW: Filter by who has VESPA data for the selected academic year
+            if academic_year:
+                students_with_vespa = []
+                
+                # Check in batches who has VESPA data for this year
+                for i in range(0, len(student_ids), 50):
+                    batch_ids = student_ids[i:i+50]
+                    
+                    # Check which students have VESPA data for the selected year
+                    vespa_check = supabase_client.table('vespa_scores')\
+                        .select('student_id')\
+                        .in_('student_id', batch_ids)\
+                        .eq('academic_year', academic_year)\
+                        .eq('cycle', cycle)\
+                        .limit(1000)\
+                        .execute()
+                    
+                    students_with_vespa_ids = set(v['student_id'] for v in vespa_check.data)
+                    
+                    # Keep only students who have VESPA data
+                    students_with_vespa.extend([sid for sid in batch_ids if sid in students_with_vespa_ids])
+                
+                student_ids = students_with_vespa
+                app.logger.info(f"QLA: After academic year filter: {len(student_ids)} students have data for {academic_year}")
             
             # Get question responses for filtered students
             if student_ids:
