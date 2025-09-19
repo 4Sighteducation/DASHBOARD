@@ -126,3 +126,4 @@ The system needs a better way to handle year transitions:
 1. Keep historical student records instead of overwriting
 2. Use student+academic_year as the unique identifier
 3. Or always query based on VESPA data year, not student record year
+
