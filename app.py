@@ -7111,19 +7111,24 @@ def generate_comparative_report():
         
         # Use data passed from frontend if available, otherwise fetch from Supabase
         frontend_data = data.get('data', {})
-        if frontend_data and any(frontend_data.values()):
-            # Use the data already loaded in the dashboard
-            app.logger.info("Using data from frontend dashboard")
-            comparison_data = process_frontend_data(frontend_data, report_type, config)
-        else:
-            # Fallback to fetching from Supabase
-            app.logger.info("Fetching fresh data from Supabase")
-            comparison_data = fetch_comparison_data(
-                establishment_id, 
-                report_type, 
-                config,
-                filters
-            )
+        app.logger.info(f"Frontend data keys: {frontend_data.keys() if frontend_data else 'No frontend data'}")
+        app.logger.info(f"Frontend vespaScores: {frontend_data.get('vespaScores', {})}")
+        
+        # Always fetch fresh data from Supabase for accurate comparison
+        app.logger.info(f"Fetching fresh data from Supabase for establishment: {establishment_id}")
+        comparison_data = fetch_comparison_data(
+            establishment_id, 
+            report_type, 
+            config,
+            filters
+        )
+        
+        app.logger.info(f"Fetched comparison data keys: {comparison_data.keys() if comparison_data else 'No data fetched'}")
+        
+        # Log the actual data values
+        for key, value in comparison_data.items():
+            if isinstance(value, dict) and 'mean' in value:
+                app.logger.info(f"Data for {key}: mean={value.get('mean')}, count={value.get('count')}")
         
         # Generate AI insights with context
         ai_insights = generate_contextual_insights(
@@ -7333,7 +7338,44 @@ def fetch_comparison_data(establishment_id, report_type, config, filters):
             
             return data
             
-        elif report_type == 'cycle_progression':
+        elif report_type == 'hybrid':
+            # Hybrid report - combination of cycle and year group/group comparison
+            cycle1 = int(config.get('cycle1', 1))
+            cycle2 = int(config.get('cycle2', 2))
+            dimension = config.get('hybridDimension', 'year_group')
+            item1 = config.get('hybridItem1')
+            item2 = config.get('hybridItem2')
+            academic_year = config.get('academicYear', current_academic_year)
+            
+            data = {}
+            
+            # Fetch primary comparison (cycles)
+            data[f'cycle_{cycle1}'] = fetch_cycle_data(
+                establishment_id, cycle1, academic_year
+            )
+            data[f'cycle_{cycle2}'] = fetch_cycle_data(
+                establishment_id, cycle2, academic_year
+            )
+            
+            # Fetch secondary comparison based on dimension
+            if dimension == 'year_group' and item1 and item2:
+                data[f'year_{item1}_cycle_{cycle1}'] = fetch_year_group_data(
+                    establishment_id, item1, cycle1, academic_year
+                )
+                data[f'year_{item2}_cycle_{cycle2}'] = fetch_year_group_data(
+                    establishment_id, item2, cycle2, academic_year
+                )
+            
+            # Add QLA if needed
+            if any(v for v in data.values()):
+                data['qla_data'] = fetch_question_level_data(
+                    supabase_client, establishment_id, 'hybrid',
+                    config
+                )
+            
+            return data
+            
+        elif report_type == 'cycle_progression' or report_type == 'progress':
             cycles = config.get('cycles', [1, 2, 3])
             
             # Query data for each cycle
@@ -7791,8 +7833,9 @@ def create_interactive_html_report(school_name, logo_url, primary_color, data, i
     data_script = f"""
     <script>
         // Real data from backend
-        window.realReportData = {json.dumps(data)};
-        window.realInsights = {json.dumps(insights)};
+        window.realReportData = {json.dumps(data) if data else '{}'};
+        window.realInsights = {json.dumps(insights) if insights else '{}'};
+        window.chartData = {json.dumps(chart_data) if chart_data else '{}'};
         window.vespaColors = {{
             'vision': '#e59437',
             'effort': '#86b4f0', 
@@ -7805,9 +7848,83 @@ def create_interactive_html_report(school_name, logo_url, primary_color, data, i
         // Initialize with real data when page loads
         document.addEventListener('DOMContentLoaded', function() {{
             console.log('Real data loaded:', window.realReportData);
-            // Update charts and visualizations with real data
-            if (typeof updateChartsWithRealData === 'function') {{
-                updateChartsWithRealData(window.realReportData);
+            console.log('Chart data:', window.chartData);
+            
+            // Initialize VESPA Radar Chart if data exists
+            if (window.chartData && window.chartData.vespaRadar) {{
+                const radarCanvas = document.getElementById('vespaRadarChart');
+                if (!radarCanvas) {{
+                    // Create canvas if it doesn't exist
+                    const chartSection = document.querySelector('.chart-section') || document.querySelector('.vespa-comparison-section');
+                    if (chartSection) {{
+                        const canvas = document.createElement('canvas');
+                        canvas.id = 'vespaRadarChart';
+                        canvas.style.maxHeight = '400px';
+                        chartSection.appendChild(canvas);
+                    }}
+                }}
+                
+                const radarCtx = document.getElementById('vespaRadarChart');
+                if (radarCtx && radarCtx.getContext) {{
+                    new Chart(radarCtx.getContext('2d'), {{
+                        type: 'radar',
+                        data: window.chartData.vespaRadar,
+                        options: {{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {{
+                                legend: {{ position: 'top' }},
+                                title: {{ display: true, text: 'VESPA Profile Comparison' }}
+                            }},
+                            scales: {{
+                                r: {{
+                                    min: 0,
+                                    max: 100,
+                                    ticks: {{ stepSize: 20 }}
+                                }}
+                            }}
+                        }}
+                    }});
+                }}
+            }}
+            
+            // Initialize Trend Chart if data exists
+            if (window.chartData && window.chartData.trendLine) {{
+                const trendCanvas = document.getElementById('trendLineChart');
+                if (!trendCanvas) {{
+                    const chartSection = document.querySelector('.chart-section') || document.querySelector('.vespa-comparison-section');
+                    if (chartSection) {{
+                        const canvas = document.createElement('canvas');
+                        canvas.id = 'trendLineChart';
+                        canvas.style.maxHeight = '400px';
+                        const container = document.createElement('div');
+                        container.style.marginTop = '30px';
+                        container.appendChild(canvas);
+                        chartSection.appendChild(container);
+                    }}
+                }}
+                
+                const trendCtx = document.getElementById('trendLineChart');
+                if (trendCtx && trendCtx.getContext) {{
+                    new Chart(trendCtx.getContext('2d'), {{
+                        type: 'line',
+                        data: window.chartData.trendLine,
+                        options: {{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {{
+                                legend: {{ position: 'top' }},
+                                title: {{ display: true, text: 'VESPA Trends' }}
+                            }},
+                            scales: {{
+                                y: {{
+                                    beginAtZero: true,
+                                    max: 100
+                                }}
+                            }}
+                        }}
+                    }});
+                }}
             }}
         }});
     </script>
@@ -8015,19 +8132,44 @@ def generate_recommendations_html(recommendations):
 
 def generate_data_table_html(data):
     """Generate HTML table for data comparison"""
+    app.logger.info(f"Generating data table HTML with data keys: {data.keys() if data else 'No data'}")
+    
     html = '<table class="data-table">'
     html += '<thead><tr><th>Group</th><th>Mean Score</th><th>Std Dev</th><th>Sample Size</th></tr></thead>'
     html += '<tbody>'
     
+    has_data = False
     for key, values in data.items():
+        # Skip non-data keys
+        if key in ['qla_data', 'insights', 'charts']:
+            continue
+            
         if isinstance(values, dict) and 'mean' in values:
             group_name = key.replace('_', ' ').title()
+            mean_val = values.get('mean', 0)
+            std_val = values.get('std', 0) 
+            count_val = values.get('count', 0)
+            
+            # Convert to percentage if needed (VESPA scores are 1-10)
+            if 0 <= mean_val <= 10:
+                mean_display = f'{mean_val * 10:.1f}%'
+                std_display = f'{std_val * 10:.1f}'
+            else:
+                mean_display = f'{mean_val:.2f}'
+                std_display = f'{std_val:.2f}'
+            
             html += f'<tr>'
             html += f'<td>{group_name}</td>'
-            html += f'<td>{values["mean"]:.2f}</td>'
-            html += f'<td>{values["std"]:.2f}</td>'
-            html += f'<td>{values["count"]}</td>'
+            html += f'<td>{mean_display}</td>'
+            html += f'<td>{std_display}</td>'
+            html += f'<td>{count_val}</td>'
             html += f'</tr>'
+            has_data = True
+            
+            app.logger.info(f"Added row for {group_name}: mean={mean_val}, std={std_val}, count={count_val}")
+    
+    if not has_data:
+        html += '<tr><td colspan="4" style="text-align: center; color: #999;">No data available</td></tr>'
     
     html += '</tbody></table>'
     return html
