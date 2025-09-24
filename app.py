@@ -7241,7 +7241,7 @@ def process_frontend_data(frontend_data, report_type, config):
         return {}
 
 def fetch_comparison_data(establishment_id, report_type, config, filters):
-    """Fetch data from comparative_metrics view or raw tables"""
+    """Fetch data from comparative_metrics view or raw tables - Enhanced with academic year support"""
     try:
         if not SUPABASE_ENABLED:
             raise ApiError("Supabase not configured", 503)
@@ -7249,8 +7249,91 @@ def fetch_comparison_data(establishment_id, report_type, config, filters):
         # Convert Knack ID to UUID if needed
         if establishment_id and not establishment_id.startswith('00000000'):
             establishment_id = convert_knack_id_to_uuid(establishment_id)
+        
+        # Import QLA module
+        from qla_analysis import fetch_question_level_data
+        
+        # Get current academic year if not specified
+        current_academic_year = config.get('academicYear', '2024/2025')
             
-        if report_type == 'cycle_progression':
+        if report_type == 'cycle_vs_cycle':
+            # Compare cycles within same or different academic years
+            cycle1 = int(config.get('cycle1', 1))
+            cycle2 = int(config.get('cycle2', 2))
+            academic_year1 = config.get('academicYear1', current_academic_year)
+            academic_year2 = config.get('academicYear2', current_academic_year)
+            
+            data = {}
+            
+            # Fetch data for cycle 1
+            data[f'cycle_{cycle1}'] = fetch_cycle_data(
+                establishment_id, cycle1, academic_year1
+            )
+            
+            # Fetch data for cycle 2
+            data[f'cycle_{cycle2}'] = fetch_cycle_data(
+                establishment_id, cycle2, academic_year2
+            )
+            
+            # Add QLA data
+            data['qla_data'] = fetch_question_level_data(
+                supabase_client, establishment_id, 'cycle_vs_cycle', 
+                {'cycle1': cycle1, 'cycle2': cycle2, 'academicYear': current_academic_year}
+            )
+            
+            return data
+            
+        elif report_type == 'year_group_vs_year_group':
+            # Compare year groups
+            year_group1 = config.get('yearGroup1')
+            year_group2 = config.get('yearGroup2')
+            cycle = int(config.get('cycle', 1))
+            academic_year = config.get('academicYear', current_academic_year)
+            
+            data = {}
+            
+            # Fetch data for each year group
+            data[f'year_{year_group1}'] = fetch_year_group_data(
+                establishment_id, year_group1, cycle, academic_year
+            )
+            data[f'year_{year_group2}'] = fetch_year_group_data(
+                establishment_id, year_group2, cycle, academic_year
+            )
+            
+            # Add QLA data
+            data['qla_data'] = fetch_question_level_data(
+                supabase_client, establishment_id, 'year_group_vs_year_group',
+                {'yearGroup1': year_group1, 'yearGroup2': year_group2, 'cycle': cycle, 'academicYear': academic_year}
+            )
+            
+            return data
+            
+        elif report_type == 'academic_year_vs_academic_year':
+            # Compare across academic years
+            year1 = config.get('academicYear1')
+            year2 = config.get('academicYear2')
+            year_group = config.get('yearGroup')  # Optional
+            cycle = int(config.get('cycle', 1))
+            
+            data = {}
+            
+            # Fetch data for each academic year
+            data[f'year_{year1.replace("/", "_")}'] = fetch_academic_year_data(
+                establishment_id, year1, year_group, cycle
+            )
+            data[f'year_{year2.replace("/", "_")}'] = fetch_academic_year_data(
+                establishment_id, year2, year_group, cycle
+            )
+            
+            # Add QLA data
+            data['qla_data'] = fetch_question_level_data(
+                supabase_client, establishment_id, 'academic_year_vs_academic_year',
+                {'academicYear1': year1, 'academicYear2': year2, 'yearGroup': year_group, 'cycle': cycle}
+            )
+            
+            return data
+            
+        elif report_type == 'cycle_progression':
             cycles = config.get('cycles', [1, 2, 3])
             
             # Query data for each cycle
@@ -7356,6 +7439,193 @@ def fetch_comparison_data(establishment_id, report_type, config, filters):
     except Exception as e:
         app.logger.error(f"Failed to fetch comparison data: {e}")
         traceback.print_exc()
+        return {}
+
+def fetch_cycle_data(establishment_id, cycle, academic_year):
+    """Fetch VESPA data for a specific cycle and academic year"""
+    try:
+        # Get students for this establishment and academic year
+        students_query = supabase_client.table('students')\
+            .select('id')\
+            .eq('establishment_id', establishment_id)
+        
+        # Only filter by academic year if provided
+        if academic_year:
+            # First check vespa_scores for academic year data
+            vespa_result = supabase_client.table('vespa_scores')\
+                .select('*')\
+                .eq('cycle', cycle)\
+                .eq('academic_year', academic_year)\
+                .execute()
+            
+            if vespa_result.data:
+                # Filter to only this establishment's students
+                students_result = students_query.execute()
+                student_ids = [s['id'] for s in students_result.data] if students_result.data else []
+                
+                # Filter scores to only include this establishment's students
+                scores = [s for s in vespa_result.data if s['student_id'] in student_ids]
+            else:
+                scores = []
+        else:
+            # Get all students for establishment
+            students_result = students_query.execute()
+            student_ids = [s['id'] for s in students_result.data] if students_result.data else []
+            
+            # Get vespa scores for these students
+            if student_ids:
+                scores = []
+                BATCH_SIZE = 50
+                for i in range(0, len(student_ids), BATCH_SIZE):
+                    batch_ids = student_ids[i:i + BATCH_SIZE]
+                    batch_result = supabase_client.table('vespa_scores')\
+                        .select('*')\
+                        .in_('student_id', batch_ids)\
+                        .eq('cycle', cycle)\
+                        .execute()
+                    if batch_result.data:
+                        scores.extend(batch_result.data)
+            else:
+                scores = []
+        
+        if scores:
+            # Calculate statistics
+            overall_scores = [s['overall'] for s in scores if s.get('overall') is not None]
+            vision_scores = [s['vision'] for s in scores if s.get('vision') is not None]
+            effort_scores = [s['effort'] for s in scores if s.get('effort') is not None]
+            systems_scores = [s['systems'] for s in scores if s.get('systems') is not None]
+            practice_scores = [s['practice'] for s in scores if s.get('practice') is not None]
+            attitude_scores = [s['attitude'] for s in scores if s.get('attitude') is not None]
+            
+            return {
+                'mean': float(np.mean(overall_scores)) if overall_scores else 0,
+                'std': float(np.std(overall_scores)) if overall_scores else 0,
+                'count': len(overall_scores),
+                'vespa_breakdown': {
+                    'vision': float(np.mean(vision_scores)) if vision_scores else 0,
+                    'effort': float(np.mean(effort_scores)) if effort_scores else 0,
+                    'systems': float(np.mean(systems_scores)) if systems_scores else 0,
+                    'practice': float(np.mean(practice_scores)) if practice_scores else 0,
+                    'attitude': float(np.mean(attitude_scores)) if attitude_scores else 0
+                },
+                'academic_year': academic_year
+            }
+        else:
+            return {
+                'mean': 0,
+                'std': 0,
+                'count': 0,
+                'vespa_breakdown': {},
+                'academic_year': academic_year
+            }
+            
+    except Exception as e:
+        app.logger.error(f"Failed to fetch cycle data: {e}")
+        return {}
+
+def fetch_year_group_data(establishment_id, year_group, cycle, academic_year):
+    """Fetch VESPA data for a specific year group"""
+    try:
+        # Get students for this year group
+        students_query = supabase_client.table('students')\
+            .select('id')\
+            .eq('establishment_id', establishment_id)\
+            .eq('year_group', year_group)
+        
+        students_result = students_query.execute()
+        student_ids = [s['id'] for s in students_result.data] if students_result.data else []
+        
+        if not student_ids:
+            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}}
+        
+        # Get vespa scores
+        vespa_query = supabase_client.table('vespa_scores')\
+            .select('*')\
+            .in_('student_id', student_ids)\
+            .eq('cycle', cycle)
+        
+        if academic_year:
+            vespa_query = vespa_query.eq('academic_year', academic_year)
+            
+        vespa_result = vespa_query.execute()
+        scores = vespa_result.data if vespa_result.data else []
+        
+        if scores:
+            # Calculate statistics
+            overall_scores = [s['overall'] for s in scores if s.get('overall') is not None]
+            
+            return {
+                'mean': float(np.mean(overall_scores)) if overall_scores else 0,
+                'std': float(np.std(overall_scores)) if overall_scores else 0,
+                'count': len(overall_scores),
+                'vespa_breakdown': {
+                    'vision': float(np.mean([s['vision'] for s in scores if s.get('vision') is not None])) if scores else 0,
+                    'effort': float(np.mean([s['effort'] for s in scores if s.get('effort') is not None])) if scores else 0,
+                    'systems': float(np.mean([s['systems'] for s in scores if s.get('systems') is not None])) if scores else 0,
+                    'practice': float(np.mean([s['practice'] for s in scores if s.get('practice') is not None])) if scores else 0,
+                    'attitude': float(np.mean([s['attitude'] for s in scores if s.get('attitude') is not None])) if scores else 0
+                },
+                'year_group': year_group,
+                'academic_year': academic_year
+            }
+        else:
+            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}, 'year_group': year_group}
+            
+    except Exception as e:
+        app.logger.error(f"Failed to fetch year group data: {e}")
+        return {}
+
+def fetch_academic_year_data(establishment_id, academic_year, year_group=None, cycle=1):
+    """Fetch VESPA data for a specific academic year"""
+    try:
+        # Get students for this academic year
+        students_query = supabase_client.table('students')\
+            .select('id')\
+            .eq('establishment_id', establishment_id)
+        
+        # Filter by year group if specified
+        if year_group:
+            students_query = students_query.eq('year_group', year_group)
+            
+        students_result = students_query.execute()
+        student_ids = [s['id'] for s in students_result.data] if students_result.data else []
+        
+        if not student_ids:
+            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}, 'academic_year': academic_year}
+        
+        # Get vespa scores for this academic year
+        vespa_result = supabase_client.table('vespa_scores')\
+            .select('*')\
+            .in_('student_id', student_ids)\
+            .eq('academic_year', academic_year)\
+            .eq('cycle', cycle)\
+            .execute()
+        
+        scores = vespa_result.data if vespa_result.data else []
+        
+        if scores:
+            # Calculate statistics
+            overall_scores = [s['overall'] for s in scores if s.get('overall') is not None]
+            
+            return {
+                'mean': float(np.mean(overall_scores)) if overall_scores else 0,
+                'std': float(np.std(overall_scores)) if overall_scores else 0,
+                'count': len(overall_scores),
+                'vespa_breakdown': {
+                    'vision': float(np.mean([s['vision'] for s in scores if s.get('vision') is not None])) if scores else 0,
+                    'effort': float(np.mean([s['effort'] for s in scores if s.get('effort') is not None])) if scores else 0,
+                    'systems': float(np.mean([s['systems'] for s in scores if s.get('systems') is not None])) if scores else 0,
+                    'practice': float(np.mean([s['practice'] for s in scores if s.get('practice') is not None])) if scores else 0,
+                    'attitude': float(np.mean([s['attitude'] for s in scores if s.get('attitude') is not None])) if scores else 0
+                },
+                'academic_year': academic_year,
+                'year_group': year_group
+            }
+        else:
+            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}, 'academic_year': academic_year}
+            
+    except Exception as e:
+        app.logger.error(f"Failed to fetch academic year data: {e}")
         return {}
 
 def generate_contextual_insights(comparison_data, org_context, questions, historical, report_type, school_name):
@@ -7470,28 +7740,14 @@ def extract_bullet_points(text, section_type):
     return bullets[:5]  # Return top 5
 
 def create_interactive_html_report(school_name, logo_url, primary_color, data, insights, config, report_type):
-    """Create an interactive HTML report that can be edited in-browser"""
+    """Create an interactive HTML report using real data - no mockup dependency"""
     
-    # Try to read the full mockup HTML if available
-    try:
-        # Read the mockup HTML file
-        import os
-        # Try heroku_backend folder first (for deployment), then root folder (for local)
-        mockup_path = os.path.join(os.path.dirname(__file__), 'heroku_backend', 'comparative_report_mockup.html')
-        if not os.path.exists(mockup_path):
-            # Try root directory as fallback
-            mockup_path = os.path.join(os.path.dirname(__file__), 'comparative_report_mockup.html')
-        
-        if os.path.exists(mockup_path):
-            with open(mockup_path, 'r', encoding='utf-8') as f:
-                html_content = f.read()
-        else:
-            # Fall back to creating from template
-            html_content = create_html_from_template(school_name, logo_url, primary_color, data, insights, config, report_type)
-    except Exception as e:
-        app.logger.warning(f"Could not read mockup file: {e}")
-        # Fall back to creating from template
-        html_content = create_html_from_template(school_name, logo_url, primary_color, data, insights, config, report_type)
+    app.logger.info(f"Creating interactive HTML report for {school_name}")
+    app.logger.info(f"Report type: {report_type}, Config: {config}")
+    app.logger.info(f"Data keys: {data.keys() if data else 'No data'}")
+    
+    # Always generate from template with real data - no mockup
+    html_content = create_html_from_template(school_name, logo_url, primary_color, data, insights, config, report_type)
     
     # Replace placeholders with real data
     comparison_title = get_comparison_title(report_type, config)
@@ -7499,6 +7755,11 @@ def create_interactive_html_report(school_name, logo_url, primary_color, data, i
     app.logger.info(f"Loaded HTML template with length: {len(html_content)}")
     app.logger.info(f"Report type: {report_type}, Config: {config}")
     app.logger.info(f"Data keys: {data.keys() if data else 'No data'}")
+    
+    # Build dynamic sections with real data
+    vespa_section = build_vespa_comparison_section(data, report_type)
+    qla_section = generate_qla_insights_html(data, report_type)
+    chart_data = prepare_chart_data(data, report_type)
     
     # Inject real data into the HTML
     replacements = {
@@ -7508,8 +7769,12 @@ def create_interactive_html_report(school_name, logo_url, primary_color, data, i
         '<!-- EXECUTIVE_SUMMARY_PLACEHOLDER -->': insights.get('summary', 'Executive summary based on data analysis.'),
         '<!-- KEY_FINDINGS_PLACEHOLDER -->': generate_key_findings_html(insights.get('key_findings', [])),
         '<!-- RECOMMENDATIONS_PLACEHOLDER -->': generate_recommendations_html(insights.get('recommendations', [])),
-        '<!-- DATA_JSON_PLACEHOLDER -->': json.dumps(prepare_chart_data(data, report_type)) if data else '{}',
-        '#667eea': primary_color
+        '<!-- DATA_JSON_PLACEHOLDER -->': json.dumps(chart_data) if chart_data else '{}',
+        '<!-- VESPA_SECTION_PLACEHOLDER -->': vespa_section,
+        '<!-- QLA_SECTION_PLACEHOLDER -->': qla_section,
+        '#667eea': primary_color,
+        '{{academic_year}}': config.get('academicYear', config.get('academicYear1', '2024/2025')),
+        '{{report_date}}': datetime.now().strftime('%B %d, %Y')
     }
     
     for old_text, new_text in replacements.items():
@@ -7770,14 +8035,131 @@ def generate_data_table_html(data):
 def prepare_chart_data(data, report_type):
     """Prepare data for Chart.js visualization"""
     chart_data = {
-        'labels': [],
-        'datasets': []
+        'vespaRadar': None,
+        'comparisonBar': None,
+        'trendLine': None,
+        'distribution': None,
+        'heatmap': None
     }
     
-    # Extract labels and values from comparison data
-    for key, values in data.items():
-        if isinstance(values, dict) and 'mean' in values:
-            chart_data['labels'].append(key.replace('_', ' ').title())
+    # Extract VESPA scores for radar chart
+    vespa_categories = ['vision', 'effort', 'systems', 'practice', 'attitude']
+    
+    if report_type in ['cycle_vs_cycle', 'cycle_progression']:
+        # Prepare radar chart data for VESPA comparison
+        datasets = []
+        for key, values in data.items():
+            if isinstance(values, dict) and 'vespa_breakdown' in values:
+                vespa = values['vespa_breakdown']
+                datasets.append({
+                    'label': key.replace('_', ' ').title(),
+                    'data': [
+                        vespa.get('vision', 0) * 10,  # Convert to 0-100 scale
+                        vespa.get('effort', 0) * 10,
+                        vespa.get('systems', 0) * 10,
+                        vespa.get('practice', 0) * 10,
+                        vespa.get('attitude', 0) * 10
+                    ],
+                    'backgroundColor': f'rgba(102, 126, 234, {0.2 if len(datasets) == 0 else 0.1})',
+                    'borderColor': '#667eea' if len(datasets) == 0 else '#764ba2',
+                    'pointBackgroundColor': '#667eea' if len(datasets) == 0 else '#764ba2',
+                    'pointBorderColor': '#fff',
+                    'pointHoverBackgroundColor': '#fff',
+                    'pointHoverBorderColor': '#667eea' if len(datasets) == 0 else '#764ba2'
+                })
+        
+        if datasets:
+            chart_data['vespaRadar'] = {
+                'type': 'radar',
+                'labels': ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude'],
+                'datasets': datasets
+            }
+    
+    # Prepare comparison bar chart
+    if report_type in ['year_group_vs_year_group', 'group_vs_group']:
+        labels = []
+        overall_scores = []
+        
+        for key, values in data.items():
+            if isinstance(values, dict) and 'mean' in values:
+                labels.append(key.replace('_', ' ').title())
+                overall_scores.append(values['mean'] * 10)  # Convert to 0-100 scale
+        
+        if labels:
+            chart_data['comparisonBar'] = {
+                'type': 'bar',
+                'labels': labels,
+                'datasets': [{
+                    'label': 'Overall VESPA Score',
+                    'data': overall_scores,
+                    'backgroundColor': ['#667eea', '#764ba2', '#8b5cf6', '#a78bfa'],
+                    'borderColor': ['#667eea', '#764ba2', '#8b5cf6', '#a78bfa'],
+                    'borderWidth': 1
+                }]
+            }
+    
+    # Prepare trend line chart for progression reports
+    if report_type == 'cycle_progression' or report_type == 'progress':
+        cycles = sorted([k for k in data.keys() if k.startswith('cycle_')])
+        
+        if cycles:
+            vespa_trends = {cat: [] for cat in vespa_categories}
+            overall_trend = []
+            
+            for cycle in cycles:
+                if cycle in data and 'vespa_breakdown' in data[cycle]:
+                    vespa = data[cycle]['vespa_breakdown']
+                    for cat in vespa_categories:
+                        vespa_trends[cat].append(vespa.get(cat, 0) * 10)
+                    overall_trend.append(data[cycle].get('mean', 0) * 10)
+            
+            datasets = []
+            colors = {
+                'vision': '#e59437',
+                'effort': '#86b4f0',
+                'systems': '#72cb44',
+                'practice': '#7f31a4',
+                'attitude': '#f032e6'
+            }
+            
+            for cat in vespa_categories:
+                if vespa_trends[cat]:
+                    datasets.append({
+                        'label': cat.capitalize(),
+                        'data': vespa_trends[cat],
+                        'borderColor': colors[cat],
+                        'backgroundColor': colors[cat] + '20',  # Add transparency
+                        'tension': 0.3,
+                        'fill': False
+                    })
+            
+            # Add overall trend
+            if overall_trend:
+                datasets.append({
+                    'label': 'Overall',
+                    'data': overall_trend,
+                    'borderColor': '#667eea',
+                    'backgroundColor': '#667eea20',
+                    'borderWidth': 3,
+                    'tension': 0.3,
+                    'fill': False
+                })
+            
+            if datasets:
+                chart_data['trendLine'] = {
+                    'type': 'line',
+                    'labels': [c.replace('cycle_', 'Cycle ') for c in cycles],
+                    'datasets': datasets
+                }
+    
+    # Add distribution data if available
+    if any('distribution' in v for v in data.values() if isinstance(v, dict)):
+        # This would need actual distribution data from QLA
+        chart_data['distribution'] = {
+            'type': 'bar',
+            'labels': ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'],
+            'datasets': []
+        }
     
     return chart_data
 
@@ -7793,10 +8175,149 @@ def get_comparison_title(report_type, config):
         return f"{dimension.replace('_', ' ').title()} Comparison Analysis"
     return "Comparative Analysis Report"
 
+def build_vespa_comparison_section(data, report_type):
+    """Build VESPA comparison section with real data"""
+    html = '<div class="vespa-comparison-section">'
+    html += '<h3 class="section-title">VESPA Score Comparison</h3>'
+    
+    # Extract VESPA data from comparison data
+    vespa_data = {}
+    for key, values in data.items():
+        if isinstance(values, dict) and 'vespa_breakdown' in values:
+            vespa_data[key] = values['vespa_breakdown']
+    
+    if vespa_data:
+        # Create comparison table
+        html += '<table class="vespa-table">'
+        html += '<thead><tr><th>Element</th>'
+        
+        # Add column headers for each comparison group
+        for key in vespa_data.keys():
+            label = key.replace('_', ' ').title()
+            html += f'<th>{label}</th>'
+        html += '<th>Difference</th></tr></thead>'
+        
+        html += '<tbody>'
+        vespa_elements = ['vision', 'effort', 'systems', 'practice', 'attitude']
+        
+        for element in vespa_elements:
+            html += f'<tr><td class="element-name">{element.capitalize()}</td>'
+            
+            scores = []
+            for key, breakdown in vespa_data.items():
+                score = breakdown.get(element, 0) * 10  # Convert to percentage
+                scores.append(score)
+                color_class = f'vespa-{element}'
+                html += f'<td class="score {color_class}">{score:.1f}%</td>'
+            
+            # Calculate difference
+            if len(scores) >= 2:
+                diff = scores[1] - scores[0]
+                diff_class = 'positive' if diff > 0 else 'negative' if diff < 0 else 'neutral'
+                html += f'<td class="difference {diff_class}">{diff:+.1f}%</td>'
+            else:
+                html += '<td class="difference">-</td>'
+            
+            html += '</tr>'
+        
+        # Add overall row
+        html += '<tr class="overall-row"><td class="element-name"><strong>Overall</strong></td>'
+        overall_scores = []
+        for key, values in data.items():
+            if isinstance(values, dict) and 'mean' in values:
+                score = values['mean'] * 10
+                overall_scores.append(score)
+                html += f'<td class="score overall"><strong>{score:.1f}%</strong></td>'
+        
+        if len(overall_scores) >= 2:
+            diff = overall_scores[1] - overall_scores[0]
+            diff_class = 'positive' if diff > 0 else 'negative' if diff < 0 else 'neutral'
+            html += f'<td class="difference {diff_class}"><strong>{diff:+.1f}%</strong></td>'
+        else:
+            html += '<td class="difference">-</td>'
+        
+        html += '</tr></tbody></table>'
+    else:
+        html += '<p>No VESPA data available for comparison.</p>'
+    
+    html += '</div>'
+    return html
+
 def generate_qla_insights_html(data, report_type):
     """Generate Question Level Analysis insights HTML"""
-    # This would generate the QLA section with questionnaire insights
-    return ''
+    
+    # Check if QLA data exists
+    qla_data = data.get('qla_data', {})
+    if not qla_data:
+        return ''
+    
+    html = '''
+    <div class="qla-section">
+        <h3 class="section-title">Question Level Analysis</h3>
+    '''
+    
+    # Add top differences if available
+    if 'questions' in qla_data:
+        questions = qla_data['questions'][:10]  # Top 10 differences
+        
+        html += '<h4>Questions with Largest Differences</h4>'
+        html += '<div class="qla-grid">'
+        
+        for idx, q in enumerate(questions):
+            diff = q.get('difference', 0)
+            diff_class = 'high-diff' if abs(diff) > 1.5 else 'medium-diff' if abs(diff) > 0.8 else 'low-diff'
+            
+            html += f'''
+            <div class="question-diff-card {diff_class}">
+                <div class="diff-rank">{idx + 1}</div>
+                <div class="question-content">
+                    <p class="question-text editable" contenteditable="true">{q.get('text', 'Question text')}</p>
+                    <div class="diff-scores">
+                        <div class="score-group">
+                            <span class="score-label">Group 1</span>
+                            <span class="score-value">{q.get('group1Score', 0):.2f}</span>
+                        </div>
+                        <div class="diff-arrow {"up" if diff > 0 else "down"}">
+                            {"↑" if diff > 0 else "↓"} {abs(diff):.2f}
+                        </div>
+                        <div class="score-group">
+                            <span class="score-label">Group 2</span>
+                            <span class="score-value">{q.get('group2Score', 0):.2f}</span>
+                        </div>
+                    </div>
+                    <span class="category-badge {q.get('category', 'overall').lower()}">{q.get('category', 'OVERALL')}</span>
+                </div>
+            </div>
+            '''
+        
+        html += '</div>'
+        
+        # Add statistical summary
+        if 'totalQuestions' in qla_data:
+            html += f'''
+            <div class="stats-summary">
+                <div class="stat-item">
+                    <span class="stat-label">Total Questions Analyzed:</span>
+                    <span class="stat-value">{qla_data.get('totalQuestions', 0)}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Significant Differences (p < 0.05):</span>
+                    <span class="stat-value">{qla_data.get('significantDifferences', 0)}</span>
+                </div>
+            </div>
+            '''
+    
+    # Add QLA insights if available
+    if 'insights' in qla_data and qla_data['insights']:
+        html += '<h4>Question-Level Insights</h4>'
+        html += '<div class="qla-insights">'
+        for insight in qla_data['insights']:
+            html += f'<p class="insight-item editable" contenteditable="true">• {insight}</p>'
+        html += '</div>'
+    
+    html += '</div>'
+    
+    return html
 
 @app.route('/api/comparative-report/export-pdf', methods=['POST', 'OPTIONS'])
 def export_comparative_report_pdf():
