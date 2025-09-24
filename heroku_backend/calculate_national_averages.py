@@ -53,6 +53,7 @@ REQUEST_FIELDS_FROM_VESPA_SOURCE = [
 TARGET_FIELDS_STRUCTURE = {
     "name_base": "field_3290",
     "academic_year": "field_3308",
+    "date_time": "field_3291",  # Date/Time field for when the record was last updated
     "vespa_cycle1": {"V": "field_3292", "E": "field_3293", "S": "field_3294", "P": "field_3295", "A": "field_3296", "O": "field_3406"},
     "vespa_cycle2": {"V": "field_3297", "E": "field_3298", "S": "field_3299", "P": "field_3300", "A": "field_3301", "O": "field_3407"},
     "vespa_cycle3": {"V": "field_3302", "E": "field_3303", "S": "field_3304", "P": "field_3305", "A": "field_3306", "O": "field_3408"},
@@ -796,7 +797,8 @@ def main():
         # Prepare payload for the target object_120 record
         payload_for_target_object = {
             TARGET_FIELDS_STRUCTURE["name_base"]: dynamic_target_record_name,
-            TARGET_FIELDS_STRUCTURE["academic_year"]: academic_year_str
+            TARGET_FIELDS_STRUCTURE["academic_year"]: academic_year_str,
+            TARGET_FIELDS_STRUCTURE["date_time"]: today.strftime("%m/%d/%Y")  # Update the date to today
         }
 
         # 1. Process VESPA Scores from object_10 (batched)
