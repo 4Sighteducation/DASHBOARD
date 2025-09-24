@@ -85,3 +85,5 @@ WHERE s.establishment_id = '1a327b33-d924-453c-803e-82671f94a242'
 GROUP BY vs.academic_year
 ORDER BY vs.academic_year DESC;
 
+
+

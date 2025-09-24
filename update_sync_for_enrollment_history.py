@@ -332,3 +332,5 @@ if __name__ == "__main__":
     print("\nCreating migration script...")
     create_migration_script()
     print("\nDone! Run migrate_to_enrollment_history.py after creating the tables")
+
+

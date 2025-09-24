@@ -219,3 +219,5 @@ A: Both are supported automatically - the system detects which is being used.
 
 **Q: Will this affect other schools?**
 A: No, it's backwards compatible. Schools without enrollment history will work as before.
+
+
