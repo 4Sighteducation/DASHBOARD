@@ -782,6 +782,39 @@ def process_psychometric_scores(psychometric_details, psychometric_output_mappin
         else:
             logging.warning(f"Target field ID for {target_field_key} not found in TARGET_FIELDS_STRUCTURE.")
 
+def parse_distribution_json(dist_json_str):
+    """
+    Parse the distribution JSON from Knack and convert to array format for Supabase
+    Input format: {"Vision": {"1": 56, "2": 185, ...}, "Effort": {...}, ...}
+    Output format: {"vision": [56, 185, ...], "effort": [...], ...}
+    """
+    distributions = {}
+    
+    if not dist_json_str:
+        return distributions
+        
+    try:
+        if isinstance(dist_json_str, str):
+            dist_data = json.loads(dist_json_str)
+        else:
+            dist_data = dist_json_str
+            
+        for element_name, scores in dist_data.items():
+            element_lower = element_name.lower()
+            
+            # Convert score dict to array (scores 1-10)
+            distribution_array = []
+            for score in range(1, 11):
+                count = scores.get(str(score), 0)
+                distribution_array.append(count)
+            
+            distributions[element_lower] = distribution_array
+            
+    except Exception as e:
+        logging.error(f"Error parsing distribution JSON: {e}")
+    
+    return distributions
+
 def sync_to_supabase_national_statistics(payload_for_target_object, academic_year_str):
     """
     Sync the calculated national averages to Supabase national_statistics table.
@@ -798,6 +831,20 @@ def sync_to_supabase_national_statistics(payload_for_target_object, academic_yea
             1: 'field_3429',  # Cycle 1 JSON statistics
             2: 'field_3430',  # Cycle 2 JSON statistics
             3: 'field_3431'   # Cycle 3 JSON statistics
+        }
+        
+        # Distribution histogram fields
+        distribution_fields = {
+            1: 'field_3409',  # Cycle 1 distribution histogram
+            2: 'field_3410',  # Cycle 2 distribution histogram
+            3: 'field_3411'   # Cycle 3 distribution histogram
+        }
+        
+        # Response count fields
+        response_count_fields = {
+            1: 'field_3412',  # Cycle 1 response count
+            2: 'field_3413',  # Cycle 2 response count
+            3: 'field_3414'   # Cycle 3 response count
         }
         
         # Field mappings for each cycle (fallback if JSON not available)
@@ -845,6 +892,19 @@ def sync_to_supabase_national_statistics(payload_for_target_object, academic_yea
                 'academic_year', supabase_year
             ).eq('cycle', cycle).execute()
             
+            # Get distribution data for this cycle
+            dist_field = distribution_fields.get(cycle)
+            dist_json_raw = payload_for_target_object.get(dist_field) if dist_field else None
+            distributions = parse_distribution_json(dist_json_raw) if dist_json_raw else {}
+            
+            # Get total response count for this cycle
+            response_field = response_count_fields.get(cycle)
+            response_raw = payload_for_target_object.get(response_field) if response_field else 0
+            try:
+                total_responses = int(float(response_raw)) if response_raw else 0
+            except (ValueError, TypeError):
+                total_responses = 0
+            
             # First try to use JSON statistics if available
             json_field = json_stat_fields.get(cycle)
             json_stats_raw = payload_for_target_object.get(json_field) if json_field else None
@@ -858,13 +918,16 @@ def sync_to_supabase_national_statistics(payload_for_target_object, academic_yea
                         if isinstance(stats, dict) and element_name.lower() in ['vision', 'effort', 'systems', 'practice', 'attitude', 'overall']:
                             element = element_name.lower()
                             
+                            # Get distribution for this element
+                            element_distribution = distributions.get(element, [])
+                            
                             stat_data = {
                                 'academic_year': supabase_year,
                                 'cycle': cycle,
                                 'element': element,
                                 'mean': float(stats.get('mean', 0)),
                                 'std_dev': float(stats.get('std_dev', 0)),
-                                'count': int(stats.get('count', 0)),
+                                'count': int(stats.get('count', total_responses)),  # Use total_responses if count not in stats
                                 'percentile_25': float(stats.get('percentile_25', 0)),
                                 'percentile_50': float(stats.get('percentile_50', 0)),
                                 'percentile_75': float(stats.get('percentile_75', 0)),
@@ -873,7 +936,7 @@ def sync_to_supabase_national_statistics(payload_for_target_object, academic_yea
                                 'confidence_interval_lower': float(stats.get('confidence_interval_lower', 0)),
                                 'confidence_interval_upper': float(stats.get('confidence_interval_upper', 0)),
                                 'skewness': float(stats.get('skewness', 0)),
-                                'distribution': [],
+                                'distribution': element_distribution,  # Add the actual distribution!
                                 'additional_stats': json.dumps({'raw_stats': stats})
                             }
                             
@@ -893,6 +956,9 @@ def sync_to_supabase_national_statistics(payload_for_target_object, academic_yea
                     value = payload_for_target_object.get(field_id)
                     if value is not None and value != '':
                         try:
+                            # Get distribution for this element
+                            element_distribution = distributions.get(element, [])
+                            
                             # Insert into national_statistics table
                             stat_data = {
                                 'academic_year': supabase_year,
@@ -900,11 +966,11 @@ def sync_to_supabase_national_statistics(payload_for_target_object, academic_yea
                                 'element': element,
                                 'mean': float(value),
                                 'std_dev': 0,  # These will be calculated by the sync process
-                                'count': 0,  
+                                'count': total_responses,  # Use the total response count
                                 'percentile_25': 0,
                                 'percentile_50': float(value),  # Use mean as median
                                 'percentile_75': 0,
-                                'distribution': []  
+                                'distribution': element_distribution  # Add the actual distribution!
                             }
                             
                             supabase_client.table('national_statistics').insert(stat_data).execute()
@@ -926,7 +992,7 @@ def sync_to_supabase_national_statistics(payload_for_target_object, academic_yea
                             'eri_score': float(eri_value),
                             'mean': 0,  # ERI is stored in eri_score field
                             'std_dev': 0,
-                            'count': 0,
+                            'count': total_responses,  # Use the total response count for ERI too
                             'percentile_25': 0,
                             'percentile_50': 0,
                             'percentile_75': 0,
