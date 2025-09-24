@@ -773,21 +773,18 @@ def process_psychometric_scores(psychometric_details, psychometric_output_mappin
 def main():
     today = date.today()
     
-    # Check for force run environment variable
-    FORCE_RUN = os.environ.get("FORCE_RUN_NATIONAL_AVERAGES", "false").lower() == "true"
-
-    if not FORCE_RUN and today.day not in [1, 15]: # Fortnightly logic (1st and 15th)
-        logging.info(f"Today is {today.day}{('th' if 10 <= today.day % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(today.day % 10, 'th'))} of the month. FORCE_RUN is not set. Skipping national average calculation (scheduled for 1st and 15th).")
-        return
+    # Log that we're running the calculation
+    logging.info(f"Starting national average calculation for {today.strftime('%Y-%m-%d')}")
     
+    # Check for force run environment variable (keeping for backward compatibility)
+    FORCE_RUN = os.environ.get("FORCE_RUN_NATIONAL_AVERAGES", "false").lower() == "true"
     if FORCE_RUN:
-        logging.info("FORCE_RUN_NATIONAL_AVERAGES is set to true. Proceeding with calculation regardless of date.")
-    else:
-        logging.info(f"Today is {today.day}{('th' if 10 <= today.day % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(today.day % 10, 'th'))}. Proceeding with national average calculation.")
+        logging.info("FORCE_RUN_NATIONAL_AVERAGES is set to true.")
 
     academic_year_str, filter_start_date, filter_end_date, ay_actual_start, ay_actual_end = get_current_academic_year_info()
     dynamic_target_record_name = f"{BASE_TARGET_RECORD_NAME} {academic_year_str}"
     logging.info(f"Processing national averages for: {dynamic_target_record_name}")
+    logging.info(f"Date range: {filter_start_date} to {filter_end_date}")
 
     if not KNACK_APP_ID or not KNACK_API_KEY: return
 
