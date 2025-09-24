@@ -1,0 +1,111 @@
+============================================================
+VESPA SYNC REPORT
+============================================================
+Date: 2025-09-09 13:53:05
+Duration: 0:17:08.224733
+
+=== TABLE SUMMARY ===
+
+ESTABLISHMENTS:
+  Records before: 118
+  Records after: 118
+  New records: 0
+  Errors: 0
+  Duration: 0:00:13.195492
+  Status: ✓ OK
+
+STUDENTS:
+  Records before: 27,527
+  Records after: 27,527
+  New records: 0
+  Errors: 0
+  Duration: 0:04:32.889151
+  Status: ✓ OK
+
+VESPA_SCORES:
+  Records before: 82,578
+  Records after: 82,578
+  New records: 0
+  Errors: 24512
+  Duration: 0:04:32.897152
+  Status: ⚠ WARNINGS
+
+STAFF_ADMINS:
+  Records before: 463
+  Records after: 463
+  New records: 0
+  Errors: 0
+  Duration: 0:00:43.649285
+  Status: ✓ OK
+
+SUPER_USERS:
+  Records before: 9
+  Records after: 9
+  New records: 0
+  Errors: 0
+  Duration: 0:00:01.978546
+  Status: ✓ OK
+
+QUESTION_RESPONSES:
+  Records before: 770,291
+  Records after: 781,139
+  New records: 10,848
+  Skipped: 13,964
+  Errors: 0
+  Duration: 0:09:37.003485
+  Status: ✓ OK
+
+SCHOOL_STATISTICS:
+  Records before: 1,176
+  Records after: 1,176
+  New records: 0
+  Errors: 0
+  Duration: 0:01:49.519034
+  Status: ✓ OK
+
+QUESTION_STATISTICS:
+  Records before: 7,505
+  Records after: 7,601
+  New records: 96
+  Errors: 0
+  Duration: 0:00:01.392941
+  Status: ✓ OK
+
+NATIONAL_STATISTICS:
+  Records before: 15
+  Records after: 9
+  New records: -6
+  Errors: 0
+  Duration: 0:00:05.975967
+  Status: ✓ OK
+
+=== OPERATIONS ===
+
+Update Academic Year:
+  Status: completed
+  Records updated: 0
+  Duration: 0:00:00.092563
+
+Calculate Eri:
+  Status: completed
+  ERI records calculated: 6
+  Duration: 0:00:01.521632
+
+=== ISSUES REQUIRING ATTENTION ===
+WARNING: Only 44.7% of staff admins have establishment connections
+WARNING: Some question responses skipped due to missing student links
+WARNING: 13964 question responses skipped due to missing student links
+WARNING: 320 duplicate responses removed (multiple Object_29 records for same student)
+ERROR: Error syncing VESPA record 68c0220d08cff903085f7096: calculate_academic_year() got an unexpected keyword argument 'is_uk_school'
+ERROR: Error syncing VESPA record 68c01dff0511e4031e9c6bbe: calculate_academic_year() got an unexpected keyword argument 'is_uk_school'
+ERROR: Error syncing VESPA record 68c01caf6e37a30313c63a94: calculate_academic_year() got an unexpected keyword argument 'is_uk_school'
+ERROR: Error syncing VESPA record 68c017fc08558f7c63900224: calculate_academic_year() got an unexpected keyword argument 'is_uk_school'
+ERROR: Error syncing VESPA record 68c017b188987c02dec33f67: calculate_academic_year() got an unexpected keyword argument 'is_uk_school'
+ERROR: Error syncing VESPA record 68c017e988987c02dec3550e: calculate_academic_year() got an unexpected keyword argument 'is_uk_school'
+ERROR: Error syncing VESPA record 68c0174746d7ae02fd43965a: calculate_academic_year() got an unexpected keyword argument 'is_uk_school'
+ERROR: Error syncing VESPA record 68c0170146d7ae02fd435803: calculate_academic_year() got an unexpected keyword argument 'is_uk_school'
+ERROR: Error syncing VESPA record 68c01736013246031fddcb17: calculate_academic_year() got an unexpected keyword argument 'is_uk_school'
+ERROR: Error syncing VESPA record 68c016cc46d7ae02fd434160: calculate_academic_year() got an unexpected keyword argument 'is_uk_school'
+... and 24502 more errors
+
+=== END OF REPORT ===

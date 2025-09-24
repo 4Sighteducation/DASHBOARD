@@ -1,0 +1,101 @@
+============================================================
+VESPA SYNC REPORT
+============================================================
+Date: 2025-09-08 23:21:42
+Duration: 1:33:36.229814
+
+=== TABLE SUMMARY ===
+
+ESTABLISHMENTS:
+  Records before: 118
+  Records after: 118
+  New records: 0
+  Errors: 0
+  Duration: 0:00:13.138220
+  Status: ✓ OK
+
+STUDENTS:
+  Records before: 27,526
+  Records after: 27,526
+  New records: 0
+  Errors: 0
+  Duration: 1:21:44.371538
+  Status: ✓ OK
+
+VESPA_SCORES:
+  Records before: 82,533
+  Records after: 82,578
+  New records: 45
+  Errors: 1
+  Duration: 1:21:44.287505
+  Status: ⚠ WARNINGS
+
+STAFF_ADMINS:
+  Records before: 462
+  Records after: 463
+  New records: 1
+  Errors: 0
+  Duration: 0:00:44.646495
+  Status: ✓ OK
+
+SUPER_USERS:
+  Records before: 9
+  Records after: 9
+  New records: 0
+  Errors: 0
+  Duration: 0:00:01.772410
+  Status: ✓ OK
+
+QUESTION_RESPONSES:
+  Records before: 769,011
+  Records after: 770,291
+  New records: 1,280
+  Skipped: 13,769
+  Errors: 0
+  Duration: 0:08:52.568060
+  Status: ✓ OK
+
+SCHOOL_STATISTICS:
+  Records before: 1,176
+  Records after: 1,176
+  New records: 0
+  Errors: 0
+  Duration: 0:01:49.565587
+  Status: ✓ OK
+
+QUESTION_STATISTICS:
+  Records before: 7,505
+  Records after: 7,505
+  New records: 0
+  Errors: 0
+  Duration: 0:00:01.388421
+  Status: ✓ OK
+
+NATIONAL_STATISTICS:
+  Records before: 15
+  Records after: 9
+  New records: -6
+  Errors: 0
+  Duration: 0:00:06.030527
+  Status: ✓ OK
+
+=== OPERATIONS ===
+
+Update Academic Year:
+  Status: completed
+  Records updated: 0
+  Duration: 0:00:00.090521
+
+Calculate Eri:
+  Status: completed
+  ERI records calculated: 6
+  Duration: 0:00:01.609608
+
+=== ISSUES REQUIRING ATTENTION ===
+WARNING: Only 44.7% of staff admins have establishment connections
+WARNING: Some question responses skipped due to missing student links
+WARNING: 13769 question responses skipped due to missing student links
+WARNING: 352 duplicate responses removed (multiple Object_29 records for same student)
+ERROR: Error syncing VESPA record 66dee17a90f9160306b4a905: [WinError 10054] An existing connection was forcibly closed by the remote host
+
+=== END OF REPORT ===

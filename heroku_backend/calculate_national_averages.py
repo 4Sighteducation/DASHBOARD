@@ -19,7 +19,7 @@ TARGET_OBJECT_KEY = "object_120"         # National Averages Data
 
 # Supabase configuration for syncing
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 # Initialize Supabase client if configured
 supabase_client = None
@@ -793,7 +793,14 @@ def sync_to_supabase_national_statistics(payload_for_target_object, academic_yea
         # Convert academic year from Knack format (2024-2025) to Supabase format (2024/2025)
         supabase_year = academic_year_str.replace('-', '/')
         
-        # Field mappings for each cycle
+        # JSON statistics fields for rich data
+        json_stat_fields = {
+            1: 'field_3429',  # Cycle 1 JSON statistics
+            2: 'field_3430',  # Cycle 2 JSON statistics
+            3: 'field_3431'   # Cycle 3 JSON statistics
+        }
+        
+        # Field mappings for each cycle (fallback if JSON not available)
         cycle_field_mappings = {
             1: {
                 'vision': 'field_3292',
@@ -831,37 +838,80 @@ def sync_to_supabase_national_statistics(payload_for_target_object, academic_yea
         records_synced = 0
         
         # Process each cycle
-        for cycle, fields in cycle_field_mappings.items():
+        for cycle in [1, 2, 3]:
             # Delete existing records for this year/cycle to avoid duplicates
             logging.info(f"Clearing existing national_statistics for {supabase_year} cycle {cycle}")
             supabase_client.table('national_statistics').delete().eq(
                 'academic_year', supabase_year
             ).eq('cycle', cycle).execute()
             
-            # Process VESPA components
-            for element, field_id in fields.items():
-                value = payload_for_target_object.get(field_id)
-                if value is not None and value != '':
-                    try:
-                        # Insert into national_statistics table
-                        stat_data = {
-                            'academic_year': supabase_year,
-                            'cycle': cycle,
-                            'element': element,
-                            'mean': float(value),
-                            'std_dev': 0,  # These will be calculated by the sync process
-                            'count': 0,  
-                            'percentile_25': 0,
-                            'percentile_50': float(value),  # Use mean as median
-                            'percentile_75': 0,
-                            'distribution': []  
-                        }
-                        
-                        supabase_client.table('national_statistics').insert(stat_data).execute()
-                        records_synced += 1
-                        logging.debug(f"Synced {element} for cycle {cycle}: {value}")
-                    except Exception as e:
-                        logging.error(f"Error syncing {element} for cycle {cycle}: {e}")
+            # First try to use JSON statistics if available
+            json_field = json_stat_fields.get(cycle)
+            json_stats_raw = payload_for_target_object.get(json_field) if json_field else None
+            
+            if json_stats_raw:
+                # Parse and use rich JSON statistics
+                try:
+                    json_stats = json.loads(json_stats_raw) if isinstance(json_stats_raw, str) else json_stats_raw
+                    
+                    for element_name, stats in json_stats.items():
+                        if isinstance(stats, dict) and element_name.lower() in ['vision', 'effort', 'systems', 'practice', 'attitude', 'overall']:
+                            element = element_name.lower()
+                            
+                            stat_data = {
+                                'academic_year': supabase_year,
+                                'cycle': cycle,
+                                'element': element,
+                                'mean': float(stats.get('mean', 0)),
+                                'std_dev': float(stats.get('std_dev', 0)),
+                                'count': int(stats.get('count', 0)),
+                                'percentile_25': float(stats.get('percentile_25', 0)),
+                                'percentile_50': float(stats.get('percentile_50', 0)),
+                                'percentile_75': float(stats.get('percentile_75', 0)),
+                                'min_value': float(stats.get('min', 0)),
+                                'max_value': float(stats.get('max', 0)),
+                                'confidence_interval_lower': float(stats.get('confidence_interval_lower', 0)),
+                                'confidence_interval_upper': float(stats.get('confidence_interval_upper', 0)),
+                                'skewness': float(stats.get('skewness', 0)),
+                                'distribution': [],
+                                'additional_stats': json.dumps({'raw_stats': stats})
+                            }
+                            
+                            supabase_client.table('national_statistics').insert(stat_data).execute()
+                            records_synced += 1
+                            logging.debug(f"Synced {element} from JSON for cycle {cycle}")
+                    
+                except Exception as e:
+                    logging.error(f"Error processing JSON stats for cycle {cycle}: {e}")
+                    # Fall back to individual fields
+                    json_stats_raw = None
+            
+            # Fallback to individual fields if JSON not available
+            if not json_stats_raw:
+                fields = cycle_field_mappings.get(cycle, {})
+                for element, field_id in fields.items():
+                    value = payload_for_target_object.get(field_id)
+                    if value is not None and value != '':
+                        try:
+                            # Insert into national_statistics table
+                            stat_data = {
+                                'academic_year': supabase_year,
+                                'cycle': cycle,
+                                'element': element,
+                                'mean': float(value),
+                                'std_dev': 0,  # These will be calculated by the sync process
+                                'count': 0,  
+                                'percentile_25': 0,
+                                'percentile_50': float(value),  # Use mean as median
+                                'percentile_75': 0,
+                                'distribution': []  
+                            }
+                            
+                            supabase_client.table('national_statistics').insert(stat_data).execute()
+                            records_synced += 1
+                            logging.debug(f"Synced {element} for cycle {cycle}: {value}")
+                        except Exception as e:
+                            logging.error(f"Error syncing {element} for cycle {cycle}: {e}")
             
             # Process ERI
             eri_field = eri_field_mappings.get(cycle)

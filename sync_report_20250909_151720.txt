@@ -1,0 +1,100 @@
+============================================================
+VESPA SYNC REPORT
+============================================================
+Date: 2025-09-09 15:17:20
+Duration: 1:35:24.526395
+
+=== TABLE SUMMARY ===
+
+ESTABLISHMENTS:
+  Records before: 118
+  Records after: 118
+  New records: 0
+  Errors: 0
+  Duration: 0:00:14.482498
+  Status: ✓ OK
+
+STUDENTS:
+  Records before: 27,527
+  Records after: 27,644
+  New records: 117
+  Errors: 0
+  Duration: 1:23:33.103748
+  Status: ✓ OK
+
+VESPA_SCORES:
+  Records before: 82,578
+  Records after: 82,584
+  New records: 6
+  Errors: 0
+  Duration: 1:23:33.113718
+  Status: ✓ OK
+
+STAFF_ADMINS:
+  Records before: 463
+  Records after: 464
+  New records: 1
+  Errors: 0
+  Duration: 0:00:46.155975
+  Status: ✓ OK
+
+SUPER_USERS:
+  Records before: 9
+  Records after: 9
+  New records: 0
+  Errors: 0
+  Duration: 0:00:01.421540
+  Status: ✓ OK
+
+QUESTION_RESPONSES:
+  Records before: 781,139
+  Records after: 782,963
+  New records: 1,824
+  Skipped: 13,792
+  Errors: 0
+  Duration: 0:08:55.863927
+  Status: ✓ OK
+
+SCHOOL_STATISTICS:
+  Records before: 1,176
+  Records after: 1,176
+  New records: 0
+  Errors: 0
+  Duration: 0:01:43.321248
+  Status: ✓ OK
+
+QUESTION_STATISTICS:
+  Records before: 7,601
+  Records after: 7,697
+  New records: 96
+  Errors: 0
+  Duration: 0:00:01.356272
+  Status: ✓ OK
+
+NATIONAL_STATISTICS:
+  Records before: 15
+  Records after: 9
+  New records: -6
+  Errors: 0
+  Duration: 0:00:06.166286
+  Status: ✓ OK
+
+=== OPERATIONS ===
+
+Update Academic Year:
+  Status: completed
+  Records updated: 0
+  Duration: 0:00:00.101264
+
+Calculate Eri:
+  Status: completed
+  ERI records calculated: 6
+  Duration: 0:00:01.462890
+
+=== ISSUES REQUIRING ATTENTION ===
+WARNING: Only 44.8% of staff admins have establishment connections
+WARNING: Some question responses skipped due to missing student links
+WARNING: 13792 question responses skipped due to missing student links
+WARNING: 320 duplicate responses removed (multiple Object_29 records for same student)
+
+=== END OF REPORT ===
