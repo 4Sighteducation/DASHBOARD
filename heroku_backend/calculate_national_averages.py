@@ -5,6 +5,7 @@ import json # Required for json.dumps in find_target_record_id and other API int
 from datetime import datetime, date, timedelta # Added timedelta
 from pathlib import Path # For robust path handling to JSON files
 import math # For statistical calculations
+from supabase import create_client, Client
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -15,6 +16,16 @@ KNACK_API_KEY = os.environ.get("KNACK_API_KEY")
 VESPA_SOURCE_OBJECT_KEY = "object_10"      # VESPA Results
 PSYCHOMETRIC_SOURCE_OBJECT_KEY = "object_29" # Psychometric Question Scores
 TARGET_OBJECT_KEY = "object_120"         # National Averages Data
+
+# Supabase configuration for syncing
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
+
+# Initialize Supabase client if configured
+supabase_client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    logging.info("Supabase client initialized for syncing national statistics")
 
 # Configuration flag for Overall calculation method
 USE_CALCULATED_OVERALL = os.environ.get("USE_CALCULATED_OVERALL", "true").lower() == "true"
@@ -771,6 +782,121 @@ def process_psychometric_scores(psychometric_details, psychometric_output_mappin
         else:
             logging.warning(f"Target field ID for {target_field_key} not found in TARGET_FIELDS_STRUCTURE.")
 
+def sync_to_supabase_national_statistics(payload_for_target_object, academic_year_str):
+    """
+    Sync the calculated national averages to Supabase national_statistics table.
+    This ensures the frontend can access historical data even after student re-uploads.
+    """
+    try:
+        logging.info(f"Syncing national averages to Supabase for academic year {academic_year_str}")
+        
+        # Convert academic year from Knack format (2024-2025) to Supabase format (2024/2025)
+        supabase_year = academic_year_str.replace('-', '/')
+        
+        # Field mappings for each cycle
+        cycle_field_mappings = {
+            1: {
+                'vision': 'field_3292',
+                'effort': 'field_3293',
+                'systems': 'field_3294',
+                'practice': 'field_3295',
+                'attitude': 'field_3296',
+                'overall': 'field_3297'
+            },
+            2: {
+                'vision': 'field_3298',
+                'effort': 'field_3299',
+                'systems': 'field_3300',
+                'practice': 'field_3301',
+                'attitude': 'field_3302',
+                'overall': 'field_3303'
+            },
+            3: {
+                'vision': 'field_3304',
+                'effort': 'field_3348',
+                'systems': 'field_3349',
+                'practice': 'field_3350',
+                'attitude': 'field_3351',
+                'overall': 'field_3352'
+            }
+        }
+        
+        # ERI field mappings
+        eri_field_mappings = {
+            1: 'field_3432',
+            2: 'field_3433',
+            3: 'field_3434'
+        }
+        
+        records_synced = 0
+        
+        # Process each cycle
+        for cycle, fields in cycle_field_mappings.items():
+            # Delete existing records for this year/cycle to avoid duplicates
+            logging.info(f"Clearing existing national_statistics for {supabase_year} cycle {cycle}")
+            supabase_client.table('national_statistics').delete().eq(
+                'academic_year', supabase_year
+            ).eq('cycle', cycle).execute()
+            
+            # Process VESPA components
+            for element, field_id in fields.items():
+                value = payload_for_target_object.get(field_id)
+                if value is not None and value != '':
+                    try:
+                        # Insert into national_statistics table
+                        stat_data = {
+                            'academic_year': supabase_year,
+                            'cycle': cycle,
+                            'element': element,
+                            'mean': float(value),
+                            'std_dev': 0,  # These will be calculated by the sync process
+                            'count': 0,  
+                            'percentile_25': 0,
+                            'percentile_50': float(value),  # Use mean as median
+                            'percentile_75': 0,
+                            'distribution': []  
+                        }
+                        
+                        supabase_client.table('national_statistics').insert(stat_data).execute()
+                        records_synced += 1
+                        logging.debug(f"Synced {element} for cycle {cycle}: {value}")
+                    except Exception as e:
+                        logging.error(f"Error syncing {element} for cycle {cycle}: {e}")
+            
+            # Process ERI
+            eri_field = eri_field_mappings.get(cycle)
+            if eri_field:
+                eri_value = payload_for_target_object.get(eri_field)
+                if eri_value is not None and eri_value != '':
+                    try:
+                        eri_data = {
+                            'academic_year': supabase_year,
+                            'cycle': cycle,
+                            'element': 'ERI',
+                            'eri_score': float(eri_value),
+                            'mean': 0,  # ERI is stored in eri_score field
+                            'std_dev': 0,
+                            'count': 0,
+                            'percentile_25': 0,
+                            'percentile_50': 0,
+                            'percentile_75': 0,
+                            'distribution': []
+                        }
+                        
+                        supabase_client.table('national_statistics').insert(eri_data).execute()
+                        records_synced += 1
+                        logging.debug(f"Synced ERI for cycle {cycle}: {eri_value}")
+                    except Exception as e:
+                        logging.error(f"Error syncing ERI for cycle {cycle}: {e}")
+        
+        logging.info(f"Successfully synced {records_synced} records to Supabase national_statistics table")
+        return True
+        
+    except Exception as e:
+        logging.error(f"Error syncing to Supabase national_statistics: {e}")
+        # Don't fail the main process if Supabase sync fails
+        return False
+
 def main():
     today = date.today()
     
@@ -828,6 +954,12 @@ def main():
             update_knack_record(TARGET_OBJECT_KEY, target_record_id, payload_for_target_object)
         else:
             create_knack_record(TARGET_OBJECT_KEY, payload_for_target_object)
+        
+        # 4. Sync to Supabase national_statistics table
+        if supabase_client:
+            sync_to_supabase_national_statistics(payload_for_target_object, academic_year_str)
+        else:
+            logging.warning("Supabase not configured - skipping sync to national_statistics table")
             
         logging.info("National average calculation task completed successfully.")
 

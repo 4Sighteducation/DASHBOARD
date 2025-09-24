@@ -955,10 +955,19 @@ def get_dashboard_initial_data():
                     futures.append(future)
                 
                 # Also fetch national benchmark in parallel
+                # Determine academic year (using current year as we're fetching current data)
+                current_academic_year = get_current_academic_year()
+                # Convert to Object_120 format (2024-2025 instead of 2024/2025)
+                object120_year = current_academic_year.replace('/', '-')
+                
                 national_future = executor.submit(
                     make_knack_request,
                     'object_120',
-                    filters=[],
+                    filters=[{
+                        'field': 'field_3308',  # Academic Year field in Object_120
+                        'operator': 'is',
+                        'value': object120_year
+                    }],
                     rows_per_page=1,
                     sort_field='field_3307',
                     sort_order='desc'
@@ -985,9 +994,18 @@ def get_dashboard_initial_data():
         # For large datasets, fetch national benchmark separately
         if total_records > 1500 and 'nationalBenchmark' not in results:
             try:
+                # Determine academic year (using current year as we're fetching current data)
+                current_academic_year = get_current_academic_year()
+                # Convert to Object_120 format (2024-2025 instead of 2024/2025)
+                object120_year = current_academic_year.replace('/', '-')
+                
                 national_data = make_knack_request(
                     'object_120',
-                    filters=[],
+                    filters=[{
+                        'field': 'field_3308',  # Academic Year field in Object_120
+                        'operator': 'is',
+                        'value': object120_year
+                    }],
                     rows_per_page=1,
                     sort_field='field_3307',
                     sort_order='desc'
@@ -3427,6 +3445,7 @@ def get_national_eri():
     """Get national ERI benchmark for a specific cycle."""
     try:
         cycle = request.args.get('cycle', '1')
+        academic_year = request.args.get('academic_year')
         
         # Validate cycle
         if cycle not in ['1', '2', '3']:
@@ -3441,12 +3460,26 @@ def get_national_eri():
         
         eri_field = national_eri_field_map[cycle]
         
-        # Fetch latest national benchmark record
-        app.logger.info(f"Fetching national ERI for cycle {cycle} from object_120")
+        # Determine academic year to use
+        if academic_year:
+            # Convert from frontend format (2025-26) to database format (2025/2026) if needed
+            academic_year = convert_academic_year_format(academic_year, to_database=True)
+        else:
+            academic_year = get_current_academic_year()
+        
+        # Convert to Object_120 format (2024-2025 instead of 2024/2025)
+        object120_year = academic_year.replace('/', '-')
+        
+        # Fetch national benchmark record for specific academic year
+        app.logger.info(f"Fetching national ERI for cycle {cycle}, academic year {object120_year} from object_120")
         
         data = make_knack_request(
             'object_120',
-            filters=[],
+            filters=[{
+                'field': 'field_3308',  # Academic Year field in Object_120
+                'operator': 'is',
+                'value': object120_year
+            }],
             page=1,
             rows_per_page=1,
             sort_field='field_3307',  # Date Time field
@@ -3865,9 +3898,18 @@ def get_dashboard_trust_data():
                 filter_sets['schools'].add(school_conn[0]['id'])
 
         # Get national benchmark
+        # Determine academic year (using current year as default)
+        current_academic_year = get_current_academic_year()
+        # Convert to Object_120 format (2024-2025 instead of 2024/2025)
+        object120_year = current_academic_year.replace('/', '-')
+        
         national_data = make_knack_request(
             'object_120',
-            filters=[],
+            filters=[{
+                'field': 'field_3308',  # Academic Year field in Object_120
+                'operator': 'is',
+                'value': object120_year
+            }],
             rows_per_page=1,
             sort_field='field_3307',
             sort_order='desc'
