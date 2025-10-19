@@ -1,0 +1,28 @@
+{
+  "Object_10 \u2192 Supabase": {
+    "students table": {
+      "field_197_email": "email",
+      "field_187_full": "name",
+      "field_144": "year_group",
+      "field_2299": "course",
+      "field_782": "faculty",
+      "field_223": "group",
+      "field_568": "level (metadata)"
+    },
+    "vespa_scores table": {
+      "field_855_date": "completion_date (\u2192 academic_year calculation)",
+      "field_146": "cycle (currentMCycle)",
+      "field_147-152": "Current cycle scores (V,E,S,P,A,Overall)",
+      "field_155-160": "Cycle 1 historical scores",
+      "field_161-166": "Cycle 2 historical scores",
+      "field_167-172": "Cycle 3 historical scores"
+    }
+  },
+  "Object_29 \u2192 Supabase": {
+    "question_responses table": {
+      "field_2732_email": "student email (for linking)",
+      "field_1826": "cycle",
+      "field_794-821": "individual question responses"
+    }
+  }
+}
