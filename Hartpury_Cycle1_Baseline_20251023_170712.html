@@ -1,0 +1,1552 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hartpury University - VESPA Cycle 1 Baseline Report</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #dc143c 0%, #8b0000 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .report-header {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .executive-summary, .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .section h2, .executive-summary h2 {
+            color: #dc143c;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .section h3 {
+            color: #8b0000;
+            margin: 20px 0 10px 0;
+            font-size: 1.4em;
+        }
+        
+        .key-insights {
+            background: #f8f9fa;
+            border-left: 4px solid #dc143c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #dc143c 0%, #8b0000 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h4 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .stat-card small {
+            font-size: 0.8em;
+            opacity: 0.8;
+            display: block;
+            margin-top: 5px;
+        }
+        
+        .chart-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th {
+            background: #dc143c;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .neutral {
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: white;
+            opacity: 0.9;
+        }
+        
+        @media print {
+            @page {
+                size: A4;
+                margin: 12mm 8mm;
+            }
+            
+            body {
+                background: white !important;
+                margin: 0;
+                padding: 0;
+                width: 100%;
+            }
+            
+            .container {
+                max-width: 100%;
+                width: 190mm;
+                margin: 0 auto;
+                padding: 0;
+                box-shadow: none;
+            }
+            
+            .report-header {
+                padding: 15px !important;
+                margin-bottom: 5px !important;
+            }
+            
+            .report-header img {
+                height: 60px !important;
+            }
+            
+            .report-header h1 {
+                font-size: 1.4em !important;
+                margin-bottom: 5px !important;
+            }
+            
+            .report-header h2 {
+                font-size: 1.2em !important;
+            }
+            
+            .report-header button {
+                display: none !important;
+            }
+            
+            .executive-summary, .section {
+                padding: 12px !important;
+                margin-bottom: 8px !important;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+            
+            /* Hide faculty cards in print, show only table */
+            .faculty-cards-grid {
+                display: none !important;
+            }
+            
+            /* Also hide the key insights grids in executive summary for more compact print */
+            .key-insights div[style*="grid-template-columns"] {
+                font-size: 0.75em !important;
+            }
+            
+            .key-insights div[style*="grid-template-columns"] > div {
+                padding: 8px !important;
+            }
+            
+            .chart-container {
+                page-break-inside: avoid;
+                margin: 3px 0 !important;
+                padding: 3px !important;
+                width: 100%;
+                max-height: 65mm;
+                overflow: hidden;
+            }
+            
+            .responsive-chart {
+                page-break-inside: avoid;
+                width: 100% !important;
+                max-width: 190mm !important;
+                height: 60mm !important;
+                max-height: 60mm !important;
+                overflow: hidden !important;
+            }
+            
+            .responsive-chart > div {
+                width: 380mm !important;
+                height: 120mm !important;
+                transform: scale(0.5) !important;
+                transform-origin: top left !important;
+            }
+            
+            .js-plotly-plot {
+                width: 100% !important;
+                height: 100% !important;
+            }
+            
+            .modebar {
+                display: none !important;
+            }
+            
+            table {
+                page-break-inside: avoid;
+                font-size: 0.65em;
+            }
+            
+            th, td {
+                padding: 4px 3px !important;
+            }
+            
+            h1 {
+                font-size: 1.4em !important;
+                margin-bottom: 8px !important;
+            }
+            
+            h2 {
+                font-size: 1.2em !important;
+                margin-bottom: 8px !important;
+            }
+            
+            h3 {
+                font-size: 1.0em !important;
+                margin: 10px 0 5px 0 !important;
+            }
+            
+            h4 {
+                font-size: 0.9em !important;
+            }
+            
+            p, li {
+                font-size: 0.75em !important;
+                line-height: 1.3 !important;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 5px !important;
+                font-size: 0.7em !important;
+            }
+            
+            .stat-card {
+                padding: 8px 5px !important;
+            }
+            
+            .stat-card h4 {
+                font-size: 0.7em !important;
+            }
+            
+            .stat-card .value {
+                font-size: 1.2em !important;
+            }
+            
+            .stat-card small {
+                font-size: 0.65em !important;
+            }
+            
+            .key-insights {
+                padding: 10px !important;
+                margin: 8px 0 !important;
+            }
+            
+            .key-insights > div {
+                padding: 10px !important;
+            }
+            
+            /* Section dividers more compact */
+            div[style*="background: #f0f4f8"] {
+                padding: 10px 0 !important;
+                margin-top: 15px !important;
+            }
+            
+            div[style*="background: #f0f4f8"] h1 {
+                font-size: 1.3em !important;
+                padding-bottom: 5px !important;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <div class="report-header">
+            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                <img src="https://i0.wp.com/northernhive.com/wp-content/uploads/2020/07/HARTPURY-UNIVERSITY-REV-ON-RED.jpg?fit=1457%2C963&ssl=1" 
+                     alt="Hartpury University Logo" 
+                     style="height: 100px; object-fit: contain; max-width: 400px;">
+            </div>
+            <h1 style="color: #dc143c; margin-bottom: 10px; text-align: center;">Hartpury University</h1>
+            <h2 style="color: #8b0000; text-align: center;">VESPA Cycle 1 Baseline Report</h2>
+            <p class="report-date" style="text-align: center;">Generated: October 23, 2025</p>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="window.print();" style="
+                    background: linear-gradient(135deg, #dc143c, #8b0000);
+                    color: white;
+                    border: none;
+                    padding: 12px 30px;
+                    font-size: 1em;
+                    font-weight: 600;
+                    border-radius: 25px;
+                    cursor: pointer;
+                    box-shadow: 0 4px 15px rgba(220, 20, 60, 0.3);
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(220, 20, 60, 0.4)';" 
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(220, 20, 60, 0.3)';">
+                    Download as PDF
+                </button>
+            </div>
+        </div>
+
+        
+        <div class="executive-summary">
+            <h2>Executive Summary</h2>
+            <p>This comprehensive VESPA Cycle 1 baseline analysis for Hartpury University examines student mindset and study skills 
+            across <strong>1,780 students</strong> in <strong>8 faculties</strong>. 
+            This baseline assessment establishes the starting point for tracking student development throughout the 2024/25 academic year.</p>
+            
+            <p style="margin-top: 15px;"><strong>Overall Performance:</strong> Hartpury students score above national 
+            average (6.01 vs 5.64), demonstrating strong 
+            engagement with learning mindsets and study skills at this baseline stage.</p>
+            
+            <p style="margin-top: 15px;"><strong>Looking Ahead:</strong> This Cycle 1 baseline will be compared against Cycle 2 
+            (mid-year, January) and Cycle 3 (end-of-year). Typically, students experience a natural adjustment in Cycle 2 as 
+            they engage with the realities of their courses, before showing strong growth and recovery by Cycle 3. 
+            This report establishes the foundation for measuring that growth journey.</p>
+            
+            <div class="key-insights" style="margin-top: 25px;">
+                <h3 style="color: #dc143c; margin-bottom: 20px;">Key Baseline Findings</h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                    <div style="background: rgba(220, 20, 60, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #dc143c;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Overall Baseline</h4>
+                        <p>Students demonstrate Vision as their strongest dimension (6.44), 
+                        while Systems (5.86) presents the primary development opportunity for the year ahead.</p>
+                    </div>
+                    
+                    <div style="background: rgba(114, 203, 68, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #72cb44;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Faculty Snapshot</h4>
+                        <p>A Levels leads with 6.33 overall score (n=212 students). 
+                        Significant variation across faculties indicates opportunities for peer learning and best practice sharing.</p>
+                    </div>
+                    
+                    <div style="background: rgba(229, 148, 55, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #e59437;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Gender Insights</h4>
+                        <p>Minimal difference between genders 
+                        (Male: 6.00, Female: 6.03). Both groups show strong baseline engagement.</p>
+                    </div>
+                    
+                    <div style="background: rgba(134, 180, 240, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #86b4f0;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Residential Analysis</h4>
+                        <p>Residential students score slightly higher 
+                        (6.10 vs 5.97), 
+                        with 1,219 non-residential and 561 residential students.</p>
+                    </div>
+                    
+                    <div style="background: rgba(127, 49, 164, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #7f31a4;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Year Group Snapshot</h4>
+                        <p>Analysis reveals performance variation across year groups, providing insights for cohort-specific interventions. 
+                        Year group baseline profiles will be essential for tracking cohort development through Cycles 2 and 3.</p>
+                    </div>
+                    
+                    <div style="background: rgba(240, 50, 230, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #f032e6;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Statement Insights</h4>
+                        <p>Students score highest on goal-setting statements ("I know what grades I want to achieve..." at 4.25) 
+                        but struggle with practice strategies ("When revising, I work under timed conditions answe..." at 2.87). 
+                        Variance analysis identifies where students need universal vs. differentiated support.</p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 25px; padding: 20px; background: linear-gradient(to right, rgba(220, 20, 60, 0.05), rgba(139, 0, 0, 0.05)); border-radius: 8px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 12px;">Strategic Priorities for 2024/25</h4>
+                    <ul style="margin: 0; padding-left: 25px; line-height: 1.8;">
+                        <li><strong>Build on Strengths:</strong> Leverage strong Vision baseline (6.44) across all faculties</li>
+                        <li><strong>Target Development:</strong> Focus interventions on Systems skills (current: 5.86)</li>
+                        <li><strong>Faculty Collaboration:</strong> Facilitate sharing of best practices from high-performing departments</li>
+                        <li><strong>Monitor Progress:</strong> Track Cycle 2 (January) to identify early intervention needs and celebrate growth</li>
+                        <li><strong>Targeted Support:</strong> Consider residential status and gender insights when designing support programs</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="section">
+            <h2>📊 Cycle 1 Baseline Overview</h2>
+            <p style="margin-bottom: 20px;">
+                Baseline VESPA scores for 1,780 Hartpury University students compared to national averages.
+                This establishes the starting point for measuring growth through Cycles 2 and 3.
+            </p>
+            
+            <div class="stats-grid">
+                
+            <div class="stat-card">
+                <h4>Vision</h4>
+                <div class="value">6.44</div>
+                <small>National: 6.1</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">↑ Above National</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Effort</h4>
+                <div class="value">5.96</div>
+                <small>National: 5.49</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">↑ Above National</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Systems</h4>
+                <div class="value">5.86</div>
+                <small>National: 5.27</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">↑ Above National</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Practice</h4>
+                <div class="value">5.91</div>
+                <small>National: 5.75</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">• On Par with National</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Attitude</h4>
+                <div class="value">5.93</div>
+                <small>National: 5.59</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">↑ Above National</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Overall</h4>
+                <div class="value">6.01</div>
+                <small>National: 5.64</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">↑ Above National</span>
+                </div>
+            </div>
+        
+            </div>
+        </div>
+
+        
+        <div class="section">
+            <h2>📈 Score Distribution Analysis</h2>
+            <p>Distribution of VESPA scores for Cycle 1 baseline. Bar charts show Hartpury percentages, red lines show national distribution.</p>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-vision" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-vision")) {                    Plotly.newPlot(                        "dist-vision",                        [{"marker":{"color":"#e59437"},"name":"Hartpury","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.6741573033707865,3.146067415730337,7.415730337078652,8.146067415730338,9.269662921348315,23.03370786516854,13.539325842696629,19.213483146067414,6.404494382022471,9.157303370786517],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[1.65,4.63,10.98,8.29,10.5,21.72,10.58,16.81,6.33,8.5],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"Hartpury: 6.4\u003cbr\u003eNational: 6.1","x":5.5,"y":24.18539325842697}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Vision Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-effort" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-effort")) {                    Plotly.newPlot(                        "dist-effort",                        [{"marker":{"color":"#86b4f0"},"name":"Hartpury","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.191011235955056,2.0786516853932584,13.03370786516854,9.550561797752808,15.224719101123597,15.786516853932584,14.269662921348313,11.910112359550562,13.03370786516854,2.9213483146067416],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[5.51,3.75,15.47,11.72,13.32,14.87,12.6,8.88,11.0,2.89],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"Hartpury: 6.0\u003cbr\u003eNational: 5.49","x":5.5,"y":16.575842696629213}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Effort Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-systems" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-systems")) {                    Plotly.newPlot(                        "dist-systems",                        [{"marker":{"color":"#72cb44"},"name":"Hartpury","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.359550561797753,3.48314606741573,8.146067415730338,14.719101123595504,10.730337078651687,24.269662921348313,10.168539325842698,17.022471910112362,4.606741573033708,4.49438202247191],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[5.94,6.73,11.79,17.16,9.29,19.2,9.1,13.03,4.11,3.65],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"Hartpury: 5.9\u003cbr\u003eNational: 5.27","x":5.5,"y":25.48314606741573}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Systems Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-practice" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-practice")) {                    Plotly.newPlot(                        "dist-practice",                        [{"marker":{"color":"#7f31a4"},"name":"Hartpury","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[1.9101123595505618,4.101123595505618,7.134831460674157,13.089887640449438,19.382022471910112,11.123595505617978,19.213483146067414,12.07865168539326,6.96629213483146,5.0],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[3.55,4.61,8.95,13.63,18.24,10.03,16.3,11.81,7.73,5.16],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"Hartpury: 5.9\u003cbr\u003eNational: 5.75","x":5.5,"y":20.35112359550562}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Practice Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-attitude" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-attitude")) {                    Plotly.newPlot(                        "dist-attitude",                        [{"marker":{"color":"#f032e6"},"name":"Hartpury","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.0224719101123596,5.280898876404494,9.887640449438202,9.606741573033707,11.741573033707866,19.49438202247191,15.393258426966291,14.157303370786517,8.314606741573034,4.101123595505618],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[3.77,6.76,11.72,10.0,12.01,20.62,11.84,13.23,6.69,3.36],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"Hartpury: 5.9\u003cbr\u003eNational: 5.59","x":5.5,"y":21.651000000000003}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Attitude Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-overall" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-overall")) {                    Plotly.newPlot(                        "dist-overall",                        [{"marker":{"color":"#ffd700"},"name":"Hartpury","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.39325842696629215,1.0112359550561798,6.067415730337078,12.07865168539326,18.258426966292134,22.528089887640448,20.0561797752809,12.640449438202248,5.168539325842696,1.7977528089887642],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.74,2.6,8.48,14.87,20.08,21.72,16.11,10.2,3.92,1.27],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"Hartpury: 6.0\u003cbr\u003eNational: 5.64","x":5.5,"y":23.65449438202247}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Overall Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+        </div>
+
+        
+        <div class="section" style="padding: 40px;">
+            <h2 style="color: #2c3e50; font-size: 2.2em; margin-bottom: 30px; border-bottom: 3px solid #dc143c; padding-bottom: 15px;">
+                Faculty Performance Comparison - Baseline
+            </h2>
+            <p style="font-size: 1.2em; color: #555; margin-bottom: 40px;">
+                Comprehensive VESPA performance metrics across all faculties based on Cycle 1 baseline assessment.
+                Student counts reflect total enrollment completing the baseline assessment in each faculty.
+            </p>
+            
+            <div class="faculty-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 50px;">
+                
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #28a745;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">A Levels</h3>
+                        <span style="background: #28a745; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#1</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.55</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.57</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.91</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.32</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.33</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #dc143c, #8b0000); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">6.33</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 212 students</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #28a745;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">Access to Higher Education</h3>
+                        <span style="background: #28a745; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#2</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">7.50</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.69</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.81</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.44</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.19</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #dc143c, #8b0000); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">6.25</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 16 students</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #28a745;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">General Sport</h3>
+                        <span style="background: #28a745; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#3</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.41</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.83</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.17</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.96</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.94</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #dc143c, #8b0000); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">6.07</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 276 students</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #dc143c;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">Agriculture</h3>
+                        <span style="background: #dc143c; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#4</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.81</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.89</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.42</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.79</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.27</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #dc143c, #8b0000); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">6.03</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 247 students</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #dc143c;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">Specialist Sport</h3>
+                        <span style="background: #dc143c; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#5</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.26</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.73</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.90</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.77</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.29</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #dc143c, #8b0000); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">5.97</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 415 students</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #dc3545;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">Equine</h3>
+                        <span style="background: #dc3545; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#6</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.35</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.10</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.98</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.08</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.14</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #dc143c, #8b0000); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">5.96</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 151 students</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #dc3545;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">Animal Management</h3>
+                        <span style="background: #dc3545; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#7</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.29</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.05</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.99</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.92</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.24</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #dc143c, #8b0000); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">5.89</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 289 students</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #dc3545;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">Outdoor Adventure and Public Services</h3>
+                        <span style="background: #dc3545; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#8</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.49</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.76</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.49</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.76</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.93</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #dc143c, #8b0000); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">5.87</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 174 students</div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <h3 style="color: #2c3e50; margin-top: 50px; margin-bottom: 15px; font-size: 1.5em;">Detailed Performance Matrix</h3>
+            <p style="font-size: 0.95em; color: #666; margin-bottom: 15px;">Compact comparison showing all faculties side-by-side (optimized for print).</p>
+            <div style="overflow-x: auto; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                <table style="width: 100%; min-width: 700px; border-collapse: separate; border-spacing: 0; background: white;">
+                    <thead>
+                        <tr>
+                            <th style="background: linear-gradient(135deg, #dc143c, #8b0000); color: white; padding: 18px; text-align: left;">Faculty</th>
+                            <th style="background: #e59437; color: white; padding: 18px; text-align: center;">VISION</th>
+                            <th style="background: #5690d6; color: white; padding: 18px; text-align: center;">EFFORT</th>
+                            <th style="background: #72cb44; color: white; padding: 18px; text-align: center;">SYSTEMS</th>
+                            <th style="background: #7f31a4; color: white; padding: 18px; text-align: center;">PRACTICE</th>
+                            <th style="background: #f032e6; color: white; padding: 18px; text-align: center;">ATTITUDE</th>
+                            <th style="background: linear-gradient(135deg, #dc143c, #8b0000); color: white; padding: 18px; text-align: center; font-weight: bold;">OVERALL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    
+                    <tr style="background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">A Levels (n=212)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.55</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.57</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.91</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.32</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.33</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(220, 20, 60, 0.05); font-size: 1.1em;"><span style="color: #28a745; font-weight: 600;">↑ 6.33</span></td>
+                    </tr>
+
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">Access to Higher Education (n=16)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 7.50</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.69</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.81</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.44</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.19</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(220, 20, 60, 0.05); font-size: 1.1em;"><span style="color: #28a745; font-weight: 600;">↑ 6.25</span></td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">General Sport (n=276)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.41</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.83</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.17</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.96</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.94</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(220, 20, 60, 0.05); font-size: 1.1em;"><span style="color: #28a745; font-weight: 600;">↑ 6.07</span></td>
+                    </tr>
+
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">Agriculture (n=247)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.81</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.89</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.42</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.79</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.27</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(220, 20, 60, 0.05); font-size: 1.1em;"><span style="color: #28a745; font-weight: 600;">↑ 6.03</span></td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">Specialist Sport (n=415)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 6.26</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.73</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.90</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.77</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.29</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(220, 20, 60, 0.05); font-size: 1.1em;"><span style="color: #28a745; font-weight: 600;">↑ 5.97</span></td>
+                    </tr>
+
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">Equine (n=151)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.35</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.10</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.98</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.08</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.14</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(220, 20, 60, 0.05); font-size: 1.1em;"><span style="color: #28a745; font-weight: 600;">↑ 5.96</span></td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">Animal Management (n=289)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 6.29</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.05</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.99</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.92</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.24</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(220, 20, 60, 0.05); font-size: 1.1em;"><span style="color: #28a745; font-weight: 600;">↑ 5.89</span></td>
+                    </tr>
+
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">Outdoor Adventure and Public Services (n=174)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.49</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.76</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.49</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.76</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.93</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(220, 20, 60, 0.05); font-size: 1.1em;"><span style="color: #28a745; font-weight: 600;">↑ 5.87</span></td>
+                    </tr>
+
+                    
+                    <tr style="background: linear-gradient(135deg, #dc143c, #8b0000); color: white;">
+                        <td style="padding: 16px; font-weight: bold;">HARTPURY AVERAGE</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">6.44</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.96</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.86</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.91</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.93</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold; font-size: 1.1em;">6.01</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; gap: 30px; flex-wrap: wrap;">
+                <span style="font-weight: 600; color: #2c3e50;">Performance Indicators vs National:</span>
+                <span style="color: #28a745;">↑ Above National (+0.2)</span>
+                <span style="color: #666;">• On Par with National (±0.2)</span>
+                <span style="color: #dc3545;">↓ Below National (-0.2)</span>
+            </div>
+            
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="faculty-chart" class="plotly-graph-div" style="height:500px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("faculty-chart")) {                    Plotly.newPlot(                        "faculty-chart",                        [{"marker":{"color":"#e59437"},"name":"Vision","x":["A Levels","Access to Higher Education","General Sport","Agriculture","Specialist Sport","Equine","Animal Management","Outdoor Adventure and Public Services"],"y":[6.55188679245283,7.5,6.413043478260869,6.805668016194332,6.2626506024096384,6.3509933774834435,6.28719723183391,6.488505747126437],"type":"bar"},{"marker":{"color":"#86b4f0"},"name":"Effort","x":["A Levels","Access to Higher Education","General Sport","Agriculture","Specialist Sport","Equine","Animal Management","Outdoor Adventure and Public Services"],"y":[6.566037735849057,6.6875,5.833333333333333,5.886639676113361,5.727710843373494,6.099337748344371,6.051903114186851,5.758620689655173],"type":"bar"},{"marker":{"color":"#72cb44"},"name":"Systems","x":["A Levels","Access to Higher Education","General Sport","Agriculture","Specialist Sport","Equine","Animal Management","Outdoor Adventure and Public Services"],"y":[5.910377358490566,5.8125,6.170289855072464,5.417004048582996,5.901204819277108,5.9801324503311255,5.989619377162629,5.488505747126437],"type":"bar"},{"marker":{"color":"#7f31a4"},"name":"Practice","x":["A Levels","Access to Higher Education","General Sport","Agriculture","Specialist Sport","Equine","Animal Management","Outdoor Adventure and Public Services"],"y":[6.316037735849057,5.4375,5.963768115942029,5.7854251012145745,5.766265060240964,6.079470198675497,5.920415224913495,5.764367816091954],"type":"bar"},{"marker":{"color":"#f032e6"},"name":"Attitude","x":["A Levels","Access to Higher Education","General Sport","Agriculture","Specialist Sport","Equine","Animal Management","Outdoor Adventure and Public Services"],"y":[6.3254716981132075,6.1875,5.938405797101449,6.271255060728745,6.286746987951807,5.139072847682119,5.2387543252595155,5.931034482758621],"type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"yaxis":{"title":{"text":"Mean Score"},"range":[0,10]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Faculty VESPA Performance Comparison - Cycle 1 Baseline"},"xaxis":{"title":{"text":"Faculty"}},"barmode":"group","height":500,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #dc143c; padding-bottom: 10px; margin: 0 auto 30px; max-width: 400px;">
+                GENDER ANALYSIS
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>👥 VESPA Scores by Gender</h2>
+            <p style="margin-bottom: 20px;">
+                Analysis of VESPA baseline scores comparing male and female students to identify any gender-specific patterns 
+                or support needs. Total sample: 907 male and 871 female students.
+            </p>
+            
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <div class="stat-card">
+                    <h4>Male Students</h4>
+                    <div class="value">6.00</div>
+                    <small>Overall Score (n=907)</small>
+                </div>
+                <div class="stat-card">
+                    <h4>Female Students</h4>
+                    <div class="value">6.03</div>
+                    <small>Overall Score (n=871)</small>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                    <h4>Difference</h4>
+                    <div class="value">0.03</div>
+                    <small>(Minimal)</small>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="gender-chart" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("gender-chart")) {                    Plotly.newPlot(                        "gender-chart",                        [{"marker":{"color":"#e59437"},"name":"Vision","text":["6.46","6.41"],"textposition":"auto","x":["Male","Female"],"y":[6.464167585446527,6.414466130884041],"type":"bar"},{"marker":{"color":"#86b4f0"},"name":"Effort","text":["5.72","6.21"],"textposition":"auto","x":["Male","Female"],"y":[5.715545755237045,6.213547646383467],"type":"bar"},{"marker":{"color":"#72cb44"},"name":"Systems","text":["5.58","6.15"],"textposition":"auto","x":["Male","Female"],"y":[5.577728776185226,6.146957520091848],"type":"bar"},{"marker":{"color":"#7f31a4"},"name":"Practice","text":["5.74","6.09"],"textposition":"auto","x":["Male","Female"],"y":[5.74090407938258,6.086107921928818],"type":"bar"},{"marker":{"color":"#f032e6"},"name":"Attitude","text":["6.55","5.29"],"textposition":"auto","x":["Male","Female"],"y":[6.550165380374862,5.285878300803674],"type":"bar"},{"marker":{"color":"#ffd700"},"name":"Overall","text":["6.00","6.03"],"textposition":"auto","x":["Male","Female"],"y":[5.995589856670342,6.029850746268656],"type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"yaxis":{"title":{"text":"Mean Score"},"range":[0,8]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"VESPA Scores by Gender - Cycle 1"},"xaxis":{"title":{"text":"Gender"}},"barmode":"group","height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+            
+            <h3>Statement-Level Gender Differences</h3>
+            <p style="margin: 15px 0;">
+                The following statements show the largest differences in agreement between male and female students,
+                highlighting areas where gender-specific support or interventions may be beneficial. 
+                We show both where males score higher and where females score higher for balanced insight.
+            </p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                <div>
+                    <h4 style="color: #2c3e50; margin-bottom: 15px; background: rgba(102, 126, 234, 0.1); padding: 10px; border-radius: 5px;">
+                        🔵 Top 3 - Male Students Score Higher
+                    </h4>
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 0.85em;">Statement</th>
+                                <th style="text-align: center; font-size: 0.85em;">Category</th>
+                                <th style="text-align: center; font-size: 0.85em;">Male</th>
+                                <th style="text-align: center; font-size: 0.85em;">Female</th>
+                                <th style="text-align: center; font-size: 0.85em;">Diff</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                    <tr>
+                        <td style="padding: 10px;">I can control my nerves in tests/practical assessments.</td>
+                        <td style="padding: 10px; text-align: center;">Attitude</td>
+                        <td style="padding: 10px; text-align: center;"><strong>3.89</strong></td>
+                        <td style="padding: 10px; text-align: center;">3.29</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">
+                            +0.60<br><small>(Male higher)</small>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I'm happy to ask questions in front of a group.</td>
+                        <td style="padding: 10px; text-align: center;">Attitude</td>
+                        <td style="padding: 10px; text-align: center;"><strong>3.64</strong></td>
+                        <td style="padding: 10px; text-align: center;">3.12</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">
+                            +0.51<br><small>(Male higher)</small>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I feel I can cope with the pressure at school/college/University</td>
+                        <td style="padding: 10px; text-align: center;">Attitude</td>
+                        <td style="padding: 10px; text-align: center;"><strong>3.97</strong></td>
+                        <td style="padding: 10px; text-align: center;">3.46</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">
+                            +0.50<br><small>(Male higher)</small>
+                        </td>
+                    </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div>
+                    <h4 style="color: #2c3e50; margin-bottom: 15px; background: rgba(240, 50, 230, 0.1); padding: 10px; border-radius: 5px;">
+                        🟣 Top 3 - Female Students Score Higher
+                    </h4>
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 0.85em;">Statement</th>
+                                <th style="text-align: center; font-size: 0.85em;">Category</th>
+                                <th style="text-align: center; font-size: 0.85em;">Male</th>
+                                <th style="text-align: center; font-size: 0.85em;">Female</th>
+                                <th style="text-align: center; font-size: 0.85em;">Diff</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                    <tr>
+                        <td style="padding: 10px;">My books/files are organised</td>
+                        <td style="padding: 10px; text-align: center;">Systems</td>
+                        <td style="padding: 10px; text-align: center;">3.47</td>
+                        <td style="padding: 10px; text-align: center;"><strong>3.91</strong></td>
+                        <td style="padding: 10px; text-align: center;" class="positive">
+                            +0.44<br><small>(Female higher)</small>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I take good notes in class which are useful for revision</td>
+                        <td style="padding: 10px; text-align: center;">Systems</td>
+                        <td style="padding: 10px; text-align: center;">3.85</td>
+                        <td style="padding: 10px; text-align: center;"><strong>4.10</strong></td>
+                        <td style="padding: 10px; text-align: center;" class="positive">
+                            +0.25<br><small>(Female higher)</small>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I study by explaining difficult topics outloud</td>
+                        <td style="padding: 10px; text-align: center;">Practice</td>
+                        <td style="padding: 10px; text-align: center;">2.80</td>
+                        <td style="padding: 10px; text-align: center;"><strong>3.03</strong></td>
+                        <td style="padding: 10px; text-align: center;" class="positive">
+                            +0.23<br><small>(Female higher)</small>
+                        </td>
+                    </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h4>Gender Analysis Insights</h4>
+                <ul style="margin-top: 10px;">
+                    <li><strong>Overall Comparison:</strong> Female students score slightly higher 
+                        (6.03 vs 6.00)</li>
+                    <li><strong>Males Score Higher On:</strong> "I can control my nerves in tests/practical assessments." (Attitude) - 0.60 point difference, 
+                        suggesting males show stronger attitude in this area</li>
+                    <li><strong>Females Score Higher On:</strong> "My books/files are organised" (Systems) - 0.44 point difference, 
+                        suggesting females demonstrate stronger systems in this area</li>
+                    <li><strong>Implication:</strong> Both genders show similar overall VESPA profiles with minimal intervention needed, 
+                        but note specific strengths of each group for peer mentoring opportunities</li>
+                </ul>
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #dc143c; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                RESIDENTIAL STATUS ANALYSIS
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>🏠 VESPA Scores by Residential Status</h2>
+            <p style="margin-bottom: 20px;">
+                Analysis of VESPA baseline scores comparing residential and non-residential students to understand 
+                how living arrangements correlate with learning mindsets and study skills.
+                Total sample: 561 residential and 1219 non-residential students.
+            </p>
+            
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <div class="stat-card">
+                    <h4>Residential Students</h4>
+                    <div class="value">6.10</div>
+                    <small>Overall Score (n=561)</small>
+                </div>
+                <div class="stat-card">
+                    <h4>Non-Residential Students</h4>
+                    <div class="value">5.97</div>
+                    <small>Overall Score (n=1219)</small>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                    <h4>Difference</h4>
+                    <div class="value">0.13</div>
+                    <small>(Moderate)</small>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="residential-chart" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("residential-chart")) {                    Plotly.newPlot(                        "residential-chart",                        [{"marker":{"color":"#e59437"},"name":"Vision","text":["6.60","6.37"],"textposition":"auto","x":["Residential","Non-Residential"],"y":[6.60427807486631,6.365053322395406],"type":"bar"},{"marker":{"color":"#86b4f0"},"name":"Effort","text":["6.03","5.93"],"textposition":"auto","x":["Residential","Non-Residential"],"y":[6.026737967914438,5.931911402789171],"type":"bar"},{"marker":{"color":"#72cb44"},"name":"Systems","text":["5.85","5.86"],"textposition":"auto","x":["Residential","Non-Residential"],"y":[5.850267379679145,5.859721082854799],"type":"bar"},{"marker":{"color":"#7f31a4"},"name":"Practice","text":["6.00","5.88"],"textposition":"auto","x":["Residential","Non-Residential"],"y":[5.996434937611408,5.875307629204266],"type":"bar"},{"marker":{"color":"#f032e6"},"name":"Attitude","text":["6.11","5.85"],"textposition":"auto","x":["Residential","Non-Residential"],"y":[6.114081996434938,5.848236259228876],"type":"bar"},{"marker":{"color":"#ffd700"},"name":"Overall","text":["6.10","5.97"],"textposition":"auto","x":["Residential","Non-Residential"],"y":[6.101604278074866,5.973748974569319],"type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"yaxis":{"title":{"text":"Mean Score"},"range":[0,8]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"VESPA Scores by Residential Status - Cycle 1"},"xaxis":{"title":{"text":"Residential Status"}},"barmode":"group","height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+            
+            <h3>Statement-Level Residential Differences</h3>
+            <p style="margin: 15px 0;">
+                The following statements show the largest differences between residential and non-residential students,
+                providing insights into how living arrangements may influence student mindsets and behaviors.
+                We show both where residential students score higher and where non-residential students score higher for balanced insight.
+            </p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                <div>
+                    <h4 style="color: #2c3e50; margin-bottom: 15px; background: rgba(114, 203, 68, 0.1); padding: 10px; border-radius: 5px;">
+                        🟢 Top 3 - Residential Students Score Higher
+                    </h4>
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 0.85em;">Statement</th>
+                                <th style="text-align: center; font-size: 0.85em;">Category</th>
+                                <th style="text-align: center; font-size: 0.85em;">Res</th>
+                                <th style="text-align: center; font-size: 0.85em;">Non-Res</th>
+                                <th style="text-align: center; font-size: 0.85em;">Diff</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                    <tr>
+                        <td style="padding: 10px;">I'm happy to ask questions in front of a group.</td>
+                        <td style="padding: 10px; text-align: center;">Attitude</td>
+                        <td style="padding: 10px; text-align: center;"><strong>3.61</strong></td>
+                        <td style="padding: 10px; text-align: center;">3.28</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">
+                            +0.32<br><small>(Residential)</small>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">When revising, I work under timed conditions answering exam-style questions</td>
+                        <td style="padding: 10px; text-align: center;">Practice</td>
+                        <td style="padding: 10px; text-align: center;"><strong>2.97</strong></td>
+                        <td style="padding: 10px; text-align: center;">2.82</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">
+                            +0.16<br><small>(Residential)</small>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I strive to achieve the goals I set for myself</td>
+                        <td style="padding: 10px; text-align: center;">Vision</td>
+                        <td style="padding: 10px; text-align: center;"><strong>4.15</strong></td>
+                        <td style="padding: 10px; text-align: center;">4.03</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">
+                            +0.12<br><small>(Residential)</small>
+                        </td>
+                    </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div>
+                    <h4 style="color: #2c3e50; margin-bottom: 15px; background: rgba(229, 148, 55, 0.1); padding: 10px; border-radius: 5px;">
+                        🟠 Top 3 - Non-Residential Students Score Higher
+                    </h4>
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 0.85em;">Statement</th>
+                                <th style="text-align: center; font-size: 0.85em;">Category</th>
+                                <th style="text-align: center; font-size: 0.85em;">Res</th>
+                                <th style="text-align: center; font-size: 0.85em;">Non-Res</th>
+                                <th style="text-align: center; font-size: 0.85em;">Diff</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                    <tr>
+                        <td style="padding: 10px;">I complete all my homework on time</td>
+                        <td style="padding: 10px; text-align: center;">Systems</td>
+                        <td style="padding: 10px; text-align: center;">3.98</td>
+                        <td style="padding: 10px; text-align: center;"><strong>4.05</strong></td>
+                        <td style="padding: 10px; text-align: center;" class="positive">
+                            +0.07<br><small>(Non-Residential)</small>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I always meet deadlines </td>
+                        <td style="padding: 10px; text-align: center;">Systems</td>
+                        <td style="padding: 10px; text-align: center;">3.91</td>
+                        <td style="padding: 10px; text-align: center;"><strong>3.97</strong></td>
+                        <td style="padding: 10px; text-align: center;" class="positive">
+                            +0.05<br><small>(Non-Residential)</small>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I am a hard working student</td>
+                        <td style="padding: 10px; text-align: center;">Effort</td>
+                        <td style="padding: 10px; text-align: center;">4.04</td>
+                        <td style="padding: 10px; text-align: center;"><strong>4.08</strong></td>
+                        <td style="padding: 10px; text-align: center;" class="positive">
+                            +0.04<br><small>(Non-Residential)</small>
+                        </td>
+                    </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h4>Residential Analysis Insights</h4>
+                <ul style="margin-top: 10px;">
+                    <li><strong>Overall Comparison:</strong> Residential students score higher 
+                        (6.10 vs 5.97)</li>
+                    <li><strong>Residential Students Excel At:</strong> "I'm happy to ask questions in front of a group." (Attitude) - 0.32 point higher, 
+                        suggesting residential life may provide supportive environment for attitude</li>
+                    <li><strong>Non-Residential Students Excel At:</strong> "I complete all my homework on time" (Systems) - 0.07 point higher, 
+                        indicating strong independent systems skills</li>
+                    <li><strong>Implication:</strong> Both groups show similar patterns suggesting universal support strategies are appropriate, 
+                        while recognizing unique strengths of each group</li>
+                </ul>
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #dc143c; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                YEAR GROUP ANALYSIS
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>📚 VESPA Scores by Year Group</h2>
+            <p style="margin-bottom: 20px;">
+                Analysis of VESPA baseline scores across different year groups to identify cohort-specific patterns.
+                Year groups are compared to understand how students at different stages of their educational journey 
+                engage with VESPA dimensions.
+            </p>
+            
+            <h3>Year Group Performance Overview</h3>
+            <div class="stats-grid">
+                
+                <div class="stat-card">
+                    <h4>Year 2</h4>
+                    <div class="value">6.16</div>
+                    <small>n=735 students</small>
+                    <div style="margin-top: 8px; font-size: 0.75em;">
+                        Rank: #1 of 2
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <h4>Year 1</h4>
+                    <div class="value">5.91</div>
+                    <small>n=1045 students</small>
+                    <div style="margin-top: 8px; font-size: 0.75em;">
+                        Rank: #2 of 2
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="year-group-chart" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("year-group-chart")) {                    Plotly.newPlot(                        "year-group-chart",                        [{"marker":{"color":"#e59437"},"name":"Vision","text":["6.53","6.38"],"textposition":"auto","x":["2","1"],"y":[6.527891156462585,6.378947368421053],"type":"bar"},{"marker":{"color":"#86b4f0"},"name":"Effort","text":["5.93","5.98"],"textposition":"auto","x":["2","1"],"y":[5.930612244897959,5.983732057416268],"type":"bar"},{"marker":{"color":"#72cb44"},"name":"Systems","text":["6.05","5.72"],"textposition":"auto","x":["2","1"],"y":[6.051700680272109,5.719617224880383],"type":"bar"},{"marker":{"color":"#7f31a4"},"name":"Practice","text":["6.23","5.69"],"textposition":"auto","x":["2","1"],"y":[6.228571428571429,5.691866028708134],"type":"bar"},{"marker":{"color":"#f032e6"},"name":"Attitude","text":["6.08","5.83"],"textposition":"auto","x":["2","1"],"y":[6.077551020408163,5.829665071770335],"type":"bar"},{"marker":{"color":"#ffd700"},"name":"Overall","text":["6.16","5.91"],"textposition":"auto","x":["2","1"],"y":[6.163265306122449,5.909090909090909],"type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"yaxis":{"title":{"text":"Mean Score"},"range":[0,8]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"VESPA Scores by Year Group - Cycle 1"},"xaxis":{"title":{"text":"Year Group"}},"barmode":"group","height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+            
+            <h3>Detailed Year Group Comparison</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Year Group</th>
+                        <th style="text-align: center;">Students</th>
+                        <th style="text-align: center;">Vision</th>
+                        <th style="text-align: center;">Effort</th>
+                        <th style="text-align: center;">Systems</th>
+                        <th style="text-align: center;">Practice</th>
+                        <th style="text-align: center;">Attitude</th>
+                        <th style="text-align: center;">Overall</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 12px; font-weight: 600;">Year 2</td>
+                        <td style="padding: 12px; text-align: center;">735</td>
+                        <td style="padding: 12px; text-align: center;">6.53</td>
+                        <td style="padding: 12px; text-align: center;">5.93</td>
+                        <td style="padding: 12px; text-align: center;">6.05</td>
+                        <td style="padding: 12px; text-align: center;">6.23</td>
+                        <td style="padding: 12px; text-align: center;">6.08</td>
+                        <td style="padding: 12px; text-align: center; font-weight: bold; background: rgba(220, 20, 60, 0.05);">6.16</td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 12px; font-weight: 600;">Year 1</td>
+                        <td style="padding: 12px; text-align: center;">1045</td>
+                        <td style="padding: 12px; text-align: center;">6.38</td>
+                        <td style="padding: 12px; text-align: center;">5.98</td>
+                        <td style="padding: 12px; text-align: center;">5.72</td>
+                        <td style="padding: 12px; text-align: center;">5.69</td>
+                        <td style="padding: 12px; text-align: center;">5.83</td>
+                        <td style="padding: 12px; text-align: center; font-weight: bold; background: rgba(220, 20, 60, 0.05);">5.91</td>
+                    </tr>
+
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h4>Year Group Analysis Insights</h4>
+                <ul style="margin-top: 10px;">
+                    <li><strong>Highest Performing:</strong> Year 2 leads with 6.16 overall score (n=735 students)</li>
+                    <li><strong>Development Focus:</strong> Year 1 shows opportunity for targeted support at 5.91 (n=1045 students)</li>
+                    <li><strong>Cohort Planning:</strong> Use these baseline differences to tailor intervention strategies by year group as students progress through Cycle 2 and 3</li>
+                </ul>
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #dc143c; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                STATEMENT LEVEL ANALYSIS
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>📝 VESPA Statement Analysis - Baseline</h2>
+            <p style="margin-bottom: 20px;">
+                Detailed analysis of individual VESPA statement responses reveals specific strengths and development areas.
+                Each statement is scored on a scale where higher scores indicate stronger agreement/engagement.
+            </p>
+            
+            <div style="margin-top: 50px; padding: 30px; background: linear-gradient(to right, #f8f9fa, #ffffff); border-radius: 12px; border: 1px solid #e9ecef;">
+                <h3 style="color: #2c3e50; margin-bottom: 25px; font-size: 1.6em;">Statement Agreement Analysis</h3>
+                <p style="color: #666; margin-bottom: 30px;">Analysis of which statements students most and least agree with in the baseline assessment.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div style="background: #fff; padding: 25px; border-radius: 10px; border: 2px solid #28a745;">
+                        <h4 style="color: #28a745; margin-bottom: 20px; font-size: 1.2em;">Top 5 - Students Strongly Agree</h4>
+                        <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                            
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I know what grades I want to achieve</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.25 | Category: Vision | n=1780
+                                <br>Variance: 0.65 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I like hearing feedback about how I can improve</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.13 | Category: Attitude | n=1780
+                                <br>Variance: 0.71 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I enjoy learning new things </strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.09 | Category: Vision | n=1780
+                                <br>Variance: 0.59 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I am a hard working student</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.07 | Category: Effort | n=1780
+                                <br>Variance: 0.60 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I strive to achieve the goals I set for myself</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.07 | Category: Vision | n=1780
+                                <br>Variance: 0.62 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        </ol>
+                    </div>
+                    
+                    <div style="background: #fff; padding: 25px; border-radius: 10px; border: 2px solid #dc3545;">
+                        <h4 style="color: #dc3545; margin-bottom: 20px; font-size: 1.2em;">Bottom 5 - Development Opportunities</h4>
+                        <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                            
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I use all my independent study time effectively</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 3.25 | Category: Effort | n=1780
+                                <br>Variance: 0.87 (Moderate - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I spread out my revision,  rather than cramming at the last minute.</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 3.22 | Category: Practice | n=1780
+                                <br>Variance: 1.12 (Moderate - Mixed responses)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>When revising I mix different kinds of topics/subjects in one study session</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 3.02 | Category: Practice | n=1780
+                                <br>Variance: 1.18 (Moderate - Mixed responses)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I study by explaining difficult topics outloud</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 2.91 | Category: Practice | n=1780
+                                <br>Variance: 1.30 (Moderate - Mixed responses)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>When revising, I work under timed conditions answering exam-style questions</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 2.87 | Category: Practice | n=1780
+                                <br>Variance: 1.16 (Moderate - Mixed responses)
+                            </span>
+                        </li>
+
+                        </ol>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">Interpretation Guide</h4>
+                    <p style="margin: 0 0 10px 0; font-size: 0.95em; color: #555;">
+                        <strong>Mean Scores:</strong> Statements range from 1-5. Scores above 4.0 indicate strong agreement, 
+                        scores between 3.0-4.0 show moderate agreement, and scores below 3.0 suggest areas where students lack confidence 
+                        or need additional support.
+                    </p>
+                    <p style="margin: 0; font-size: 0.95em; color: #555;">
+                        <strong>Variance:</strong> Measures how spread out student responses are. <em>Low variance</em> (below 0.8) means 
+                        most students agree and responses are consistent - ideal for building on strengths or addressing common challenges. 
+                        <em>High variance</em> (above 1.5) indicates mixed responses where some students strongly agree while others don't - 
+                        suggesting differentiated support may be needed. <em>Moderate variance</em> (0.8-1.5) shows typical spread in student experiences.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="footer">
+            <p>© 2024 VESPA Education Analytics | Hartpury University - Confidential Report</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Cycle 1 Baseline | Academic Year 2024/25</p>
+        </div>
+
+    </div>
+</body>
+</html>
