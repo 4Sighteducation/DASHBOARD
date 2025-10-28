@@ -59,7 +59,7 @@ def load_establishment_mapping():
     establishments = supabase.table('establishments').select('id,knack_id,name').execute()
     mapping = {est['knack_id']: est for est in establishments.data}
     
-    logging.info(f"✅ Loaded {len(mapping)} establishments")
+    logging.info(f"OK - Loaded {len(mapping)} establishments")
     return mapping
 
 def load_and_filter_data():
@@ -79,7 +79,7 @@ def load_and_filter_data():
             logging.info(f"  Loaded {total_rows:,} rows...")
     
     df = pd.concat(chunks, ignore_index=True)
-    logging.info(f"✅ Total records: {len(df):,}")
+    logging.info(f"OK - Total records: {len(df):,}")
     
     # Convert dates
     df['created_date'] = pd.to_datetime(df['created'], errors='coerce')
@@ -90,7 +90,7 @@ def load_and_filter_data():
         (df['created_date'] <= '2025-08-31')
     ].copy()
     
-    logging.info(f"✅ Filtered to {len(archive_data):,} records from 2024-2025")
+    logging.info(f"OK - Filtered to {len(archive_data):,} records from 2024-2025")
     
     return archive_data
 
@@ -209,7 +209,7 @@ def import_students(data, establishment_mapping):
             logging.error(f"Error importing final batch: {e}")
             stats['errors'] += len(students_to_import)
     
-    logging.info(f"\n✅ Students Import Complete:")
+    logging.info(f"\nOK - Students Import Complete:")
     logging.info(f"   New: {stats['new']}")
     logging.info(f"   Updated: {stats['updated']}")
     logging.info(f"   Skipped: {stats['skipped']}")
@@ -244,7 +244,7 @@ def get_student_mapping():
         if len(batch.data) < page_size:
             break
     
-    logging.info(f"✅ Loaded {len(student_map)} student mappings")
+    logging.info(f"OK - Loaded {len(student_map)} student mappings")
     return student_map
 
 def import_vespa_scores(data, student_map):
@@ -343,7 +343,7 @@ def import_vespa_scores(data, student_map):
             logging.error(f"Error importing final scores batch: {e}")
             stats['errors'] += len(scores_to_import)
     
-    logging.info(f"\n✅ VESPA Scores Import Complete:")
+    logging.info(f"\nOK - VESPA Scores Import Complete:")
     logging.info(f"   Imported: {stats['imported']}")
     logging.info(f"   Skipped: {stats['skipped']}")
     logging.info(f"   Errors: {stats['errors']}")
@@ -356,7 +356,7 @@ def calculate_statistics(values):
         return None
     
     values = [v for v in values if pd.notna(v) and v != '']
-    values = pd.to_numeric(values, errors='coerce').dropna()
+    values = pd.Series(pd.to_numeric(values, errors='coerce')).dropna().values
     
     if len(values) == 0:
         return None
@@ -405,7 +405,7 @@ def calculate_and_import_statistics():
         if len(batch.data) < page_size:
             break
     
-    logging.info(f"✅ Loaded {len(all_scores):,} VESPA scores")
+    logging.info(f"OK - Loaded {len(all_scores):,} VESPA scores")
     
     # Calculate school statistics
     school_stats = []
@@ -461,7 +461,7 @@ def calculate_and_import_statistics():
                 on_conflict='establishment_id,cycle,academic_year,element'
             ).execute()
         
-        logging.info(f"✅ Imported {len(school_stats)} school statistics")
+        logging.info(f"OK - Imported {len(school_stats)} school statistics")
     
     # Calculate national statistics
     national_stats = []
@@ -502,7 +502,7 @@ def calculate_and_import_statistics():
             on_conflict='cycle,academic_year,element'
         ).execute()
         
-        logging.info(f"✅ Imported {len(national_stats)} national statistics")
+        logging.info(f"OK - Imported {len(national_stats)} national statistics")
     
     return len(school_stats), len(national_stats)
 
@@ -513,21 +513,21 @@ def verify_import():
     # Check students
     students = supabase.table('students').select('*', count='exact')\
         .eq('academic_year', ARCHIVE_YEAR).execute()
-    logging.info(f"✅ Students for {ARCHIVE_YEAR}: {students.count}")
+    logging.info(f"OK - Students for {ARCHIVE_YEAR}: {students.count}")
     
     # Check VESPA scores
     scores = supabase.table('vespa_scores').select('*', count='exact')\
         .eq('academic_year', ARCHIVE_YEAR).execute()
-    logging.info(f"✅ VESPA scores for {ARCHIVE_YEAR}: {scores.count}")
+    logging.info(f"OK - VESPA scores for {ARCHIVE_YEAR}: {scores.count}")
     
     # Check statistics
     school_stats = supabase.table('school_statistics').select('*', count='exact')\
         .eq('academic_year', ARCHIVE_YEAR).execute()
-    logging.info(f"✅ School statistics: {school_stats.count}")
+    logging.info(f"OK - School statistics: {school_stats.count}")
     
     national_stats = supabase.table('national_statistics').select('*', count='exact')\
         .eq('academic_year', ARCHIVE_YEAR).execute()
-    logging.info(f"✅ National statistics: {national_stats.count}")
+    logging.info(f"OK - National statistics: {national_stats.count}")
 
 def main():
     """Main import process"""
@@ -612,4 +612,13 @@ Next Steps:
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
 
