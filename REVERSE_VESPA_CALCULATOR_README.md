@@ -29,7 +29,32 @@ Based on your algorithms:
 
 ## Usage
 
-### Basic Usage
+### Method 1: Import from CSV (RECOMMENDED)
+
+If you have a CSV file with VESPA scores:
+
+```bash
+python csv_to_knack_importer.py
+```
+
+This will:
+1. Read your CSV with VESPA scores
+2. Generate question responses
+3. Create Knack-ready import files
+
+See [CSV_IMPORT_GUIDE.md](CSV_IMPORT_GUIDE.md) for detailed instructions.
+
+### Method 2: Direct from Knack (Automated)
+
+If VESPA scores are already in Knack Object_10:
+
+```bash
+python knack_vespa_automation.py
+```
+
+This reads from Object_10 and writes directly to Object_29.
+
+### Method 3: Programmatic (Advanced)
 
 ```python
 from reverse_vespa_calculator import ReverseVESPACalculator
@@ -54,11 +79,6 @@ student = calculator.generate_student_record(desired_scores, "John Doe")
 1. **Test the calculator**:
    ```bash
    python reverse_vespa_calculator.py
-   ```
-
-2. **Add students without surveys**:
-   ```bash
-   python add_missing_students.py
    ```
 
 ## Generation Methods

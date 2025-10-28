@@ -7251,15 +7251,24 @@ def fetch_comparison_data(establishment_id, report_type, config, filters):
         if not SUPABASE_ENABLED:
             raise ApiError("Supabase not configured", 503)
             
+        # Log the original establishment ID
+        app.logger.info(f"Original establishment_id: {establishment_id}")
+        
         # Convert Knack ID to UUID if needed
         if establishment_id and not establishment_id.startswith('00000000'):
-            establishment_id = convert_knack_id_to_uuid(establishment_id)
+            converted_id = convert_knack_id_to_uuid(establishment_id)
+            app.logger.info(f"Converted {establishment_id} to {converted_id}")
+            establishment_id = converted_id
+        
+        app.logger.info(f"Final establishment_id to use: {establishment_id}")
         
         # Import QLA module
         from qla_analysis import fetch_question_level_data
         
         # Get current academic year if not specified
+        # Default to 2024/2025 which has data
         current_academic_year = config.get('academicYear', '2024/2025')
+        app.logger.info(f"Using academic year: {current_academic_year}")
             
         if report_type == 'cycle_vs_cycle':
             # Compare cycles within same or different academic years
@@ -7310,6 +7319,53 @@ def fetch_comparison_data(establishment_id, report_type, config, filters):
                 supabase_client, establishment_id, 'year_group_vs_year_group',
                 {'yearGroup1': year_group1, 'yearGroup2': year_group2, 'cycle': cycle, 'academicYear': academic_year}
             )
+            
+            return data
+            
+        elif report_type == 'faculty_vs_faculty':
+            # Compare faculties
+            faculty1 = config.get('faculty1')
+            faculty2 = config.get('faculty2')
+            cycle = int(config.get('cycle', 1))
+            academic_year = config.get('academicYear', current_academic_year)
+            
+            data = {}
+            
+            app.logger.info(f"Comparing faculties: {faculty1} vs {faculty2}")
+            
+            # Fetch data for each faculty
+            data[f'faculty_{faculty1}'] = fetch_faculty_data(
+                establishment_id, faculty1, cycle, academic_year
+            )
+            data[f'faculty_{faculty2}'] = fetch_faculty_data(
+                establishment_id, faculty2, cycle, academic_year
+            )
+            
+            # Add QLA data if needed
+            data['qla_data'] = fetch_question_level_data(
+                supabase_client, establishment_id, 'faculty_vs_faculty',
+                {'faculty1': faculty1, 'faculty2': faculty2, 'cycle': cycle, 'academicYear': academic_year}
+            )
+            
+            return data
+            
+        elif report_type == 'faculty_progression':
+            # Track a single faculty's progression over time
+            faculty = config.get('faculty')
+            academic_years = config.get('academicYears', [current_academic_year])
+            cycles = config.get('cycles', [1, 2, 3])
+            
+            data = {}
+            
+            app.logger.info(f"Tracking faculty {faculty} progression across years: {academic_years}")
+            
+            # Fetch data for each year/cycle combination
+            for year in academic_years:
+                for cycle in cycles:
+                    key = f'faculty_{faculty}_year_{year.replace("/", "_")}_cycle_{cycle}'
+                    data[key] = fetch_faculty_data(
+                        establishment_id, faculty, cycle, year
+                    )
             
             return data
             
@@ -7486,49 +7542,50 @@ def fetch_comparison_data(establishment_id, report_type, config, filters):
 def fetch_cycle_data(establishment_id, cycle, academic_year):
     """Fetch VESPA data for a specific cycle and academic year"""
     try:
-        # Get students for this establishment and academic year
+        app.logger.info(f"fetch_cycle_data called: establishment={establishment_id}, cycle={cycle}, year={academic_year}")
+        
+        # Get students for this establishment
         students_query = supabase_client.table('students')\
             .select('id')\
             .eq('establishment_id', establishment_id)
         
-        # Only filter by academic year if provided
+        # Also filter students by academic year if provided
         if academic_year:
-            # First check vespa_scores for academic year data
-            vespa_result = supabase_client.table('vespa_scores')\
+            students_query = students_query.eq('academic_year', academic_year)
+        
+        students_result = students_query.execute()
+        student_ids = [s['id'] for s in students_result.data] if students_result.data else []
+        
+        app.logger.info(f"Found {len(student_ids)} students for establishment {establishment_id}")
+        
+        if not student_ids:
+            app.logger.warning(f"No students found for establishment {establishment_id}")
+            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}, 'academic_year': academic_year}
+        
+        # Get vespa scores for these students
+        scores = []
+        BATCH_SIZE = 50
+        
+        for i in range(0, len(student_ids), BATCH_SIZE):
+            batch_ids = student_ids[i:i + BATCH_SIZE]
+            
+            # Build query for this batch
+            vespa_query = supabase_client.table('vespa_scores')\
                 .select('*')\
-                .eq('cycle', cycle)\
-                .eq('academic_year', academic_year)\
-                .execute()
+                .in_('student_id', batch_ids)\
+                .eq('cycle', cycle)
             
-            if vespa_result.data:
-                # Filter to only this establishment's students
-                students_result = students_query.execute()
-                student_ids = [s['id'] for s in students_result.data] if students_result.data else []
-                
-                # Filter scores to only include this establishment's students
-                scores = [s for s in vespa_result.data if s['student_id'] in student_ids]
-            else:
-                scores = []
-        else:
-            # Get all students for establishment
-            students_result = students_query.execute()
-            student_ids = [s['id'] for s in students_result.data] if students_result.data else []
+            # Add academic year filter if provided
+            if academic_year:
+                vespa_query = vespa_query.eq('academic_year', academic_year)
             
-            # Get vespa scores for these students
-            if student_ids:
-                scores = []
-                BATCH_SIZE = 50
-                for i in range(0, len(student_ids), BATCH_SIZE):
-                    batch_ids = student_ids[i:i + BATCH_SIZE]
-                    batch_result = supabase_client.table('vespa_scores')\
-                        .select('*')\
-                        .in_('student_id', batch_ids)\
-                        .eq('cycle', cycle)\
-                        .execute()
-                    if batch_result.data:
-                        scores.extend(batch_result.data)
-            else:
-                scores = []
+            batch_result = vespa_query.execute()
+            
+            if batch_result.data:
+                scores.extend(batch_result.data)
+                app.logger.info(f"Batch {i//BATCH_SIZE + 1}: Found {len(batch_result.data)} scores")
+        
+        app.logger.info(f"Total vespa_scores found: {len(scores)} for cycle {cycle}, year {academic_year}")
         
         if scores:
             # Calculate statistics
@@ -7563,6 +7620,76 @@ def fetch_cycle_data(establishment_id, cycle, academic_year):
             
     except Exception as e:
         app.logger.error(f"Failed to fetch cycle data: {e}")
+        app.logger.error(f"Error details: {traceback.format_exc()}")
+        return {
+            'mean': 0,
+            'std': 0,
+            'count': 0,
+            'vespa_breakdown': {},
+            'academic_year': academic_year,
+            'error': str(e)
+        }
+
+def fetch_faculty_data(establishment_id, faculty, cycle, academic_year):
+    """Fetch VESPA data for a specific faculty"""
+    try:
+        app.logger.info(f"fetch_faculty_data called: establishment={establishment_id}, faculty={faculty}, cycle={cycle}, year={academic_year}")
+        
+        # Get students for this faculty
+        students_query = supabase_client.table('students')\
+            .select('id')\
+            .eq('establishment_id', establishment_id)\
+            .eq('faculty', faculty)
+        
+        # Filter by academic year if provided
+        if academic_year:
+            students_query = students_query.eq('academic_year', academic_year)
+            
+        students_result = students_query.execute()
+        student_ids = [s['id'] for s in students_result.data] if students_result.data else []
+        
+        app.logger.info(f"Found {len(student_ids)} students in faculty {faculty}")
+        
+        if not student_ids:
+            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}, 'faculty': faculty}
+        
+        # Get vespa scores
+        vespa_query = supabase_client.table('vespa_scores')\
+            .select('*')\
+            .in_('student_id', student_ids)\
+            .eq('cycle', cycle)
+        
+        if academic_year:
+            vespa_query = vespa_query.eq('academic_year', academic_year)
+            
+        vespa_result = vespa_query.execute()
+        scores = vespa_result.data if vespa_result.data else []
+        
+        app.logger.info(f"Found {len(scores)} scores for faculty {faculty}")
+        
+        if scores:
+            # Calculate statistics
+            overall_scores = [s['overall'] for s in scores if s.get('overall') is not None]
+            
+            return {
+                'mean': float(np.mean(overall_scores)) if overall_scores else 0,
+                'std': float(np.std(overall_scores)) if overall_scores else 0,
+                'count': len(overall_scores),
+                'vespa_breakdown': {
+                    'vision': float(np.mean([s['vision'] for s in scores if s.get('vision') is not None])) if scores else 0,
+                    'effort': float(np.mean([s['effort'] for s in scores if s.get('effort') is not None])) if scores else 0,
+                    'systems': float(np.mean([s['systems'] for s in scores if s.get('systems') is not None])) if scores else 0,
+                    'practice': float(np.mean([s['practice'] for s in scores if s.get('practice') is not None])) if scores else 0,
+                    'attitude': float(np.mean([s['attitude'] for s in scores if s.get('attitude') is not None])) if scores else 0
+                },
+                'faculty': faculty,
+                'academic_year': academic_year
+            }
+        else:
+            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}, 'faculty': faculty}
+            
+    except Exception as e:
+        app.logger.error(f"Failed to fetch faculty data: {e}")
         return {}
 
 def fetch_year_group_data(establishment_id, year_group, cycle, academic_year):
@@ -7574,6 +7701,10 @@ def fetch_year_group_data(establishment_id, year_group, cycle, academic_year):
             .eq('establishment_id', establishment_id)\
             .eq('year_group', year_group)
         
+        # Filter by academic year if provided
+        if academic_year:
+            students_query = students_query.eq('academic_year', academic_year)
+            
         students_result = students_query.execute()
         student_ids = [s['id'] for s in students_result.data] if students_result.data else []
         
