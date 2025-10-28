@@ -617,16 +617,11 @@ def sync_students_and_vespa_scores():
                             logging.info(f"Processing batch of {len(unique_batch)} VESPA scores (deduplicated from {len(vespa_batch)})...")
                             
                             # Use the appropriate constraint
-                            if use_new_constraint:
-                                supabase.table('vespa_scores').upsert(
-                                    unique_batch,
-                                    on_conflict='student_id,cycle,academic_year'
-                                ).execute()
-                            else:
-                                supabase.table('vespa_scores').upsert(
-                                    unique_batch,
-                                    on_conflict='student_id,cycle'
-                                ).execute()
+                            # FIXED: Always use new constraint (database updated)
+                            supabase.table('vespa_scores').upsert(
+                                unique_batch,
+                                on_conflict='student_id,cycle,academic_year'
+                            ).execute()
                             scores_synced += len(unique_batch)
                             vespa_batch = []
                         
@@ -681,16 +676,11 @@ def sync_students_and_vespa_scores():
         logging.info(f"Processing final batch of {len(unique_batch)} VESPA scores (deduplicated from {len(vespa_batch)})...")
         
         # Use the appropriate constraint
-        if use_new_constraint:
-            supabase.table('vespa_scores').upsert(
-                unique_batch,
-                on_conflict='student_id,cycle,academic_year'
-            ).execute()
-        else:
-            supabase.table('vespa_scores').upsert(
-                unique_batch,
-                on_conflict='student_id,cycle'
-            ).execute()
+        # FIXED: Always use new constraint (database updated)
+        supabase.table('vespa_scores').upsert(
+            unique_batch,
+            on_conflict='student_id,cycle,academic_year'
+        ).execute()
         scores_synced += len(unique_batch)
     
     # Get final counts
