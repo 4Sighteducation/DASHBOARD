@@ -12,10 +12,13 @@ import json
 def run_sync():
     """Run the sync script and capture output"""
     try:
-        # Run sync script
+        print("Starting sync... (this will take 30-60 minutes)")
+        print("Progress will be shown below:\n")
+        
+        # Run sync script - DON'T capture output so user can see progress
         result = subprocess.run(
             ['python', 'sync_knack_to_supabase.py'],
-            capture_output=True,
+            capture_output=False,  # Changed to False - show real-time output
             text=True
         )
         
