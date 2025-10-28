@@ -6,6 +6,10 @@ from datetime import datetime, date, timedelta # Added timedelta
 from pathlib import Path # For robust path handling to JSON files
 import math # For statistical calculations
 from supabase import create_client, Client
+from dotenv import load_dotenv
+
+# Load environment variables from .env file (for local development)
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
