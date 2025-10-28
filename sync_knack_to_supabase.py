@@ -1825,63 +1825,137 @@ def refresh_materialized_views():
         return True
 
 def generate_sync_report():
-    """Generate comprehensive sync report"""
+    """Generate comprehensive sync report with enhanced details"""
     report_lines = []
-    report_lines.append("=" * 60)
-    report_lines.append("VESPA SYNC REPORT")
-    report_lines.append("=" * 60)
-    report_lines.append(f"Date: {sync_report['start_time'].strftime('%Y-%m-%d %H:%M:%S') if sync_report['start_time'] else 'N/A'}")
+    
+    # Header
+    report_lines.append("=" * 80)
+    report_lines.append("VESPA SYNC REPORT - ENHANCED")
+    report_lines.append("=" * 80)
+    report_lines.append(f"Date: {sync_report['start_time'].strftime('%Y-%m-%d %H:%M:%S UTC') if sync_report['start_time'] else 'N/A'}")
     
     if sync_report['start_time'] and sync_report['end_time']:
         duration = sync_report['end_time'] - sync_report['start_time']
         report_lines.append(f"Duration: {duration}")
+        report_lines.append(f"Script Version: 2.0 (Multi-Year Support)")
     
-    report_lines.append("\n=== TABLE SUMMARY ===")
+    # Executive Summary
+    report_lines.append("\n" + "=" * 80)
+    report_lines.append("EXECUTIVE SUMMARY")
+    report_lines.append("=" * 80)
+    
+    total_new = sum(m.get('new_records', 0) for m in sync_report['tables'].values())
+    total_errors = sum(m.get('errors', 0) for m in sync_report['tables'].values())
+    total_skipped = sum(m.get('skipped', 0) for m in sync_report['tables'].values())
+    
+    report_lines.append(f"Total New Records: {total_new:,}")
+    report_lines.append(f"Total Errors: {total_errors}")
+    report_lines.append(f"Total Skipped: {total_skipped:,}")
+    
+    if total_errors == 0 and total_skipped < 1000:
+        report_lines.append("Overall Status: SUCCESS (All systems operational)")
+    elif total_errors > 0:
+        report_lines.append(f"Overall Status: PARTIAL SUCCESS ({total_errors} errors encountered)")
+    else:
+        report_lines.append(f"Overall Status: SUCCESS WITH WARNINGS ({total_skipped:,} records skipped)")
+    
+    # Detailed Table Summary
+    report_lines.append("\n" + "=" * 80)
+    report_lines.append("DETAILED TABLE SUMMARY")
+    report_lines.append("=" * 80)
     
     for table_name, metrics in sync_report['tables'].items():
-        report_lines.append(f"\n{table_name.upper()}:")
-        report_lines.append(f"  Records before: {metrics['records_before']:,}")
-        report_lines.append(f"  Records after: {metrics['records_after']:,}")
-        report_lines.append(f"  New records: {metrics['new_records']:,}")
+        report_lines.append(f"\n{table_name.upper()}")
+        report_lines.append("-" * 80)
+        report_lines.append(f"  Records Before Sync: {metrics.get('records_before', 0):,}")
+        report_lines.append(f"  Records After Sync:  {metrics.get('records_after', 0):,}")
+        report_lines.append(f"  New/Updated:         {metrics.get('new_records', 0):,}")
+        
+        if 'updated_records' in metrics:
+            report_lines.append(f"  Updated:             {metrics['updated_records']:,}")
+        
         if 'skipped' in metrics and metrics['skipped'] > 0:
-            report_lines.append(f"  Skipped: {metrics['skipped']:,}")
-        report_lines.append(f"  Errors: {metrics['errors']}")
+            report_lines.append(f"  Skipped:             {metrics['skipped']:,}")
+            skipped_pct = (metrics['skipped'] / (metrics['new_records'] + metrics['skipped'])) * 100 if (metrics['new_records'] + metrics['skipped']) > 0 else 0
+            report_lines.append(f"  Skip Rate:           {skipped_pct:.1f}%")
         
-        if 'start_time' in metrics and 'end_time' in metrics:
+        if 'duplicates_handled' in metrics and metrics['duplicates_handled'] > 0:
+            report_lines.append(f"  Duplicates Removed:  {metrics['duplicates_handled']:,}")
+        
+        report_lines.append(f"  Errors:              {metrics.get('errors', 0)}")
+        
+        if 'start_time' in metrics and 'end_time' in metrics and metrics['end_time']:
             table_duration = metrics['end_time'] - metrics['start_time']
-            report_lines.append(f"  Duration: {table_duration}")
+            report_lines.append(f"  Processing Time:     {table_duration}")
         
-        # Status indicator
-        if metrics['errors'] == 0:
-            report_lines.append(f"  Status: ✓ OK")
+        # Enhanced status
+        if metrics.get('errors', 0) == 0:
+            if metrics.get('skipped', 0) < 100:
+                report_lines.append(f"  Status: OK - Excellent")
+            elif metrics.get('skipped', 0) < 1000:
+                report_lines.append(f"  Status: OK - Good")
+            else:
+                report_lines.append(f"  Status: OK - Some skips")
+        elif metrics.get('errors', 0) < 10:
+            report_lines.append(f"  Status: WARNING - Minor issues")
         else:
-            report_lines.append(f"  Status: ⚠ WARNINGS")
+            report_lines.append(f"  Status: ERROR - Needs attention")
     
-    # Operations summary
+    # Operations summary with more detail
     if 'operations' in sync_report and sync_report['operations']:
-        report_lines.append("\n=== OPERATIONS ===")
+        report_lines.append("\n" + "=" * 80)
+        report_lines.append("OPERATIONS PERFORMED")
+        report_lines.append("=" * 80)
+        
         for op_name, op_data in sync_report['operations'].items():
             report_lines.append(f"\n{op_name.replace('_', ' ').title()}:")
-            report_lines.append(f"  Status: {op_data.get('status', 'unknown')}")
+            report_lines.append(f"  Status: {op_data.get('status', 'unknown').upper()}")
             if 'records_updated' in op_data:
-                report_lines.append(f"  Records updated: {op_data['records_updated']:,}")
+                report_lines.append(f"  Records Updated: {op_data['records_updated']:,}")
             if 'eri_records' in op_data:
-                report_lines.append(f"  ERI records calculated: {op_data['eri_records']}")
-            if 'start_time' in op_data and 'end_time' in op_data:
-                op_duration = op_data['end_time'] - op_data['start_time']
-                report_lines.append(f"  Duration: {op_duration}")
+                report_lines.append(f"  ERI Records: {op_data['eri_records']}")
+            if 'details' in op_data:
+                report_lines.append(f"  Details: {op_data['details']}")
     
-    # Issues requiring attention
+    # Critical Issues
     if sync_report['warnings'] or sync_report['errors']:
-        report_lines.append("\n=== ISSUES REQUIRING ATTENTION ===")
-        for warning in sync_report['warnings']:
-            report_lines.append(f"WARNING: {warning}")
-        for error in sync_report['errors'][:10]:  # Show first 10 errors
-            report_lines.append(f"ERROR: {error}")
-        if len(sync_report['errors']) > 10:
-            report_lines.append(f"... and {len(sync_report['errors']) - 10} more errors")
+        report_lines.append("\n" + "=" * 80)
+        report_lines.append("ISSUES REQUIRING ATTENTION")
+        report_lines.append("=" * 80)
+        
+        if sync_report['warnings']:
+            report_lines.append("\nWARNINGS:")
+            for warning in sync_report['warnings']:
+                report_lines.append(f"  - {warning}")
+        
+        if sync_report['errors']:
+            report_lines.append("\nERRORS (First 10):")
+            for error in sync_report['errors'][:10]:
+                report_lines.append(f"  - {error}")
+            if len(sync_report['errors']) > 10:
+                report_lines.append(f"\n  ... and {len(sync_report['errors']) - 10} more errors (check log file)")
+    else:
+        report_lines.append("\n" + "=" * 80)
+        report_lines.append("NO ISSUES - SYNC COMPLETED SUCCESSFULLY!")
+        report_lines.append("=" * 80)
     
-    report_lines.append("\n=== END OF REPORT ===")
+    # Recommendations
+    report_lines.append("\n" + "=" * 80)
+    report_lines.append("RECOMMENDATIONS")
+    report_lines.append("=" * 80)
+    
+    if total_errors == 0 and total_skipped < 100:
+        report_lines.append("  All systems operating optimally. No action required.")
+    elif total_skipped > 5000:
+        report_lines.append("  HIGH SKIP RATE: Investigate missing student links or constraint issues.")
+    elif total_errors > 100:
+        report_lines.append("  HIGH ERROR COUNT: Check log file for details and contact support.")
+    else:
+        report_lines.append("  Minor issues detected. Monitor next sync run.")
+    
+    report_lines.append("\n" + "=" * 80)
+    report_lines.append("END OF REPORT")
+    report_lines.append("=" * 80)
     
     return "\n".join(report_lines)
 
