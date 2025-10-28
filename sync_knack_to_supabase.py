@@ -3,6 +3,22 @@
 Sync script to migrate data from Knack to Supabase
 This script fetches all data from Knack and populates the Supabase database
 Enhanced with batch processing, resume capability, and timeout handling
+
+VERSION: 2.0 - FIXED (October 28, 2025)
+===========================================================
+CRITICAL FIXES APPLIED:
+1. Students upsert: Changed to on_conflict='email,academic_year' (2 locations)
+2. Question responses: Added academic_year field calculation from field_856
+3. Question responses upsert: Changed to include academic_year (2 locations)
+4. Fallback logic: Uses 'created' date before current date
+5. Multi-year support: All constraints match database schema
+
+This version properly handles:
+- ✅ Same student across multiple academic years
+- ✅ Both workflows (keep & refresh / delete & re-upload)
+- ✅ Completion date-based academic year assignment
+- ✅ Historical data protection
+===========================================================
 """
 
 import os
@@ -428,20 +444,30 @@ def sync_students_and_vespa_scores():
                     existing_student_id = student_email_map.get(student_email.lower())
                     
                     # Calculate academic year for this student
-                    # Use completion date if available, otherwise use current date
+                    # Priority: 1) completion date, 2) created date, 3) current date
                     completion_date_raw = record.get('field_855')
+                    created_date_raw = record.get('created')
+                    
                     if completion_date_raw and completion_date_raw.strip():
+                        # Use completion date if available
                         academic_year = calculate_academic_year(
                             completion_date_raw,
                             establishment_id,
-                            is_australian=False  # UK schools use August cutoff
+                            is_australian=False
+                        )
+                    elif created_date_raw:
+                        # FIX: Use created date as fallback (better than current date)
+                        academic_year = calculate_academic_year(
+                            created_date_raw,
+                            establishment_id,
+                            is_australian=False
                         )
                     else:
-                        # No completion date, use current academic year
+                        # Last resort: use current academic year
                         academic_year = calculate_academic_year(
                             datetime.now().strftime('%d/%m/%Y'),
                             establishment_id,
-                            is_australian=False  # UK schools use August cutoff
+                            is_australian=False
                         )
                     
                     student_data = {
@@ -467,10 +493,10 @@ def sync_students_and_vespa_scores():
                     # Process batch if it reaches the limit
                     if len(student_batch) >= BATCH_SIZES['students']:
                         logging.info(f"Processing batch of {len(student_batch)} students...")
-                        # Use email as conflict resolution first, then knack_id
+                        # FIX: Use email AND academic_year to match database constraint
                         result = supabase.table('students').upsert(
                             student_batch,
-                            on_conflict='email'  # Changed from knack_id to email
+                            on_conflict='email,academic_year'  # FIXED: Match UNIQUE(email, academic_year)
                         ).execute()
                         
                         # Update both maps with the newly inserted/updated students
@@ -621,9 +647,10 @@ def sync_students_and_vespa_scores():
     # Process any remaining students in the batch
     if student_batch:
         logging.info(f"Processing final batch of {len(student_batch)} students...")
+        # FIX: Use email AND academic_year to match database constraint
         result = supabase.table('students').upsert(
             student_batch,
-            on_conflict='email'  # Changed from knack_id to email
+            on_conflict='email,academic_year'  # FIXED: Match UNIQUE(email, academic_year)
         ).execute()
         
         # Update both maps with the newly inserted/updated students
@@ -754,6 +781,30 @@ def sync_question_responses():
                     continue
                 processed_object29_ids.add(record['id'])
                 
+                # FIX #2: Calculate academic_year for this Object_29 record
+                # Priority: 1) field_856 (completion date), 2) created date, 3) current date
+                completion_date_obj29 = record.get('field_856')
+                created_date_obj29 = record.get('created')
+                
+                if completion_date_obj29 and str(completion_date_obj29).strip():
+                    academic_year_obj29 = calculate_academic_year(
+                        completion_date_obj29,
+                        None,  # No establishment needed for year calculation
+                        is_australian=False
+                    )
+                elif created_date_obj29:
+                    academic_year_obj29 = calculate_academic_year(
+                        created_date_obj29,
+                        None,
+                        is_australian=False
+                    )
+                else:
+                    academic_year_obj29 = calculate_academic_year(
+                        datetime.now().strftime('%d/%m/%Y'),
+                        None,
+                        is_australian=False
+                    )
+                
                 # Get Object_10 connection via field_792 (email-based connection)
                 object_10_field = record.get('field_792_raw', [])
                 if object_10_field and isinstance(object_10_field, list) and len(object_10_field) > 0:
@@ -796,6 +847,7 @@ def sync_question_responses():
                                         response_data = {
                                             'student_id': student_id,
                                             'cycle': cycle,
+                                            'academic_year': academic_year_obj29,  # FIX #2: Add academic_year
                                             'question_id': q_detail['questionId'],
                                             'response_value': int_value
                                         }
@@ -821,9 +873,10 @@ def sync_question_responses():
                         sync_report['tables'][table_name]['duplicates_handled'] += duplicates_removed
                     
                     logging.info(f"Processing batch of {len(deduped_batch)} question responses...")
+                    # FIX #3: Add academic_year to match database constraint
                     supabase.table('question_responses').upsert(
                         deduped_batch,
-                        on_conflict='student_id,cycle,question_id'
+                        on_conflict='student_id,cycle,academic_year,question_id'  # FIXED
                     ).execute()
                     responses_synced += len(deduped_batch)
                     response_batch = []
@@ -848,9 +901,10 @@ def sync_question_responses():
             sync_report['tables'][table_name]['duplicates_handled'] += duplicates_removed
         
         logging.info(f"Processing final batch of {len(deduped_batch)} question responses...")
+        # FIX #3: Add academic_year to match database constraint
         supabase.table('question_responses').upsert(
             deduped_batch,
-            on_conflict='student_id,cycle,question_id'
+            on_conflict='student_id,cycle,academic_year,question_id'  # FIXED
         ).execute()
         responses_synced += len(deduped_batch)
     
