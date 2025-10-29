@@ -271,11 +271,19 @@ def sync_establishments():
                 # Try alternative fields or use a descriptive fallback
                 est_name = est.get('field_11') or est.get('identifier') or f"Establishment {est['id'][:8]}"
             
+            # Check field_3573 for Australian schools
+            is_aus_raw = est.get('field_3573_raw', '')
+            is_aus = is_aus_raw in ['True', 'Yes', 'true', 'yes', True, 1, '1']
+            
+            # Check field_3752 for use_standard_year (NULL = Yes = use standard)
+            use_standard_raw = est.get('field_3752_raw', '')
+            use_standard = None if not use_standard_raw else (use_standard_raw in ['Yes', 'yes', 'True', 'true', True, 1, '1'])
+            
             establishment_data = {
                 'knack_id': est['id'],
                 'name': est_name,
-                # Check field_3573 for Australian schools - only "True" counts
-                'is_australian': est.get('field_3573_raw', '') == 'True'
+                'is_australian': is_aus,
+                'use_standard_year': use_standard
                 # trust_id removed - needs to be handled separately as it requires UUID reference
             }
             
@@ -351,11 +359,17 @@ def sync_students_and_vespa_scores():
     students_processed = set()
     
     # Get establishment mapping first - cache this for efficiency
-    establishments = supabase.table('establishments').select('id', 'knack_id', 'is_australian').execute()
+    establishments = supabase.table('establishments').select('id', 'knack_id', 'is_australian', 'use_standard_year').execute()
     est_map = {e['knack_id']: e['id'] for e in establishments.data}
     
-    # Pre-fetch all Australian establishments to avoid repeated queries
-    australian_ests = {e['id']: e.get('is_australian', False) for e in establishments.data}
+    # Pre-fetch establishment settings to avoid repeated queries
+    est_settings = {
+        e['id']: {
+            'is_australian': e.get('is_australian', False),
+            'use_standard_year': e.get('use_standard_year')
+        } 
+        for e in establishments.data
+    }
     
     # Pre-fetch existing students to build both email -> student_id and knack_id -> student_id mappings
     logging.info("Loading existing student mappings...")
@@ -450,24 +464,22 @@ def sync_students_and_vespa_scores():
                     
                     if completion_date_raw and completion_date_raw.strip():
                         # Use completion date if available
+                        # Let function look up establishment settings (is_australian, use_standard_year)
                         academic_year = calculate_academic_year(
                             completion_date_raw,
-                            establishment_id,
-                            is_australian=False
+                            establishment_id
                         )
                     elif created_date_raw:
                         # FIX: Use created date as fallback (better than current date)
                         academic_year = calculate_academic_year(
                             created_date_raw,
-                            establishment_id,
-                            is_australian=False
+                            establishment_id
                         )
                     else:
                         # Last resort: use current academic year
                         academic_year = calculate_academic_year(
                             datetime.now().strftime('%d/%m/%Y'),
-                            establishment_id,
-                            is_australian=False
+                            establishment_id
                         )
                     
                     student_data = {
@@ -591,7 +603,8 @@ def sync_students_and_vespa_scores():
                                 'academic_year': calculate_academic_year(
                                     record.get('field_855'),
                                     establishment_id,
-                                    australian_ests.get(establishment_id, False)
+                                    est_settings.get(establishment_id, {}).get('is_australian', False),
+                                    est_settings.get(establishment_id, {}).get('use_standard_year')
                                 )
                             }
                             
@@ -776,23 +789,19 @@ def sync_question_responses():
                 completion_date_obj29 = record.get('field_856')
                 created_date_obj29 = record.get('created')
                 
+                # For Object_29, we don't have establishment_id easily available
+                # Just use UK standard for question responses (safe default)
                 if completion_date_obj29 and str(completion_date_obj29).strip():
                     academic_year_obj29 = calculate_academic_year(
-                        completion_date_obj29,
-                        None,  # No establishment needed for year calculation
-                        is_australian=False
+                        completion_date_obj29
                     )
                 elif created_date_obj29:
                     academic_year_obj29 = calculate_academic_year(
-                        created_date_obj29,
-                        None,
-                        is_australian=False
+                        created_date_obj29
                     )
                 else:
                     academic_year_obj29 = calculate_academic_year(
-                        datetime.now().strftime('%d/%m/%Y'),
-                        None,
-                        is_australian=False
+                        datetime.now().strftime('%d/%m/%Y')
                     )
                 
                 # Get Object_10 connection via field_792 (email-based connection)
@@ -953,12 +962,16 @@ def normalize_academic_year_for_benchmark(academic_year):
     
     return academic_year
 
-def calculate_academic_year(date_str, establishment_id=None, is_australian=None):
+def calculate_academic_year(date_str, establishment_id=None, is_australian=None, use_standard_year=None):
     """Calculate academic year based on date and establishment location
     
+    NEW: Supports use_standard_year flag for Australian schools that want UK calculation
+    
     Returns academic year in format YYYY/YYYY (e.g., "2025/2026")
-    - For non-Australian schools: August 1st cutoff (Aug-Jul academic year)
-    - For Australian schools: January 1st cutoff (Jan-Dec academic year)
+    Priority:
+    1. If use_standard_year is YES or NULL: Use UK August cutoff
+    2. If use_standard_year is NO and is_australian: Use calendar year
+    3. Otherwise: UK August cutoff
     """
     if not date_str:
         # If no date provided, use current date
@@ -975,29 +988,36 @@ def calculate_academic_year(date_str, establishment_id=None, is_australian=None)
                 logging.error(f"Could not parse date: {date_str}")
                 date = datetime.now()
     
-    # Check if Australian school
-    if is_australian is None and establishment_id:
-        # Only do API call if is_australian not provided (backward compatibility)
+    # Check establishment settings
+    if (is_australian is None or use_standard_year is None) and establishment_id:
         try:
-            est = supabase.table('establishments').select('is_australian').eq('id', establishment_id).execute()
+            est = supabase.table('establishments').select('is_australian', 'use_standard_year').eq('id', establishment_id).execute()
             if est.data and len(est.data) > 0:
-                is_australian = est.data[0].get('is_australian', False)
-            else:
-                is_australian = False
+                if is_australian is None:
+                    is_australian = est.data[0].get('is_australian', False)
+                if use_standard_year is None:
+                    use_standard_year = est.data[0].get('use_standard_year')
         except Exception as e:
-            logging.warning(f"Could not determine if establishment is Australian: {e}")
-            is_australian = False
+            logging.warning(f"Could not determine establishment settings: {e}")
+            if is_australian is None:
+                is_australian = False
     elif is_australian is None:
         is_australian = False
     
-    if is_australian:
-        # Australian: Calendar year (Jan-Dec)
-        # Academic year 2025 = "2025/2025"
+    # Priority: use_standard_year flag overrides is_australian
+    # NULL or YES = use standard UK calculation
+    if use_standard_year is None or use_standard_year == True:
+        # Use standard UK academic year (Aug-Jul)
+        if date.month >= 8:
+            return f"{date.year}/{date.year + 1}"
+        else:
+            return f"{date.year - 1}/{date.year}"
+    elif is_australian:
+        # Australian school NOT using standard: Calendar year (Jan-Dec)
         return f"{date.year}/{date.year}"
     else:
-        # Rest of world: Academic year (Aug-Jul)
-        # August 1st is the cutoff
-        if date.month >= 8:  # August onwards
+        # UK school: Academic year (Aug-Jul)
+        if date.month >= 8:
             return f"{date.year}/{date.year + 1}"
         else:
             return f"{date.year - 1}/{date.year}"
