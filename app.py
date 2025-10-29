@@ -379,6 +379,28 @@ def convert_academic_year_format(year_str, to_database=True):
     
     return year_str
 
+def strip_html_tags(text):
+    """
+    Remove HTML tags from text while preserving the content.
+    Handles both simple tags like <p> and self-closing tags.
+    
+    Args:
+        text: String that may contain HTML tags
+    
+    Returns:
+        String with HTML tags removed
+    """
+    if not text or not isinstance(text, str):
+        return text
+    
+    import re
+    # Remove HTML tags but keep the content
+    # Pattern matches: <tag>, </tag>, <tag/>, <tag attr="value">
+    clean_text = re.sub(r'<[^>]+>', '', text)
+    # Remove extra whitespace
+    clean_text = ' '.join(clean_text.split())
+    return clean_text.strip()
+
 def get_academic_year_filters(establishment_id=None, date_field='field_855', australian_field='field_3511'):
     """
     Generate academic year date filters for UK/Australian schools.
@@ -2846,7 +2868,10 @@ def get_comments_word_cloud():
             if batch_result.data:
                 for comment in batch_result.data:
                     if comment.get('comment_text'):
-                        all_comments.append(comment['comment_text'])
+                        # Clean HTML tags from comment text
+                        clean_text = strip_html_tags(comment['comment_text'])
+                        if clean_text:  # Only add if there's content after cleaning
+                            all_comments.append(clean_text)
         
         app.logger.info(f"Collected {len(all_comments)} comments")
         
@@ -3037,13 +3062,16 @@ def get_comments_themes():
             if batch_result.data:
                 for comment in batch_result.data:
                     if comment.get('comment_text'):
-                        all_comments_with_meta.append({
-                            'text': comment['comment_text'],
-                            'type': comment.get('comment_type', 'general'),
-                            'cycle': comment.get('cycle'),
-                            'yearGroup': student_year_map.get(comment['student_id'], 'Unknown'),
-                            'date': comment.get('created_at', '')[:10] if comment.get('created_at') else ''
-                        })
+                        # Clean HTML tags from comment text
+                        clean_text = strip_html_tags(comment['comment_text'])
+                        if clean_text:  # Only add if there's content after cleaning
+                            all_comments_with_meta.append({
+                                'text': clean_text,
+                                'type': comment.get('comment_type', 'general'),
+                                'cycle': comment.get('cycle'),
+                                'yearGroup': student_year_map.get(comment['student_id'], 'Unknown'),
+                                'date': comment.get('created_at', '')[:10] if comment.get('created_at') else ''
+                            })
         
         app.logger.info(f"Found {len(all_comments_with_meta)} comments for theme analysis")
         
@@ -6666,11 +6694,16 @@ def get_qla_data_query():
                 
                 for i in range(0, len(student_ids), BATCH_SIZE):
                     batch_ids = student_ids[i:i + BATCH_SIZE]
-                    responses_result = supabase_client.table('question_responses')\
+                    responses_query = supabase_client.table('question_responses')\
                         .select('question_id, response_value')\
                         .in_('student_id', batch_ids)\
-                        .eq('cycle', cycle)\
-                        .execute()
+                        .eq('cycle', cycle)
+                    
+                    # CRITICAL FIX: Add academic_year filter if provided
+                    if academic_year:
+                        responses_query = responses_query.eq('academic_year', formatted_year)
+                    
+                    responses_result = responses_query.execute()
                     filtered_responses.extend(responses_result.data)
                 
                 # Calculate statistics for filtered data
