@@ -54,10 +54,8 @@ export default function SchoolsPage() {
         setSchools(establishments)
         setFilteredSchools(establishments)
         
-        // Load basic stats for each school (current year only for performance)
-        for (const school of establishments.slice(0, 20)) {  // Load first 20 for performance
-          await loadBasicSchoolStats(school.id)
-        }
+        // Don't load stats on page load - only when clicking a school
+        // This makes page load MUCH faster
       }
     } catch (error) {
       console.error('Error loading schools:', error)
@@ -193,7 +191,7 @@ export default function SchoolsPage() {
                 <h3 className="font-semibold text-gray-800 mb-2">{school.name}</h3>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Users className="w-4 h-4" />
-                  <span>{schoolStats.get(school.id)?.totalStudents || '...'} students</span>
+                  <span>Click for details</span>
                 </div>
                 {school.is_australian && (
                   <span className="inline-block mt-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">

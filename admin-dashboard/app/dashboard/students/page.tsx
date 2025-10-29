@@ -19,7 +19,7 @@ export default function StudentsPage() {
     try {
       let query = supabase
         .from('students')
-        .select('id, email, name, academic_year, year_group, establishment_id, knack_id')
+        .select('*')
         .order('email')
         .limit(500)
 
