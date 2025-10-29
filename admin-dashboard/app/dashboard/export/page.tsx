@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Download, FileText } from 'lucide-react'
+import { Download, FileText, RefreshCw } from 'lucide-react'
 
 export default function ExportPage() {
   const [exporting, setExporting] = useState(false)
