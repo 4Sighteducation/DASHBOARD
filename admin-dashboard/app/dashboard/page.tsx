@@ -14,21 +14,38 @@ export default function DashboardHome() {
 
   async function loadDashboardStats() {
     try {
-      // Get students by year
-      const { data: students } = await supabase
-        .from('students')
-        .select('academic_year')
+      // Get ALL students with pagination (Supabase limits to 1000 by default)
+      const allStudents: any[] = []
+      let offset = 0
+      const limit = 1000
+
+      while (true) {
+        const { data: batch } = await supabase
+          .from('students')
+          .select('academic_year')
+          .range(offset, offset + limit - 1)
+
+        if (!batch || batch.length === 0) break
+
+        allStudents.push(...batch)
+        offset += limit
+
+        if (batch.length < limit) break // No more records
+      }
+
+      console.log(`Loaded ${allStudents.length} total students`)
 
       const yearCounts: any = {}
-      students?.forEach(s => {
+      allStudents.forEach(s => {
         const year = s.academic_year || 'Unknown'
         yearCounts[year] = (yearCounts[year] || 0) + 1
       })
 
-      // Get VESPA scores by year
+      // Get VESPA scores count by year (sample for performance)
       const { data: scores } = await supabase
         .from('vespa_scores')
         .select('academic_year, cycle')
+        .limit(5000)
 
       const scoreCounts: any = {}
       scores?.forEach(s => {
@@ -48,9 +65,18 @@ export default function DashboardHome() {
     return <div className="text-center py-12">Loading dashboard...</div>
   }
 
-  const chartData = Object.entries(stats.yearCounts).map(([year, count]) => ({
+  // Sort years chronologically (most recent first)
+  const sortedYears = Object.entries(stats.yearCounts)
+    .sort(([yearA], [yearB]) => {
+      // Extract first year from format "2025/2026"
+      const yearNumA = parseInt(yearA.split('/')[0])
+      const yearNumB = parseInt(yearB.split('/')[0])
+      return yearNumB - yearNumA // Descending (newest first)
+    })
+
+  const chartData = sortedYears.map(([year, count]) => ({
     year,
-    students: count
+    students: count as number
   }))
 
   return (

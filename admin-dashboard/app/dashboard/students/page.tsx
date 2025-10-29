@@ -19,24 +19,34 @@ export default function StudentsPage() {
     try {
       let query = supabase
         .from('students')
-        .select('*')
-        .order('name')
-        .limit(100)
+        .select('id, email, name, academic_year, year_group, establishment_id, knack_id')
+        .order('email')
+        .limit(500)
 
+      // Filter by year first (most selective)
       if (selectedYear !== 'All Years') {
         query = query.eq('academic_year', selectedYear)
       }
 
-      if (searchTerm) {
-        query = query.or(`email.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`)
+      // Then filter by search term if provided
+      if (searchTerm && searchTerm.length >= 2) {
+        // Use ilike for case-insensitive search
+        const searchPattern = `%${searchTerm}%`
+        query = query.or(`email.ilike.${searchPattern},name.ilike.${searchPattern}`)
       }
 
       const { data, error } = await query
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
+      
+      console.log('Search results:', data?.length || 0, 'students found')
       setStudents(data || [])
     } catch (error) {
       console.error('Error searching students:', error)
+      alert('Search failed. Check browser console for details.')
     }
     setLoading(false)
   }
@@ -76,7 +86,7 @@ export default function StudentsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && searchStudents()}
                 placeholder="Type email or name..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
               />
               <Search className="absolute right-3 top-2.5 w-5 h-5 text-gray-400" />
             </div>
@@ -89,7 +99,7 @@ export default function StudentsPage() {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
             >
               {academicYears.map(year => (
                 <option key={year} value={year}>{year}</option>
