@@ -6609,9 +6609,9 @@ def get_qla_data_query():
             # Get filtered student IDs first
             students_query = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid)
             
-            # DON'T filter by academic_year on students table - check VESPA data instead
-            # if academic_year:
-            #     students_query = students_query.eq('academic_year', academic_year)  # REMOVED - same bug
+            # FIXED: Filter by academic_year on students table first to avoid cross-year contamination
+            if academic_year:
+                students_query = students_query.eq('academic_year', formatted_year)
             
             if year_group:
                 students_query = students_query.eq('year_group', year_group)
