@@ -820,6 +820,9 @@ def sync_question_responses():
                 
                 if not student_id:
                     sync_report['tables'][table_name]['skipped'] += 1
+                    # DIAGNOSTIC: Log first 10 skipped records to understand WHY they're being skipped
+                    if sync_report['tables'][table_name]['skipped'] <= 10:
+                        logging.warning(f"SKIP #{sync_report['tables'][table_name]['skipped']}: Record {record.get('id')} - field_792_raw: {object_10_field}, extracted_knack_id: {object_10_knack_id}, in_student_map: {object_10_knack_id in student_map if object_10_knack_id else False}")
                     if sync_report['tables'][table_name]['skipped'] == 1:
                         sync_report['warnings'].append(f"Some question responses skipped due to missing student links")
                     continue
@@ -2014,8 +2017,8 @@ def main():
         if calculate_statistics():
             # Calculate question-level statistics
             calculate_question_statistics()
-            # Calculate national statistics
-            calculate_national_statistics()
+            # DISABLED: National statistics calculated separately by scheduled job
+            # calculate_national_statistics()
             # Refresh materialized views
             refresh_materialized_views()
         else:
