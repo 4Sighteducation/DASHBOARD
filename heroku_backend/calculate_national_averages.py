@@ -109,7 +109,8 @@ def get_current_academic_year_info():
         ay_start_year = current_year - 1
         ay_end_year = current_year
     
-    academic_year_str = f"{ay_start_year}-{ay_end_year}"
+    # FIXED: Use database format (YYYY/YYYY) to match rest of system
+    academic_year_str = f"{ay_start_year}/{ay_end_year}"
     # Actual start and end of the academic period
     start_date_of_ay = date(ay_start_year, 8, 1)
     end_date_of_ay = date(ay_end_year, 7, 31)
@@ -827,8 +828,8 @@ def sync_to_supabase_national_statistics(payload_for_target_object, academic_yea
     try:
         logging.info(f"Syncing national averages to Supabase for academic year {academic_year_str}")
         
-        # Convert academic year from Knack format (2024-2025) to Supabase format (2024/2025)
-        supabase_year = academic_year_str.replace('-', '/')
+        # FIXED: academic_year_str already in correct format (YYYY/YYYY)
+        supabase_year = academic_year_str
         
         # JSON statistics fields for rich data
         json_stat_fields = {
