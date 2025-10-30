@@ -6600,8 +6600,12 @@ def get_qla_data_query():
             qla_result = qla_query.execute()
             app.logger.info(f"qla_question_performance result count: {len(qla_result.data) if qla_result.data else 0}")
         
-        # If we have filters, we need to calculate filtered data
-        if year_group or group or faculty or student_id:
+        # FIX: If STILL no data in pre-aggregated tables, calculate from raw question_responses
+        # This handles the case where statistics haven't been calculated yet for new academic years
+        force_calculate_from_raw = not qla_result.data
+        
+        # If we have filters OR no pre-aggregated data, we need to calculate from raw data
+        if year_group or group or faculty or student_id or force_calculate_from_raw:
             # Get filtered student IDs first
             students_query = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid)
             
