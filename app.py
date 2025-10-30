@@ -6647,7 +6647,7 @@ def get_qla_data_query():
                     vespa_check = supabase_client.table('vespa_scores')\
                         .select('student_id')\
                         .in_('student_id', batch_ids)\
-                        .eq('academic_year', academic_year)\
+                        .eq('academic_year', formatted_year)\
                         .eq('cycle', cycle)\
                         .limit(1000)\
                         .execute()
