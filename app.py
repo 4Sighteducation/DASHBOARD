@@ -5351,26 +5351,13 @@ def get_academic_years():
                             if record['academic_year']:
                                 all_years.add(record['academic_year'])
                 
-                # Convert set to sorted list
-                years = sorted(list(all_years), reverse=True)  # Most recent first
+                # Convert set to sorted list (most recent first)
+                years = sorted(list(all_years), reverse=True)
                 
-                # Convert format from 2025/2026 to 2025-26 for frontend compatibility
-                formatted_years = []
-                for year in years:
-                    if '/' in year:
-                        # Convert 2025/2026 to 2025-26
-                        parts = year.split('/')
-                        if len(parts) == 2:
-                            formatted_years.append(f"{parts[0]}-{parts[1][-2:]}")
-                    else:
-                        # Already in correct format or keep as-is
-                        formatted_years.append(year)
-                
-                # Remove duplicates while preserving order
-                formatted_years = list(dict.fromkeys(formatted_years))
-                
-                if formatted_years:
-                    return jsonify(formatted_years)
+                # FIXED: Return database format (YYYY/YYYY) without conversion
+                # This ensures consistency between API, frontend, and database
+                if years:
+                    return jsonify(years)
         
         # Fall back to national statistics
         result = supabase_client.table('national_statistics')\
@@ -5381,26 +5368,9 @@ def get_academic_years():
         years = list(set([r['academic_year'] for r in result.data if r.get('academic_year')]))
         years.sort(reverse=True)  # Most recent first
         
-        # Convert format from 2025/2026 to 2025-26 for frontend compatibility
-        formatted_years = []
-        for year in years:
-            if '/' in year:
-                # Convert 2025/2026 to 2025-26
-                parts = year.split('/')
-                if len(parts) == 2:
-                    formatted_years.append(f"{parts[0]}-{parts[1][-2:]}")
-            else:
-                # Already in correct format or keep as-is
-                formatted_years.append(year)
-        
-        # Remove duplicates while preserving order
-        formatted_years = list(dict.fromkeys(formatted_years))
-        
-        # Add "All Years" option at the beginning
-        if formatted_years:
-            formatted_years.insert(0, 'all')
-        
-        return jsonify(formatted_years)
+        # FIXED: Return database format (YYYY/YYYY) without conversion
+        # This ensures consistency between API, frontend, and database
+        return jsonify(years)
         
     except Exception as e:
         app.logger.error(f"Failed to fetch academic years: {e}")
