@@ -31,6 +31,9 @@ import re
 from datetime import datetime, timedelta, date
 from dotenv import load_dotenv
 from supabase import create_client, Client
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import time
 from collections import defaultdict
 
@@ -705,6 +708,211 @@ def generate_report():
     
     logging.info(f"\nReport saved to {report_filename}")
     print("\n" + report_text)
+    
+    return report_text, report_filename
+
+
+def send_email_report(report_text, report_filename):
+    """
+    Send sync report via email using SendGrid or Gmail SMTP
+    Enhanced with color-coded HTML formatting
+    """
+    # Get email configuration from environment
+    email_to = os.getenv('SYNC_REPORT_EMAIL', 'tony@vespa.academy')
+    email_from = os.getenv('EMAIL_FROM', 'noreply@vespa.academy')
+    sendgrid_api_key = os.getenv('SENDGRID_API_KEY')
+    
+    if not email_to:
+        logging.warning("No SYNC_REPORT_EMAIL configured, skipping email notification")
+        return
+    
+    # Parse report for summary stats
+    students = scores = comments = 0
+    errors = []
+    warnings = []
+    
+    for table_name, metrics in sync_report['tables'].items():
+        if table_name == 'students':
+            students = metrics.get('synced', 0)
+        elif table_name == 'vespa_scores':
+            scores = metrics.get('synced', 0)
+        elif table_name == 'student_comments':
+            comments = metrics.get('synced', 0)
+    
+    duration = sync_report.get('duration', 'Unknown')
+    success = len(sync_report.get('errors', [])) == 0
+    
+    # Create HTML email with beautiful formatting
+    html_content = f"""
+    <html>
+    <head>
+        <style>
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }}
+            .container {{ max-width: 700px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }}
+            .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white; }}
+            .header h1 {{ margin: 0; font-size: 24px; font-weight: 700; }}
+            .header p {{ margin: 10px 0 0; opacity: 0.9; }}
+            .status {{ padding: 20px; text-align: center; border-bottom: 1px solid #eee; }}
+            .status.success {{ background: #f0fdf4; color: #166534; }}
+            .status.warning {{ background: #fffbeb; color: #92400e; }}
+            .status.error {{ background: #fef2f2; color: #991b1b; }}
+            .status-icon {{ font-size: 48px; margin-bottom: 10px; }}
+            .status-message {{ font-size: 18px; font-weight: 600; }}
+            .stats {{ padding: 30px; }}
+            .stats-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }}
+            .stat-card {{ background: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; border-left: 4px solid; }}
+            .stat-card.students {{ border-color: #3b82f6; }}
+            .stat-card.vespa {{ border-color: #10b981; }}
+            .stat-card.comments {{ border-color: #f59e0b; }}
+            .stat-value {{ font-size: 32px; font-weight: 700; color: #1f2937; }}
+            .stat-label {{ font-size: 12px; text-transform: uppercase; color: #6b7280; margin-top: 5px; letter-spacing: 0.5px; }}
+            .details {{ background: #f9fafb; padding: 15px 30px; }}
+            .detail-row {{ display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }}
+            .detail-label {{ color: #6b7280; }}
+            .detail-value {{ font-weight: 600; color: #1f2937; }}
+            .footer {{ padding: 20px 30px; background: #f3f4f6; text-align: center; color: #6b7280; font-size: 12px; }}
+            .view-full {{ display: inline-block; margin-top: 10px; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🔄 VESPA Sync Report</h1>
+                <p>Current Year Only Sync (v3.0)</p>
+                <p>{sync_report['academic_year_uk']} • {sync_report['start_time'].strftime('%B %d, %Y at %H:%M')}</p>
+            </div>
+            
+            <div class="status {'success' if success else 'error'}">
+                <div class="status-icon">{'✅' if success else '⚠️'}</div>
+                <div class="status-message">
+                    {'Sync Completed Successfully' if success else 'Sync Completed with Warnings'}
+                </div>
+                <p style="margin: 10px 0 0; font-size: 14px; opacity: 0.8;">Duration: {duration}</p>
+            </div>
+            
+            <div class="stats">
+                <div class="stats-grid">
+                    <div class="stat-card students">
+                        <div class="stat-value">{students:,}</div>
+                        <div class="stat-label">Students Synced</div>
+                    </div>
+                    <div class="stat-card vespa">
+                        <div class="stat-value">{scores:,}</div>
+                        <div class="stat-label">VESPA Scores</div>
+                    </div>
+                    <div class="stat-card comments">
+                        <div class="stat-value">{comments:,}</div>
+                        <div class="stat-label">Comments</div>
+                    </div>
+                </div>
+                
+                <div class="details">
+                    <div class="detail-row">
+                        <span class="detail-label">Academic Year (UK):</span>
+                        <span class="detail-value">{sync_report['academic_year_uk']}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Academic Year (AUS):</span>
+                        <span class="detail-value">{sync_report['academic_year_aus']}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Records Skipped (no date):</span>
+                        <span class="detail-value">{sync_report.get('skipped_no_date', 0)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Records Skipped (no email):</span>
+                        <span class="detail-value">{sync_report.get('skipped_no_email', 0)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>VESPA Dashboard Sync System • Automated Daily Sync</p>
+                <p>This is an automated message. Full report saved to: {report_filename}</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    try:
+        if sendgrid_api_key:
+            # Use SendGrid API
+            send_via_sendgrid(email_to, email_from, report_text, html_content, sendgrid_api_key)
+        else:
+            # Try Gmail SMTP as fallback
+            gmail_user = os.getenv('GMAIL_USER')
+            gmail_pass = os.getenv('GMAIL_APP_PASSWORD')
+            if gmail_user and gmail_pass:
+                send_via_gmail(email_to, gmail_user, gmail_pass, report_text, html_content)
+            else:
+                logging.warning("No email service configured (SENDGRID_API_KEY or GMAIL_USER/GMAIL_APP_PASSWORD)")
+                logging.info("Email report not sent - configure email service to enable notifications")
+    except Exception as e:
+        logging.error(f"Failed to send email report: {e}")
+        logging.info("Sync completed successfully but email notification failed")
+
+
+def send_via_sendgrid(to_email, from_email, plain_text, html_content, api_key):
+    """Send email via SendGrid API"""
+    import requests
+    
+    url = "https://api.sendgrid.com/v3/mail/send"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    duration = sync_report.get('duration', 'Unknown')
+    subject = f"✅ VESPA Sync Complete - {sync_report['academic_year_uk']} ({duration})"
+    
+    if sync_report.get('errors'):
+        subject = f"⚠️ VESPA Sync Warning - {sync_report['academic_year_uk']}"
+    
+    data = {
+        "personalizations": [{
+            "to": [{"email": to_email}],
+            "subject": subject
+        }],
+        "from": {"email": from_email, "name": "VESPA Sync System"},
+        "content": [
+            {"type": "text/plain", "value": plain_text},
+            {"type": "text/html", "value": html_content}
+        ]
+    }
+    
+    response = requests.post(url, headers=headers, json=data)
+    
+    if response.status_code == 202:
+        logging.info(f"✅ Email report sent successfully to {to_email}")
+    else:
+        logging.error(f"SendGrid API error: {response.status_code} - {response.text}")
+
+
+def send_via_gmail(to_email, gmail_user, gmail_pass, plain_text, html_content):
+    """Send email via Gmail SMTP"""
+    duration = sync_report.get('duration', 'Unknown')
+    subject = f"✅ VESPA Sync Complete - {sync_report['academic_year_uk']} ({duration})"
+    
+    if sync_report.get('errors'):
+        subject = f"⚠️ VESPA Sync Warning - {sync_report['academic_year_uk']}"
+    
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = gmail_user
+    msg['To'] = to_email
+    
+    part1 = MIMEText(plain_text, 'plain')
+    part2 = MIMEText(html_content, 'html')
+    
+    msg.attach(part1)
+    msg.attach(part2)
+    
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        server.login(gmail_user, gmail_pass)
+        server.send_message(msg)
+    
+    logging.info(f"✅ Email report sent successfully to {to_email} via Gmail")
 
 
 def main():
@@ -728,7 +936,10 @@ def main():
         sync_question_responses(year_boundaries, student_email_map)
         
         # Step 4: Generate report
-        generate_report()
+        report_text, report_filename = generate_report()
+        
+        # Step 5: Send email notification
+        send_email_report(report_text, report_filename)
         
         logging.info("\n" + "="*80)
         logging.info("✅ SYNC COMPLETED SUCCESSFULLY")
@@ -737,7 +948,8 @@ def main():
     except Exception as e:
         logging.error(f"SYNC FAILED: {e}")
         sync_report['errors'].append(str(e))
-        generate_report()
+        report_text, report_filename = generate_report()
+        send_email_report(report_text, report_filename)  # Send email even on error
         raise
 
 
