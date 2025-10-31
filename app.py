@@ -6677,29 +6677,49 @@ def get_qla_data_query():
             
             # Get question responses for filtered students
             if student_ids:
-                # Process in batches
-                BATCH_SIZE = 50
+                # FIXED: Reduce batch size to 30 students to stay under Supabase's 1000-record hard limit
+                # 30 students × 32 questions = 960 responses (safely under 1000)
+                BATCH_SIZE = 30
                 filtered_responses = []
-                total_qr_batches = (len(student_ids) + 49) // 50
+                total_qr_batches = (len(student_ids) + BATCH_SIZE - 1) // BATCH_SIZE
                 app.logger.info(f"QLA DEBUG: Fetching question responses in {total_qr_batches} batches for {len(student_ids)} students")
                 
                 for i in range(0, len(student_ids), BATCH_SIZE):
                     batch_ids = student_ids[i:i + BATCH_SIZE]
                     batch_num = (i // BATCH_SIZE) + 1
                     
-                    responses_query = supabase_client.table('question_responses')\
-                        .select('question_id, response_value')\
-                        .in_('student_id', batch_ids)\
-                        .eq('cycle', cycle)
+                    # Use range-based pagination to ensure we get ALL responses for these students
+                    offset = 0
+                    PAGE_SIZE = 1000  # Supabase's hard limit
+                    batch_responses = []
                     
-                    # CRITICAL FIX: Add academic_year filter if provided
-                    if academic_year:
-                        responses_query = responses_query.eq('academic_year', formatted_year)
+                    while True:
+                        responses_query = supabase_client.table('question_responses')\
+                            .select('question_id, response_value')\
+                            .in_('student_id', batch_ids)\
+                            .eq('cycle', cycle)
+                        
+                        # Add academic_year filter if provided
+                        if academic_year:
+                            responses_query = responses_query.eq('academic_year', formatted_year)
+                        
+                        # Use range() for proper pagination instead of limit()
+                        responses_result = responses_query.range(offset, offset + PAGE_SIZE - 1).execute()
+                        
+                        if not responses_result.data:
+                            break
+                        
+                        batch_responses.extend(responses_result.data)
+                        app.logger.info(f"QLA DEBUG: Batch {batch_num}/{total_qr_batches}, Page offset {offset}: Fetched {len(responses_result.data)} responses")
+                        
+                        # If we got less than PAGE_SIZE, we've reached the end
+                        if len(responses_result.data) < PAGE_SIZE:
+                            break
+                        
+                        offset += PAGE_SIZE
                     
-                    # CRITICAL FIX: Add high limit to handle large batches (50 students × 32 questions = 1600)
-                    responses_result = responses_query.limit(2000).execute()
-                    app.logger.info(f"QLA DEBUG: Batch {batch_num}/{total_qr_batches}: Fetched {len(responses_result.data)} responses for {len(batch_ids)} students")
-                    filtered_responses.extend(responses_result.data)
+                    app.logger.info(f"QLA DEBUG: Batch {batch_num}/{total_qr_batches}: Fetched {len(batch_responses)} total responses for {len(batch_ids)} students")
+                    filtered_responses.extend(batch_responses)
                 
                 app.logger.info(f"QLA DEBUG: Total responses collected: {len(filtered_responses)}, unique students: {len(set(r['question_id'] for r in filtered_responses))}")
                 
