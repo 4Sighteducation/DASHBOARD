@@ -6643,15 +6643,19 @@ def get_qla_data_query():
             # CRITICAL FIX: Add limit to handle large schools (Supabase default is 1000)
             students_result = students_query.limit(10000).execute()
             student_ids = [s['id'] for s in students_result.data]
-            app.logger.info(f"QLA: Found {len(student_ids)} students after filtering")
+            app.logger.info(f"QLA DEBUG: Initial students from query: {len(student_ids)}")
             
             # NEW: Filter by who has VESPA data for the selected academic year
             if academic_year:
                 students_with_vespa = []
                 
                 # Check in batches who has VESPA data for this year
+                total_batches = (len(student_ids) + 49) // 50
+                app.logger.info(f"QLA DEBUG: Processing {total_batches} batches of students for VESPA check")
+                
                 for i in range(0, len(student_ids), 50):
                     batch_ids = student_ids[i:i+50]
+                    batch_num = (i // 50) + 1
                     
                     # Check which students have VESPA data for the selected year
                     # FIXED: Remove limit to get all results (batch of 50 should never exceed limits)
@@ -6663,21 +6667,26 @@ def get_qla_data_query():
                         .execute()
                     
                     students_with_vespa_ids = set(v['student_id'] for v in vespa_check.data)
+                    app.logger.info(f"QLA DEBUG: Batch {batch_num}/{total_batches}: {len(batch_ids)} students queried, {len(students_with_vespa_ids)} have VESPA")
                     
                     # Keep only students who have VESPA data
                     students_with_vespa.extend([sid for sid in batch_ids if sid in students_with_vespa_ids])
                 
                 student_ids = students_with_vespa
-                app.logger.info(f"QLA: After academic year filter: {len(student_ids)} students have data for {academic_year}")
+                app.logger.info(f"QLA DEBUG: After VESPA filter: {len(student_ids)} students (expected 396)")
             
             # Get question responses for filtered students
             if student_ids:
                 # Process in batches
                 BATCH_SIZE = 50
                 filtered_responses = []
+                total_qr_batches = (len(student_ids) + 49) // 50
+                app.logger.info(f"QLA DEBUG: Fetching question responses in {total_qr_batches} batches for {len(student_ids)} students")
                 
                 for i in range(0, len(student_ids), BATCH_SIZE):
                     batch_ids = student_ids[i:i + BATCH_SIZE]
+                    batch_num = (i // BATCH_SIZE) + 1
+                    
                     responses_query = supabase_client.table('question_responses')\
                         .select('question_id, response_value')\
                         .in_('student_id', batch_ids)\
@@ -6689,7 +6698,10 @@ def get_qla_data_query():
                     
                     # CRITICAL FIX: Add high limit to handle large batches (50 students × 32 questions = 1600)
                     responses_result = responses_query.limit(2000).execute()
+                    app.logger.info(f"QLA DEBUG: Batch {batch_num}/{total_qr_batches}: Fetched {len(responses_result.data)} responses for {len(batch_ids)} students")
                     filtered_responses.extend(responses_result.data)
+                
+                app.logger.info(f"QLA DEBUG: Total responses collected: {len(filtered_responses)}, unique students: {len(set(r['question_id'] for r in filtered_responses))}")
                 
                 # Calculate statistics for filtered data
                 question_stats = {}
