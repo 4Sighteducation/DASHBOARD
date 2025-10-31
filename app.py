@@ -6644,12 +6644,12 @@ def get_qla_data_query():
                     batch_ids = student_ids[i:i+50]
                     
                     # Check which students have VESPA data for the selected year
+                    # FIXED: Remove limit to get all results (batch of 50 should never exceed limits)
                     vespa_check = supabase_client.table('vespa_scores')\
                         .select('student_id')\
                         .in_('student_id', batch_ids)\
                         .eq('academic_year', formatted_year)\
                         .eq('cycle', cycle)\
-                        .limit(1000)\
                         .execute()
                     
                     students_with_vespa_ids = set(v['student_id'] for v in vespa_check.data)
