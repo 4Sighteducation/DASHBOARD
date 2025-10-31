@@ -295,11 +295,13 @@ def sync_students_and_vespa_scores(year_boundaries):
     
     students_synced = 0
     scores_synced = 0
+    comments_synced = 0  # NEW: Track comments
     skipped_no_date = 0
     skipped_no_email = 0
     
     student_batch = []
     score_batch = []
+    comment_batch = []  # NEW: Batch for student comments
     
     # Track student mappings for Object_29 sync
     student_id_map = {}  # knack_id -> supabase_id
@@ -378,6 +380,28 @@ def sync_students_and_vespa_scores(year_boundaries):
                     except (ValueError, TypeError) as e:
                         logging.warning(f"Error parsing VESPA scores for {email}: {e}")
             
+            # NEW: Extract student comments (RRC and Goal fields)
+            comment_mappings = [
+                {'cycle': 1, 'type': 'rrc', 'field_raw': 'field_2302_raw'},
+                {'cycle': 1, 'type': 'goal', 'field_raw': 'field_2499_raw'},
+                {'cycle': 2, 'type': 'rrc', 'field_raw': 'field_2303_raw'},
+                {'cycle': 2, 'type': 'goal', 'field_raw': 'field_2493_raw'},
+                {'cycle': 3, 'type': 'rrc', 'field_raw': 'field_2304_raw'},
+                {'cycle': 3, 'type': 'goal', 'field_raw': 'field_2494_raw'},
+            ]
+            
+            for mapping in comment_mappings:
+                comment_text = record.get(mapping['field_raw'])
+                if comment_text and isinstance(comment_text, str) and comment_text.strip():
+                    comment_data = {
+                        'student_knack_id': record['id'],  # Will map to student_id after upsert
+                        'cycle': mapping['cycle'],
+                        'comment_type': mapping['type'],
+                        'comment_text': comment_text.strip(),
+                        'academic_year': academic_year  # Add academic year for proper tracking
+                    }
+                    comment_batch.append(comment_data)
+            
             # Process batches
             if len(student_batch) >= BATCH_SIZES['students']:
                 result = supabase.table('students').upsert(
@@ -431,9 +455,36 @@ def sync_students_and_vespa_scores(year_boundaries):
         ).execute()
         scores_synced += len(batch)
     
+    # NEW: Process student comments with correct student_ids
+    logging.info(f"\nProcessing {len(comment_batch)} student comments...")
+    comments_with_ids = []
+    
+    for comment in comment_batch:
+        student_knack_id = comment.pop('student_knack_id')
+        student_id = student_id_map.get(student_knack_id)
+        
+        if student_id:
+            comment['student_id'] = student_id
+            comments_with_ids.append(comment)
+    
+    # Upsert comments in batches
+    COMMENT_BATCH_SIZE = 200
+    for i in range(0, len(comments_with_ids), COMMENT_BATCH_SIZE):
+        batch = comments_with_ids[i:i + COMMENT_BATCH_SIZE]
+        try:
+            supabase.table('student_comments').upsert(
+                batch,
+                on_conflict='student_id,cycle,comment_type'  # FIXED: Match actual database constraint
+            ).execute()
+            comments_synced += len(batch)
+            logging.info(f"Synced {comments_synced} comments...")
+        except Exception as e:
+            logging.error(f"Error syncing comments batch: {e}")
+    
     logging.info(f"\n✅ STUDENTS & VESPA SYNC COMPLETE")
     logging.info(f"   Students synced: {students_synced}")
     logging.info(f"   VESPA scores synced: {scores_synced}")
+    logging.info(f"   Student comments synced: {comments_synced}")
     logging.info(f"   Skipped (no date): {skipped_no_date}")
     logging.info(f"   Skipped (no email): {skipped_no_email}")
     
@@ -444,6 +495,9 @@ def sync_students_and_vespa_scores(year_boundaries):
     }
     sync_report['tables']['vespa_scores'] = {
         'synced': scores_synced
+    }
+    sync_report['tables']['student_comments'] = {
+        'synced': comments_synced
     }
     
     return student_email_map, student_id_map
