@@ -2329,7 +2329,9 @@ def generate_wordcloud():
                 'totalComments': 0,
                 'uniqueWords': 0,
                 'topWord': None,
-                'message': 'No comments found for the selected filters'
+                'message': 'No comments found for the selected filters',
+                'cycle': cycle,  # FIXED: Return cycle even when empty
+                'academicYear': academic_year  # FIXED: Return academic year even when empty
             })
         
         # Process comments
@@ -2387,7 +2389,9 @@ def generate_wordcloud():
             'wordCloudData': word_cloud_data,
             'totalComments': len(all_comments),
             'uniqueWords': len(word_freq),
-            'topWord': top_words[0] if top_words else None
+            'topWord': top_words[0] if top_words else None,
+            'cycle': cycle,  # FIXED: Return cycle so Vue badge can display it
+            'academicYear': academic_year  # FIXED: Return academic year for badge
         })
         
     except Exception as e:
@@ -2877,7 +2881,9 @@ def get_comments_word_cloud():
                 'totalComments': 0,
                 'uniqueWords': 0,
                 'topWord': None,
-                'message': 'No students found for the selected filters'
+                'message': 'No students found for the selected filters',
+                'cycle': cycle if cycle else 'All Cycles',
+                'academicYear': academic_year
             })
         
         student_ids = [s['id'] for s in all_students]
@@ -2918,7 +2924,9 @@ def get_comments_word_cloud():
                 'totalComments': 0,
                 'uniqueWords': 0,
                 'topWord': None,
-                'message': 'No comments found for the selected filters'
+                'message': 'No comments found for the selected filters',
+                'cycle': cycle if cycle else 'All Cycles',
+                'academicYear': academic_year
             })
         
         # Process comments for word cloud
@@ -2972,7 +2980,9 @@ def get_comments_word_cloud():
                 'totalComments': len(all_comments),
                 'uniqueWords': 0,
                 'topWord': None,
-                'message': 'No meaningful words found in comments'
+                'message': 'No meaningful words found in comments',
+                'cycle': cycle if cycle else 'All Cycles',
+                'academicYear': academic_year
             })
         
         # Calculate relative sizes for word cloud
