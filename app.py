@@ -6632,8 +6632,10 @@ def get_qla_data_query():
                     if student_result.data:
                         students_query = students_query.eq('id', student_result.data[0]['id'])
             
-            students_result = students_query.execute()
+            # CRITICAL FIX: Add limit to handle large schools (Supabase default is 1000)
+            students_result = students_query.limit(10000).execute()
             student_ids = [s['id'] for s in students_result.data]
+            app.logger.info(f"QLA: Found {len(student_ids)} students after filtering")
             
             # NEW: Filter by who has VESPA data for the selected academic year
             if academic_year:
