@@ -1,0 +1,457 @@
+2025-10-31 06:33:46,391 - INFO - ================================================================================
+2025-10-31 06:33:46,392 - INFO - VESPA CURRENT-YEAR-ONLY SYNC - VERSION 3.0
+2025-10-31 06:33:46,392 - INFO - ================================================================================
+2025-10-31 06:33:46,392 - INFO - Started at: 2025-10-31 06:33:46.392403
+2025-10-31 06:33:46,392 - INFO - 
+2025-10-31 06:33:46,392 - INFO - Current academic year boundaries calculated:
+2025-10-31 06:33:46,392 - INFO -   UK: 2025/2026 (01/08/2025 to 31/07/2026)
+2025-10-31 06:33:46,392 - INFO -   AUS: 2025/2025 (01/01/2025 to 31/12/2025)
+2025-10-31 06:33:46,392 - INFO - ================================================================================
+2025-10-31 06:33:46,393 - INFO - SYNCING STUDENTS & VESPA SCORES - CURRENT YEAR ONLY
+2025-10-31 06:33:46,393 - INFO - ================================================================================
+2025-10-31 06:33:46,393 - INFO - Fetching Object_10 records for academic year 2025/2026
+2025-10-31 06:33:46,393 - INFO - Date filter: 01/08/2025 to 31/07/2026
+2025-10-31 06:33:46,393 - INFO - Fetching object_10 page 1...
+2025-10-31 06:33:55,397 - INFO - Total pages for object_10: 10 (9878 records)
+2025-10-31 06:33:55,897 - INFO - Fetching object_10 page 2...
+2025-10-31 06:34:07,341 - INFO - Fetching object_10 page 3...
+2025-10-31 06:34:17,300 - INFO - Fetching object_10 page 4...
+2025-10-31 06:34:26,005 - INFO - Fetching object_10 page 5...
+2025-10-31 06:34:36,130 - INFO - Fetching object_10 page 6...
+2025-10-31 06:34:45,397 - INFO - Fetching object_10 page 7...
+2025-10-31 06:34:54,473 - INFO - Fetching object_10 page 8...
+2025-10-31 06:35:04,188 - INFO - Fetching object_10 page 9...
+2025-10-31 06:35:14,297 - INFO - Fetching object_10 page 10...
+2025-10-31 06:35:21,454 - INFO - Fetched 9878 records from object_10
+2025-10-31 06:35:21,454 - INFO - Processing 9878 Object_10 records...
+2025-10-31 06:35:22,017 - INFO - HTTP Request: GET https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/establishments?select=id%2C%20knack_id%2C%20is_australian%2C%20use_standard_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:22,177 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:22,179 - INFO - Synced 100 students...
+2025-10-31 06:35:22,285 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:22,287 - INFO - Synced 200 students...
+2025-10-31 06:35:22,391 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:22,492 - INFO - Synced 300 students...
+2025-10-31 06:35:22,598 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:22,599 - INFO - Synced 400 students...
+2025-10-31 06:35:22,702 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:22,704 - INFO - Synced 500 students...
+2025-10-31 06:35:22,805 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:22,806 - INFO - Synced 600 students...
+2025-10-31 06:35:22,903 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:22,904 - INFO - Synced 700 students...
+2025-10-31 06:35:23,012 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:23,014 - INFO - Synced 800 students...
+2025-10-31 06:35:23,116 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:23,117 - INFO - Synced 900 students...
+2025-10-31 06:35:23,223 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:23,225 - INFO - Synced 1000 students...
+2025-10-31 06:35:23,325 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:23,326 - INFO - Synced 1100 students...
+2025-10-31 06:35:23,431 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:23,433 - INFO - Synced 1200 students...
+2025-10-31 06:35:23,531 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:23,533 - INFO - Synced 1300 students...
+2025-10-31 06:35:23,634 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:23,638 - INFO - Synced 1400 students...
+2025-10-31 06:35:23,735 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:23,736 - INFO - Synced 1500 students...
+2025-10-31 06:35:23,853 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:23,855 - INFO - Synced 1600 students...
+2025-10-31 06:35:23,959 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:23,960 - INFO - Synced 1700 students...
+2025-10-31 06:35:24,074 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:24,076 - INFO - Synced 1800 students...
+2025-10-31 06:35:24,188 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:24,190 - INFO - Synced 1900 students...
+2025-10-31 06:35:24,293 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:24,294 - INFO - Synced 2000 students...
+2025-10-31 06:35:24,393 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:24,394 - INFO - Synced 2100 students...
+2025-10-31 06:35:24,501 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:24,503 - INFO - Synced 2200 students...
+2025-10-31 06:35:24,598 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:24,599 - INFO - Synced 2300 students...
+2025-10-31 06:35:24,702 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:24,703 - INFO - Synced 2400 students...
+2025-10-31 06:35:24,810 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:24,811 - INFO - Synced 2500 students...
+2025-10-31 06:35:24,917 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:24,918 - INFO - Synced 2600 students...
+2025-10-31 06:35:25,016 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:25,018 - INFO - Synced 2700 students...
+2025-10-31 06:35:25,122 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:25,124 - INFO - Synced 2800 students...
+2025-10-31 06:35:25,239 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:25,240 - INFO - Synced 2900 students...
+2025-10-31 06:35:25,343 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:25,344 - INFO - Synced 3000 students...
+2025-10-31 06:35:25,455 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:25,456 - INFO - Synced 3100 students...
+2025-10-31 06:35:25,560 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:25,561 - INFO - Synced 3200 students...
+2025-10-31 06:35:25,665 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:25,666 - INFO - Synced 3300 students...
+2025-10-31 06:35:25,767 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:25,768 - INFO - Synced 3400 students...
+2025-10-31 06:35:25,871 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:25,871 - INFO - Synced 3500 students...
+2025-10-31 06:35:25,978 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:25,979 - INFO - Synced 3600 students...
+2025-10-31 06:35:26,082 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:26,083 - INFO - Synced 3700 students...
+2025-10-31 06:35:26,196 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:26,198 - INFO - Synced 3800 students...
+2025-10-31 06:35:26,303 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:26,304 - INFO - Synced 3900 students...
+2025-10-31 06:35:26,402 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:26,403 - INFO - Synced 4000 students...
+2025-10-31 06:35:26,507 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:26,508 - INFO - Synced 4100 students...
+2025-10-31 06:35:26,615 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:26,617 - INFO - Synced 4200 students...
+2025-10-31 06:35:26,725 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:26,727 - INFO - Synced 4300 students...
+2025-10-31 06:35:26,833 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:26,835 - INFO - Synced 4400 students...
+2025-10-31 06:35:26,947 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:26,949 - INFO - Synced 4500 students...
+2025-10-31 06:35:27,061 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:27,062 - INFO - Synced 4600 students...
+2025-10-31 06:35:27,168 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:27,169 - INFO - Synced 4700 students...
+2025-10-31 06:35:27,271 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:27,273 - INFO - Synced 4800 students...
+2025-10-31 06:35:27,381 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:27,382 - INFO - Synced 4900 students...
+2025-10-31 06:35:27,482 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:27,483 - INFO - Synced 5000 students...
+2025-10-31 06:35:27,590 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:27,591 - INFO - Synced 5100 students...
+2025-10-31 06:35:27,702 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:27,703 - INFO - Synced 5200 students...
+2025-10-31 06:35:27,811 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:27,812 - INFO - Synced 5300 students...
+2025-10-31 06:35:27,905 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:27,906 - INFO - Synced 5400 students...
+2025-10-31 06:35:28,006 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:28,007 - INFO - Synced 5500 students...
+2025-10-31 06:35:28,111 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:28,113 - INFO - Synced 5600 students...
+2025-10-31 06:35:28,212 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:28,213 - INFO - Synced 5700 students...
+2025-10-31 06:35:28,324 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:28,326 - INFO - Synced 5800 students...
+2025-10-31 06:35:28,431 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:28,432 - INFO - Synced 5900 students...
+2025-10-31 06:35:28,537 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:28,539 - INFO - Synced 6000 students...
+2025-10-31 06:35:28,639 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:28,640 - INFO - Synced 6100 students...
+2025-10-31 06:35:28,742 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:28,750 - INFO - Synced 6200 students...
+2025-10-31 06:35:28,854 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:28,855 - INFO - Synced 6300 students...
+2025-10-31 06:35:28,959 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:28,960 - INFO - Synced 6400 students...
+2025-10-31 06:35:29,071 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:29,073 - INFO - Synced 6500 students...
+2025-10-31 06:35:29,181 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:29,183 - INFO - Synced 6600 students...
+2025-10-31 06:35:29,288 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:29,289 - INFO - Synced 6700 students...
+2025-10-31 06:35:29,391 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:29,392 - INFO - Synced 6800 students...
+2025-10-31 06:35:29,497 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:29,499 - INFO - Synced 6900 students...
+2025-10-31 06:35:29,603 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:29,604 - INFO - Synced 7000 students...
+2025-10-31 06:35:29,706 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:29,708 - INFO - Synced 7100 students...
+2025-10-31 06:35:29,825 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:29,827 - INFO - Synced 7200 students...
+2025-10-31 06:35:29,937 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:29,938 - INFO - Synced 7300 students...
+2025-10-31 06:35:30,043 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:30,045 - INFO - Synced 7400 students...
+2025-10-31 06:35:30,152 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:30,153 - INFO - Synced 7500 students...
+2025-10-31 06:35:30,260 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:30,262 - INFO - Synced 7600 students...
+2025-10-31 06:35:30,365 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:30,365 - INFO - Synced 7700 students...
+2025-10-31 06:35:30,471 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:30,472 - INFO - Synced 7800 students...
+2025-10-31 06:35:30,570 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:30,572 - INFO - Synced 7900 students...
+2025-10-31 06:35:30,679 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:30,681 - INFO - Synced 8000 students...
+2025-10-31 06:35:30,788 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:30,789 - INFO - Synced 8100 students...
+2025-10-31 06:35:30,890 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:30,891 - INFO - Synced 8200 students...
+2025-10-31 06:35:31,001 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:31,002 - INFO - Synced 8300 students...
+2025-10-31 06:35:31,101 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:31,102 - INFO - Synced 8400 students...
+2025-10-31 06:35:31,199 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:31,200 - INFO - Synced 8500 students...
+2025-10-31 06:35:31,300 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:31,301 - INFO - Synced 8600 students...
+2025-10-31 06:35:31,403 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:31,404 - INFO - Synced 8700 students...
+2025-10-31 06:35:31,509 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:31,511 - INFO - Synced 8800 students...
+2025-10-31 06:35:31,622 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:31,623 - INFO - Synced 8900 students...
+2025-10-31 06:35:31,730 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:31,732 - INFO - Synced 9000 students...
+2025-10-31 06:35:31,842 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:31,844 - INFO - Synced 9100 students...
+2025-10-31 06:35:31,946 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:31,947 - INFO - Synced 9200 students...
+2025-10-31 06:35:32,050 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:32,052 - INFO - Synced 9300 students...
+2025-10-31 06:35:32,154 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:32,155 - INFO - Synced 9400 students...
+2025-10-31 06:35:32,255 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:32,256 - INFO - Synced 9500 students...
+2025-10-31 06:35:32,360 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:32,362 - INFO - Synced 9600 students...
+2025-10-31 06:35:32,458 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:32,460 - INFO - Synced 9700 students...
+2025-10-31 06:35:32,569 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:32,571 - INFO - Synced 9800 students...
+2025-10-31 06:35:32,671 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/students?on_conflict=email%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:32,673 - INFO - 
+Processing 29629 VESPA scores...
+2025-10-31 06:35:32,807 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:32,928 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:33,052 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:33,173 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:33,294 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:33,404 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:33,521 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:33,639 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:33,755 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:33,874 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:33,995 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:34,113 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:34,236 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:34,350 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:34,466 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:34,594 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:34,712 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:34,829 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:34,952 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:35,069 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:35,187 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:35,301 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:35,418 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:35,529 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:35,659 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:35,776 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:35,893 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:36,014 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:36,135 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:36,253 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:36,368 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:36,487 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:36,604 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:36,747 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:36,867 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:36,986 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:37,106 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:37,236 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:37,349 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:37,478 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:37,596 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:37,713 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:37,825 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:37,940 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:38,061 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:38,179 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:38,297 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:38,413 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:38,523 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:38,638 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:38,752 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:38,863 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:38,978 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:39,095 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:39,216 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:39,335 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:39,456 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:39,571 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:39,688 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:39,821 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:39,943 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:40,062 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:40,182 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:40,300 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:40,439 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:40,569 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:40,690 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:40,808 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:40,922 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:41,043 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:41,171 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:41,287 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:41,406 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:41,526 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:41,645 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:41,760 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:41,889 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:42,012 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:42,138 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:42,258 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:42,372 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:42,488 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:42,605 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:42,721 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:42,841 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:42,957 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:43,080 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:43,191 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:43,299 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:43,416 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:43,541 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:43,656 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:43,767 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:43,880 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:44,004 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:44,114 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:44,229 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:44,349 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:44,465 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:44,585 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:44,696 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:44,835 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:44,953 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:45,074 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:45,186 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:45,299 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:45,414 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:45,533 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:45,655 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:45,777 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:45,900 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:46,014 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:46,132 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:46,244 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:46,359 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:46,474 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:46,587 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:46,706 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:46,836 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:46,949 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:47,060 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:47,172 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:47,289 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:47,408 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:47,528 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:47,644 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:47,757 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:47,872 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:48,004 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:48,114 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:48,234 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:48,349 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:48,467 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:48,578 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:48,693 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:48,804 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:48,918 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:49,036 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:49,166 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:49,289 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:49,406 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:49,523 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:49,656 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:49,772 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:49,893 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:50,018 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:50,133 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:50,257 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 201 Created"
+2025-10-31 06:35:50,343 - INFO - HTTP Request: POST https://qcdcdzfanrlvdcagmwmg.supabase.co/rest/v1/vespa_scores?on_conflict=student_id%2Ccycle%2Cacademic_year "HTTP/1.1 200 OK"
+2025-10-31 06:35:50,343 - INFO - 
+\u2705 STUDENTS & VESPA SYNC COMPLETE
+2025-10-31 06:35:50,345 - INFO -    Students synced: 9878
+2025-10-31 06:35:50,345 - INFO -    VESPA scores synced: 29629
+2025-10-31 06:35:50,345 - INFO -    Skipped (no date): 0
+2025-10-31 06:35:50,345 - INFO -    Skipped (no email): 0
+2025-10-31 06:35:50,554 - INFO - ================================================================================
+2025-10-31 06:35:50,555 - INFO - SYNCING QUESTION RESPONSES - CURRENT YEAR ONLY
+2025-10-31 06:35:50,555 - INFO - ================================================================================
+2025-10-31 06:35:50,555 - INFO - Fetching Object_29 records for academic year 2025/2026
+2025-10-31 06:35:50,555 - INFO - Date filter: 01/08/2025 to 31/07/2026
+2025-10-31 06:35:50,555 - INFO - Fetching object_29 page 1...
+2025-10-31 06:35:59,315 - INFO - Total pages for object_29: 10 (9623 records)
+2025-10-31 06:35:59,815 - INFO - Fetching object_29 page 2...
+2025-10-31 06:36:08,935 - INFO - Fetching object_29 page 3...
+2025-10-31 06:36:18,037 - INFO - Fetching object_29 page 4...
+2025-10-31 06:36:27,052 - INFO - Fetching object_29 page 5...
+2025-10-31 06:36:35,863 - INFO - Fetching object_29 page 6...
+2025-10-31 06:36:44,597 - INFO - Fetching object_29 page 7...
+2025-10-31 06:36:53,446 - INFO - Fetching object_29 page 8...
+2025-10-31 06:37:01,938 - INFO - Fetching object_29 page 9...
+2025-10-31 06:37:10,637 - INFO - Fetching object_29 page 10...
+2025-10-31 06:37:15,963 - INFO - Fetched 9623 records from object_29
+2025-10-31 06:37:15,963 - INFO - Processing 9623 Object_29 records...
+2025-10-31 06:37:15,974 - WARNING - No student found for email: <a href="mailto:dharaneesh.saravanan461@education.nsw.gov.au">dharaneesh.saravanan461@education.nsw.gov.au</a> (Object_29 record: 68fed706523e2002fa5a6de1)
+2025-10-31 06:37:15,974 - WARNING - No student found for email: <a href="mailto:andrew.martin61@education.nsw.gov.au">andrew.martin61@education.nsw.gov.au</a> (Object_29 record: 69041c5486823d0337d08b50)
+2025-10-31 06:37:15,974 - WARNING - No student found for email: <a href="mailto:ebony.hazlewood@education.nsw.gov.au">ebony.hazlewood@education.nsw.gov.au</a> (Object_29 record: 68fed7f482e3eb03269e962a)
+2025-10-31 06:37:15,974 - WARNING - No student found for email: <a href="mailto:isabel.sparrius@education.nsw.gov.au">isabel.sparrius@education.nsw.gov.au</a> (Object_29 record: 68fed72c8934b30331816cf2)
+2025-10-31 06:37:15,975 - WARNING - No student found for email: <a href="mailto:20rjones@thelangton.org.uk">20rjones@thelangton.org.uk</a> (Object_29 record: 673c906769342102d1e1be20)
+2025-10-31 06:37:15,984 - INFO - 
+\u2705 QUESTION RESPONSES SYNC COMPLETE
+2025-10-31 06:37:15,984 - INFO -    Responses synced: 0
+2025-10-31 06:37:15,984 - INFO -    Skipped (no date): 0
+2025-10-31 06:37:15,984 - INFO -    Skipped (no email): 0
+2025-10-31 06:37:15,984 - INFO -    Skipped (no student match): 9623
+2025-10-31 06:37:16,068 - INFO - 
+Report saved to sync_current_year_only_report_20251031_063716.txt
+2025-10-31 06:37:16,068 - INFO - 
+================================================================================
+2025-10-31 06:37:16,068 - INFO - \u2705 SYNC COMPLETED SUCCESSFULLY
+2025-10-31 06:37:16,068 - INFO - ================================================================================
+
+================================================================================
+CURRENT-YEAR-ONLY SYNC REPORT
+================================================================================
+Version: 3.0 - Current Year Only
+Date: 2025-10-31 06:33:46
+Duration: 0:03:29.675341
+Academic Year (UK): 2025/2026
+Academic Year (AUS): 2025/2025
+
+================================================================================
+TABLES SYNCED
+================================================================================
+
+STUDENTS:
+----------------------------------------
+  synced: 9878
+  skipped_no_date: 0
+  skipped_no_email: 0
+
+VESPA_SCORES:
+----------------------------------------
+  synced: 29629
+
+QUESTION_RESPONSES:
+----------------------------------------
+  synced: 0
+  skipped_no_date: 0
+  skipped_no_email: 0
+  skipped_no_match: 9623
+
+================================================================================
+SUMMARY
+================================================================================
+Total skipped (no date): 0
+Total skipped (no email): 0
+Total skipped (no student match): 9623
+
+================================================================================
+END OF REPORT
+================================================================================

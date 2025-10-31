@@ -1,0 +1,144 @@
+================================================================================
+VESPA SYNC REPORT - ENHANCED
+================================================================================
+Date: 2025-10-30 07:40:44 UTC
+Duration: 3:52:34.863118
+Script Version: 2.0 (Multi-Year Support)
+
+================================================================================
+EXECUTIVE SUMMARY
+================================================================================
+Total New Records: 186
+Total Errors: 5
+Total Skipped: 702
+Overall Status: PARTIAL SUCCESS (5 errors encountered)
+
+================================================================================
+DETAILED TABLE SUMMARY
+================================================================================
+
+ESTABLISHMENTS
+--------------------------------------------------------------------------------
+  Records Before Sync: 125
+  Records After Sync:  125
+  New/Updated:         0
+  Updated:             0
+  Errors:              0
+  Processing Time:     0:00:09.951865
+  Status: OK - Excellent
+
+STUDENTS
+--------------------------------------------------------------------------------
+  Records Before Sync: 36,214
+  Records After Sync:  36,216
+  New/Updated:         2
+  Updated:             0
+  Errors:              0
+  Processing Time:     3:39:51.257387
+  Status: OK - Excellent
+
+VESPA_SCORES
+--------------------------------------------------------------------------------
+  Records Before Sync: 108,129
+  Records After Sync:  108,153
+  New/Updated:         24
+  Updated:             0
+  Errors:              2
+  Processing Time:     3:39:51.232211
+  Status: WARNING - Minor issues
+
+STAFF_ADMINS
+--------------------------------------------------------------------------------
+  Records Before Sync: 519
+  Records After Sync:  519
+  New/Updated:         0
+  Errors:              0
+  Processing Time:     0:00:42.259137
+  Status: OK - Excellent
+
+SUPER_USERS
+--------------------------------------------------------------------------------
+  Records Before Sync: 9
+  Records After Sync:  9
+  New/Updated:         0
+  Errors:              0
+  Processing Time:     0:00:01.101345
+  Status: OK - Excellent
+
+QUESTION_RESPONSES
+--------------------------------------------------------------------------------
+  Records Before Sync: 1,241,903
+  Records After Sync:  1,242,063
+  New/Updated:         160
+  Updated:             0
+  Skipped:             702
+  Skip Rate:           81.4%
+  Duplicates Removed:  32
+  Errors:              3
+  Processing Time:     0:08:20.396821
+  Status: WARNING - Minor issues
+
+SCHOOL_STATISTICS
+--------------------------------------------------------------------------------
+  Records Before Sync: 1,650
+  Records After Sync:  1,650
+  New/Updated:         0
+  Errors:              0
+  Processing Time:     0:01:42.116700
+  Status: OK - Excellent
+
+QUESTION_STATISTICS
+--------------------------------------------------------------------------------
+  Records Before Sync: 1,820
+  Records After Sync:  0
+  New/Updated:         0
+  Errors:              0
+  Status: OK - Excellent
+
+NATIONAL_STATISTICS
+--------------------------------------------------------------------------------
+  Records Before Sync: 10
+  Records After Sync:  0
+  New/Updated:         0
+  Errors:              0
+  Status: OK - Excellent
+
+================================================================================
+OPERATIONS PERFORMED
+================================================================================
+
+Update Academic Year:
+  Status: COMPLETED
+  Records Updated: 0
+
+Calculate Eri:
+  Status: COMPLETED
+  ERI Records: 6
+
+================================================================================
+ISSUES REQUIRING ATTENTION
+================================================================================
+
+WARNINGS:
+  - Only 48.5% of staff admins have establishment connections
+  - Some question responses skipped due to missing student links
+  - 702 question responses skipped due to missing student links
+  - 32 duplicate responses removed (multiple Object_29 records for same student)
+
+ERRORS (First 10):
+  - Error syncing VESPA record 66f2cc954a2c85031b0c505f: The read operation timed out
+  - Error syncing VESPA record 66f2cc9799e96802e17a223a: timed out
+  - Error syncing psychometric record 68c93fb10428a10f8ba1e9c4: [WinError 10054] An existing connection was forcibly closed by the remote host
+  - Error syncing psychometric record 68c9c2f22f9b0402f8dde0ea: [WinError 10054] An existing connection was forcibly closed by the remote host
+  - Error syncing psychometric record 6718e9b021408002ceb1c3f1: [SSL: SSLV3_ALERT_BAD_RECORD_MAC] sslv3 alert bad record mac (_ssl.c:2648)
+  - Question statistics calculation failed: {'message': 'JSON could not be generated', 'code': 400, 'hint': 'Refer to full message for details', 'details': "b'Bad Request'"}
+  - Benchmark statistics calculation failed: 0
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+  Minor issues detected. Monitor next sync run.
+
+================================================================================
+END OF REPORT
+================================================================================

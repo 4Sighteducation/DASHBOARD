@@ -6679,7 +6679,8 @@ def get_qla_data_query():
                     if academic_year:
                         responses_query = responses_query.eq('academic_year', formatted_year)
                     
-                    responses_result = responses_query.execute()
+                    # CRITICAL FIX: Add high limit to handle large batches (50 students × 32 questions = 1600)
+                    responses_result = responses_query.limit(2000).execute()
                     filtered_responses.extend(responses_result.data)
                 
                 # Calculate statistics for filtered data
