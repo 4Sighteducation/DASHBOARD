@@ -1254,6 +1254,78 @@ def get_dashboard_data_page():
         raise ApiError(f"Failed to fetch dashboard page: {str(e)}", 500)
 
 # --- Cache Management Endpoints ---
+@app.route('/api/sync/refresh-establishment', methods=['POST'])
+def refresh_establishment_data():
+    """
+    Trigger real-time sync for a single establishment
+    Allows staff admins to refresh their data on-demand without waiting for scheduled sync
+    """
+    data = request.get_json()
+    if not data:
+        raise ApiError("Missing request body")
+    
+    establishment_id = data.get('establishmentId')  # Knack ID
+    
+    if not establishment_id:
+        raise ApiError("establishmentId is required")
+    
+    try:
+        # Import the single establishment sync function
+        import subprocess
+        import json
+        
+        app.logger.info(f"Starting real-time sync for establishment: {establishment_id}")
+        
+        # Run sync as subprocess
+        result = subprocess.run(
+            ['python', 'sync_single_establishment.py', '--establishment-id', establishment_id],
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minute timeout
+        )
+        
+        if result.returncode == 0:
+            # Parse JSON output from sync script
+            try:
+                summary = json.loads(result.stdout.strip().split('\n')[-1])
+                app.logger.info(f"Sync completed: {summary}")
+                
+                # Clear cache for this establishment
+                if CACHE_ENABLED:
+                    patterns = [
+                        f'*:{establishment_id}:*',
+                        f'dashboard_data:*:{establishment_id}:*',
+                        f'dataset:{establishment_id}:*',
+                        f'metadata:{establishment_id}:*'
+                    ]
+                    for pattern in patterns:
+                        keys = redis_client.keys(pattern)
+                        if keys:
+                            redis_client.delete(*keys)
+                
+                return jsonify({
+                    'success': True,
+                    'message': f"Data refreshed successfully for {summary.get('establishment_name', 'establishment')}",
+                    'summary': summary
+                })
+            except json.JSONDecodeError:
+                # Fallback if JSON parsing fails
+                return jsonify({
+                    'success': True,
+                    'message': 'Data refreshed successfully',
+                    'details': 'Sync completed but summary unavailable'
+                })
+        else:
+            app.logger.error(f"Sync failed: {result.stderr}")
+            raise ApiError(f"Sync failed: {result.stderr[:200]}")
+    
+    except subprocess.TimeoutExpired:
+        raise ApiError("Sync timeout - please try again later")
+    except Exception as e:
+        app.logger.error(f"Error refreshing establishment data: {e}")
+        raise ApiError(f"Failed to refresh data: {str(e)}")
+
+
 @app.route('/api/cache/clear', methods=['POST'])
 def clear_cache():
     """Clear all or specific cache entries"""
