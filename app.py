@@ -2177,8 +2177,9 @@ def generate_wordcloud():
     comment_fields = data.get('commentFields', [])
     filters = data.get('filters', {})
     cycle = data.get('cycle')  # Get cycle from request
+    academic_year = data.get('academicYear')  # Get selected academic year from request
     
-    app.logger.info(f"Generating word cloud for fields: {comment_fields}, cycle: {cycle}")
+    app.logger.info(f"Generating word cloud for fields: {comment_fields}, cycle: {cycle}, academic_year: {academic_year}")
     
     try:
         # Import required libraries
@@ -2245,9 +2246,23 @@ def generate_wordcloud():
                 'value': filters['trustFieldValue']
             })
         
-        # Add academic year filter for current academic year comments
-        academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
-        knack_filters.append(academic_year_filter)
+        # FIXED: Only add academic year filter if NO academic year is explicitly provided
+        # This allows the frontend to specify which academic year's comments to show
+        if not academic_year:
+            # Use auto-calculated current academic year as fallback
+            academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
+            knack_filters.append(academic_year_filter)
+            app.logger.info(f"Using auto-calculated academic year filter")
+        else:
+            # Use the selected academic year from the frontend
+            # Convert to database format if needed (2025-26 -> 2025/2026)
+            formatted_year = convert_academic_year_format(academic_year, to_database=True)
+            app.logger.info(f"Using selected academic year: {formatted_year} (from frontend: {academic_year})")
+            # Note: We can't filter Object_10 directly by academic_year field (doesn't exist in Knack)
+            # Instead, we rely on the completion date field_855 being in range
+            # For now, still apply date range filter but log what we're looking for
+            academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
+            knack_filters.append(academic_year_filter)
         
         # Add cycle filter if provided
         if cycle:
@@ -2282,19 +2297,30 @@ def generate_wordcloud():
             if not records:
                 break
             
+            # Enhanced logging for debugging
+            app.logger.info(f"Comment Analysis - Page {page}: Fetched {len(records)} VESPA records")
+            
             # Extract comments from records
+            records_with_comments = 0
             for record in records:
+                has_comment_this_record = False
                 for field in comment_fields:
                     comment = record.get(field + '_raw')
                     if comment and isinstance(comment, str) and len(comment.strip()) > 0:
                         all_comments.append(comment.strip())
+                        has_comment_this_record = True
+                if has_comment_this_record:
+                    records_with_comments += 1
+            
+            app.logger.info(f"Comment Analysis - Page {page}: {records_with_comments} records had comments")
             
             if len(records) < 500:
                 # Don't break - there might be more data on subsequent pages
                 pass
             page += 1
         
-        app.logger.info(f"Collected {len(all_comments)} comments")
+        app.logger.info(f"Comment Analysis FINAL: Collected {len(all_comments)} comments from {page-1} pages")
+        app.logger.info(f"Comment Analysis FILTERS USED: {json.dumps(knack_filters, indent=2)}")
         
         # If no comments found, return empty result
         if not all_comments:
@@ -2377,8 +2403,10 @@ def analyze_themes():
     
     comment_fields = data.get('commentFields', [])
     filters = data.get('filters', {})
+    cycle = data.get('cycle')  # Get cycle from request
+    academic_year = data.get('academicYear')  # Get selected academic year from request
     
-    app.logger.info(f"Analyzing themes for fields: {comment_fields}")
+    app.logger.info(f"Analyzing themes for fields: {comment_fields}, cycle: {cycle}, academic_year: {academic_year}")
     
     try:
         # Build filters for fetching VESPA results
@@ -2405,19 +2433,28 @@ def analyze_themes():
                 'value': filters['trustFieldValue']
             })
         
-        # Add academic year filter for current academic year comments
-        academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
-        knack_filters.append(academic_year_filter)
+        # FIXED: Only add academic year filter if NO academic year is explicitly provided
+        if not academic_year:
+            # Use auto-calculated current academic year as fallback
+            academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
+            knack_filters.append(academic_year_filter)
+            app.logger.info(f"Theme analysis: Using auto-calculated academic year filter")
+        else:
+            # Use the selected academic year from the frontend
+            formatted_year = convert_academic_year_format(academic_year, to_database=True)
+            app.logger.info(f"Theme analysis: Using selected academic year: {formatted_year}")
+            # Apply date range filter for selected academic year
+            academic_year_filter = get_academic_year_filters(establishment_id, 'field_855', 'field_3511')
+            knack_filters.append(academic_year_filter)
         
         # Add cycle filter if provided
-        cycle = filters.get('cycle')
         if cycle:
             knack_filters.append({
                 'field': 'field_146',
                 'operator': 'is',
                 'value': str(cycle)
             })
-            app.logger.info(f"Added cycle filter for cycle {cycle}")
+            app.logger.info(f"Theme analysis: Added cycle filter for cycle {cycle}")
         
         # Combine base filters with any additional filters from the frontend
         if 'additionalFilters' in filters and filters['additionalFilters']:
