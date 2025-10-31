@@ -6605,7 +6605,15 @@ def get_qla_data_query():
         force_calculate_from_raw = not qla_result.data
         
         # If we have filters OR no pre-aggregated data, we need to calculate from raw data
-        if year_group or group or faculty or student_id or force_calculate_from_raw:
+        # CRITICAL FIX: Ignore 'all' filter values - frontend sends 'all' to mean no filter
+        has_filters = (
+            (year_group and year_group != 'all') or 
+            (group and group != 'all') or 
+            (faculty and faculty != 'all') or 
+            student_id
+        )
+        
+        if has_filters or force_calculate_from_raw:
             # Get filtered student IDs first
             students_query = supabase_client.table('students').select('id').eq('establishment_id', establishment_uuid)
             
@@ -6613,11 +6621,11 @@ def get_qla_data_query():
             if academic_year:
                 students_query = students_query.eq('academic_year', formatted_year)
             
-            if year_group:
+            if year_group and year_group != 'all':
                 students_query = students_query.eq('year_group', year_group)
-            if group:
+            if group and group != 'all':
                 students_query = students_query.eq('group', group)
-            if faculty:
+            if faculty and faculty != 'all':
                 students_query = students_query.eq('faculty', faculty)
             if student_id:
                 # Convert student ID if needed
