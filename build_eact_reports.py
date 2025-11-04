@@ -43,6 +43,16 @@ COLORS = {
     'Overall': '#ffd700'
 }
 
+# School logo paths (relative to script location)
+SCHOOL_LOGOS = {
+    'North Birmingham Academy': 'E-ACT-North-Birmingham-Academy_Logo-Stacked_Full-Colour_Web.png',
+    'Montpelier High School': 'montpelier-high-school-logo.png',
+    'Ousedale School': '51A051D3872FD2795D5CC7FE41DD6E46.png',
+    'Crest Academy': 'crest-logo.png',
+    'West Walsall Academy': 'R (1).png',
+    'Daventry 6th Form': 'E-ACT-Daventry-Sixth-Form_Logo-Stacked_Full-Colour_Web.png'
+}
+
 # Statement to category mapping (from Hartpury report)
 STATEMENT_MAPPING = {
     "I've worked out the next steps in my life": 'Vision',
@@ -577,7 +587,7 @@ def build_school_report_html(school_name, stats, year_groups, groups, insights, 
 </head>
 <body>
     <div class="container">
-        {generate_header(report_date, school_name, "VESPA Cycle 1 Baseline Report")}
+        {generate_header(report_date, school_name, "VESPA Cycle 1 Baseline Report", show_logo=False, school_name=school_name)}
         {generate_school_exec_summary(stats, strongest_dim, weakest_dim, school_name)}
         {generate_baseline_overview(stats)}
         {generate_eri_detail_section(stats, school_name)}
@@ -884,15 +894,26 @@ def get_insights_css():
         }
     """
 
-def generate_header(report_date, org_name, subtitle, show_logo=False):
+def generate_header(report_date, org_name, subtitle, show_logo=False, school_name=None):
     """Generate report header"""
     logo_html = ""
     if show_logo:
+        # Use E-ACT Trust logo for executive summary
         logo_html = """
             <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
                 <img src="https://schoolsweek.co.uk/wp-content/uploads/2018/08/e-act-1920x1017.png" 
                      alt="E-ACT Logo" 
                      style="height: 80px; object-fit: contain; max-width: 300px;">
+            </div>
+        """
+    elif school_name and school_name in SCHOOL_LOGOS:
+        # Use school-specific logo for individual reports
+        logo_path = SCHOOL_LOGOS[school_name]
+        logo_html = f"""
+            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                <img src="{logo_path}" 
+                     alt="{school_name} Logo" 
+                     style="height: 100px; object-fit: contain; max-width: 400px;">
             </div>
         """
     
