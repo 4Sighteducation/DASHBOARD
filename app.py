@@ -8815,6 +8815,497 @@ def export_comparative_report_pdf():
 
 # ===== END COMPARATIVE REPORT ENDPOINT =====
 
+# ===== VESPA QUESTIONNAIRE V2 ENDPOINTS =====
+
+# Load question mappings for Knack field IDs
+QUESTION_MAPPINGS_FILE = os.path.join(os.path.dirname(__file__), 'AIVESPACoach', 'psychometric_question_details.json')
+try:
+    with open(QUESTION_MAPPINGS_FILE, 'r', encoding='utf-8') as f:
+        QUESTION_MAPPINGS = json.load(f)
+        app.logger.info(f"Loaded {len(QUESTION_MAPPINGS)} question mappings")
+except Exception as e:
+    app.logger.error(f"Failed to load question mappings: {e}")
+    QUESTION_MAPPINGS = []
+
+def calculate_academic_year_for_student(date_obj=None, is_australian=False, use_standard_year=None):
+    """Calculate academic year based on date and school location
+    
+    Priority:
+    1. If use_standard_year is YES or NULL: Use UK August cutoff
+    2. If use_standard_year is NO and is_australian: Use calendar year
+    3. Otherwise: UK August cutoff
+    """
+    if date_obj is None:
+        date_obj = datetime.now()
+    
+    # Priority: use_standard_year flag overrides is_australian
+    # NULL or YES = use standard UK calculation
+    if use_standard_year is None or use_standard_year == True:
+        # Use standard UK academic year (Aug-Jul)
+        if date_obj.month >= 8:
+            return f"{date_obj.year}/{date_obj.year + 1}"
+        else:
+            return f"{date_obj.year - 1}/{date_obj.year}"
+    elif is_australian:
+        # Australian school NOT using standard: Calendar year (Jan-Dec)
+        return f"{date_obj.year}/{date_obj.year}"
+    else:
+        # UK school: Academic year (Aug-Jul)
+        if date_obj.month >= 8:
+            return f"{date_obj.year}/{date_obj.year + 1}"
+        else:
+            return f"{date_obj.year - 1}/{date_obj.year}"
+
+@app.route('/api/vespa/questionnaire/validate', methods=['GET'])
+def validate_questionnaire_access():
+    """
+    Validate if a student can take the VESPA questionnaire
+    Checks cycle completion status and determines which cycle is currently active
+    """
+    try:
+        email = request.args.get('email')
+        account_id = request.args.get('accountId')
+        
+        if not email:
+            return jsonify({'allowed': False, 'reason': 'error', 'message': 'Email is required'}), 400
+        
+        app.logger.info(f"[Questionnaire Validate] Checking access for {email}")
+        
+        # Fetch student's Object_10 record from Knack
+        headers = {
+            'X-Knack-Application-Id': os.getenv('KNACK_APP_ID'),
+            'X-Knack-REST-API-Key': os.getenv('KNACK_API_KEY'),
+            'Content-Type': 'application/json'
+        }
+        
+        # Search for student by email
+        filters = {
+            'match': 'and',
+            'rules': [
+                {
+                    'field': 'field_197',  # Student email field
+                    'operator': 'is',
+                    'value': email
+                }
+            ]
+        }
+        
+        response = requests.get(
+            f"https://api.knack.com/v1/objects/object_10/records",
+            headers=headers,
+            params={'filters': json.dumps(filters)},
+            timeout=30
+        )
+        
+        if not response.ok:
+            app.logger.error(f"Knack API error: {response.status_code} - {response.text}")
+            return jsonify({
+                'allowed': False,
+                'reason': 'error',
+                'message': 'Unable to verify student record'
+            }), 500
+        
+        records = response.json().get('records', [])
+        
+        if not records:
+            # Student not found - they can take Cycle 1
+            app.logger.info(f"[Questionnaire Validate] New student {email} - allow Cycle 1")
+            return jsonify({
+                'allowed': True,
+                'cycle': 1,
+                'reason': 'new_student',
+                'message': 'Welcome! Please complete your first VESPA questionnaire',
+                'academicYear': calculate_academic_year_for_student(),
+                'userRecord': None
+            })
+        
+        # Get the most recent record
+        record = records[0]
+        app.logger.info(f"[Questionnaire Validate] Found record for {email}: {record['id']}")
+        
+        # Check which cycles are completed (have scores)
+        cycle1_complete = record.get('field_155_raw') is not None and record.get('field_155_raw') != ''
+        cycle2_complete = record.get('field_161_raw') is not None and record.get('field_161_raw') != ''
+        cycle3_complete = record.get('field_167_raw') is not None and record.get('field_167_raw') != ''
+        
+        app.logger.info(f"[Questionnaire Validate] Cycle status - C1: {cycle1_complete}, C2: {cycle2_complete}, C3: {cycle3_complete}")
+        
+        # Determine next cycle
+        next_cycle = None
+        reason = None
+        message = None
+        
+        if not cycle1_complete:
+            next_cycle = 1
+            reason = 'cycle_1_active'
+            message = 'Please complete your first VESPA questionnaire'
+        elif not cycle2_complete:
+            next_cycle = 2
+            reason = 'cycle_2_active'
+            message = 'Ready for your second VESPA questionnaire'
+        elif not cycle3_complete:
+            next_cycle = 3
+            reason = 'cycle_3_active'
+            message = 'Ready for your final VESPA questionnaire'
+        else:
+            # All cycles complete
+            return jsonify({
+                'allowed': False,
+                'cycle': None,
+                'reason': 'all_completed',
+                'message': 'You have completed all three VESPA questionnaires for this academic year',
+                'userRecord': record
+            })
+        
+        # Get establishment for academic year calculation
+        est_field = record.get('field_133_raw', [])
+        establishment_id = None
+        is_australian = False
+        use_standard_year = None
+        
+        if est_field and isinstance(est_field, list) and len(est_field) > 0:
+            est_knack_id = est_field[0].get('id') if isinstance(est_field[0], dict) else est_field[0]
+            # Look up establishment in Supabase
+            if supabase_client:
+                try:
+                    est_result = supabase_client.table('establishments').select('id', 'is_australian', 'use_standard_year').eq('knack_id', est_knack_id).execute()
+                    if est_result.data:
+                        establishment_id = est_result.data[0]['id']
+                        is_australian = est_result.data[0].get('is_australian', False)
+                        use_standard_year = est_result.data[0].get('use_standard_year')
+                except Exception as e:
+                    app.logger.warning(f"Could not fetch establishment: {e}")
+        
+        academic_year = calculate_academic_year_for_student(
+            is_australian=is_australian,
+            use_standard_year=use_standard_year
+        )
+        
+        return jsonify({
+            'allowed': True,
+            'cycle': next_cycle,
+            'reason': reason,
+            'message': message,
+            'academicYear': academic_year,
+            'userRecord': record
+        })
+        
+    except Exception as e:
+        app.logger.error(f"[Questionnaire Validate] Error: {e}")
+        traceback.print_exc()
+        return jsonify({
+            'allowed': False,
+            'reason': 'error',
+            'message': f'Validation error: {str(e)}'
+        }), 500
+
+@app.route('/api/vespa/questionnaire/submit', methods=['POST'])
+def submit_questionnaire():
+    """
+    Submit completed VESPA questionnaire
+    Dual-writes to both Supabase (primary) and Knack (legacy compatibility)
+    """
+    try:
+        data = request.json
+        app.logger.info(f"[Questionnaire Submit] Received submission for {data.get('studentEmail')}")
+        
+        # Validate required fields
+        required_fields = ['studentEmail', 'studentName', 'cycle', 'responses', 'vespaScores', 'academicYear']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
+        
+        student_email = data['studentEmail']
+        student_name = data['studentName']
+        cycle = data['cycle']
+        responses = data['responses']
+        vespa_scores = data['vespaScores']
+        category_averages = data.get('categoryAverages', {})
+        academic_year = data['academicYear']
+        knack_record_id = data.get('knackRecordId')
+        
+        app.logger.info(f"[Questionnaire Submit] Cycle {cycle} for {student_email}, Academic Year: {academic_year}")
+        
+        # Get establishment info from Knack record if available
+        establishment_id = None
+        establishment_knack_id = None
+        
+        if knack_record_id:
+            # Fetch the Knack record to get establishment
+            headers = {
+                'X-Knack-Application-Id': os.getenv('KNACK_APP_ID'),
+                'X-Knack-REST-API-Key': os.getenv('KNACK_API_KEY'),
+                'Content-Type': 'application/json'
+            }
+            
+            record_response = requests.get(
+                f"https://api.knack.com/v1/objects/object_10/records/{knack_record_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if record_response.ok:
+                record = record_response.json()
+                est_field = record.get('field_133_raw', [])
+                if est_field and isinstance(est_field, list) and len(est_field) > 0:
+                    establishment_knack_id = est_field[0].get('id') if isinstance(est_field[0], dict) else est_field[0]
+                    
+                    # Map to Supabase establishment_id
+                    if supabase_client and establishment_knack_id:
+                        try:
+                            est_result = supabase_client.table('establishments').select('id').eq('knack_id', establishment_knack_id).execute()
+                            if est_result.data:
+                                establishment_id = est_result.data[0]['id']
+                        except Exception as e:
+                            app.logger.warning(f"Could not map establishment: {e}")
+        
+        # ===== PHASE 1: WRITE TO SUPABASE =====
+        supabase_success = False
+        student_id = None
+        
+        if supabase_client:
+            try:
+                app.logger.info(f"[Questionnaire Submit] Writing to Supabase...")
+                
+                # 1. Upsert student record
+                student_data = {
+                    'knack_id': knack_record_id or f'temp_{student_email}',  # Temporary ID if no Knack record yet
+                    'email': student_email,
+                    'name': student_name,
+                    'establishment_id': establishment_id,
+                    'academic_year': academic_year
+                }
+                
+                student_result = supabase_client.table('students').upsert(
+                    student_data,
+                    on_conflict='email,academic_year'
+                ).execute()
+                
+                if student_result.data:
+                    student_id = student_result.data[0]['id']
+                    app.logger.info(f"[Questionnaire Submit] Student upserted: {student_id}")
+                else:
+                    raise Exception("Failed to upsert student - no data returned")
+                
+                # 2. Write VESPA scores
+                completion_date = datetime.now().strftime('%Y-%m-%d')
+                vespa_data = {
+                    'student_id': student_id,
+                    'cycle': cycle,
+                    'vision': vespa_scores.get('VISION'),
+                    'effort': vespa_scores.get('EFFORT'),
+                    'systems': vespa_scores.get('SYSTEMS'),
+                    'practice': vespa_scores.get('PRACTICE'),
+                    'attitude': vespa_scores.get('ATTITUDE'),
+                    'overall': vespa_scores.get('OVERALL'),
+                    'completion_date': completion_date,
+                    'academic_year': academic_year
+                }
+                
+                supabase_client.table('vespa_scores').upsert(
+                    vespa_data,
+                    on_conflict='student_id,cycle,academic_year'
+                ).execute()
+                
+                app.logger.info(f"[Questionnaire Submit] VESPA scores written for cycle {cycle}")
+                
+                # 3. Write question responses (32 rows)
+                response_batch = []
+                for question_id, response_value in responses.items():
+                    if response_value is not None:
+                        response_batch.append({
+                            'student_id': student_id,
+                            'cycle': cycle,
+                            'academic_year': academic_year,
+                            'question_id': question_id,
+                            'response_value': response_value
+                        })
+                
+                if response_batch:
+                    supabase_client.table('question_responses').upsert(
+                        response_batch,
+                        on_conflict='student_id,cycle,academic_year,question_id'
+                    ).execute()
+                    
+                    app.logger.info(f"[Questionnaire Submit] {len(response_batch)} question responses written")
+                
+                supabase_success = True
+                
+            except Exception as e:
+                app.logger.error(f"[Questionnaire Submit] Supabase write failed: {e}")
+                traceback.print_exc()
+                # Continue to Knack write even if Supabase fails
+        
+        # ===== PHASE 2: DUAL-WRITE TO KNACK =====
+        knack_success = False
+        
+        try:
+            app.logger.info(f"[Questionnaire Submit] Dual-writing to Knack...")
+            
+            headers = {
+                'X-Knack-Application-Id': os.getenv('KNACK_APP_ID'),
+                'X-Knack-REST-API-Key': os.getenv('KNACK_API_KEY'),
+                'Content-Type': 'application/json'
+            }
+            
+            # Prepare Knack update data for Object_10 (VESPA scores)
+            knack_score_data = {
+                'field_146': str(cycle)  # Update cycle field
+            }
+            
+            # Map VESPA scores to correct fields based on cycle
+            score_fields = {
+                1: {'vision': 'field_155', 'effort': 'field_156', 'systems': 'field_157', 
+                    'practice': 'field_158', 'attitude': 'field_159', 'overall': 'field_160'},
+                2: {'vision': 'field_161', 'effort': 'field_162', 'systems': 'field_163',
+                    'practice': 'field_164', 'attitude': 'field_165', 'overall': 'field_166'},
+                3: {'vision': 'field_167', 'effort': 'field_168', 'systems': 'field_169',
+                    'practice': 'field_170', 'attitude': 'field_171', 'overall': 'field_172'}
+            }
+            
+            cycle_fields = score_fields[cycle]
+            for key, field_id in cycle_fields.items():
+                score_value = vespa_scores.get(key.upper())
+                if score_value is not None:
+                    knack_score_data[field_id] = str(score_value)
+            
+            # Update or create Object_10 record
+            if knack_record_id:
+                # Update existing record
+                response = requests.put(
+                    f"https://api.knack.com/v1/objects/object_10/records/{knack_record_id}",
+                    headers=headers,
+                    json=knack_score_data,
+                    timeout=30
+                )
+            else:
+                # Create new record (include email and name)
+                knack_score_data['field_197'] = student_email
+                knack_score_data['field_187'] = student_name
+                if establishment_knack_id:
+                    knack_score_data['field_133'] = [establishment_knack_id]
+                
+                response = requests.post(
+                    "https://api.knack.com/v1/objects/object_10/records",
+                    headers=headers,
+                    json=knack_score_data,
+                    timeout=30
+                )
+                
+                if response.ok:
+                    knack_record_id = response.json().get('id')
+                    app.logger.info(f"[Questionnaire Submit] Created new Knack Object_10 record: {knack_record_id}")
+            
+            if not response.ok:
+                app.logger.error(f"[Questionnaire Submit] Knack Object_10 write failed: {response.status_code} - {response.text}")
+            else:
+                app.logger.info(f"[Questionnaire Submit] Knack Object_10 updated successfully")
+            
+            # Now write to Object_29 (question responses)
+            knack_response_data = {}
+            
+            # Map each response to the correct Knack field
+            for question in QUESTION_MAPPINGS:
+                question_id = question['questionId']
+                if question_id in responses:
+                    response_value = responses[question_id]
+                    
+                    # Get the correct field for this cycle
+                    if cycle == 1:
+                        field_id = question.get('fieldIdCycle1')
+                    elif cycle == 2:
+                        field_id = question.get('fieldIdCycle2')
+                    elif cycle == 3:
+                        field_id = question.get('fieldIdCycle3')
+                    
+                    if field_id:
+                        knack_response_data[field_id] = str(response_value)
+            
+            # Link to Object_10 record
+            if knack_record_id:
+                knack_response_data['field_792'] = [knack_record_id]  # Connection to Object_10
+            
+            # Check if Object_29 record exists for this student
+            # Search by connected Object_10 record
+            if knack_record_id:
+                filters = {
+                    'match': 'and',
+                    'rules': [
+                        {
+                            'field': 'field_792',
+                            'operator': 'is',
+                            'value': knack_record_id
+                        }
+                    ]
+                }
+                
+                obj29_response = requests.get(
+                    "https://api.knack.com/v1/objects/object_29/records",
+                    headers=headers,
+                    params={'filters': json.dumps(filters)},
+                    timeout=30
+                )
+                
+                obj29_records = obj29_response.json().get('records', []) if obj29_response.ok else []
+                
+                if obj29_records:
+                    # Update existing Object_29 record
+                    obj29_id = obj29_records[0]['id']
+                    response = requests.put(
+                        f"https://api.knack.com/v1/objects/object_29/records/{obj29_id}",
+                        headers=headers,
+                        json=knack_response_data,
+                        timeout=30
+                    )
+                    app.logger.info(f"[Questionnaire Submit] Updated Object_29 record: {obj29_id}")
+                else:
+                    # Create new Object_29 record
+                    response = requests.post(
+                        "https://api.knack.com/v1/objects/object_29/records",
+                        headers=headers,
+                        json=knack_response_data,
+                        timeout=30
+                    )
+                    app.logger.info(f"[Questionnaire Submit] Created new Object_29 record")
+                
+                if not response.ok:
+                    app.logger.error(f"[Questionnaire Submit] Knack Object_29 write failed: {response.status_code} - {response.text}")
+                else:
+                    knack_success = True
+                    app.logger.info(f"[Questionnaire Submit] Knack Object_29 written successfully")
+            
+        except Exception as e:
+            app.logger.error(f"[Questionnaire Submit] Knack write failed: {e}")
+            traceback.print_exc()
+        
+        # ===== RETURN RESULTS =====
+        if supabase_success or knack_success:
+            return jsonify({
+                'success': True,
+                'supabaseWritten': supabase_success,
+                'knackWritten': knack_success,
+                'studentId': student_id,
+                'knackRecordId': knack_record_id,
+                'scores': vespa_scores
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Both Supabase and Knack writes failed',
+                'supabaseWritten': supabase_success,
+                'knackWritten': knack_success
+            }), 500
+        
+    except Exception as e:
+        app.logger.error(f"[Questionnaire Submit] Fatal error: {e}")
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ===== END VESPA QUESTIONNAIRE V2 ENDPOINTS =====
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 
