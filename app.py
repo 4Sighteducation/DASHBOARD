@@ -9246,8 +9246,11 @@ def submit_questionnaire():
             }
             
             # Prepare Knack update data for Object_10 (VESPA scores)
+            completion_date_knack = datetime.now().strftime('%d/%m/%Y')  # UK format DD/MM/YYYY
+            
             knack_score_data = {
-                'field_146': str(cycle)  # Update cycle field
+                'field_146': str(cycle),  # Cycle field
+                'field_855': completion_date_knack  # Completion date
             }
             
             # Map VESPA scores to correct fields based on cycle
@@ -9341,7 +9344,10 @@ def submit_questionnaire():
                 app.logger.info(f"[Questionnaire Submit] Knack Object_10 updated successfully")
             
             # Now write to Object_29 (question responses)
-            knack_response_data = {}
+            knack_response_data = {
+                'field_863': str(cycle),  # Cycle field for Object_29
+                'field_856': completion_date_knack  # Completion date for Object_29
+            }
             
             # Map each response to the correct Knack field
             for question in QUESTION_MAPPINGS:
@@ -9394,9 +9400,13 @@ def submit_questionnaire():
             if obj29_connections_added:
                 app.logger.info(f"[Questionnaire Submit] Adding staff connections to Object_29: {obj29_connections_added}")
             
-            # Check if Object_29 record exists for this student
-            # Search by connected Object_10 record
+            # CRITICAL: Find and update existing Object_29 record (not create new!)
+            # Search by connected Object_10 record (field_792)
+            obj29_id = None
+            
             if knack_record_id:
+                app.logger.info(f"[Questionnaire Submit] Searching for Object_29 record connected to Object_10: {knack_record_id}")
+                
                 filters = {
                     'match': 'and',
                     'rules': [
@@ -9415,33 +9425,47 @@ def submit_questionnaire():
                     timeout=30
                 )
                 
-                obj29_records = obj29_response.json().get('records', []) if obj29_response.ok else []
-                
-                if obj29_records:
-                    # Update existing Object_29 record
-                    obj29_id = obj29_records[0]['id']
-                    response = requests.put(
-                        f"https://api.knack.com/v1/objects/object_29/records/{obj29_id}",
-                        headers=headers,
-                        json=knack_response_data,
-                        timeout=30
-                    )
-                    app.logger.info(f"[Questionnaire Submit] Updated Object_29 record: {obj29_id}")
+                if obj29_response.ok:
+                    obj29_records = obj29_response.json().get('records', [])
+                    if obj29_records:
+                        obj29_id = obj29_records[0]['id']
+                        app.logger.info(f"[Questionnaire Submit] Found existing Object_29 record: {obj29_id}")
+                    else:
+                        app.logger.warning(f"[Questionnaire Submit] No Object_29 record found for Object_10: {knack_record_id}")
+                        app.logger.warning(f"[Questionnaire Submit] This student may not have been onboarded properly!")
                 else:
-                    # Create new Object_29 record
-                    response = requests.post(
-                        "https://api.knack.com/v1/objects/object_29/records",
-                        headers=headers,
-                        json=knack_response_data,
-                        timeout=30
-                    )
-                    app.logger.info(f"[Questionnaire Submit] Created new Object_29 record")
+                    app.logger.error(f"[Questionnaire Submit] Failed to search Object_29: {obj29_response.status_code}")
+            
+            # Update or create Object_29 record
+            if obj29_id:
+                # UPDATE existing record
+                response = requests.put(
+                    f"https://api.knack.com/v1/objects/object_29/records/{obj29_id}",
+                    headers=headers,
+                    json=knack_response_data,
+                    timeout=30
+                )
+                app.logger.info(f"[Questionnaire Submit] Updated Object_29 record: {obj29_id}")
+            else:
+                # CREATE new record (should be rare - only for improperly onboarded students)
+                app.logger.warning(f"[Questionnaire Submit] Creating NEW Object_29 record (student not properly onboarded?)")
+                response = requests.post(
+                    "https://api.knack.com/v1/objects/object_29/records",
+                    headers=headers,
+                    json=knack_response_data,
+                    timeout=30
+                )
                 
-                if not response.ok:
-                    app.logger.error(f"[Questionnaire Submit] Knack Object_29 write failed: {response.status_code} - {response.text}")
-                else:
-                    knack_success = True
-                    app.logger.info(f"[Questionnaire Submit] Knack Object_29 written successfully")
+                if response.ok:
+                    obj29_id = response.json().get('id')
+                    app.logger.info(f"[Questionnaire Submit] Created new Object_29 record: {obj29_id}")
+            
+            if not response.ok:
+                app.logger.error(f"[Questionnaire Submit] Knack Object_29 write failed: {response.status_code} - {response.text}")
+                app.logger.error(f"[Questionnaire Submit] Response body: {response.text[:500]}")
+            else:
+                knack_success = True
+                app.logger.info(f"[Questionnaire Submit] Knack Object_29 written successfully")
             
         except Exception as e:
             app.logger.error(f"[Questionnaire Submit] Knack write failed: {e}")
