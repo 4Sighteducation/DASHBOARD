@@ -9253,21 +9253,23 @@ def submit_questionnaire():
                 'field_855': completion_date_knack  # Completion date
             }
             
-            # Map VESPA scores to correct fields based on cycle
-            score_fields = {
-                1: {'vision': 'field_155', 'effort': 'field_156', 'systems': 'field_157', 
-                    'practice': 'field_158', 'attitude': 'field_159', 'overall': 'field_160'},
-                2: {'vision': 'field_161', 'effort': 'field_162', 'systems': 'field_163',
-                    'practice': 'field_164', 'attitude': 'field_165', 'overall': 'field_166'},
-                3: {'vision': 'field_167', 'effort': 'field_168', 'systems': 'field_169',
-                    'practice': 'field_170', 'attitude': 'field_171', 'overall': 'field_172'}
+            # CRITICAL: Write to CURRENT fields (147-152), not historical cycle fields
+            # Knack's conditional formulas will automatically copy to historical fields based on field_146 (cycle)
+            current_score_fields = {
+                'VISION': 'field_147',
+                'EFFORT': 'field_148',
+                'SYSTEMS': 'field_149',
+                'PRACTICE': 'field_150',
+                'ATTITUDE': 'field_151',
+                'OVERALL': 'field_152'
             }
             
-            cycle_fields = score_fields[cycle]
-            for key, field_id in cycle_fields.items():
-                score_value = vespa_scores.get(key.upper())
+            app.logger.info(f"[Questionnaire Submit] Writing VESPA scores to CURRENT fields (147-152)")
+            for key, field_id in current_score_fields.items():
+                score_value = vespa_scores.get(key)
                 if score_value is not None:
                     knack_score_data[field_id] = str(score_value)
+                    app.logger.info(f"[Questionnaire Submit] {key}: {score_value} → {field_id}")
             
             # Helper to extract connection ID from various formats
             def extract_connection_id(connection_data):
@@ -9349,22 +9351,33 @@ def submit_questionnaire():
                 'field_856': completion_date_knack  # Completion date for Object_29
             }
             
-            # Map each response to the correct Knack field
+            # Map each response to BOTH current AND historical Knack fields
+            app.logger.info(f"[Questionnaire Submit] Mapping 32 question responses to Object_29 fields")
+            
             for question in QUESTION_MAPPINGS:
                 question_id = question['questionId']
                 if question_id in responses:
                     response_value = responses[question_id]
                     
-                    # Get the correct field for this cycle
-                    if cycle == 1:
-                        field_id = question.get('fieldIdCycle1')
-                    elif cycle == 2:
-                        field_id = question.get('fieldIdCycle2')
-                    elif cycle == 3:
-                        field_id = question.get('fieldIdCycle3')
+                    # WRITE TO CURRENT FIELD (triggers conditional formulas)
+                    current_field_id = question.get('currentCycleFieldId')
+                    if current_field_id:
+                        knack_response_data[current_field_id] = str(response_value)
                     
-                    if field_id:
-                        knack_response_data[field_id] = str(response_value)
+                    # ALSO WRITE TO HISTORICAL FIELD (direct write as backup)
+                    if cycle == 1:
+                        historical_field_id = question.get('fieldIdCycle1')
+                    elif cycle == 2:
+                        historical_field_id = question.get('fieldIdCycle2')
+                    elif cycle == 3:
+                        historical_field_id = question.get('fieldIdCycle3')
+                    else:
+                        historical_field_id = None
+                    
+                    if historical_field_id:
+                        knack_response_data[historical_field_id] = str(response_value)
+            
+            app.logger.info(f"[Questionnaire Submit] Mapped {len([k for k in knack_response_data.keys() if k.startswith('field_')])} fields to Object_29")
             
             # Link to Object_10 record
             if knack_record_id:
