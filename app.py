@@ -9043,54 +9043,10 @@ def submit_questionnaire():
             'Content-Type': 'application/json'
         }
         
-        # STEP 1: Try to get staff connections from Object_6 (primary source of truth)
-        app.logger.info(f"[Questionnaire Submit] Looking up staff connections in Object_6...")
-        try:
-            obj6_filters = {
-                'match': 'and',
-                'rules': [{
-                    'field': 'field_182',  # Email connection field in Object_6
-                    'operator': 'is',
-                    'value': student_email
-                }]
-            }
-            
-            obj6_response = requests.get(
-                "https://api.knack.com/v1/objects/object_6/records",
-                headers=headers,
-                params={'filters': json.dumps(obj6_filters)},
-                timeout=30
-            )
-            
-            if obj6_response.ok:
-                obj6_records = obj6_response.json().get('records', [])
-                if obj6_records:
-                    obj6_record = obj6_records[0]
-                    app.logger.info(f"[Questionnaire Submit] Found Object_6 record for {student_email}")
-                    
-                    # Extract staff connections from Object_6
-                    # Staff Admin - field_190
-                    if obj6_record.get('field_190_raw'):
-                        staff_connections['staff_admin'] = obj6_record['field_190_raw']
-                    
-                    # Tutor - field_1682
-                    if obj6_record.get('field_1682_raw'):
-                        staff_connections['tutor'] = obj6_record['field_1682_raw']
-                    
-                    # Head of Year - field_547
-                    if obj6_record.get('field_547_raw'):
-                        staff_connections['head_of_year'] = obj6_record['field_547_raw']
-                    
-                    # Subject Teacher - field_2177
-                    if obj6_record.get('field_2177_raw'):
-                        staff_connections['subject_teacher'] = obj6_record['field_2177_raw']
-                    
-                    app.logger.info(f"[Questionnaire Submit] Object_6 staff connections: {[k for k,v in staff_connections.items() if v]}")
-        except Exception as e:
-            app.logger.warning(f"[Questionnaire Submit] Could not fetch Object_6 record: {e}")
-        
-        # STEP 2: Get Object_10 record (for establishment AND as fallback for staff connections)
+        # STEP 1: Get Object_10 record (for establishment + check existing staff connections)
         obj10_record = None
+        need_staff_lookup = False  # Flag to determine if we need to look up staff
+        
         if knack_record_id:
             try:
                 record_response = requests.get(
@@ -9116,24 +9072,89 @@ def submit_questionnaire():
                             except Exception as e:
                                 app.logger.warning(f"Could not map establishment: {e}")
                     
-                    # FALLBACK: Use Object_10 staff connections if Object_6 didn't have them
-                    if not staff_connections['staff_admin'] and obj10_record.get('field_439_raw'):
-                        staff_connections['staff_admin'] = obj10_record['field_439_raw']
-                        app.logger.info(f"[Questionnaire Submit] Using Object_10 fallback for staff_admin")
+                    # CHECK: Do staff connections already exist in Object_10?
+                    existing_staff_admin = obj10_record.get('field_439_raw')
+                    existing_tutor = obj10_record.get('field_145_raw')
+                    existing_hoy = obj10_record.get('field_429_raw')
+                    existing_teacher = obj10_record.get('field_2191_raw')
                     
-                    if not staff_connections['tutor'] and obj10_record.get('field_145_raw'):
-                        staff_connections['tutor'] = obj10_record['field_145_raw']
-                        app.logger.info(f"[Questionnaire Submit] Using Object_10 fallback for tutor")
-                    
-                    if not staff_connections['head_of_year'] and obj10_record.get('field_429_raw'):
-                        staff_connections['head_of_year'] = obj10_record['field_429_raw']
-                        app.logger.info(f"[Questionnaire Submit] Using Object_10 fallback for head_of_year")
-                    
-                    if not staff_connections['subject_teacher'] and obj10_record.get('field_2191_raw'):
-                        staff_connections['subject_teacher'] = obj10_record['field_2191_raw']
-                        app.logger.info(f"[Questionnaire Submit] Using Object_10 fallback for subject_teacher")
+                    # If ALL connections exist, use them and skip lookup
+                    if existing_staff_admin and existing_tutor and existing_hoy and existing_teacher:
+                        app.logger.info(f"[Questionnaire Submit] All staff connections exist in Object_10 - skipping lookup")
+                        staff_connections['staff_admin'] = existing_staff_admin
+                        staff_connections['tutor'] = existing_tutor
+                        staff_connections['head_of_year'] = existing_hoy
+                        staff_connections['subject_teacher'] = existing_teacher
+                        need_staff_lookup = False
+                    else:
+                        # Some connections missing - need to look them up
+                        missing = []
+                        if not existing_staff_admin: missing.append('staff_admin')
+                        if not existing_tutor: missing.append('tutor')
+                        if not existing_hoy: missing.append('head_of_year')
+                        if not existing_teacher: missing.append('subject_teacher')
+                        
+                        app.logger.info(f"[Questionnaire Submit] Missing connections in Object_10: {missing} - will look up")
+                        
+                        # Store existing ones so we don't overwrite
+                        if existing_staff_admin: staff_connections['staff_admin'] = existing_staff_admin
+                        if existing_tutor: staff_connections['tutor'] = existing_tutor
+                        if existing_hoy: staff_connections['head_of_year'] = existing_hoy
+                        if existing_teacher: staff_connections['subject_teacher'] = existing_teacher
+                        
+                        need_staff_lookup = True
             except Exception as e:
                 app.logger.warning(f"[Questionnaire Submit] Could not fetch Object_10 record: {e}")
+                need_staff_lookup = True  # If we can't check, look them up to be safe
+        else:
+            # No Object_10 record yet (new student) - need to look up staff
+            app.logger.info(f"[Questionnaire Submit] New student - will look up staff connections")
+            need_staff_lookup = True
+        
+        # STEP 2: Only look up staff from Object_6 if needed
+        if need_staff_lookup:
+            app.logger.info(f"[Questionnaire Submit] Looking up staff connections in Object_6...")
+            try:
+                obj6_filters = {
+                    'match': 'and',
+                    'rules': [{
+                        'field': 'field_182',  # Email connection field in Object_6
+                        'operator': 'is',
+                        'value': student_email
+                    }]
+                }
+                
+                obj6_response = requests.get(
+                    "https://api.knack.com/v1/objects/object_6/records",
+                    headers=headers,
+                    params={'filters': json.dumps(obj6_filters)},
+                    timeout=30
+                )
+                
+                if obj6_response.ok:
+                    obj6_records = obj6_response.json().get('records', [])
+                    if obj6_records:
+                        obj6_record = obj6_records[0]
+                        app.logger.info(f"[Questionnaire Submit] Found Object_6 record for {student_email}")
+                        
+                        # Only fill in MISSING connections from Object_6
+                        if not staff_connections['staff_admin'] and obj6_record.get('field_190_raw'):
+                            staff_connections['staff_admin'] = obj6_record['field_190_raw']
+                            app.logger.info(f"[Questionnaire Submit] Found staff_admin in Object_6")
+                        
+                        if not staff_connections['tutor'] and obj6_record.get('field_1682_raw'):
+                            staff_connections['tutor'] = obj6_record['field_1682_raw']
+                            app.logger.info(f"[Questionnaire Submit] Found tutor in Object_6")
+                        
+                        if not staff_connections['head_of_year'] and obj6_record.get('field_547_raw'):
+                            staff_connections['head_of_year'] = obj6_record['field_547_raw']
+                            app.logger.info(f"[Questionnaire Submit] Found head_of_year in Object_6")
+                        
+                        if not staff_connections['subject_teacher'] and obj6_record.get('field_2177_raw'):
+                            staff_connections['subject_teacher'] = obj6_record['field_2177_raw']
+                            app.logger.info(f"[Questionnaire Submit] Found subject_teacher in Object_6")
+            except Exception as e:
+                app.logger.warning(f"[Questionnaire Submit] Could not fetch Object_6 record: {e}")
         
         # ===== PHASE 1: WRITE TO SUPABASE =====
         supabase_success = False
@@ -9245,7 +9266,7 @@ def submit_questionnaire():
                 if score_value is not None:
                     knack_score_data[field_id] = str(score_value)
             
-            # Add staff connections to Object_10
+            # Helper to extract connection ID from various formats
             def extract_connection_id(connection_data):
                 """Helper to extract ID from connection field (handles different formats)"""
                 if not connection_data:
@@ -9257,29 +9278,35 @@ def submit_questionnaire():
                     return item
                 return None
             
+            # Only add staff connections if we have them (don't send empty values)
+            connections_added = []
+            
             if staff_connections['staff_admin']:
                 staff_admin_id = extract_connection_id(staff_connections['staff_admin'])
                 if staff_admin_id:
                     knack_score_data['field_439'] = [staff_admin_id]
-                    app.logger.info(f"[Questionnaire Submit] Added staff_admin to Object_10")
+                    connections_added.append('staff_admin')
             
             if staff_connections['tutor']:
                 tutor_id = extract_connection_id(staff_connections['tutor'])
                 if tutor_id:
                     knack_score_data['field_145'] = [tutor_id]
-                    app.logger.info(f"[Questionnaire Submit] Added tutor to Object_10")
+                    connections_added.append('tutor')
             
             if staff_connections['head_of_year']:
                 hoy_id = extract_connection_id(staff_connections['head_of_year'])
                 if hoy_id:
                     knack_score_data['field_429'] = [hoy_id]
-                    app.logger.info(f"[Questionnaire Submit] Added head_of_year to Object_10")
+                    connections_added.append('head_of_year')
             
             if staff_connections['subject_teacher']:
                 teacher_id = extract_connection_id(staff_connections['subject_teacher'])
                 if teacher_id:
                     knack_score_data['field_2191'] = [teacher_id]
-                    app.logger.info(f"[Questionnaire Submit] Added subject_teacher to Object_10")
+                    connections_added.append('subject_teacher')
+            
+            if connections_added:
+                app.logger.info(f"[Questionnaire Submit] Adding staff connections to Object_10: {connections_added}")
             
             # Update or create Object_10 record
             if knack_record_id:
@@ -9337,30 +9364,35 @@ def submit_questionnaire():
             if knack_record_id:
                 knack_response_data['field_792'] = [knack_record_id]  # Connection to Object_10
             
-            # Add staff connections to Object_29
+            # Add staff connections to Object_29 (only if we have them)
+            obj29_connections_added = []
+            
             if staff_connections['staff_admin']:
                 staff_admin_id = extract_connection_id(staff_connections['staff_admin'])
                 if staff_admin_id:
                     knack_response_data['field_2069'] = [staff_admin_id]
-                    app.logger.info(f"[Questionnaire Submit] Added staff_admin to Object_29")
+                    obj29_connections_added.append('staff_admin')
             
             if staff_connections['tutor']:
                 tutor_id = extract_connection_id(staff_connections['tutor'])
                 if tutor_id:
                     knack_response_data['field_2070'] = [tutor_id]
-                    app.logger.info(f"[Questionnaire Submit] Added tutor to Object_29")
+                    obj29_connections_added.append('tutor')
             
             if staff_connections['head_of_year']:
                 hoy_id = extract_connection_id(staff_connections['head_of_year'])
                 if hoy_id:
                     knack_response_data['field_3266'] = [hoy_id]
-                    app.logger.info(f"[Questionnaire Submit] Added head_of_year to Object_29")
+                    obj29_connections_added.append('head_of_year')
             
             if staff_connections['subject_teacher']:
                 teacher_id = extract_connection_id(staff_connections['subject_teacher'])
                 if teacher_id:
                     knack_response_data['field_2071'] = [teacher_id]
-                    app.logger.info(f"[Questionnaire Submit] Added subject_teacher to Object_29")
+                    obj29_connections_added.append('subject_teacher')
+            
+            if obj29_connections_added:
+                app.logger.info(f"[Questionnaire Submit] Adding staff connections to Object_29: {obj29_connections_added}")
             
             # Check if Object_29 record exists for this student
             # Search by connected Object_10 record
