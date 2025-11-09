@@ -9077,21 +9077,29 @@ def validate_questionnaire_access():
             if obj10_records:
                 obj10_record = obj10_records[0]
         
-        # Check completion status for the active cycle using CURRENT score fields (147-152)
-        # If any current field has a value, the cycle is complete
+        # Check completion status for the active cycle using HISTORICAL cycle fields
+        # These are permanent and don't get overwritten like current fields (147-152)
         if obj10_record:
-            current_vision = obj10_record.get('field_147_raw')
-            current_effort = obj10_record.get('field_148_raw')
-            current_overall = obj10_record.get('field_152_raw')
+            # Map cycle to historical Vision fields (reliable indicator of completion)
+            historical_vision_fields = {
+                1: 'field_155',  # V1
+                2: 'field_161',  # V2
+                3: 'field_167'   # V3
+            }
+            
+            vision_field = historical_vision_fields.get(active_cycle)
+            vision_value = obj10_record.get(f'{vision_field}_raw') if vision_field else None
+            
             current_cycle_field = obj10_record.get('field_146_raw')
             
+            app.logger.info(f"[Questionnaire Validate] Checking if Cycle {active_cycle} is complete...")
+            app.logger.info(f"[Questionnaire Validate] Historical Vision field ({vision_field}): {vision_value}")
             app.logger.info(f"[Questionnaire Validate] Current cycle field (146): {current_cycle_field}")
-            app.logger.info(f"[Questionnaire Validate] Current scores (147-152): V:{current_vision}, E:{current_effort}, O:{current_overall}")
             
-            # Check if the current cycle in the record matches the active cycle
-            # AND if scores exist (meaning they already completed it)
-            if current_cycle_field == active_cycle and current_overall is not None and current_overall != '':
-                app.logger.info(f"[Questionnaire Validate] Student already completed active Cycle {active_cycle}")
+            # Check if this specific cycle has been completed
+            # A cycle is complete if its historical Vision field has a value (not null, not empty, not 0)
+            if vision_value is not None and vision_value != '' and vision_value != 0:
+                app.logger.info(f"[Questionnaire Validate] Student already completed Cycle {active_cycle} (Vision score: {vision_value})")
                 return jsonify({
                     'allowed': False,
                     'cycle': active_cycle,
