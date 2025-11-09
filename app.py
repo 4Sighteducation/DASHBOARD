@@ -10019,5 +10019,299 @@ def get_report_data():
 # ===== END VESPA REPORT V2 ENDPOINT =====
 
 
+# ===== VESPA STAFF OVERVIEW ENDPOINT =====
+
+@app.route('/api/vespa/staff-overview', methods=['GET'])
+def get_staff_overview():
+    """
+    Get VESPA overview data for all students connected to a staff member
+    Returns student list with scores, responses, and goals for the current cycle
+    
+    Staff connections (many-to-many):
+    - Staff Admin: Object_10 field_439 → Object_5 field_86 (email)
+    - Tutor: Object_10 field_145 → Object_7 field_96 (email)
+    - Head of Year: Object_10 field_429 → Object_18 field_417 (email)
+    - Subject Teacher: Object_10 field_2191 → Object_78 field_1879 (email)
+    """
+    try:
+        staff_email = request.args.get('email')
+        
+        if not staff_email:
+            return jsonify({'error': 'Email is required'}), 400
+        
+        app.logger.info(f"[Staff Overview] Fetching data for {staff_email}")
+        
+        if not supabase_client:
+            return jsonify({'error': 'Database not available'}), 500
+        
+        # Headers for Knack API
+        headers = {
+            'X-Knack-Application-Id': os.getenv('KNACK_APP_ID'),
+            'X-Knack-REST-API-Key': os.getenv('KNACK_API_KEY')
+        }
+        
+        # Step 1: Detect staff role(s) and get staff member info
+        staff_info = {
+            'name': '',
+            'email': staff_email,
+            'roles': []
+        }
+        
+        staff_id_mappings = {}
+        
+        # Check Staff Admin (Object_5)
+        try:
+            admin_response = requests.get(
+                "https://api.knack.com/v1/objects/object_5/records",
+                headers=headers,
+                params={'filters': json.dumps({'match': 'and', 'rules': [{'field': 'field_86', 'operator': 'is', 'value': staff_email}]})},
+                timeout=10
+            )
+            if admin_response.ok:
+                admin_records = admin_response.json().get('records', [])
+                if admin_records:
+                    staff_info['roles'].append('staff_admin')
+                    staff_info['name'] = admin_records[0].get('field_84', '') or admin_records[0].get('field_84_raw', '')
+                    staff_id_mappings['staff_admin'] = admin_records[0].get('id')
+                    app.logger.info(f"[Staff Overview] Detected Staff Admin role")
+        except Exception as e:
+            app.logger.warning(f"Could not check Staff Admin role: {e}")
+        
+        # Check Tutor (Object_7)
+        try:
+            tutor_response = requests.get(
+                "https://api.knack.com/v1/objects/object_7/records",
+                headers=headers,
+                params={'filters': json.dumps({'match': 'and', 'rules': [{'field': 'field_96', 'operator': 'is', 'value': staff_email}]})},
+                timeout=10
+            )
+            if tutor_response.ok:
+                tutor_records = tutor_response.json().get('records', [])
+                if tutor_records:
+                    staff_info['roles'].append('tutor')
+                    if not staff_info['name']:
+                        staff_info['name'] = tutor_records[0].get('field_94', '') or tutor_records[0].get('field_94_raw', '')
+                    staff_id_mappings['tutor'] = tutor_records[0].get('id')
+                    app.logger.info(f"[Staff Overview] Detected Tutor role")
+        except Exception as e:
+            app.logger.warning(f"Could not check Tutor role: {e}")
+        
+        # Check Head of Year (Object_18)
+        try:
+            hoy_response = requests.get(
+                "https://api.knack.com/v1/objects/object_18/records",
+                headers=headers,
+                params={'filters': json.dumps({'match': 'and', 'rules': [{'field': 'field_417', 'operator': 'is', 'value': staff_email}]})},
+                timeout=10
+            )
+            if hoy_response.ok:
+                hoy_records = hoy_response.json().get('records', [])
+                if hoy_records:
+                    staff_info['roles'].append('head_of_year')
+                    if not staff_info['name']:
+                        staff_info['name'] = hoy_records[0].get('field_415', '') or hoy_records[0].get('field_415_raw', '')
+                    staff_id_mappings['head_of_year'] = hoy_records[0].get('id')
+                    app.logger.info(f"[Staff Overview] Detected Head of Year role")
+        except Exception as e:
+            app.logger.warning(f"Could not check Head of Year role: {e}")
+        
+        # Check Subject Teacher (Object_78)
+        try:
+            teacher_response = requests.get(
+                "https://api.knack.com/v1/objects/object_78/records",
+                headers=headers,
+                params={'filters': json.dumps({'match': 'and', 'rules': [{'field': 'field_1879', 'operator': 'is', 'value': staff_email}]})},
+                timeout=10
+            )
+            if teacher_response.ok:
+                teacher_records = teacher_response.json().get('records', [])
+                if teacher_records:
+                    staff_info['roles'].append('subject_teacher')
+                    if not staff_info['name']:
+                        staff_info['name'] = teacher_records[0].get('field_1877', '') or teacher_records[0].get('field_1877_raw', '')
+                    staff_id_mappings['subject_teacher'] = teacher_records[0].get('id')
+                    app.logger.info(f"[Staff Overview] Detected Subject Teacher role")
+        except Exception as e:
+            app.logger.warning(f"Could not check Subject Teacher role: {e}")
+        
+        if not staff_info['roles']:
+            return jsonify({'error': 'No staff role found for this email'}), 404
+        
+        # Step 2: Get all Object_10 (VESPA Results) records connected to this staff member
+        # Build filter rules based on detected roles
+        filter_rules = []
+        
+        if 'staff_admin' in staff_info['roles']:
+            filter_rules.append({'field': 'field_439', 'operator': 'contains', 'value': staff_id_mappings['staff_admin']})
+        
+        if 'tutor' in staff_info['roles']:
+            filter_rules.append({'field': 'field_145', 'operator': 'contains', 'value': staff_id_mappings['tutor']})
+        
+        if 'head_of_year' in staff_info['roles']:
+            filter_rules.append({'field': 'field_429', 'operator': 'contains', 'value': staff_id_mappings['head_of_year']})
+        
+        if 'subject_teacher' in staff_info['roles']:
+            filter_rules.append({'field': 'field_2191', 'operator': 'contains', 'value': staff_id_mappings['subject_teacher']})
+        
+        # Build query with OR logic (any matching connection)
+        filters = {'match': 'or', 'rules': filter_rules}
+        
+        app.logger.info(f"[Staff Overview] Fetching students with filters: {json.dumps(filters)}")
+        
+        # Fetch connected student records from Object_10
+        try:
+            obj10_response = requests.get(
+                "https://api.knack.com/v1/objects/object_10/records",
+                headers=headers,
+                params={
+                    'filters': json.dumps(filters),
+                    'rows_per_page': 1000  # Get up to 1000 students
+                },
+                timeout=30
+            )
+            
+            if not obj10_response.ok:
+                app.logger.error(f"[Staff Overview] Knack API error: {obj10_response.status_code} - {obj10_response.text}")
+                return jsonify({'error': 'Failed to fetch student data from Knack'}), 500
+            
+            obj10_records = obj10_response.json().get('records', [])
+            app.logger.info(f"[Staff Overview] Found {len(obj10_records)} connected students")
+            
+        except Exception as e:
+            app.logger.error(f"[Staff Overview] Error fetching Object_10: {e}")
+            return jsonify({'error': f'Failed to query student records: {str(e)}'}), 500
+        
+        # Step 3: Process each student and get their VESPA data from Supabase
+        students_data = []
+        filter_sets = {
+            'groups': set(),
+            'yearGroups': set(),
+            'faculties': set(),
+            'courses': set(),
+            'cycles': set()
+        }
+        
+        for record in obj10_records:
+            try:
+                # Extract student info from Object_10
+                student_email = record.get('field_197', '') or record.get('field_197_raw', '')
+                student_name = record.get('field_198', '') or record.get('field_198_raw', '')
+                
+                if not student_email:
+                    continue
+                
+                # Get metadata fields
+                group = record.get('field_223', '') or record.get('field_223_raw', '')
+                year_group = record.get('field_144', '') or record.get('field_144_raw', '')
+                faculty = record.get('field_782', '') or record.get('field_782_raw', '')
+                course = record.get('field_2299', '') or record.get('field_2299_raw', '')
+                current_cycle_raw = record.get('field_146_raw', '')
+                current_cycle = int(current_cycle_raw) if current_cycle_raw and str(current_cycle_raw).isdigit() else 1
+                
+                # Add to filter sets
+                if group:
+                    filter_sets['groups'].add(group)
+                if year_group:
+                    filter_sets['yearGroups'].add(year_group)
+                if faculty:
+                    filter_sets['faculties'].add(faculty)
+                if course:
+                    filter_sets['courses'].add(course)
+                if current_cycle:
+                    filter_sets['cycles'].add(current_cycle)
+                
+                # Get VESPA scores from Supabase for current cycle
+                scores_result = supabase_client.table('vespa_scores')\
+                    .select('cycle, vision, effort, systems, practice, attitude, overall, completion_date')\
+                    .eq('email', student_email)\
+                    .eq('cycle', current_cycle)\
+                    .order('completion_date', desc=True)\
+                    .limit(1)\
+                    .execute()
+                
+                scores = None
+                has_completed = False
+                if scores_result.data:
+                    scores = scores_result.data[0]
+                    has_completed = True
+                
+                # Get student response for current cycle (fields 2302, 2303, 2304)
+                response_text = ''
+                if current_cycle == 1:
+                    response_text = record.get('field_2302', '') or record.get('field_2302_raw', '')
+                elif current_cycle == 2:
+                    response_text = record.get('field_2303', '') or record.get('field_2303_raw', '')
+                elif current_cycle == 3:
+                    response_text = record.get('field_2304', '') or record.get('field_2304_raw', '')
+                
+                # Get student goals for current cycle (fields 2499, 2493, 2494)
+                goals_text = ''
+                if current_cycle == 1:
+                    goals_text = record.get('field_2499', '') or record.get('field_2499_raw', '')
+                elif current_cycle == 2:
+                    goals_text = record.get('field_2493', '') or record.get('field_2493_raw', '')
+                elif current_cycle == 3:
+                    goals_text = record.get('field_2494', '') or record.get('field_2494_raw', '')
+                
+                # Build student data object
+                student_data = {
+                    'id': record.get('id'),
+                    'name': student_name,
+                    'email': student_email,
+                    'group': group,
+                    'yearGroup': year_group,
+                    'faculty': faculty,
+                    'course': course,
+                    'currentCycle': current_cycle,
+                    'hasCompleted': has_completed,
+                    'scores': scores if scores else {
+                        'vision': None,
+                        'effort': None,
+                        'systems': None,
+                        'practice': None,
+                        'attitude': None,
+                        'overall': None,
+                        'completionDate': None
+                    },
+                    'response': response_text,
+                    'goals': goals_text
+                }
+                
+                students_data.append(student_data)
+                
+            except Exception as e:
+                app.logger.warning(f"[Staff Overview] Error processing student {record.get('id')}: {e}")
+                continue
+        
+        # Sort students by name
+        students_data.sort(key=lambda x: x.get('name', '').lower())
+        
+        # Convert filter sets to sorted lists
+        filters_data = {
+            'groups': sorted(list(filter_sets['groups'])),
+            'yearGroups': sorted(list(filter_sets['yearGroups'])),
+            'faculties': sorted(list(filter_sets['faculties'])),
+            'courses': sorted(list(filter_sets['courses'])),
+            'cycles': sorted(list(filter_sets['cycles']))
+        }
+        
+        app.logger.info(f"[Staff Overview] Returning {len(students_data)} students")
+        
+        # Build response
+        return jsonify({
+            'success': True,
+            'staffMember': staff_info,
+            'students': students_data,
+            'filters': filters_data
+        })
+        
+    except Exception as e:
+        app.logger.error(f"[Staff Overview] Error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+# ===== END VESPA STAFF OVERVIEW ENDPOINT =====
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 
