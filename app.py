@@ -9039,7 +9039,7 @@ def validate_questionnaire_access():
             app.logger.info(f"[Questionnaire Validate] No active cycle for today: {today}")
             app.logger.info(f"[Questionnaire Validate] Checking for Cycle Unlocked override...")
             
-            # Fetch student's Object_10 record to check field_1582 (Cycle Unlocked)
+            # Fetch student's Object_10 record to check field_1679 (Cycle Unlocked)
             obj10_filters = {
                 'match': 'and',
                 'rules': [{
@@ -9063,14 +9063,14 @@ def validate_questionnaire_access():
                 obj10_records = obj10_response.json().get('records', [])
                 if obj10_records:
                     obj10_record = obj10_records[0]
-                    cycle_unlocked_raw = obj10_record.get('field_1582_raw')
-                    cycle_unlocked_display = obj10_record.get('field_1582')
+                    cycle_unlocked_raw = obj10_record.get('field_1679_raw')
+                    cycle_unlocked_display = obj10_record.get('field_1679')
                     
                     # Knack boolean: _raw = true/false (boolean), display = "Yes"/"No" (string)
                     cycle_unlocked = cycle_unlocked_raw is True or cycle_unlocked_raw == True or cycle_unlocked_display == 'Yes'
                     
-                    app.logger.info(f"[Questionnaire Validate] Cycle Unlocked field_1582_raw: {cycle_unlocked_raw} (type: {type(cycle_unlocked_raw).__name__})")
-                    app.logger.info(f"[Questionnaire Validate] Cycle Unlocked field_1582 display: {cycle_unlocked_display}")
+                    app.logger.info(f"[Questionnaire Validate] Cycle Unlocked field_1679_raw: {cycle_unlocked_raw} (type: {type(cycle_unlocked_raw).__name__})")
+                    app.logger.info(f"[Questionnaire Validate] Cycle Unlocked field_1679 display: {cycle_unlocked_display}")
                     app.logger.info(f"[Questionnaire Validate] Cycle Unlocked result: {cycle_unlocked}")
             
             if cycle_unlocked:
@@ -9523,7 +9523,7 @@ def submit_questionnaire():
             knack_score_data = {
                 'field_146': str(cycle),  # Cycle field
                 'field_855': completion_date_knack,  # Completion date
-                'field_1582': 'No'  # Reset Cycle Unlocked to No after successful completion
+                'field_1679': 'No'  # Reset Cycle Unlocked to No after successful completion
             }
             
             # CRITICAL: Write to CURRENT fields (147-152), not historical cycle fields
