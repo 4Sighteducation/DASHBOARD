@@ -9827,6 +9827,115 @@ def submit_questionnaire():
 
 # ===== END VESPA QUESTIONNAIRE V2 ENDPOINTS =====
 
+# ===== VESPA REPORT V2 ENDPOINT =====
+
+@app.route('/api/vespa/report/data', methods=['GET'])
+def get_report_data():
+    """
+    Get VESPA report data from Supabase for all cycles
+    Returns student info, scores, and question responses
+    """
+    try:
+        email = request.args.get('email')
+        
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+        
+        app.logger.info(f"[Report Data] Fetching report for {email}")
+        
+        if not supabase_client:
+            return jsonify({'error': 'Database not available'}), 500
+        
+        # Get student record
+        student_result = supabase_client.table('students')\
+            .select('id, name, email, establishment_id, year_group, group, course, faculty')\
+            .eq('email', email)\
+            .order('academic_year', desc=True)\
+            .limit(1)\
+            .execute()
+        
+        if not student_result.data:
+            return jsonify({'error': 'Student not found'}), 404
+        
+        student_data = student_result.data[0]
+        student_id = student_data['id']
+        
+        # Get establishment info (including logo)
+        establishment_info = None
+        if student_data.get('establishment_id'):
+            est_result = supabase_client.table('establishments')\
+                .select('name, knack_id')\
+                .eq('id', student_data['establishment_id'])\
+                .execute()
+            
+            if est_result.data:
+                establishment_info = est_result.data[0]
+                
+                # Get logo URL from Knack (field_3206)
+                if establishment_info.get('knack_id'):
+                    try:
+                        headers = {
+                            'X-Knack-Application-Id': os.getenv('KNACK_APP_ID'),
+                            'X-Knack-REST-API-Key': os.getenv('KNACK_API_KEY')
+                        }
+                        knack_response = requests.get(
+                            f"https://api.knack.com/v1/objects/object_2/records/{establishment_info['knack_id']}",
+                            headers=headers,
+                            timeout=5
+                        )
+                        if knack_response.ok:
+                            knack_record = knack_response.json()
+                            logo_url = knack_record.get('field_3206_raw') or knack_record.get('field_3206', '')
+                            establishment_info['logoUrl'] = logo_url
+                    except Exception as e:
+                        app.logger.warning(f"Could not fetch logo: {e}")
+        
+        # Get VESPA scores for all cycles
+        scores_result = supabase_client.table('vespa_scores')\
+            .select('cycle, vision, effort, systems, practice, attitude, overall, completion_date')\
+            .eq('student_id', student_id)\
+            .order('cycle')\
+            .execute()
+        
+        # Get question responses for all cycles
+        responses_result = supabase_client.table('question_responses')\
+            .select('cycle, question_id, response_value')\
+            .eq('student_id', student_id)\
+            .execute()
+        
+        # Organize responses by cycle
+        responses_by_cycle = {1: {}, 2: {}, 3: {}}
+        for response in responses_result.data:
+            cycle = response['cycle']
+            question_id = response['question_id']
+            value = response['response_value']
+            if cycle in responses_by_cycle:
+                responses_by_cycle[cycle][question_id] = value
+        
+        # Build response
+        return jsonify({
+            'success': True,
+            'student': {
+                'name': student_data.get('name', ''),
+                'email': student_data.get('email', ''),
+                'establishment': establishment_info.get('name', '') if establishment_info else '',
+                'logoUrl': establishment_info.get('logoUrl', '') if establishment_info else '',
+                'yearGroup': student_data.get('year_group', ''),
+                'group': student_data.get('group', ''),
+                'course': student_data.get('course', ''),
+                'faculty': student_data.get('faculty', '')
+            },
+            'scores': scores_result.data,
+            'responses': responses_by_cycle
+        })
+        
+    except Exception as e:
+        app.logger.error(f"[Report Data] Error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+# ===== END VESPA REPORT V2 ENDPOINT =====
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 
