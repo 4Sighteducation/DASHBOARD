@@ -9941,6 +9941,31 @@ def get_report_data():
             if cycle in responses_by_cycle:
                 responses_by_cycle[cycle][question_id] = value
         
+        # Get student responses, goals, and coaching notes
+        responses_data = supabase_client.table('student_responses')\
+            .select('cycle, response_text, submitted_at')\
+            .eq('student_id', student_id)\
+            .execute()
+        
+        goals_data = supabase_client.table('student_goals')\
+            .select('cycle, goal_text, goal_set_date, goal_due_date')\
+            .eq('student_id', student_id)\
+            .execute()
+        
+        coaching_data = supabase_client.table('staff_coaching_notes')\
+            .select('cycle, coaching_text, coaching_date, staff_id')\
+            .eq('student_id', student_id)\
+            .execute()
+        
+        # Organize by cycle
+        student_profile = {}
+        for cycle in [1, 2, 3]:
+            student_profile[cycle] = {
+                'response': next((r for r in responses_data.data if r['cycle'] == cycle), None),
+                'goals': next((g for g in goals_data.data if g['cycle'] == cycle), None),
+                'coaching': next((c for c in coaching_data.data if c['cycle'] == cycle), None)
+            }
+        
         # Get coaching content for each score
         coaching_content_map = {}
         
@@ -9982,7 +10007,8 @@ def get_report_data():
             },
             'scores': scores_result.data,
             'responses': responses_by_cycle,
-            'coachingContent': coaching_content_map
+            'coachingContent': coaching_content_map,
+            'studentProfile': student_profile  # Responses, goals, coaching notes by cycle
         })
         
     except Exception as e:

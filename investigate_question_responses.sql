@@ -17,7 +17,7 @@ WHERE name ILIKE '%Ashlyns%' OR name ILIKE '%Coffs%'
 ORDER BY name;
 
 -- Copy the IDs from above and use them below
--- Ashlyns ID: 308cc905-c1c9-4b71-b976-dfe4d8c7d7ec
+-- Ashlyns ID: caa446f7-c1ad-47cd-acf1-771cacf10d3a
 -- Coffs Harbour ID: caa446f7-c1ad-47cd-acf1-771cacf10d3a
 
 
@@ -33,7 +33,7 @@ SELECT
     MIN(created_at) as first_created,
     MAX(created_at) as last_created
 FROM students
-WHERE establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
 GROUP BY academic_year
 ORDER BY academic_year DESC;
 
@@ -48,7 +48,7 @@ SELECT
     MAX(vs.completion_date) as latest_completion
 FROM vespa_scores vs
 JOIN students s ON vs.student_id = s.id
-WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
 GROUP BY vs.academic_year, vs.cycle
 ORDER BY vs.academic_year DESC, vs.cycle;
 
@@ -64,7 +64,7 @@ SELECT
     MAX(qr.created_at) as latest_response
 FROM question_responses qr
 JOIN students s ON qr.student_id = s.id
-WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
 GROUP BY qr.academic_year, qr.cycle
 ORDER BY qr.academic_year DESC, qr.cycle;
 
@@ -77,7 +77,7 @@ WITH vespa_students AS (
         vs.cycle
     FROM vespa_scores vs
     JOIN students s ON vs.student_id = s.id
-    WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+    WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
         AND vs.academic_year = '2025/2026'
         AND vs.cycle = 1
 ),
@@ -88,7 +88,7 @@ response_students AS (
         qr.cycle
     FROM question_responses qr
     JOIN students s ON qr.student_id = s.id
-    WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+    WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
         AND qr.academic_year = '2025/2026'
         AND qr.cycle = 1
 )
@@ -110,7 +110,7 @@ WITH vespa_students AS (
         vs.completion_date as vespa_date
     FROM vespa_scores vs
     JOIN students s ON vs.student_id = s.id
-    WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+    WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
         AND vs.academic_year = '2025/2026'
         AND vs.cycle = 1
 ),
@@ -152,7 +152,7 @@ LEFT JOIN (
     WHERE cycle = 1
     GROUP BY student_id, academic_year, cycle
 ) qr ON s.id = qr.student_id AND qr.cycle = 1
-WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     AND (
         s.academic_year != vs.academic_year 
         OR s.academic_year != qr.academic_year
@@ -257,7 +257,7 @@ SELECT
 FROM question_responses qr
 JOIN students s ON qr.student_id = s.id
 WHERE s.establishment_id IN (
-    '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec',  -- Ashlyns
+    'caa446f7-c1ad-47cd-acf1-771cacf10d3a',  -- Ashlyns
     'caa446f7-c1ad-47cd-acf1-771cacf10d3a'   -- Coffs Harbour
 )
 GROUP BY DATE_TRUNC('month', qr.created_at), qr.academic_year
@@ -273,7 +273,7 @@ FROM students s
 JOIN establishments e ON s.establishment_id = e.id
 WHERE s.academic_year IS NULL
     AND s.establishment_id IN (
-        '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec',
+        'caa446f7-c1ad-47cd-acf1-771cacf10d3a',
         'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     )
 GROUP BY e.name;
@@ -301,7 +301,7 @@ LEFT JOIN (
     AND vs.cycle = qr.cycle
     AND vs.academic_year = qr.academic_year
 WHERE s.establishment_id IN (
-    '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec',
+    'caa446f7-c1ad-47cd-acf1-771cacf10d3a',
     'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
 )
 GROUP BY e.name, vs.academic_year, vs.cycle
@@ -325,7 +325,7 @@ SELECT
     END as status
 FROM students s
 LEFT JOIN question_responses qr ON s.id = qr.student_id
-WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     AND s.academic_year = '2025/2026'
     AND (qr.cycle = 1 OR qr.cycle IS NULL)
 GROUP BY s.email, s.academic_year, qr.cycle
@@ -346,7 +346,7 @@ FROM question_responses qr
 JOIN students s ON qr.student_id = s.id
 JOIN establishments e ON s.establishment_id = e.id
 WHERE s.establishment_id IN (
-    '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec',
+    'caa446f7-c1ad-47cd-acf1-771cacf10d3a',
     'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
 )
 GROUP BY e.name, qr.academic_year, qr.cycle
@@ -367,7 +367,7 @@ SELECT
     MAX(created_at) as latest,
     DATE_TRUNC('day', MAX(created_at)) - DATE_TRUNC('day', MIN(created_at)) as date_range
 FROM students
-WHERE establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     AND academic_year = '2025/2026'
 
 UNION ALL
@@ -382,7 +382,7 @@ SELECT
     DATE_TRUNC('day', MAX(created_at)) - DATE_TRUNC('day', MIN(created_at))
 FROM vespa_scores vs
 JOIN students s ON vs.student_id = s.id
-WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     AND vs.academic_year = '2025/2026'
     AND vs.cycle = 1
 
@@ -398,7 +398,7 @@ SELECT
     DATE_TRUNC('day', MAX(created_at)) - DATE_TRUNC('day', MIN(created_at))
 FROM question_responses qr
 JOIN students s ON qr.student_id = s.id
-WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     AND qr.academic_year = '2025/2026'
     AND qr.cycle = 1;
 
@@ -426,7 +426,7 @@ LEFT JOIN (
     WHERE cycle = 1 AND academic_year = '2025/2026'
     GROUP BY student_id
 ) qr_count ON s.id = qr_count.student_id
-WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     AND s.academic_year = '2025/2026'
     AND vs.cycle = 1
     AND vs.academic_year = '2025/2026'
@@ -446,7 +446,7 @@ SELECT
     COUNT(DISTINCT student_id) as unique_students
 FROM question_responses qr
 JOIN students s ON qr.student_id = s.id
-WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     AND qr.created_at >= NOW() - INTERVAL '7 days'
 GROUP BY DATE(created_at)
 ORDER BY date DESC;
@@ -461,7 +461,7 @@ SELECT
     COUNT(DISTINCT student_id) as students
 FROM question_responses qr
 JOIN students s ON qr.student_id = s.id
-WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     AND qr.created_at >= '2025-10-30 00:00:00'
 GROUP BY DATE(created_at), academic_year, cycle
 ORDER BY date DESC, academic_year DESC, cycle;
@@ -474,7 +474,7 @@ ORDER BY date DESC, academic_year DESC, cycle;
 -- 9.1: Replace with any establishment ID to check health
 -- Just change the UUID below
 WITH target_school AS (
-    SELECT '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec' as est_id
+    SELECT 'caa446f7-c1ad-47cd-acf1-771cacf10d3a' as est_id
 )
 SELECT 
     'Students' as metric,
@@ -521,7 +521,7 @@ SELECT
     COUNT(*)::text as value,
     ''::text as academic_year
 FROM students
-WHERE establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
 
 UNION ALL
 
@@ -530,7 +530,7 @@ SELECT
     COUNT(*)::text,
     '2025/2026'
 FROM students
-WHERE establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     AND academic_year = '2025/2026'
 
 UNION ALL
@@ -541,7 +541,7 @@ SELECT
     '2025/2026'
 FROM vespa_scores vs
 JOIN students s ON vs.student_id = s.id
-WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     AND vs.academic_year = '2025/2026'
     AND vs.cycle = 1
 
@@ -553,7 +553,7 @@ SELECT
     '2025/2026'
 FROM question_responses qr
 JOIN students s ON qr.student_id = s.id
-WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     AND qr.academic_year = '2025/2026'
     AND qr.cycle = 1
 
@@ -565,7 +565,7 @@ SELECT
     '2025/2026'
 FROM question_responses qr
 JOIN students s ON qr.student_id = s.id
-WHERE s.establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE s.establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
     AND qr.academic_year = '2025/2026'
     AND qr.cycle = 1
 
@@ -579,7 +579,7 @@ ORDER BY metric;
 -- Run this to see what academic years are available
 SELECT DISTINCT academic_year
 FROM students
-WHERE establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
 ORDER BY academic_year DESC;
 
 -- Check if question_statistics table has data
@@ -589,7 +589,7 @@ SELECT
     COUNT(*) as stat_records,
     MAX(calculated_at) as last_calculated
 FROM question_statistics
-WHERE establishment_id = '308cc905-c1c9-4b71-b976-dfe4d8c7d7ec'
+WHERE establishment_id = 'caa446f7-c1ad-47cd-acf1-771cacf10d3a'
 GROUP BY academic_year, cycle
 ORDER BY academic_year DESC, cycle;
 

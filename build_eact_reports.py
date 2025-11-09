@@ -287,6 +287,29 @@ def calculate_all_insights(df):
     
     return insights
 
+def analyze_statements(df):
+    """Analyze individual statements with variance"""
+    statement_cols = [col for col in df.columns if col in STATEMENT_MAPPING]
+    statement_analysis = []
+    
+    for statement in statement_cols:
+        values = df[statement].dropna()
+        if len(values) > 0:
+            mean_val = values.mean()
+            std_val = values.std()
+            variance_val = std_val ** 2 if not pd.isna(std_val) else 0
+            
+            statement_analysis.append({
+                'statement': statement,
+                'category': STATEMENT_MAPPING.get(statement, 'Unknown'),
+                'mean': mean_val,
+                'std': std_val,
+                'variance': variance_val,
+                'n': len(values)
+            })
+    
+    return sorted(statement_analysis, key=lambda x: x['mean'], reverse=True)
+
 def calculate_distribution(series):
     """Calculate percentage distribution for scores 1-10"""
     total = len(series)
@@ -421,11 +444,19 @@ def generate_executive_summary(df):
     year_group_stats = sorted(year_group_stats, key=lambda x: x['overall'], reverse=True)
     print(f"   {len(year_group_stats)} year groups analyzed")
     
+    # Statement analysis
+    print("\nAnalyzing statements...")
+    statement_analysis = analyze_statements(df)
+    print(f"   {len(statement_analysis)} statements analyzed")
+    if statement_analysis:
+        print(f"   Highest: {statement_analysis[0]['statement'][:50]}... ({statement_analysis[0]['mean']:.2f}, var={statement_analysis[0]['variance']:.2f})")
+        print(f"   Lowest: {statement_analysis[-1]['statement'][:50]}... ({statement_analysis[-1]['mean']:.2f}, var={statement_analysis[-1]['variance']:.2f})")
+    
     # Generate HTML
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"EACT_Trust_Executive_Summary_{timestamp}.html"
     
-    html = build_executive_summary_html(overall_stats, school_stats, year_group_stats, df)
+    html = build_executive_summary_html(overall_stats, school_stats, year_group_stats, statement_analysis, df)
     
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(html)
@@ -438,7 +469,7 @@ def generate_executive_summary(df):
     
     return filename
 
-def build_executive_summary_html(overall, schools, year_groups, df):
+def build_executive_summary_html(overall, schools, year_groups, statements, df):
     """Build the Executive Summary HTML document"""
     report_date = datetime.now().strftime("%B %d, %Y")
     
@@ -472,8 +503,10 @@ def build_executive_summary_html(overall, schools, year_groups, df):
         {generate_header(report_date, "E-ACT Academy Trust", "Executive Summary", show_logo=True)}
         {generate_exec_summary_content(overall, schools, year_groups, strongest_dim, weakest_dim, overall_status)}
         {generate_baseline_overview(overall)}
+        {generate_distributions_section(df, "E-ACT Trust")}
         {generate_school_comparison_section(schools, overall)}
         {generate_year_group_section(year_groups, "Trust")}
+        {generate_statement_section(statements)}
         {generate_eri_section(overall, schools, year_groups)}
         {generate_footer("E-ACT Academy Trust")}
     </div>
@@ -548,12 +581,16 @@ def generate_individual_school_report(school_name, school_df, overall_df):
     insights = calculate_all_insights(school_df)
     print(f"   Calculated {len(insights)} Questionnaire Insights")
     
+    # Statement analysis
+    statement_analysis = analyze_statements(school_df)
+    print(f"   Analyzed {len(statement_analysis)} statements")
+    
     # Generate HTML
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     safe_name = school_name.replace(' ', '_').replace('/', '_')
     filename = f"EACT_{safe_name}_Cycle1_Baseline_{timestamp}.html"
     
-    html = build_school_report_html(school_name, school_stats, year_group_stats, group_stats, insights, school_df)
+    html = build_school_report_html(school_name, school_stats, year_group_stats, group_stats, insights, statement_analysis, school_df)
     
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(html)
@@ -562,7 +599,7 @@ def generate_individual_school_report(school_name, school_df, overall_df):
     
     return filename
 
-def build_school_report_html(school_name, stats, year_groups, groups, insights, df):
+def build_school_report_html(school_name, stats, year_groups, groups, insights, statements, df):
     """Build individual school report HTML"""
     report_date = datetime.now().strftime("%B %d, %Y")
     
@@ -595,6 +632,7 @@ def build_school_report_html(school_name, stats, year_groups, groups, insights, 
         {generate_year_group_section(year_groups, school_name) if year_groups else ""}
         {generate_group_section(groups, stats, school_name) if groups else ""}
         {generate_distributions_section(df, school_name)}
+        {generate_statement_section(statements)}
         {generate_recommendations_section(stats, insights, strongest_dim, weakest_dim, school_name)}
         {generate_footer(school_name)}
     </div>
@@ -1650,6 +1688,96 @@ def generate_distributions_section(df, org_name):
 """
     
     html += """
+        </div>
+"""
+    return html
+
+def generate_statement_section(statements):
+    """Generate statement-level analysis section with variance"""
+    
+    # Top 5 statements
+    top_5_html = ""
+    for i, stmt in enumerate(statements[:5], 1):
+        variance = stmt.get('variance', 0)
+        variance_text = "High" if variance > 1.5 else "Moderate" if variance > 0.8 else "Low"
+        
+        top_5_html += f"""
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>{stmt['statement']}</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: {stmt['mean']:.2f} | Category: {stmt['category']} | n={stmt['n']}
+                                <br>Variance: {variance:.2f} ({variance_text} - {'Consistent agreement' if variance < 1.0 else 'Mixed responses'})
+                            </span>
+                        </li>
+"""
+    
+    # Bottom 5 statements
+    bottom_5_html = ""
+    for i, stmt in enumerate(statements[-5:], 1):
+        variance = stmt.get('variance', 0)
+        variance_text = "High" if variance > 1.5 else "Moderate" if variance > 0.8 else "Low"
+        
+        bottom_5_html += f"""
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>{stmt['statement']}</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: {stmt['mean']:.2f} | Category: {stmt['category']} | n={stmt['n']}
+                                <br>Variance: {variance:.2f} ({variance_text} - {'Consistent agreement' if variance < 1.0 else 'Mixed responses'})
+                            </span>
+                        </li>
+"""
+    
+    html = f"""
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                STATEMENT LEVEL ANALYSIS
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>📝 VESPA Statement Analysis - Baseline</h2>
+            <p style="margin-bottom: 20px;">
+                Detailed analysis of individual VESPA statement responses reveals specific strengths and development areas.
+                Each statement is scored on a 1-5 scale where higher scores indicate stronger agreement/engagement.
+            </p>
+            
+            <div style="margin-top: 50px; padding: 30px; background: linear-gradient(to right, #f8f9fa, #ffffff); border-radius: 12px; border: 1px solid #e9ecef;">
+                <h3 style="color: #2c3e50; margin-bottom: 25px; font-size: 1.6em;">Statement Agreement Analysis</h3>
+                <p style="color: #666; margin-bottom: 30px;">Analysis of which statements students most and least agree with in the baseline assessment.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div style="background: #fff; padding: 25px; border-radius: 10px; border: 2px solid #28a745;">
+                        <h4 style="color: #28a745; margin-bottom: 20px; font-size: 1.2em;">Top 5 - Students Strongly Agree</h4>
+                        <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                            {top_5_html}
+                        </ol>
+                    </div>
+                    
+                    <div style="background: #fff; padding: 25px; border-radius: 10px; border: 2px solid #dc3545;">
+                        <h4 style="color: #dc3545; margin-bottom: 20px; font-size: 1.2em;">Bottom 5 - Development Opportunities</h4>
+                        <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                            {bottom_5_html}
+                        </ol>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">Interpretation Guide</h4>
+                    <p style="margin: 0 0 10px 0; font-size: 0.95em; color: #555;">
+                        <strong>Mean Scores:</strong> Statements range from 1-5. Scores above 4.0 indicate strong agreement, 
+                        scores between 3.0-4.0 show moderate agreement, and scores below 3.0 suggest areas where students lack confidence 
+                        or need additional support.
+                    </p>
+                    <p style="margin: 0; font-size: 0.95em; color: #555;">
+                        <strong>Variance:</strong> Measures how spread out student responses are. <em>Low variance</em> (below 0.8) means 
+                        most students agree and responses are consistent - ideal for building on strengths or addressing common challenges. 
+                        <em>High variance</em> (above 1.5) indicates mixed responses where some students strongly agree while others don't - 
+                        suggesting differentiated support may be needed. <em>Moderate variance</em> (0.8-1.5) shows typical spread in student experiences.
+                    </p>
+                </div>
+            </div>
         </div>
 """
     return html
