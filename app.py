@@ -8823,9 +8823,30 @@ try:
     with open(QUESTION_MAPPINGS_FILE, 'r', encoding='utf-8') as f:
         QUESTION_MAPPINGS = json.load(f)
         app.logger.info(f"Loaded {len(QUESTION_MAPPINGS)} question mappings")
+        
+        # Create a mapping dict keyed by questionId for fast lookup
+        # Also add alias mappings for Vue app IDs that don't match JSON
+        QUESTION_MAP_BY_ID = {}
+        for q in QUESTION_MAPPINGS:
+            QUESTION_MAP_BY_ID[q['questionId']] = q
+        
+        # Add aliases for Vue app question IDs that don't match psychometric JSON
+        ID_ALIASES = {
+            'q29': 'q29_vision_grades',
+            'q30': 'outcome_q_support',
+            'q31': 'outcome_q_equipped',
+            'q32': 'outcome_q_confident'
+        }
+        
+        for vue_id, json_id in ID_ALIASES.items():
+            if json_id in QUESTION_MAP_BY_ID:
+                QUESTION_MAP_BY_ID[vue_id] = QUESTION_MAP_BY_ID[json_id]
+                app.logger.info(f"Added alias: {vue_id} → {json_id}")
+        
 except Exception as e:
     app.logger.error(f"Failed to load question mappings: {e}")
     QUESTION_MAPPINGS = []
+    QUESTION_MAP_BY_ID = {}
 
 def calculate_academic_year_for_student(date_obj=None, is_australian=False, use_standard_year=None):
     """Calculate academic year based on date and school location
@@ -9512,30 +9533,36 @@ def submit_questionnaire():
             # Map each response to BOTH current AND historical Knack fields
             app.logger.info(f"[Questionnaire Submit] Mapping 32 question responses to Object_29 fields")
             
-            for question in QUESTION_MAPPINGS:
-                question_id = question['questionId']
-                if question_id in responses:
-                    response_value = responses[question_id]
-                    
-                    # WRITE TO CURRENT FIELD (triggers conditional formulas)
-                    current_field_id = question.get('currentCycleFieldId')
-                    if current_field_id:
-                        knack_response_data[current_field_id] = str(response_value)
-                    
-                    # ALSO WRITE TO HISTORICAL FIELD (direct write as backup)
-                    if cycle == 1:
-                        historical_field_id = question.get('fieldIdCycle1')
-                    elif cycle == 2:
-                        historical_field_id = question.get('fieldIdCycle2')
-                    elif cycle == 3:
-                        historical_field_id = question.get('fieldIdCycle3')
-                    else:
-                        historical_field_id = None
-                    
-                    if historical_field_id:
-                        knack_response_data[historical_field_id] = str(response_value)
+            mapped_count = 0
+            for vue_question_id, response_value in responses.items():
+                # Look up the question mapping (with alias support)
+                question = QUESTION_MAP_BY_ID.get(vue_question_id)
+                
+                if not question:
+                    app.logger.warning(f"[Questionnaire Submit] No mapping found for question ID: {vue_question_id}")
+                    continue
+                
+                # WRITE TO CURRENT FIELD (triggers conditional formulas)
+                current_field_id = question.get('currentCycleFieldId')
+                if current_field_id:
+                    knack_response_data[current_field_id] = str(response_value)
+                    mapped_count += 1
+                
+                # ALSO WRITE TO HISTORICAL FIELD (direct write as backup)
+                if cycle == 1:
+                    historical_field_id = question.get('fieldIdCycle1')
+                elif cycle == 2:
+                    historical_field_id = question.get('fieldIdCycle2')
+                elif cycle == 3:
+                    historical_field_id = question.get('fieldIdCycle3')
+                else:
+                    historical_field_id = None
+                
+                if historical_field_id:
+                    knack_response_data[historical_field_id] = str(response_value)
+                    mapped_count += 1
             
-            app.logger.info(f"[Questionnaire Submit] Mapped {len([k for k in knack_response_data.keys() if k.startswith('field_')])} question response fields to Object_29")
+            app.logger.info(f"[Questionnaire Submit] Mapped {mapped_count} fields (current + historical) to Object_29")
             
             # Add VESPA scores to Object_29 (current AND historical fields)
             app.logger.info(f"[Questionnaire Submit] Adding VESPA scores to Object_29...")
