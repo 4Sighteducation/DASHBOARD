@@ -43,36 +43,31 @@ for entry in coaching_data:
         # Helper function to clean NaN values from arrays
         def clean_array(arr):
             if not arr or not isinstance(arr, list):
-                return None  # Return None instead of empty array
-            # Filter out NaN, None, and "nan" strings
+                return None
             cleaned = [item for item in arr if item and str(item).lower() != 'nan']
-            return cleaned if cleaned else None  # Return None if array becomes empty
+            return cleaned if cleaned else None
         
-        # Map the data structure
-        questions_list = clean_array(entry.get('questions_list', []))
-        coaching_list = clean_array(entry.get('coaching_comments_list', []))
+        # Special handling for Overall category (only has text, no questions/comments)
+        category = entry.get('Category', '')
+        is_overall = category == 'Overall'
         
-        # Skip if both questions AND coaching comments are empty (Overall entries)
-        if not questions_list and not coaching_list:
-            category = entry.get('Category', '')
-            if category == 'Overall':
-                print(f"Skipping Overall entry (no questions/comments): Level {entry.get('Level')}, scores {scores}")
-                continue
+        questions_list = None if is_overall else clean_array(entry.get('questions_list', []))
+        coaching_list = None if is_overall else clean_array(entry.get('coaching_comments_list', []))
         
         coaching_record = {
             'level': entry.get('Level', ''),
-            'category': entry.get('Category', ''),
+            'category': category,
             'score_min': min(scores),
             'score_max': max(scores),
             'rating': entry.get('ShowForRating', ''),
             'statement_text': entry.get('Text', ''),
-            'questions': questions_list,
-            'coaching_comments': coaching_list,
-            'suggested_tools': entry.get('Suggested Tools', '') if str(entry.get('Suggested Tools', '')).lower() != 'nan' else None,
+            'questions': questions_list,  # NULL for Overall
+            'coaching_comments': coaching_list,  # NULL for Overall
+            'suggested_tools': None if is_overall else (entry.get('Suggested Tools', '') if str(entry.get('Suggested Tools', '')).lower() != 'nan' else None),
             'welsh_text': entry.get('Welsh Text', ''),
-            'welsh_questions': entry.get('Welsh Questions', '') if str(entry.get('Welsh Questions', '')).lower() != 'nan' else None,
-            'welsh_tools': entry.get('Welsh Tools', '') if str(entry.get('Welsh Tools', '')).lower() != 'nan' else None,
-            'welsh_coaching_comments': entry.get('Welsh Coaching Comments', '')
+            'welsh_questions': None if is_overall else (entry.get('Welsh Questions', '') if str(entry.get('Welsh Questions', '')).lower() != 'nan' else None),
+            'welsh_tools': None if is_overall else (entry.get('Welsh Tools', '') if str(entry.get('Welsh Tools', '')).lower() != 'nan' else None),
+            'welsh_coaching_comments': entry.get('Welsh Coaching Comments', '') if not is_overall else None
         }
         
         # Upsert to Supabase
