@@ -9847,18 +9847,40 @@ def get_report_data():
             return jsonify({'error': 'Database not available'}), 500
         
         # Get student record
-        student_result = supabase_client.table('students')\
+        # Handle duplicates by finding the student_id that has vespa_scores
+        student_records = supabase_client.table('students')\
             .select('id, name, email, establishment_id, year_group, group, course, faculty')\
             .eq('email', email)\
-            .order('academic_year', desc=True)\
-            .limit(1)\
             .execute()
         
-        if not student_result.data:
+        if not student_records.data:
             return jsonify({'error': 'Student not found'}), 404
         
-        student_data = student_result.data[0]
-        student_id = student_data['id']
+        # If multiple student records, find the one with scores
+        student_data = None
+        student_id = None
+        
+        if len(student_records.data) > 1:
+            app.logger.warning(f"[Report Data] Found {len(student_records.data)} duplicate student records for {email}")
+            # Check which one has scores
+            for record in student_records.data:
+                score_check = supabase_client.table('vespa_scores')\
+                    .select('id')\
+                    .eq('student_id', record['id'])\
+                    .limit(1)\
+                    .execute()
+                if score_check.data:
+                    student_data = record
+                    student_id = record['id']
+                    app.logger.info(f"[Report Data] Using student_id {student_id} (has scores)")
+                    break
+        
+        # If no duplicate or no scores found, use first/only record
+        if not student_data:
+            student_data = student_records.data[0]
+            student_id = student_data['id']
+        
+        app.logger.info(f"[Report Data] Using student_id: {student_id} for {email}")
         
         # Get student's Level from Knack Object_10 (field_568)
         student_level = 'Level 3'  # Default
@@ -10220,20 +10242,44 @@ def get_staff_overview():
                 if current_cycle:
                     filter_sets['cycles'].add(current_cycle)
                 
-                # Get VESPA scores from Supabase for current cycle
-                scores_result = supabase_client.table('vespa_scores')\
-                    .select('cycle, vision, effort, systems, practice, attitude, overall, completion_date')\
+                # Get student_id from students table (handle duplicates)
+                student_lookup = supabase_client.table('students')\
+                    .select('id')\
                     .eq('email', student_email)\
-                    .eq('cycle', current_cycle)\
-                    .order('completion_date', desc=True)\
-                    .limit(1)\
                     .execute()
                 
                 scores = None
                 has_completed = False
-                if scores_result.data:
-                    scores = scores_result.data[0]
-                    has_completed = True
+                
+                if student_lookup.data:
+                    # If multiple students, find one with scores
+                    lookup_student_id = None
+                    if len(student_lookup.data) > 1:
+                        for s_record in student_lookup.data:
+                            check_scores = supabase_client.table('vespa_scores')\
+                                .select('id')\
+                                .eq('student_id', s_record['id'])\
+                                .limit(1)\
+                                .execute()
+                            if check_scores.data:
+                                lookup_student_id = s_record['id']
+                                break
+                    
+                    if not lookup_student_id:
+                        lookup_student_id = student_lookup.data[0]['id']
+                    
+                    # Get VESPA scores from Supabase for current cycle using student_id
+                    scores_result = supabase_client.table('vespa_scores')\
+                        .select('cycle, vision, effort, systems, practice, attitude, overall, completion_date')\
+                        .eq('student_id', lookup_student_id)\
+                        .eq('cycle', current_cycle)\
+                        .order('completion_date', desc=True)\
+                        .limit(1)\
+                        .execute()
+                    
+                    if scores_result.data:
+                        scores = scores_result.data[0]
+                        has_completed = True
                 
                 # Get student response for current cycle (fields 2302, 2303, 2304)
                 response_text = ''
