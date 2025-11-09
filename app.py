@@ -9860,6 +9860,35 @@ def get_report_data():
         student_data = student_result.data[0]
         student_id = student_data['id']
         
+        # Get student's Level from Knack Object_10 (field_568)
+        student_level = 'Level 3'  # Default
+        if supabase_client:
+            try:
+                # Try to get from Supabase students table first (if we've stored it)
+                # Otherwise fetch from Knack
+                headers = {
+                    'X-Knack-Application-Id': os.getenv('KNACK_APP_ID'),
+                    'X-Knack-REST-API-Key': os.getenv('KNACK_API_KEY')
+                }
+                
+                # Search Object_10 by email to get Level
+                obj10_response = requests.get(
+                    "https://api.knack.com/v1/objects/object_10/records",
+                    headers=headers,
+                    params={'filters': json.dumps({'match': 'and', 'rules': [{'field': 'field_197', 'operator': 'is', 'value': email}]})},
+                    timeout=5
+                )
+                
+                if obj10_response.ok:
+                    obj10_records = obj10_response.json().get('records', [])
+                    if obj10_records:
+                        level_value = obj10_records[0].get('field_568_raw') or obj10_records[0].get('field_568', '')
+                        if level_value:
+                            student_level = level_value
+                            app.logger.info(f"[Report Data] Student level: {student_level}")
+            except Exception as e:
+                app.logger.warning(f"Could not fetch student level: {e}")
+        
         # Get establishment info (including logo)
         establishment_info = None
         if student_data.get('establishment_id'):
@@ -9912,6 +9941,31 @@ def get_report_data():
             if cycle in responses_by_cycle:
                 responses_by_cycle[cycle][question_id] = value
         
+        # Get coaching content for each score
+        coaching_content_map = {}
+        
+        for score_record in scores_result.data:
+            cycle = score_record['cycle']
+            coaching_content_map[cycle] = {}
+            
+            for category in ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude']:
+                score_value = score_record.get(category.lower())
+                if score_value:
+                    # Fetch matching coaching content
+                    try:
+                        content_result = supabase_client.table('coaching_content')\
+                            .select('statement_text, questions, coaching_comments, suggested_tools')\
+                            .eq('level', student_level)\
+                            .eq('category', category)\
+                            .lte('score_min', score_value)\
+                            .gte('score_max', score_value)\
+                            .execute()
+                        
+                        if content_result.data:
+                            coaching_content_map[cycle][category] = content_result.data[0]
+                    except Exception as e:
+                        app.logger.warning(f"Could not fetch coaching content for {category}: {e}")
+        
         # Build response
         return jsonify({
             'success': True,
@@ -9923,10 +9977,12 @@ def get_report_data():
                 'yearGroup': student_data.get('year_group', ''),
                 'group': student_data.get('group', ''),
                 'course': student_data.get('course', ''),
-                'faculty': student_data.get('faculty', '')
+                'faculty': student_data.get('faculty', ''),
+                'level': student_level
             },
             'scores': scores_result.data,
-            'responses': responses_by_cycle
+            'responses': responses_by_cycle,
+            'coachingContent': coaching_content_map
         })
         
     except Exception as e:
