@@ -8860,7 +8860,11 @@ def calculate_academic_year_for_student(date_obj=None, is_australian=False, use_
 def validate_questionnaire_access():
     """
     Validate if a student can take the VESPA questionnaire
-    Checks cycle completion status and determines which cycle is currently active
+    Checks:
+    1. VESPA Customer (establishment) from Object_6 or Object_3
+    2. Cycle dates from Object_66 for that establishment
+    3. Which cycle is currently active (based on today's date)
+    4. Whether student has already completed the active cycle
     """
     try:
         email = request.args.get('email')
@@ -8871,110 +8875,252 @@ def validate_questionnaire_access():
         
         app.logger.info(f"[Questionnaire Validate] Checking access for {email}")
         
-        # Fetch student's Object_10 record from Knack
         headers = {
             'X-Knack-Application-Id': os.getenv('KNACK_APP_ID'),
             'X-Knack-REST-API-Key': os.getenv('KNACK_API_KEY'),
             'Content-Type': 'application/json'
         }
         
-        # Search for student by email
-        filters = {
+        # STEP 1: Get VESPA Customer (establishment) from Object_6 (primary) or Object_3 (fallback)
+        vespa_customer_id = None
+        
+        # Try Object_6 first (student record)
+        app.logger.info(f"[Questionnaire Validate] Looking up VESPA Customer from Object_6...")
+        obj6_filters = {
             'match': 'and',
-            'rules': [
-                {
-                    'field': 'field_197',  # Student email field
-                    'operator': 'is',
-                    'value': email
-                }
-            ]
+            'rules': [{
+                'field': 'field_182',  # Email connection in Object_6
+                'operator': 'is',
+                'value': email
+            }]
         }
         
-        response = requests.get(
-            f"https://api.knack.com/v1/objects/object_10/records",
+        obj6_response = requests.get(
+            "https://api.knack.com/v1/objects/object_6/records",
             headers=headers,
-            params={'filters': json.dumps(filters)},
+            params={'filters': json.dumps(obj6_filters)},
             timeout=30
         )
         
-        if not response.ok:
-            app.logger.error(f"Knack API error: {response.status_code} - {response.text}")
+        if obj6_response.ok:
+            obj6_records = obj6_response.json().get('records', [])
+            if obj6_records:
+                obj6_record = obj6_records[0]
+                vespa_customer_field = obj6_record.get('field_179_raw', [])
+                if vespa_customer_field and isinstance(vespa_customer_field, list) and len(vespa_customer_field) > 0:
+                    vespa_customer_id = vespa_customer_field[0].get('id') if isinstance(vespa_customer_field[0], dict) else vespa_customer_field[0]
+                    app.logger.info(f"[Questionnaire Validate] Found VESPA Customer from Object_6: {vespa_customer_id}")
+        
+        # Fallback to Object_3 (user profile) if not found
+        if not vespa_customer_id and account_id:
+            app.logger.info(f"[Questionnaire Validate] Trying Object_3 fallback...")
+            obj3_filters = {
+                'match': 'and',
+                'rules': [{
+                    'field': 'field_70',  # Email in Object_3
+                    'operator': 'is',
+                    'value': email
+                }]
+            }
+            
+            obj3_response = requests.get(
+                "https://api.knack.com/v1/objects/object_3/records",
+                headers=headers,
+                params={'filters': json.dumps(obj3_filters)},
+                timeout=30
+            )
+            
+            if obj3_response.ok:
+                obj3_records = obj3_response.json().get('records', [])
+                if obj3_records:
+                    vespa_customer_field = obj3_records[0].get('field_122_raw', [])
+                    if vespa_customer_field and isinstance(vespa_customer_field, list) and len(vespa_customer_field) > 0:
+                        vespa_customer_id = vespa_customer_field[0].get('id') if isinstance(vespa_customer_field[0], dict) else vespa_customer_field[0]
+                        app.logger.info(f"[Questionnaire Validate] Found VESPA Customer from Object_3: {vespa_customer_id}")
+        
+        if not vespa_customer_id:
+            return jsonify({
+                'allowed': False,
+                'reason': 'no_establishment',
+                'message': 'Unable to identify your school/establishment. Please contact support.'
+            }), 400
+        
+        # STEP 2: Get cycle dates from Object_66 for this VESPA Customer
+        app.logger.info(f"[Questionnaire Validate] Fetching cycle dates from Object_66...")
+        cycle_filters = {
+            'match': 'and',
+            'rules': [{
+                'field': 'field_1585',  # Connected VESPA Customer in Object_66
+                'operator': 'is',
+                'value': vespa_customer_id
+            }]
+        }
+        
+        cycles_response = requests.get(
+            "https://api.knack.com/v1/objects/object_66/records",
+            headers=headers,
+            params={'filters': json.dumps(cycle_filters)},
+            timeout=30
+        )
+        
+        if not cycles_response.ok:
+            app.logger.error(f"Failed to fetch cycles: {cycles_response.status_code}")
             return jsonify({
                 'allowed': False,
                 'reason': 'error',
-                'message': 'Unable to verify student record'
+                'message': 'Unable to load cycle dates for your school'
             }), 500
         
-        records = response.json().get('records', [])
+        cycle_records = cycles_response.json().get('records', [])
         
-        if not records:
-            # Student not found - they can take Cycle 1
-            app.logger.info(f"[Questionnaire Validate] New student {email} - allow Cycle 1")
-            return jsonify({
-                'allowed': True,
-                'cycle': 1,
-                'reason': 'new_student',
-                'message': 'Welcome! Please complete your first VESPA questionnaire',
-                'academicYear': calculate_academic_year_for_student(),
-                'userRecord': None
-            })
-        
-        # Get the most recent record
-        record = records[0]
-        app.logger.info(f"[Questionnaire Validate] Found record for {email}: {record['id']}")
-        
-        # Check which cycles are completed (have scores)
-        cycle1_complete = record.get('field_155_raw') is not None and record.get('field_155_raw') != ''
-        cycle2_complete = record.get('field_161_raw') is not None and record.get('field_161_raw') != ''
-        cycle3_complete = record.get('field_167_raw') is not None and record.get('field_167_raw') != ''
-        
-        app.logger.info(f"[Questionnaire Validate] Cycle status - C1: {cycle1_complete}, C2: {cycle2_complete}, C3: {cycle3_complete}")
-        
-        # Determine next cycle
-        next_cycle = None
-        reason = None
-        message = None
-        
-        if not cycle1_complete:
-            next_cycle = 1
-            reason = 'cycle_1_active'
-            message = 'Please complete your first VESPA questionnaire'
-        elif not cycle2_complete:
-            next_cycle = 2
-            reason = 'cycle_2_active'
-            message = 'Ready for your second VESPA questionnaire'
-        elif not cycle3_complete:
-            next_cycle = 3
-            reason = 'cycle_3_active'
-            message = 'Ready for your final VESPA questionnaire'
-        else:
-            # All cycles complete
+        if not cycle_records:
+            app.logger.warning(f"No cycle dates found for VESPA Customer: {vespa_customer_id}")
             return jsonify({
                 'allowed': False,
-                'cycle': None,
-                'reason': 'all_completed',
-                'message': 'You have completed all three VESPA questionnaires for this academic year',
-                'userRecord': record
-            })
+                'reason': 'no_cycles',
+                'message': 'No questionnaire cycles have been set up for your school yet'
+            }), 400
         
-        # Get establishment for academic year calculation
-        est_field = record.get('field_133_raw', [])
+        # STEP 3: Determine which cycle is currently active based on dates
+        today = datetime.now().date()
+        active_cycle = None
+        active_cycle_record = None
+        
+        app.logger.info(f"[Questionnaire Validate] Checking {len(cycle_records)} cycle periods for today's date: {today}")
+        
+        for cycle_record in cycle_records:
+            cycle_num = cycle_record.get('field_1579_raw')  # Cycle number
+            start_date_str = cycle_record.get('field_1678')  # Start date
+            end_date_str = cycle_record.get('field_1580')    # End date
+            
+            if not start_date_str or not end_date_str:
+                continue
+            
+            try:
+                # Parse dates (UK format DD/MM/YYYY)
+                start_date = datetime.strptime(start_date_str, '%d/%m/%Y').date()
+                end_date = datetime.strptime(end_date_str, '%d/%m/%Y').date()
+                
+                app.logger.info(f"[Questionnaire Validate] Cycle {cycle_num}: {start_date} to {end_date}")
+                
+                # Check if today is within this cycle
+                if start_date <= today <= end_date:
+                    active_cycle = int(cycle_num) if cycle_num else None
+                    active_cycle_record = cycle_record
+                    app.logger.info(f"[Questionnaire Validate] ACTIVE CYCLE FOUND: Cycle {active_cycle}")
+                    break
+            except Exception as e:
+                app.logger.warning(f"Error parsing cycle dates: {e}")
+                continue
+        
+        if not active_cycle:
+            # No active cycle right now
+            app.logger.info(f"[Questionnaire Validate] No active cycle for today: {today}")
+            
+            # Find next upcoming cycle
+            future_cycles = []
+            for cycle_record in cycle_records:
+                start_date_str = cycle_record.get('field_1678')
+                if start_date_str:
+                    try:
+                        start_date = datetime.strptime(start_date_str, '%d/%m/%Y').date()
+                        if start_date > today:
+                            future_cycles.append({
+                                'cycle': int(cycle_record.get('field_1579_raw', 0)),
+                                'start_date': start_date,
+                                'start_date_formatted': start_date.strftime('%d/%m/%Y')
+                            })
+                    except:
+                        pass
+            
+            if future_cycles:
+                future_cycles.sort(key=lambda x: x['start_date'])
+                next_cycle_info = future_cycles[0]
+                return jsonify({
+                    'allowed': False,
+                    'cycle': None,
+                    'reason': 'before_start',
+                    'message': f"The next questionnaire cycle opens on {next_cycle_info['start_date_formatted']}",
+                    'nextStartDate': next_cycle_info['start_date_formatted']
+                })
+            else:
+                return jsonify({
+                    'allowed': False,
+                    'cycle': None,
+                    'reason': 'no_active_cycle',
+                    'message': 'There are no questionnaire cycles currently scheduled'
+                })
+        
+        # STEP 4: Check if student has already completed the active cycle
+        app.logger.info(f"[Questionnaire Validate] Active cycle is {active_cycle}, checking if student completed it...")
+        
+        # Fetch student's Object_10 record
+        obj10_filters = {
+            'match': 'and',
+            'rules': [{
+                'field': 'field_197',  # Student email
+                'operator': 'is',
+                'value': email
+            }]
+        }
+        
+        obj10_response = requests.get(
+            f"https://api.knack.com/v1/objects/object_10/records",
+            headers=headers,
+            params={'filters': json.dumps(obj10_filters)},
+            timeout=30
+        )
+        
+        obj10_record = None
+        if obj10_response.ok:
+            obj10_records = obj10_response.json().get('records', [])
+            if obj10_records:
+                obj10_record = obj10_records[0]
+        
+        # Check completion status for the active cycle using CURRENT score fields (147-152)
+        # If any current field has a value, the cycle is complete
+        if obj10_record:
+            current_vision = obj10_record.get('field_147_raw')
+            current_effort = obj10_record.get('field_148_raw')
+            current_overall = obj10_record.get('field_152_raw')
+            current_cycle_field = obj10_record.get('field_146_raw')
+            
+            app.logger.info(f"[Questionnaire Validate] Current cycle field (146): {current_cycle_field}")
+            app.logger.info(f"[Questionnaire Validate] Current scores (147-152): V:{current_vision}, E:{current_effort}, O:{current_overall}")
+            
+            # Check if the current cycle in the record matches the active cycle
+            # AND if scores exist (meaning they already completed it)
+            if current_cycle_field == active_cycle and current_overall is not None and current_overall != '':
+                app.logger.info(f"[Questionnaire Validate] Student already completed active Cycle {active_cycle}")
+                return jsonify({
+                    'allowed': False,
+                    'cycle': active_cycle,
+                    'reason': 'already_completed',
+                    'message': f'You have already completed the questionnaire for Cycle {active_cycle}',
+                    'userRecord': obj10_record
+                })
+        
+        # Student can take the active cycle
+        app.logger.info(f"[Questionnaire Validate] Allowing student to complete Cycle {active_cycle}")
+        
+        # Get establishment for academic year
         establishment_id = None
         is_australian = False
         use_standard_year = None
         
-        if est_field and isinstance(est_field, list) and len(est_field) > 0:
-            est_knack_id = est_field[0].get('id') if isinstance(est_field[0], dict) else est_field[0]
-            # Look up establishment in Supabase
-            if supabase_client:
-                try:
-                    est_result = supabase_client.table('establishments').select('id', 'is_australian', 'use_standard_year').eq('knack_id', est_knack_id).execute()
-                    if est_result.data:
-                        establishment_id = est_result.data[0]['id']
-                        is_australian = est_result.data[0].get('is_australian', False)
-                        use_standard_year = est_result.data[0].get('use_standard_year')
-                except Exception as e:
-                    app.logger.warning(f"Could not fetch establishment: {e}")
+        if obj10_record:
+            est_field = obj10_record.get('field_133_raw', [])
+            if est_field and isinstance(est_field, list) and len(est_field) > 0:
+                est_knack_id = est_field[0].get('id') if isinstance(est_field[0], dict) else est_field[0]
+                if supabase_client:
+                    try:
+                        est_result = supabase_client.table('establishments').select('id', 'is_australian', 'use_standard_year').eq('knack_id', est_knack_id).execute()
+                        if est_result.data:
+                            establishment_id = est_result.data[0]['id']
+                            is_australian = est_result.data[0].get('is_australian', False)
+                            use_standard_year = est_result.data[0].get('use_standard_year')
+                    except Exception as e:
+                        app.logger.warning(f"Could not fetch establishment: {e}")
         
         academic_year = calculate_academic_year_for_student(
             is_australian=is_australian,
@@ -8983,11 +9129,15 @@ def validate_questionnaire_access():
         
         return jsonify({
             'allowed': True,
-            'cycle': next_cycle,
-            'reason': reason,
-            'message': message,
+            'cycle': active_cycle,
+            'reason': f'cycle_{active_cycle}_active',
+            'message': f'Please complete your Cycle {active_cycle} VESPA questionnaire',
             'academicYear': academic_year,
-            'userRecord': record
+            'userRecord': obj10_record,
+            'cycleInfo': {
+                'startDate': active_cycle_record.get('field_1678'),
+                'endDate': active_cycle_record.get('field_1580')
+            }
         })
         
     except Exception as e:
