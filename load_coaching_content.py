@@ -43,11 +43,22 @@ for entry in coaching_data:
         # Helper function to clean NaN values from arrays
         def clean_array(arr):
             if not arr or not isinstance(arr, list):
-                return []
+                return None  # Return None instead of empty array
             # Filter out NaN, None, and "nan" strings
-            return [item for item in arr if item and str(item).lower() != 'nan']
+            cleaned = [item for item in arr if item and str(item).lower() != 'nan']
+            return cleaned if cleaned else None  # Return None if array becomes empty
         
         # Map the data structure
+        questions_list = clean_array(entry.get('questions_list', []))
+        coaching_list = clean_array(entry.get('coaching_comments_list', []))
+        
+        # Skip if both questions AND coaching comments are empty (Overall entries)
+        if not questions_list and not coaching_list:
+            category = entry.get('Category', '')
+            if category == 'Overall':
+                print(f"Skipping Overall entry (no questions/comments): Level {entry.get('Level')}, scores {scores}")
+                continue
+        
         coaching_record = {
             'level': entry.get('Level', ''),
             'category': entry.get('Category', ''),
@@ -55,12 +66,12 @@ for entry in coaching_data:
             'score_max': max(scores),
             'rating': entry.get('ShowForRating', ''),
             'statement_text': entry.get('Text', ''),
-            'questions': clean_array(entry.get('questions_list', [])),
-            'coaching_comments': clean_array(entry.get('coaching_comments_list', [])),
-            'suggested_tools': entry.get('Suggested Tools', '') if str(entry.get('Suggested Tools', '')).lower() != 'nan' else '',
+            'questions': questions_list,
+            'coaching_comments': coaching_list,
+            'suggested_tools': entry.get('Suggested Tools', '') if str(entry.get('Suggested Tools', '')).lower() != 'nan' else None,
             'welsh_text': entry.get('Welsh Text', ''),
-            'welsh_questions': entry.get('Welsh Questions', '') if str(entry.get('Welsh Questions', '')).lower() != 'nan' else '',
-            'welsh_tools': entry.get('Welsh Tools', '') if str(entry.get('Welsh Tools', '')).lower() != 'nan' else '',
+            'welsh_questions': entry.get('Welsh Questions', '') if str(entry.get('Welsh Questions', '')).lower() != 'nan' else None,
+            'welsh_tools': entry.get('Welsh Tools', '') if str(entry.get('Welsh Tools', '')).lower() != 'nan' else None,
             'welsh_coaching_comments': entry.get('Welsh Coaching Comments', '')
         }
         
