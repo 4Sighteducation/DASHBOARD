@@ -9535,7 +9535,43 @@ def submit_questionnaire():
                     if historical_field_id:
                         knack_response_data[historical_field_id] = str(response_value)
             
-            app.logger.info(f"[Questionnaire Submit] Mapped {len([k for k in knack_response_data.keys() if k.startswith('field_')])} fields to Object_29")
+            app.logger.info(f"[Questionnaire Submit] Mapped {len([k for k in knack_response_data.keys() if k.startswith('field_')])} question response fields to Object_29")
+            
+            # Add VESPA scores to Object_29 (current AND historical fields)
+            app.logger.info(f"[Questionnaire Submit] Adding VESPA scores to Object_29...")
+            
+            # CURRENT VESPA score fields in Object_29
+            knack_response_data['field_857'] = str(vespa_scores.get('VISION', ''))      # V current
+            knack_response_data['field_858'] = str(vespa_scores.get('EFFORT', ''))      # E current
+            knack_response_data['field_859'] = str(vespa_scores.get('SYSTEMS', ''))     # S current
+            knack_response_data['field_861'] = str(vespa_scores.get('PRACTICE', ''))    # P current
+            knack_response_data['field_860'] = str(vespa_scores.get('ATTITUDE', ''))    # A current
+            knack_response_data['field_862'] = str(vespa_scores.get('OVERALL', ''))     # O current
+            
+            # HISTORICAL VESPA score fields by cycle
+            historical_score_fields = {
+                1: {
+                    'VISION': 'field_1935', 'EFFORT': 'field_1936', 'SYSTEMS': 'field_1937',
+                    'PRACTICE': 'field_1938', 'ATTITUDE': 'field_1939', 'OVERALL': 'field_1940'
+                },
+                2: {
+                    'VISION': 'field_1941', 'EFFORT': 'field_1942', 'SYSTEMS': 'field_1943',
+                    'PRACTICE': 'field_1944', 'ATTITUDE': 'field_1945', 'OVERALL': 'field_1946'
+                },
+                3: {
+                    'VISION': 'field_1947', 'EFFORT': 'field_1948', 'SYSTEMS': 'field_1949',
+                    'PRACTICE': 'field_1950', 'ATTITUDE': 'field_1951', 'OVERALL': 'field_1952'
+                }
+            }
+            
+            # Write to historical fields for this cycle
+            if cycle in historical_score_fields:
+                for score_key, field_id in historical_score_fields[cycle].items():
+                    score_value = vespa_scores.get(score_key)
+                    if score_value is not None:
+                        knack_response_data[field_id] = str(score_value)
+            
+            app.logger.info(f"[Questionnaire Submit] Added VESPA scores to Object_29 (current: 857-862, historical C{cycle}: {list(historical_score_fields.get(cycle, {}).values())})")
             
             # Link to Object_10 record
             if knack_record_id:
