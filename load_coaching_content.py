@@ -40,6 +40,13 @@ for entry in coaching_data:
             print(f"Skipping entry with invalid scores: {entry.get('Category')} - {scores}")
             continue
         
+        # Helper function to clean NaN values from arrays
+        def clean_array(arr):
+            if not arr or not isinstance(arr, list):
+                return []
+            # Filter out NaN, None, and "nan" strings
+            return [item for item in arr if item and str(item).lower() != 'nan']
+        
         # Map the data structure
         coaching_record = {
             'level': entry.get('Level', ''),
@@ -48,12 +55,12 @@ for entry in coaching_data:
             'score_max': max(scores),
             'rating': entry.get('ShowForRating', ''),
             'statement_text': entry.get('Text', ''),
-            'questions': entry.get('questions_list', []),
-            'coaching_comments': entry.get('coaching_comments_list', []),
-            'suggested_tools': entry.get('Suggested Tools', ''),
+            'questions': clean_array(entry.get('questions_list', [])),
+            'coaching_comments': clean_array(entry.get('coaching_comments_list', [])),
+            'suggested_tools': entry.get('Suggested Tools', '') if str(entry.get('Suggested Tools', '')).lower() != 'nan' else '',
             'welsh_text': entry.get('Welsh Text', ''),
-            'welsh_questions': entry.get('Welsh Questions', ''),
-            'welsh_tools': entry.get('Welsh Tools', ''),
+            'welsh_questions': entry.get('Welsh Questions', '') if str(entry.get('Welsh Questions', '')).lower() != 'nan' else '',
+            'welsh_tools': entry.get('Welsh Tools', '') if str(entry.get('Welsh Tools', '')).lower() != 'nan' else '',
             'welsh_coaching_comments': entry.get('Welsh Coaching Comments', '')
         }
         
