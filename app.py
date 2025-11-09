@@ -9063,10 +9063,15 @@ def validate_questionnaire_access():
                 obj10_records = obj10_response.json().get('records', [])
                 if obj10_records:
                     obj10_record = obj10_records[0]
-                    cycle_unlocked_value = obj10_record.get('field_1582_raw')
-                    # Knack boolean: True/False or "Yes"/"No"
-                    cycle_unlocked = cycle_unlocked_value in [True, 'Yes', 'yes', 'true']
-                    app.logger.info(f"[Questionnaire Validate] Cycle Unlocked (field_1582): {cycle_unlocked_value} → {cycle_unlocked}")
+                    cycle_unlocked_raw = obj10_record.get('field_1582_raw')
+                    cycle_unlocked_display = obj10_record.get('field_1582')
+                    
+                    # Knack boolean: _raw = true/false (boolean), display = "Yes"/"No" (string)
+                    cycle_unlocked = cycle_unlocked_raw is True or cycle_unlocked_raw == True or cycle_unlocked_display == 'Yes'
+                    
+                    app.logger.info(f"[Questionnaire Validate] Cycle Unlocked field_1582_raw: {cycle_unlocked_raw} (type: {type(cycle_unlocked_raw).__name__})")
+                    app.logger.info(f"[Questionnaire Validate] Cycle Unlocked field_1582 display: {cycle_unlocked_display}")
+                    app.logger.info(f"[Questionnaire Validate] Cycle Unlocked result: {cycle_unlocked}")
             
             if cycle_unlocked:
                 # OVERRIDE: Student has permission to complete despite no active cycle
