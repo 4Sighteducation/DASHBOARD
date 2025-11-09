@@ -9941,12 +9941,22 @@ def get_report_data():
                     except Exception as e:
                         app.logger.warning(f"Could not fetch logo: {e}")
         
-        # Get VESPA scores for all cycles
-        scores_result = supabase_client.table('vespa_scores')\
+        # Get VESPA scores for all cycles (most recent per cycle if duplicates exist)
+        all_scores_raw = supabase_client.table('vespa_scores')\
             .select('cycle, vision, effort, systems, practice, attitude, overall, completion_date')\
             .eq('student_id', student_id)\
-            .order('cycle')\
+            .order('completion_date', desc=True)\
             .execute()
+        
+        # Deduplicate - keep only most recent score per cycle
+        scores_by_cycle = {}
+        for score in all_scores_raw.data:
+            cycle = score['cycle']
+            if cycle not in scores_by_cycle:
+                scores_by_cycle[cycle] = score
+        
+        # Convert back to list, sorted by cycle
+        scores_result_data = sorted(scores_by_cycle.values(), key=lambda x: x['cycle'])
         
         # Get question responses for all cycles
         responses_result = supabase_client.table('question_responses')\
@@ -9991,7 +10001,7 @@ def get_report_data():
         # Get coaching content for each score
         coaching_content_map = {}
         
-        for score_record in scores_result.data:
+        for score_record in scores_result_data:
             cycle = score_record['cycle']
             coaching_content_map[cycle] = {}
             
@@ -10027,7 +10037,7 @@ def get_report_data():
                 'faculty': student_data.get('faculty', ''),
                 'level': student_level
             },
-            'scores': scores_result.data,
+            'scores': scores_result_data,  # Deduplicated scores
             'responses': responses_by_cycle,
             'coachingContent': coaching_content_map,
             'studentProfile': student_profile  # Responses, goals, coaching notes by cycle
