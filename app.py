@@ -9035,10 +9035,98 @@ def validate_questionnaire_access():
                 continue
         
         if not active_cycle:
-            # No active cycle right now
+            # No active cycle right now - check if there's an override (Cycle Unlocked)
             app.logger.info(f"[Questionnaire Validate] No active cycle for today: {today}")
+            app.logger.info(f"[Questionnaire Validate] Checking for Cycle Unlocked override...")
             
-            # Find next upcoming cycle
+            # Fetch student's Object_10 record to check field_1582 (Cycle Unlocked)
+            obj10_filters = {
+                'match': 'and',
+                'rules': [{
+                    'field': 'field_197',  # Student email
+                    'operator': 'is',
+                    'value': email
+                }]
+            }
+            
+            obj10_response = requests.get(
+                f"https://api.knack.com/v1/objects/object_10/records",
+                headers=headers,
+                params={'filters': json.dumps(obj10_filters)},
+                timeout=30
+            )
+            
+            cycle_unlocked = False
+            obj10_record = None
+            
+            if obj10_response.ok:
+                obj10_records = obj10_response.json().get('records', [])
+                if obj10_records:
+                    obj10_record = obj10_records[0]
+                    cycle_unlocked_value = obj10_record.get('field_1582_raw')
+                    # Knack boolean: True/False or "Yes"/"No"
+                    cycle_unlocked = cycle_unlocked_value in [True, 'Yes', 'yes', 'true']
+                    app.logger.info(f"[Questionnaire Validate] Cycle Unlocked (field_1582): {cycle_unlocked_value} → {cycle_unlocked}")
+            
+            if cycle_unlocked:
+                # OVERRIDE: Student has permission to complete despite no active cycle
+                # Determine which cycle they should complete (first incomplete)
+                cycle1_complete = obj10_record.get('field_155_raw') not in [None, '', 0]
+                cycle2_complete = obj10_record.get('field_161_raw') not in [None, '', 0]
+                cycle3_complete = obj10_record.get('field_167_raw') not in [None, '', 0]
+                
+                if not cycle1_complete:
+                    override_cycle = 1
+                elif not cycle2_complete:
+                    override_cycle = 2
+                elif not cycle3_complete:
+                    override_cycle = 3
+                else:
+                    # All cycles complete - no override needed
+                    return jsonify({
+                        'allowed': False,
+                        'cycle': None,
+                        'reason': 'all_completed',
+                        'message': 'You have completed all three VESPA questionnaires',
+                        'userRecord': obj10_record
+                    })
+                
+                app.logger.info(f"[Questionnaire Validate] OVERRIDE ACTIVE - Allowing Cycle {override_cycle} completion")
+                
+                # Get establishment for academic year
+                establishment_id = None
+                is_australian = False
+                use_standard_year = None
+                
+                est_field = obj10_record.get('field_133_raw', [])
+                if est_field and isinstance(est_field, list) and len(est_field) > 0:
+                    est_knack_id = est_field[0].get('id') if isinstance(est_field[0], dict) else est_field[0]
+                    if supabase_client:
+                        try:
+                            est_result = supabase_client.table('establishments').select('id', 'is_australian', 'use_standard_year').eq('knack_id', est_knack_id).execute()
+                            if est_result.data:
+                                establishment_id = est_result.data[0]['id']
+                                is_australian = est_result.data[0].get('is_australian', False)
+                                use_standard_year = est_result.data[0].get('use_standard_year')
+                        except Exception as e:
+                            app.logger.warning(f"Could not fetch establishment: {e}")
+                
+                academic_year = calculate_academic_year_for_student(
+                    is_australian=is_australian,
+                    use_standard_year=use_standard_year
+                )
+                
+                return jsonify({
+                    'allowed': True,
+                    'cycle': override_cycle,
+                    'reason': 'cycle_unlocked_override',
+                    'message': f'Special access granted - Please complete your Cycle {override_cycle} questionnaire',
+                    'academicYear': academic_year,
+                    'userRecord': obj10_record,
+                    'isOverride': True
+                })
+            
+            # No override - find next upcoming cycle
             future_cycles = []
             for cycle_record in cycle_records:
                 start_date_str = cycle_record.get('field_1678')
@@ -9429,7 +9517,8 @@ def submit_questionnaire():
             
             knack_score_data = {
                 'field_146': str(cycle),  # Cycle field
-                'field_855': completion_date_knack  # Completion date
+                'field_855': completion_date_knack,  # Completion date
+                'field_1582': 'No'  # Reset Cycle Unlocked to No after successful completion
             }
             
             # CRITICAL: Write to CURRENT fields (147-152), not historical cycle fields
