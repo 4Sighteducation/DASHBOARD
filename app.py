@@ -10368,6 +10368,365 @@ def get_staff_overview():
 
 # ===== END VESPA STAFF OVERVIEW ENDPOINT =====
 
+# ===== VESPA REPORT SAVE ENDPOINTS =====
+
+@app.route('/api/vespa/report/save-response', methods=['POST'])
+def save_student_response():
+    """
+    Save student response/reflection (dual-write to Supabase + Knack)
+    """
+    try:
+        data = request.json
+        student_email = data.get('studentEmail')
+        cycle = data.get('cycle')
+        response_text = data.get('responseText', '')
+        knack_record_id = data.get('knackRecordId')
+        
+        if not student_email or not cycle:
+            return jsonify({'error': 'studentEmail and cycle are required'}), 400
+        
+        app.logger.info(f"[Save Response] Saving response for {student_email}, cycle {cycle}")
+        
+        if not supabase_client:
+            return jsonify({'error': 'Database not available'}), 500
+        
+        # Get student record
+        student_records = supabase_client.table('students')\
+            .select('id, knack_id, academic_year')\
+            .eq('email', student_email)\
+            .execute()
+        
+        if not student_records.data:
+            return jsonify({'error': 'Student not found'}), 404
+        
+        # Use first matching student (or prioritize one with scores if multiple)
+        student_data = student_records.data[0]
+        student_id = student_data['id']
+        academic_year = student_data['academic_year']
+        knack_record_id = knack_record_id or student_data['knack_id']
+        
+        # 1. Write to Supabase
+        response_data = {
+            'student_id': student_id,
+            'cycle': cycle,
+            'academic_year': academic_year,
+            'response_text': response_text,
+            'updated_at': datetime.now().isoformat()
+        }
+        
+        sb_result = supabase_client.table('student_responses').upsert(
+            response_data,
+            on_conflict='student_id,cycle,academic_year'
+        ).execute()
+        
+        app.logger.info(f"[Save Response] Supabase write successful")
+        
+        # 2. Dual-write to Knack Object_10
+        knack_success = False
+        knack_error = None
+        
+        # Map cycle to Knack field
+        field_mapping = {
+            1: 'field_2302',
+            2: 'field_2303',
+            3: 'field_2304'
+        }
+        
+        if cycle in field_mapping:
+            try:
+                headers = {
+                    'X-Knack-Application-Id': KNACK_APP_ID,
+                    'X-Knack-REST-API-Key': KNACK_API_KEY,
+                    'Content-Type': 'application/json'
+                }
+                
+                knack_payload = {
+                    field_mapping[cycle]: response_text
+                }
+                
+                knack_response = requests.put(
+                    f"https://api.knack.com/v1/objects/object_10/records/{knack_record_id}",
+                    headers=headers,
+                    json=knack_payload,
+                    timeout=10
+                )
+                
+                if knack_response.ok:
+                    knack_success = True
+                    app.logger.info(f"[Save Response] Knack write successful")
+                else:
+                    knack_error = f"Knack API returned {knack_response.status_code}"
+                    app.logger.warning(f"[Save Response] Knack write failed: {knack_error}")
+                    
+            except Exception as e:
+                knack_error = str(e)
+                app.logger.error(f"[Save Response] Knack write error: {e}")
+        
+        return jsonify({
+            'success': True,
+            'supabaseWritten': True,
+            'knackWritten': knack_success,
+            'knackError': knack_error,
+            'submittedAt': sb_result.data[0].get('submitted_at') if sb_result.data else None
+        })
+        
+    except Exception as e:
+        app.logger.error(f"[Save Response] Error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/vespa/report/save-goals', methods=['POST'])
+def save_student_goals():
+    """
+    Save student goals (dual-write to Supabase + Knack)
+    """
+    try:
+        data = request.json
+        student_email = data.get('studentEmail')
+        cycle = data.get('cycle')
+        goal_text = data.get('goalText', '')
+        goal_set_date = data.get('goalSetDate')
+        goal_due_date = data.get('goalDueDate')
+        knack_record_id = data.get('knackRecordId')
+        
+        if not student_email or not cycle:
+            return jsonify({'error': 'studentEmail and cycle are required'}), 400
+        
+        app.logger.info(f"[Save Goals] Saving goals for {student_email}, cycle {cycle}")
+        
+        if not supabase_client:
+            return jsonify({'error': 'Database not available'}), 500
+        
+        # Get student record
+        student_records = supabase_client.table('students')\
+            .select('id, knack_id, academic_year')\
+            .eq('email', student_email)\
+            .execute()
+        
+        if not student_records.data:
+            return jsonify({'error': 'Student not found'}), 404
+        
+        student_data = student_records.data[0]
+        student_id = student_data['id']
+        academic_year = student_data['academic_year']
+        knack_record_id = knack_record_id or student_data['knack_id']
+        
+        # 1. Write to Supabase
+        goals_data = {
+            'student_id': student_id,
+            'cycle': cycle,
+            'academic_year': academic_year,
+            'goal_text': goal_text,
+            'goal_set_date': goal_set_date,
+            'goal_due_date': goal_due_date,
+            'updated_at': datetime.now().isoformat()
+        }
+        
+        sb_result = supabase_client.table('student_goals').upsert(
+            goals_data,
+            on_conflict='student_id,cycle,academic_year'
+        ).execute()
+        
+        app.logger.info(f"[Save Goals] Supabase write successful")
+        
+        # 2. Dual-write to Knack Object_10
+        knack_success = False
+        knack_error = None
+        
+        # Map cycle to Knack fields
+        field_mapping = {
+            1: {'text': 'field_2499', 'set': 'field_2321', 'due': 'field_2500'},
+            2: {'text': 'field_2493', 'set': 'field_2496', 'due': 'field_2497'},
+            3: {'text': 'field_2494', 'set': 'field_2497', 'due': 'field_2498'}
+        }
+        
+        if cycle in field_mapping:
+            try:
+                headers = {
+                    'X-Knack-Application-Id': KNACK_APP_ID,
+                    'X-Knack-REST-API-Key': KNACK_API_KEY,
+                    'Content-Type': 'application/json'
+                }
+                
+                # Convert dates to Knack format (DD/MM/YYYY)
+                knack_payload = {
+                    field_mapping[cycle]['text']: goal_text
+                }
+                
+                if goal_set_date:
+                    # Convert YYYY-MM-DD to DD/MM/YYYY
+                    try:
+                        date_obj = datetime.strptime(goal_set_date, '%Y-%m-%d')
+                        knack_payload[field_mapping[cycle]['set']] = date_obj.strftime('%d/%m/%Y')
+                    except:
+                        pass
+                
+                if goal_due_date:
+                    try:
+                        date_obj = datetime.strptime(goal_due_date, '%Y-%m-%d')
+                        knack_payload[field_mapping[cycle]['due']] = date_obj.strftime('%d/%m/%Y')
+                    except:
+                        pass
+                
+                knack_response = requests.put(
+                    f"https://api.knack.com/v1/objects/object_10/records/{knack_record_id}",
+                    headers=headers,
+                    json=knack_payload,
+                    timeout=10
+                )
+                
+                if knack_response.ok:
+                    knack_success = True
+                    app.logger.info(f"[Save Goals] Knack write successful")
+                else:
+                    knack_error = f"Knack API returned {knack_response.status_code}"
+                    app.logger.warning(f"[Save Goals] Knack write failed: {knack_error}")
+                    
+            except Exception as e:
+                knack_error = str(e)
+                app.logger.error(f"[Save Goals] Knack write error: {e}")
+        
+        return jsonify({
+            'success': True,
+            'supabaseWritten': True,
+            'knackWritten': knack_success,
+            'knackError': knack_error
+        })
+        
+    except Exception as e:
+        app.logger.error(f"[Save Goals] Error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/vespa/report/save-coaching', methods=['POST'])
+def save_staff_coaching():
+    """
+    Save staff coaching notes (dual-write to Supabase + Knack)
+    """
+    try:
+        data = request.json
+        student_email = data.get('studentEmail')
+        staff_email = data.get('staffEmail')
+        cycle = data.get('cycle')
+        coaching_text = data.get('coachingText', '')
+        coaching_date = data.get('coachingDate')
+        knack_record_id = data.get('knackRecordId')
+        
+        if not student_email or not cycle:
+            return jsonify({'error': 'studentEmail and cycle are required'}), 400
+        
+        app.logger.info(f"[Save Coaching] Saving coaching for {student_email}, cycle {cycle}")
+        
+        if not supabase_client:
+            return jsonify({'error': 'Database not available'}), 500
+        
+        # Get student record
+        student_records = supabase_client.table('students')\
+            .select('id, knack_id, academic_year')\
+            .eq('email', student_email)\
+            .execute()
+        
+        if not student_records.data:
+            return jsonify({'error': 'Student not found'}), 404
+        
+        student_data = student_records.data[0]
+        student_id = student_data['id']
+        academic_year = student_data['academic_year']
+        knack_record_id = knack_record_id or student_data['knack_id']
+        
+        # Get staff_id if staff_email provided
+        staff_id = None
+        if staff_email:
+            staff_records = supabase_client.table('staff_admins')\
+                .select('id')\
+                .eq('email', staff_email)\
+                .execute()
+            if staff_records.data:
+                staff_id = staff_records.data[0]['id']
+        
+        # 1. Write to Supabase
+        coaching_data = {
+            'student_id': student_id,
+            'staff_id': staff_id,
+            'cycle': cycle,
+            'academic_year': academic_year,
+            'coaching_text': coaching_text,
+            'coaching_date': coaching_date,
+            'updated_at': datetime.now().isoformat()
+        }
+        
+        sb_result = supabase_client.table('staff_coaching_notes').upsert(
+            coaching_data,
+            on_conflict='student_id,cycle,academic_year'
+        ).execute()
+        
+        app.logger.info(f"[Save Coaching] Supabase write successful")
+        
+        # 2. Dual-write to Knack Object_10
+        knack_success = False
+        knack_error = None
+        
+        # Map cycle to Knack fields
+        field_mapping = {
+            1: {'text': 'field_2488', 'date': 'field_2485'},
+            2: {'text': 'field_2490', 'date': 'field_2486'},
+            3: {'text': 'field_2491', 'date': 'field_2487'}
+        }
+        
+        if cycle in field_mapping:
+            try:
+                headers = {
+                    'X-Knack-Application-Id': KNACK_APP_ID,
+                    'X-Knack-REST-API-Key': KNACK_API_KEY,
+                    'Content-Type': 'application/json'
+                }
+                
+                knack_payload = {
+                    field_mapping[cycle]['text']: coaching_text
+                }
+                
+                if coaching_date:
+                    # Convert YYYY-MM-DD to DD/MM/YYYY
+                    try:
+                        date_obj = datetime.strptime(coaching_date, '%Y-%m-%d')
+                        knack_payload[field_mapping[cycle]['date']] = date_obj.strftime('%d/%m/%Y')
+                    except:
+                        pass
+                
+                knack_response = requests.put(
+                    f"https://api.knack.com/v1/objects/object_10/records/{knack_record_id}",
+                    headers=headers,
+                    json=knack_payload,
+                    timeout=10
+                )
+                
+                if knack_response.ok:
+                    knack_success = True
+                    app.logger.info(f"[Save Coaching] Knack write successful")
+                else:
+                    knack_error = f"Knack API returned {knack_response.status_code}"
+                    app.logger.warning(f"[Save Coaching] Knack write failed: {knack_error}")
+                    
+            except Exception as e:
+                knack_error = str(e)
+                app.logger.error(f"[Save Coaching] Knack write error: {e}")
+        
+        return jsonify({
+            'success': True,
+            'supabaseWritten': True,
+            'knackWritten': knack_success,
+            'knackError': knack_error
+        })
+        
+    except Exception as e:
+        app.logger.error(f"[Save Coaching] Error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+# ===== END VESPA REPORT SAVE ENDPOINTS =====
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 
