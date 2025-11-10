@@ -10257,11 +10257,11 @@ def get_staff_overview():
                 current_cycle_raw = record.get('field_146_raw', '')
                 current_cycle = int(current_cycle_raw) if current_cycle_raw and str(current_cycle_raw).isdigit() else 1
                 
-                # Determine which cycle to fetch data for
+                # Determine which cycle to show data for
                 # If cycle filter is specified, use that; otherwise use current_cycle
                 target_cycle = selected_cycle if selected_cycle is not None else current_cycle
                 
-                # Add to filter sets
+                # Add to filter sets (add ALL completed cycles, not just current)
                 if group:
                     filter_sets['groups'].add(group)
                 if year_group:
@@ -10270,60 +10270,56 @@ def get_staff_overview():
                     filter_sets['faculties'].add(faculty)
                 if course:
                     filter_sets['courses'].add(course)
-                if current_cycle:
-                    filter_sets['cycles'].add(current_cycle)
                 
-                # Get student_id from students table (handle duplicates)
-                student_lookup = supabase_client.table('students')\
-                    .select('id')\
-                    .eq('email', student_email)\
-                    .execute()
+                # Add all cycles this student has completed to filter sets
+                for cycle_num in range(1, current_cycle + 1):
+                    filter_sets['cycles'].add(cycle_num)
                 
+                # Get VESPA scores from Knack's cycle-specific fields
+                # Cycle 1: fields 155-159, Cycle 2: fields 161-165, Cycle 3: fields 167-171
                 scores = None
                 has_completed = False
-                all_cycles_with_scores = set()
                 
-                if student_lookup.data:
-                    # If multiple students, find one with scores
-                    lookup_student_id = None
-                    if len(student_lookup.data) > 1:
-                        for s_record in student_lookup.data:
-                            check_scores = supabase_client.table('vespa_scores')\
-                                .select('id')\
-                                .eq('student_id', s_record['id'])\
-                                .limit(1)\
-                                .execute()
-                            if check_scores.data:
-                                lookup_student_id = s_record['id']
-                                break
+                if target_cycle == 1:
+                    vision = record.get('field_155_raw')
+                    effort = record.get('field_156_raw')
+                    systems = record.get('field_157_raw')
+                    practice = record.get('field_158_raw')
+                    attitude = record.get('field_159_raw')
+                elif target_cycle == 2:
+                    vision = record.get('field_161_raw')
+                    effort = record.get('field_162_raw')
+                    systems = record.get('field_163_raw')
+                    practice = record.get('field_164_raw')
+                    attitude = record.get('field_165_raw')
+                elif target_cycle == 3:
+                    vision = record.get('field_167_raw')
+                    effort = record.get('field_168_raw')
+                    systems = record.get('field_169_raw')
+                    practice = record.get('field_170_raw')
+                    attitude = record.get('field_171_raw')
+                else:
+                    vision = effort = systems = practice = attitude = None
+                
+                # Check if student has completed this cycle (has at least one score)
+                if vision or effort or systems or practice or attitude:
+                    has_completed = True
+                    # Calculate overall if not present
+                    score_values = [s for s in [vision, effort, systems, practice, attitude] if s is not None and str(s).replace('.', '', 1).isdigit()]
+                    overall = round(sum(float(s) for s in score_values) / len(score_values), 1) if score_values else None
                     
-                    if not lookup_student_id:
-                        lookup_student_id = student_lookup.data[0]['id']
-                    
-                    # Get all cycles that have scores (for filter dropdown)
-                    all_scores_result = supabase_client.table('vespa_scores')\
-                        .select('cycle')\
-                        .eq('student_id', lookup_student_id)\
-                        .execute()
-                    
-                    if all_scores_result.data:
-                        all_cycles_with_scores = {s['cycle'] for s in all_scores_result.data}
-                        # Add all cycles with scores to filter sets
-                        for cycle_num in all_cycles_with_scores:
-                            filter_sets['cycles'].add(cycle_num)
-                    
-                    # Get VESPA scores from Supabase for target cycle using student_id
-                    scores_result = supabase_client.table('vespa_scores')\
-                        .select('cycle, vision, effort, systems, practice, attitude, overall, completion_date')\
-                        .eq('student_id', lookup_student_id)\
-                        .eq('cycle', target_cycle)\
-                        .order('completion_date', desc=True)\
-                        .limit(1)\
-                        .execute()
-                    
-                    if scores_result.data:
-                        scores = scores_result.data[0]
-                        has_completed = True
+                    scores = {
+                        'vision': vision,
+                        'effort': effort,
+                        'systems': systems,
+                        'practice': practice,
+                        'attitude': attitude,
+                        'overall': overall
+                    }
+                
+                # If cycle filter is active and student hasn't completed that cycle, skip them
+                if selected_cycle is not None and not has_completed:
+                    continue
                 
                 # Get student response for target cycle (fields 2302, 2303, 2304)
                 response_text = ''
@@ -10334,6 +10330,15 @@ def get_staff_overview():
                 elif target_cycle == 3:
                     response_text = record.get('field_2304', '') or record.get('field_2304_raw', '')
                 
+                # Strip HTML from response text
+                if response_text:
+                    import re
+                    # Convert <br> and </p> to newlines, then strip all HTML
+                    response_text = response_text.replace('<br>', '\n').replace('<br/>', '\n').replace('<br />', '\n')
+                    response_text = response_text.replace('</p>', '\n\n')
+                    response_text = re.sub('<[^<]+?>', '', response_text)
+                    response_text = response_text.strip()
+                
                 # Get student goals for target cycle (fields 2499, 2493, 2494)
                 goals_text = ''
                 if target_cycle == 1:
@@ -10342,6 +10347,15 @@ def get_staff_overview():
                     goals_text = record.get('field_2493', '') or record.get('field_2493_raw', '')
                 elif target_cycle == 3:
                     goals_text = record.get('field_2494', '') or record.get('field_2494_raw', '')
+                
+                # Strip HTML from goals text
+                if goals_text:
+                    import re
+                    # Convert <br> and </p> to newlines, then strip all HTML
+                    goals_text = goals_text.replace('<br>', '\n').replace('<br/>', '\n').replace('<br />', '\n')
+                    goals_text = goals_text.replace('</p>', '\n\n')
+                    goals_text = re.sub('<[^<]+?>', '', goals_text)
+                    goals_text = goals_text.strip()
                 
                 # Build student data object
                 student_data = {
@@ -10353,6 +10367,7 @@ def get_staff_overview():
                     'faculty': faculty,
                     'course': course,
                     'currentCycle': current_cycle,
+                    'targetCycle': target_cycle,  # Which cycle data is being shown
                     'hasCompleted': has_completed,
                     'scores': scores if scores else {
                         'vision': None,
@@ -10360,11 +10375,12 @@ def get_staff_overview():
                         'systems': None,
                         'practice': None,
                         'attitude': None,
-                        'overall': None,
-                        'completionDate': None
+                        'overall': None
                     },
                     'response': response_text,
-                    'goals': goals_text
+                    'goals': goals_text,
+                    'hasResponse': bool(response_text and response_text.strip()),
+                    'hasGoals': bool(goals_text and goals_text.strip())
                 }
                 
                 students_data.append(student_data)
