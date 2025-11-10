@@ -10326,7 +10326,16 @@ def get_staff_overview():
                 
                 # Debug logging for Alena Ramsey
                 if student_name and 'Alena' in student_name:
-                    app.logger.info(f"[DEBUG Alena] Target:{target_cycle}, Current:{current_cycle}, V:{vision}, E:{effort}, S:{systems}, P:{practice}, A:{attitude}, O:{overall}")
+                    # Log what's in the actual record for ALL cycle fields
+                    app.logger.info(f"[DEBUG Alena] Full record check:")
+                    app.logger.info(f"  Current cycle (field_146_raw): {current_cycle}")
+                    app.logger.info(f"  Target cycle: {target_cycle}")
+                    app.logger.info(f"  Current fields (147-152): V={record.get('field_147_raw')}, E={record.get('field_148_raw')}, S={record.get('field_149_raw')}, P={record.get('field_150_raw')}, A={record.get('field_151_raw')}, O={record.get('field_152_raw')}")
+                    app.logger.info(f"  C1 historical (155-160): V={record.get('field_155_raw')}, E={record.get('field_156_raw')}, S={record.get('field_157_raw')}, P={record.get('field_158_raw')}, A={record.get('field_159_raw')}, O={record.get('field_160_raw')}")
+                    app.logger.info(f"  C2 historical (161-166): V={record.get('field_161_raw')}, E={record.get('field_162_raw')}, S={record.get('field_163_raw')}, P={record.get('field_164_raw')}, A={record.get('field_165_raw')}, O={record.get('field_166_raw')}")
+                    app.logger.info(f"  C3 historical (167-172): V={record.get('field_167_raw')}, E={record.get('field_168_raw')}, S={record.get('field_169_raw')}, P={record.get('field_170_raw')}, A={record.get('field_171_raw')}, O={record.get('field_172_raw')}")
+                    app.logger.info(f"  Selected values: V={vision}, E={effort}, S={systems}, P={practice}, A={attitude}, O={overall}")
+                    app.logger.info(f"  Has completed target cycle: {has_completed_target_cycle}")
                 
                 # Check if student has completed this target cycle (has at least one score)
                 # Note: We check if ANY score exists, as some students may have partial data
