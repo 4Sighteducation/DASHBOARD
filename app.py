@@ -10281,51 +10281,69 @@ def get_staff_overview():
                 for cycle_num in range(1, current_cycle + 1):
                     filter_sets['cycles'].add(cycle_num)
                 
-                # Get VESPA scores from Knack's cycle-specific fields
-                # Cycle 1: fields 155-159, Cycle 2: fields 161-165, Cycle 3: fields 167-171
+                # Get VESPA scores from Knack - need to check BOTH current and historical fields
+                # Current cycle fields: 147-152 (V, E, S, P, A, Overall)
+                # Historical fields: C1=155-160, C2=161-166, C3=167-172
                 scores = None
                 has_completed_target_cycle = False
+                vision = effort = systems = practice = attitude = overall = None
                 
-                if target_cycle == 1:
+                # If target_cycle matches current_cycle, use current fields (147-152)
+                # Otherwise use historical fields
+                if target_cycle == current_cycle:
+                    # Use current cycle fields
+                    vision = record.get('field_147_raw')
+                    effort = record.get('field_148_raw')
+                    systems = record.get('field_149_raw')
+                    practice = record.get('field_150_raw')
+                    attitude = record.get('field_151_raw')
+                    overall = record.get('field_152_raw')
+                    app.logger.debug(f"[Staff Overview] {student_name} - Using CURRENT fields for cycle {target_cycle}")
+                elif target_cycle == 1:
+                    # Use Cycle 1 historical fields
                     vision = record.get('field_155_raw')
                     effort = record.get('field_156_raw')
                     systems = record.get('field_157_raw')
                     practice = record.get('field_158_raw')
                     attitude = record.get('field_159_raw')
+                    overall = record.get('field_160_raw')
                 elif target_cycle == 2:
+                    # Use Cycle 2 historical fields
                     vision = record.get('field_161_raw')
                     effort = record.get('field_162_raw')
                     systems = record.get('field_163_raw')
                     practice = record.get('field_164_raw')
                     attitude = record.get('field_165_raw')
+                    overall = record.get('field_166_raw')
                 elif target_cycle == 3:
+                    # Use Cycle 3 historical fields
                     vision = record.get('field_167_raw')
                     effort = record.get('field_168_raw')
                     systems = record.get('field_169_raw')
                     practice = record.get('field_170_raw')
                     attitude = record.get('field_171_raw')
-                else:
-                    vision = effort = systems = practice = attitude = None
+                    overall = record.get('field_172_raw')
                 
                 # Debug logging for Alena Ramsey
                 if student_name and 'Alena' in student_name:
-                    app.logger.info(f"[DEBUG Alena] Cycle {target_cycle} - V:{vision}, E:{effort}, S:{systems}, P:{practice}, A:{attitude}, Current:{current_cycle}")
+                    app.logger.info(f"[DEBUG Alena] Target:{target_cycle}, Current:{current_cycle}, V:{vision}, E:{effort}, S:{systems}, P:{practice}, A:{attitude}, O:{overall}")
                 
                 # Check if student has completed this target cycle (has at least one score)
                 # Note: We check if ANY score exists, as some students may have partial data
                 if vision or effort or systems or practice or attitude:
                     has_completed_target_cycle = True
-                    # Calculate overall if not present
-                    score_values = []
-                    for s in [vision, effort, systems, practice, attitude]:
-                        if s is not None:
-                            # Try to convert to float
-                            try:
-                                score_values.append(float(s))
-                            except (ValueError, TypeError):
-                                pass
-                    
-                    overall = round(sum(score_values) / len(score_values), 1) if score_values else None
+                    # Calculate overall if not present from individual scores
+                    if not overall:
+                        score_values = []
+                        for s in [vision, effort, systems, practice, attitude]:
+                            if s is not None:
+                                # Try to convert to float
+                                try:
+                                    score_values.append(float(s))
+                                except (ValueError, TypeError):
+                                    pass
+                        
+                        overall = round(sum(score_values) / len(score_values), 1) if score_values else None
                     
                     scores = {
                         'vision': vision,
