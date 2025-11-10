@@ -10067,11 +10067,19 @@ def get_staff_overview():
     """
     try:
         staff_email = request.args.get('email')
+        cycle_filter = request.args.get('cycle')  # Optional cycle filter (1, 2, 3, or None for all)
         
         if not staff_email:
             return jsonify({'error': 'Email is required'}), 400
         
-        app.logger.info(f"[Staff Overview] Fetching data for {staff_email}")
+        # Parse cycle filter if provided
+        selected_cycle = None
+        if cycle_filter and cycle_filter.isdigit():
+            selected_cycle = int(cycle_filter)
+            if selected_cycle not in [1, 2, 3]:
+                selected_cycle = None
+        
+        app.logger.info(f"[Staff Overview] Fetching data for {staff_email}, cycle filter: {selected_cycle}")
         
         if not supabase_client:
             return jsonify({'error': 'Database not available'}), 500
@@ -10227,7 +10235,16 @@ def get_staff_overview():
             try:
                 # Extract student info from Object_10
                 student_email = record.get('field_197', '') or record.get('field_197_raw', '')
-                student_name = record.get('field_198', '') or record.get('field_198_raw', '')
+                
+                # Extract student name from field_187_raw (compound field with first/last)
+                name_raw = record.get('field_187_raw', {})
+                if isinstance(name_raw, dict):
+                    first_name = name_raw.get('first', '') or ''
+                    last_name = name_raw.get('last', '') or ''
+                    student_name = f"{first_name} {last_name}".strip()
+                else:
+                    # Fallback to field_198 if field_187_raw is not available
+                    student_name = record.get('field_198', '') or record.get('field_198_raw', '') or ''
                 
                 if not student_email:
                     continue
@@ -10239,6 +10256,10 @@ def get_staff_overview():
                 course = record.get('field_2299', '') or record.get('field_2299_raw', '')
                 current_cycle_raw = record.get('field_146_raw', '')
                 current_cycle = int(current_cycle_raw) if current_cycle_raw and str(current_cycle_raw).isdigit() else 1
+                
+                # Determine which cycle to fetch data for
+                # If cycle filter is specified, use that; otherwise use current_cycle
+                target_cycle = selected_cycle if selected_cycle is not None else current_cycle
                 
                 # Add to filter sets
                 if group:
@@ -10260,6 +10281,7 @@ def get_staff_overview():
                 
                 scores = None
                 has_completed = False
+                all_cycles_with_scores = set()
                 
                 if student_lookup.data:
                     # If multiple students, find one with scores
@@ -10278,11 +10300,23 @@ def get_staff_overview():
                     if not lookup_student_id:
                         lookup_student_id = student_lookup.data[0]['id']
                     
-                    # Get VESPA scores from Supabase for current cycle using student_id
+                    # Get all cycles that have scores (for filter dropdown)
+                    all_scores_result = supabase_client.table('vespa_scores')\
+                        .select('cycle')\
+                        .eq('student_id', lookup_student_id)\
+                        .execute()
+                    
+                    if all_scores_result.data:
+                        all_cycles_with_scores = {s['cycle'] for s in all_scores_result.data}
+                        # Add all cycles with scores to filter sets
+                        for cycle_num in all_cycles_with_scores:
+                            filter_sets['cycles'].add(cycle_num)
+                    
+                    # Get VESPA scores from Supabase for target cycle using student_id
                     scores_result = supabase_client.table('vespa_scores')\
                         .select('cycle, vision, effort, systems, practice, attitude, overall, completion_date')\
                         .eq('student_id', lookup_student_id)\
-                        .eq('cycle', current_cycle)\
+                        .eq('cycle', target_cycle)\
                         .order('completion_date', desc=True)\
                         .limit(1)\
                         .execute()
@@ -10291,22 +10325,22 @@ def get_staff_overview():
                         scores = scores_result.data[0]
                         has_completed = True
                 
-                # Get student response for current cycle (fields 2302, 2303, 2304)
+                # Get student response for target cycle (fields 2302, 2303, 2304)
                 response_text = ''
-                if current_cycle == 1:
+                if target_cycle == 1:
                     response_text = record.get('field_2302', '') or record.get('field_2302_raw', '')
-                elif current_cycle == 2:
+                elif target_cycle == 2:
                     response_text = record.get('field_2303', '') or record.get('field_2303_raw', '')
-                elif current_cycle == 3:
+                elif target_cycle == 3:
                     response_text = record.get('field_2304', '') or record.get('field_2304_raw', '')
                 
-                # Get student goals for current cycle (fields 2499, 2493, 2494)
+                # Get student goals for target cycle (fields 2499, 2493, 2494)
                 goals_text = ''
-                if current_cycle == 1:
+                if target_cycle == 1:
                     goals_text = record.get('field_2499', '') or record.get('field_2499_raw', '')
-                elif current_cycle == 2:
+                elif target_cycle == 2:
                     goals_text = record.get('field_2493', '') or record.get('field_2493_raw', '')
-                elif current_cycle == 3:
+                elif target_cycle == 3:
                     goals_text = record.get('field_2494', '') or record.get('field_2494_raw', '')
                 
                 # Build student data object
