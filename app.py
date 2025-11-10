@@ -10233,8 +10233,13 @@ def get_staff_overview():
         
         for record in obj10_records:
             try:
-                # Extract student info from Object_10
-                student_email = record.get('field_197', '') or record.get('field_197_raw', '')
+                # Extract student email from Object_10
+                # field_197_raw is a dict with 'email' key, field_197 is the formatted display value (may be HTML)
+                email_raw = record.get('field_197_raw', {})
+                if isinstance(email_raw, dict):
+                    student_email = email_raw.get('email', '')
+                else:
+                    student_email = record.get('field_197', '')
                 
                 # Extract student name from field_187_raw (compound field with first/last)
                 name_raw = record.get('field_187_raw', {})
@@ -10246,7 +10251,8 @@ def get_staff_overview():
                     # Fallback to field_198 if field_187_raw is not available
                     student_name = record.get('field_198', '') or record.get('field_198_raw', '') or ''
                 
-                if not student_email:
+                if not student_email or not isinstance(student_email, str):
+                    app.logger.warning(f"[Staff Overview] Invalid email for student: {student_name}, email: {student_email}")
                     continue
                 
                 # Get metadata fields
