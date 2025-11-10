@@ -10278,7 +10278,7 @@ def get_staff_overview():
                 # Get VESPA scores from Knack's cycle-specific fields
                 # Cycle 1: fields 155-159, Cycle 2: fields 161-165, Cycle 3: fields 167-171
                 scores = None
-                has_completed = False
+                has_completed_target_cycle = False
                 
                 if target_cycle == 1:
                     vision = record.get('field_155_raw')
@@ -10301,12 +10301,25 @@ def get_staff_overview():
                 else:
                     vision = effort = systems = practice = attitude = None
                 
-                # Check if student has completed this cycle (has at least one score)
+                # Debug logging for Alena Ramsey
+                if student_name and 'Alena' in student_name:
+                    app.logger.info(f"[DEBUG Alena] Cycle {target_cycle} - V:{vision}, E:{effort}, S:{systems}, P:{practice}, A:{attitude}, Current:{current_cycle}")
+                
+                # Check if student has completed this target cycle (has at least one score)
+                # Note: We check if ANY score exists, as some students may have partial data
                 if vision or effort or systems or practice or attitude:
-                    has_completed = True
+                    has_completed_target_cycle = True
                     # Calculate overall if not present
-                    score_values = [s for s in [vision, effort, systems, practice, attitude] if s is not None and str(s).replace('.', '', 1).isdigit()]
-                    overall = round(sum(float(s) for s in score_values) / len(score_values), 1) if score_values else None
+                    score_values = []
+                    for s in [vision, effort, systems, practice, attitude]:
+                        if s is not None:
+                            # Try to convert to float
+                            try:
+                                score_values.append(float(s))
+                            except (ValueError, TypeError):
+                                pass
+                    
+                    overall = round(sum(score_values) / len(score_values), 1) if score_values else None
                     
                     scores = {
                         'vision': vision,
@@ -10316,10 +10329,24 @@ def get_staff_overview():
                         'attitude': attitude,
                         'overall': overall
                     }
+                else:
+                    # No scores for this cycle, set to None structure
+                    scores = {
+                        'vision': None,
+                        'effort': None,
+                        'systems': None,
+                        'practice': None,
+                        'attitude': None,
+                        'overall': None
+                    }
                 
                 # If cycle filter is active and student hasn't completed that cycle, skip them
-                if selected_cycle is not None and not has_completed:
+                if selected_cycle is not None and not has_completed_target_cycle:
+                    app.logger.debug(f"[Staff Overview] Skipping {student_name} - no data for cycle {target_cycle}")
                     continue
+                
+                # For display purposes, student has completed if they have target cycle scores
+                has_completed = has_completed_target_cycle
                 
                 # Get student response for target cycle (fields 2302, 2303, 2304)
                 response_text = ''
