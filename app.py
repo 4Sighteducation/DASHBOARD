@@ -11037,13 +11037,24 @@ def get_profile_from_knack(email):
                 school_name = vespa_customer[0].get('identifier', 'Unknown School')
                 establishment_id = vespa_customer[0].get('id')
         
+        # Parse attendance - field_3076 is text like "93%"
+        attendance_raw = record.get('field_3076', '')
+        attendance_float = None
+        if attendance_raw:
+            try:
+                # Remove % sign and convert to float
+                attendance_str = str(attendance_raw).replace('%', '').strip()
+                attendance_float = float(attendance_str) / 100 if attendance_str else None
+            except (ValueError, TypeError):
+                app.logger.warning(f"[Academic Profile] Could not parse attendance: {attendance_raw}")
+        
         return {
             'student': {
                 'email': email,
                 'name': record.get('field_3066'),
                 'yearGroup': record.get('field_3078'),
                 'tutorGroup': record.get('field_3077'),
-                'attendance': record.get('field_3076'),
+                'attendance': attendance_float,  # Now as 0.93 instead of "93%"
                 'priorAttainment': record.get('field_3272'),
                 'upn': record.get('field_3137'),
                 'uci': record.get('field_3136'),

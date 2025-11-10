@@ -1145,6 +1145,184 @@ def sync_staff_admins():
         logging.error(f"Failed to sync staff admins: {e}")
         sync_report['errors'].append(f"Staff admin sync failed: {e}")
 
+def sync_academic_profiles():
+    """Sync academic profiles from Object_112 to Supabase academic_profiles + student_subjects tables"""
+    logging.info("Syncing academic profiles...")
+    
+    # Track metrics
+    table_name = 'academic_profiles'
+    sync_report['tables'][table_name] = {
+        'start_time': datetime.now(),
+        'records_before': 0,
+        'records_after': 0,
+        'new_records': 0,
+        'errors': 0
+    }
+    sync_report['tables']['student_subjects'] = {
+        'start_time': datetime.now(),
+        'records_before': 0,
+        'records_after': 0,
+        'new_records': 0,
+        'errors': 0
+    }
+    
+    try:
+        # Get counts before
+        before_profiles = supabase.table('academic_profiles').select('id', count='exact').execute()
+        before_subjects = supabase.table('student_subjects').select('id', count='exact').execute()
+        sync_report['tables'][table_name]['records_before'] = before_profiles.count
+        sync_report['tables']['student_subjects']['records_before'] = before_subjects.count
+    except:
+        pass
+    
+    try:
+        # Get establishment mapping for UUIDs
+        establishments = supabase.table('establishments').select('id', 'knack_id', 'is_australian', 'use_standard_year').execute()
+        est_map = {e['knack_id']: e for e in establishments.data}
+        
+        # Fetch all Object_112 records
+        profiles = fetch_all_knack_records('object_112')
+        profiles_synced = 0
+        subjects_synced = 0
+        
+        for profile in profiles:
+            try:
+                # Get account ID from field_3064 (UserId connection)
+                account_id = profile.get('field_3064')
+                if not account_id:
+                    continue
+                
+                # Query Object_3 to get email
+                obj3_response = requests.get(
+                    f'{BASE_KNACK_URL}/object_3/records/{account_id}',
+                    headers={
+                        'X-Knack-Application-Id': KNACK_APP_ID,
+                        'X-Knack-REST-API-Key': KNACK_API_KEY
+                    },
+                    timeout=30
+                )
+                
+                if obj3_response.status_code != 200:
+                    continue
+                
+                obj3_data = obj3_response.json()
+                student_email = obj3_data.get('field_70', '')
+                if not student_email:
+                    continue
+                
+                # Get establishment ID
+                vespa_customer = profile.get('field_3069')
+                establishment_knack_id = None
+                if vespa_customer and isinstance(vespa_customer, list) and len(vespa_customer) > 0:
+                    establishment_knack_id = vespa_customer[0].get('id')
+                
+                establishment_data = est_map.get(establishment_knack_id) if establishment_knack_id else None
+                establishment_id = establishment_data['id'] if establishment_data else None
+                
+                # Calculate academic year
+                academic_year = calculate_academic_year(
+                    datetime.now().strftime('%d/%m/%Y'),
+                    establishment_id,
+                    establishment_data.get('is_australian') if establishment_data else False,
+                    establishment_data.get('use_standard_year') if establishment_data else None
+                )
+                
+                # Parse attendance from field_3076 (text like "93%")
+                attendance_raw = profile.get('field_3076', '')
+                attendance_float = None
+                if attendance_raw:
+                    try:
+                        attendance_str = str(attendance_raw).replace('%', '').strip()
+                        attendance_float = float(attendance_str) / 100 if attendance_str else None
+                    except (ValueError, TypeError):
+                        pass
+                
+                # Create profile record
+                profile_data = {
+                    'student_email': student_email,
+                    'student_name': profile.get('field_3066', ''),
+                    'year_group': profile.get('field_3078', ''),
+                    'tutor_group': profile.get('field_3077', ''),
+                    'attendance': attendance_float,
+                    'prior_attainment': profile.get('field_3272'),
+                    'upn': profile.get('field_3137', ''),
+                    'uci': profile.get('field_3136', ''),
+                    'centre_number': profile.get('field_3138', ''),
+                    'establishment_name': establishment_data.get('name') if establishment_data else 'Unknown',
+                    'establishment_id': establishment_id,
+                    'academic_year': academic_year,
+                    'knack_record_id': profile['id']
+                }
+                
+                # Upsert profile
+                profile_result = supabase.table('academic_profiles').upsert(
+                    profile_data,
+                    on_conflict='student_email,academic_year'
+                ).execute()
+                
+                profile_id = profile_result.data[0]['id']
+                profiles_synced += 1
+                
+                # Process subjects (field_3080 to field_3094 = Sub1 to Sub15)
+                for position in range(1, 16):
+                    field_key = f'field_{3079 + position}'
+                    subject_json_str = profile.get(field_key)
+                    
+                    if subject_json_str and subject_json_str.strip():
+                        try:
+                            subject_data = json.loads(subject_json_str)
+                            if subject_data.get('subject'):
+                                # Prepare subject record
+                                subject_record = {
+                                    'profile_id': profile_id,
+                                    'subject_name': subject_data.get('subject'),
+                                    'exam_type': subject_data.get('examType'),
+                                    'exam_board': subject_data.get('examBoard'),
+                                    'current_grade': subject_data.get('currentGrade'),
+                                    'target_grade': subject_data.get('targetGrade'),
+                                    'minimum_expected_grade': subject_data.get('minimumExpectedGrade'),
+                                    'subject_target_grade': subject_data.get('subjectTargetGrade'),
+                                    'effort_grade': subject_data.get('effortGrade'),
+                                    'behaviour_grade': subject_data.get('behaviourGrade'),
+                                    'subject_attendance': subject_data.get('subjectAttendance'),
+                                    'subject_position': position,
+                                    'original_record_id': subject_data.get('originalRecordId')
+                                }
+                                
+                                # Upsert subject
+                                supabase.table('student_subjects').upsert(
+                                    subject_record,
+                                    on_conflict='profile_id,subject_position'
+                                ).execute()
+                                
+                                subjects_synced += 1
+                                
+                        except json.JSONDecodeError:
+                            logging.warning(f"Could not parse subject JSON for position {position} in profile {profile['id']}")
+                
+            except Exception as e:
+                logging.error(f"Error syncing academic profile {profile.get('id')}: {e}")
+                sync_report['tables'][table_name]['errors'] += 1
+        
+        # Get final counts
+        try:
+            after_profiles = supabase.table('academic_profiles').select('id', count='exact').execute()
+            after_subjects = supabase.table('student_subjects').select('id', count='exact').execute()
+            sync_report['tables'][table_name]['records_after'] = after_profiles.count
+            sync_report['tables'][table_name]['new_records'] = after_profiles.count - sync_report['tables'][table_name]['records_before']
+            sync_report['tables']['student_subjects']['records_after'] = after_subjects.count
+            sync_report['tables']['student_subjects']['new_records'] = after_subjects.count - sync_report['tables']['student_subjects']['records_before']
+            sync_report['tables'][table_name]['end_time'] = datetime.now()
+            sync_report['tables']['student_subjects']['end_time'] = datetime.now()
+        except:
+            pass
+        
+        logging.info(f"Synced {profiles_synced} academic profiles with {subjects_synced} subjects")
+        
+    except Exception as e:
+        logging.error(f"Failed to sync academic profiles: {e}")
+        sync_report['errors'].append(f"Academic profiles sync failed: {e}")
+
 def sync_super_users():
     """Sync super users from object_21"""
     logging.info("Syncing super users...")
@@ -2005,6 +2183,7 @@ def main():
         sync_students_and_vespa_scores()
         sync_staff_admins()  # Added
         sync_super_users()   # Added
+        sync_academic_profiles()  # NEW: Academic profiles from Object_112
         sync_question_responses()
         
         # Update academic_year in question_responses
