@@ -10939,10 +10939,43 @@ def get_profile_from_knack(email):
     try:
         app.logger.info(f"[Academic Profile] Querying Knack Object_112 for {email}")
         
+        # STEP 1: Get account ID from Object_3 (user account)
+        # field_3070 is a connection to Object_3, so we need to query Object_3 first
+        obj3_filters = json.dumps({
+            'match': 'and',
+            'rules': [
+                {'field': 'field_70', 'operator': 'is', 'value': email}
+            ]
+        })
+        
+        obj3_response = requests.get(
+            f'{KNACK_API_URL}/objects/object_3/records',
+            headers={
+                'X-Knack-Application-Id': KNACK_APP_ID,
+                'X-Knack-REST-API-Key': KNACK_API_KEY
+            },
+            params={'filters': obj3_filters, 'format': 'raw'},
+            timeout=30
+        )
+        
+        if obj3_response.status_code != 200:
+            app.logger.warning(f"[Academic Profile] Object_3 query failed: {obj3_response.status_code}")
+            return None
+        
+        obj3_data = obj3_response.json()
+        
+        if not obj3_data.get('records'):
+            app.logger.info(f"[Academic Profile] No Object_3 account found for {email}")
+            return None
+        
+        account_id = obj3_data['records'][0]['id']
+        app.logger.info(f"[Academic Profile] Found account ID: {account_id}")
+        
+        # STEP 2: Query Object_112 by account ID (field_3064 = UserId)
         filters = json.dumps({
             'match': 'and',
             'rules': [
-                {'field': 'field_3070', 'operator': 'is', 'value': email}
+                {'field': 'field_3064', 'operator': 'is', 'value': account_id}
             ]
         })
         
@@ -10952,7 +10985,8 @@ def get_profile_from_knack(email):
                 'X-Knack-Application-Id': KNACK_APP_ID,
                 'X-Knack-REST-API-Key': KNACK_API_KEY
             },
-            params={'filters': filters, 'format': 'raw'}
+            params={'filters': filters, 'format': 'raw'},
+            timeout=30
         )
         
         if response.status_code != 200:
