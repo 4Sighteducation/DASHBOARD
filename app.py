@@ -10949,7 +10949,7 @@ def get_profile_from_knack(email):
         })
         
         obj3_response = requests.get(
-            f'{KNACK_API_URL}/objects/object_3/records',
+            'https://api.knack.com/v1/objects/object_3/records',
             headers={
                 'X-Knack-Application-Id': KNACK_APP_ID,
                 'X-Knack-REST-API-Key': KNACK_API_KEY
@@ -10980,7 +10980,7 @@ def get_profile_from_knack(email):
         })
         
         response = requests.get(
-            f'{KNACK_API_URL}/objects/object_112/records',
+            'https://api.knack.com/v1/objects/object_112/records',
             headers={
                 'X-Knack-Application-Id': KNACK_APP_ID,
                 'X-Knack-REST-API-Key': KNACK_API_KEY
