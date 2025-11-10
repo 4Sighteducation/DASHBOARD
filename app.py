@@ -161,6 +161,7 @@ CACHE_TTL = {
     'establishments': 3600,  # 1 hour for establishments
     'question_mappings': 86400,  # 24 hours for static mappings
     'dashboard_data': 600,  # 10 minutes for dashboard batch data
+    'academic_profile': 300,  # 5 minutes for academic profiles (like vespa_results)
 }
 
 # --- Supabase Setup ---
@@ -10830,6 +10831,664 @@ def save_staff_coaching():
         return jsonify({'error': str(e)}), 500
 
 # ===== END VESPA REPORT SAVE ENDPOINTS =====
+
+
+# ============================================
+# ACADEMIC PROFILE ENDPOINTS V2
+# Added: November 10, 2025
+# Dual-write to Supabase + Knack (Object_112/113)
+# ============================================
+
+def get_profile_from_supabase(email, academic_year=None):
+    """Query Supabase for academic profile"""
+    try:
+        app.logger.info(f"[Academic Profile] Querying Supabase for {email}, year: {academic_year}")
+        
+        query = supabase_client.table('academic_profiles').select('*').eq('student_email', email)
+        
+        if academic_year:
+            query = query.eq('academic_year', academic_year)
+        
+        profile_response = query.order('created_at', desc=True).limit(1).execute()
+        
+        if not profile_response.data:
+            app.logger.info(f"[Academic Profile] No Supabase profile found for {email}")
+            return None
+        
+        profile = profile_response.data[0]
+        profile_id = profile['id']
+        
+        app.logger.info(f"[Academic Profile] Found Supabase profile: {profile_id}")
+        
+        subjects_response = supabase_client.table('student_subjects')\
+            .select('*')\
+            .eq('profile_id', profile_id)\
+            .order('subject_position')\
+            .execute()
+        
+        app.logger.info(f"[Academic Profile] Found {len(subjects_response.data)} subjects")
+        
+        return {
+            'student': {
+                'email': profile.get('student_email'),
+                'name': profile.get('student_name'),
+                'yearGroup': profile.get('year_group'),
+                'tutorGroup': profile.get('tutor_group'),
+                'attendance': profile.get('attendance'),
+                'priorAttainment': profile.get('prior_attainment'),
+                'upn': profile.get('upn'),
+                'uci': profile.get('uci'),
+                'centreNumber': profile.get('centre_number'),
+                'school': profile.get('establishment_name'),
+                'establishmentId': profile.get('establishment_id')
+            },
+            'subjects': [
+                {
+                    'id': subj.get('id'),
+                    'subjectName': subj.get('subject_name'),
+                    'examType': subj.get('exam_type'),
+                    'examBoard': subj.get('exam_board'),
+                    'currentGrade': subj.get('current_grade'),
+                    'targetGrade': subj.get('target_grade'),
+                    'minimumExpectedGrade': subj.get('minimum_expected_grade'),
+                    'subjectTargetGrade': subj.get('subject_target_grade'),
+                    'effortGrade': subj.get('effort_grade'),
+                    'behaviourGrade': subj.get('behaviour_grade'),
+                    'subjectAttendance': subj.get('subject_attendance'),
+                    'position': subj.get('subject_position'),
+                    'originalRecordId': subj.get('original_record_id')
+                }
+                for subj in subjects_response.data
+            ],
+            'profileId': profile_id,
+            'academicYear': profile.get('academic_year'),
+            'knackRecordId': profile.get('knack_record_id'),
+            'updatedAt': profile.get('updated_at'),
+            'dataSource': 'supabase'
+        }
+        
+    except Exception as e:
+        app.logger.error(f"[Academic Profile] Error querying Supabase: {e}")
+        app.logger.error(traceback.format_exc())
+        return None
+
+
+def parse_knack_subject_json(json_string):
+    """Parse subject JSON from Knack Object_112 sub1-sub15 fields"""
+    if not json_string:
+        return None
+    
+    try:
+        if isinstance(json_string, dict):
+            return json_string
+        
+        subject = json.loads(json_string)
+        
+        if not subject.get('subject'):
+            return None
+        
+        return subject
+        
+    except json.JSONDecodeError as e:
+        app.logger.warning(f"[Academic Profile] Failed to parse subject JSON: {e}")
+        return None
+
+
+def get_profile_from_knack(email):
+    """Fallback: Query Knack Object_112 for academic profile"""
+    try:
+        app.logger.info(f"[Academic Profile] Querying Knack Object_112 for {email}")
+        
+        filters = json.dumps({
+            'match': 'and',
+            'rules': [
+                {'field': 'field_3070', 'operator': 'is', 'value': email}
+            ]
+        })
+        
+        response = requests.get(
+            f'{KNACK_API_URL}/objects/object_112/records',
+            headers={
+                'X-Knack-Application-Id': KNACK_APP_ID,
+                'X-Knack-REST-API-Key': KNACK_API_KEY
+            },
+            params={'filters': filters, 'format': 'raw'}
+        )
+        
+        if response.status_code != 200:
+            app.logger.warning(f"[Academic Profile] Knack API returned {response.status_code}")
+            return None
+        
+        data = response.json()
+        
+        if not data.get('records'):
+            app.logger.info(f"[Academic Profile] No Knack profile found for {email}")
+            return None
+        
+        record = data['records'][0]
+        app.logger.info(f"[Academic Profile] Found Knack profile: {record.get('id')}")
+        
+        subjects = []
+        for i in range(1, 16):
+            field_key = f'field_{3079 + i}'
+            
+            if field_key in record:
+                subject = parse_knack_subject_json(record[field_key])
+                if subject:
+                    subjects.append({
+                        'id': None,
+                        'subjectName': subject.get('subject'),
+                        'examType': subject.get('examType'),
+                        'examBoard': subject.get('examBoard'),
+                        'currentGrade': subject.get('currentGrade'),
+                        'targetGrade': subject.get('targetGrade'),
+                        'minimumExpectedGrade': subject.get('minimumExpectedGrade'),
+                        'subjectTargetGrade': subject.get('subjectTargetGrade'),
+                        'effortGrade': subject.get('effortGrade'),
+                        'behaviourGrade': subject.get('behaviourGrade'),
+                        'subjectAttendance': subject.get('subjectAttendance'),
+                        'position': i,
+                        'originalRecordId': subject.get('originalRecordId')
+                    })
+        
+        school_name = 'Unknown School'
+        establishment_id = None
+        
+        vespa_customer = record.get('field_3069')
+        if vespa_customer:
+            if isinstance(vespa_customer, dict):
+                school_name = vespa_customer.get('identifier', vespa_customer.get('name', 'Unknown School'))
+                establishment_id = vespa_customer.get('id')
+            elif isinstance(vespa_customer, list) and len(vespa_customer) > 0:
+                school_name = vespa_customer[0].get('identifier', 'Unknown School')
+                establishment_id = vespa_customer[0].get('id')
+        
+        return {
+            'student': {
+                'email': email,
+                'name': record.get('field_3066'),
+                'yearGroup': record.get('field_3078'),
+                'tutorGroup': record.get('field_3077'),
+                'attendance': record.get('field_3076'),
+                'priorAttainment': record.get('field_3272'),
+                'upn': record.get('field_3137'),
+                'uci': record.get('field_3136'),
+                'centreNumber': record.get('field_3138'),
+                'school': school_name,
+                'establishmentId': establishment_id
+            },
+            'subjects': subjects,
+            'knackRecordId': record.get('id'),
+            'academicYear': None,
+            'dataSource': 'knack'
+        }
+        
+    except Exception as e:
+        app.logger.error(f"[Academic Profile] Error querying Knack: {e}")
+        app.logger.error(traceback.format_exc())
+        return None
+
+
+def sync_subject_to_knack(subject_data, object_112_record_id, position):
+    """Update subject in Knack Object_112 + Object_113"""
+    try:
+        subject_json = {
+            'subject': subject_data.get('subjectName'),
+            'examType': subject_data.get('examType'),
+            'examBoard': subject_data.get('examBoard'),
+            'currentGrade': subject_data.get('currentGrade'),
+            'targetGrade': subject_data.get('targetGrade'),
+            'minimumExpectedGrade': subject_data.get('minimumExpectedGrade'),
+            'subjectTargetGrade': subject_data.get('subjectTargetGrade'),
+            'effortGrade': subject_data.get('effortGrade'),
+            'behaviourGrade': subject_data.get('behaviourGrade'),
+            'subjectAttendance': subject_data.get('subjectAttendance'),
+            'originalRecordId': subject_data.get('originalRecordId')
+        }
+        
+        field_id = f'field_{3079 + position}'
+        
+        update_data = {
+            field_id: json.dumps(subject_json)
+        }
+        
+        response = requests.put(
+            f'{KNACK_API_URL}/objects/object_112/records/{object_112_record_id}',
+            headers={
+                'X-Knack-Application-Id': KNACK_APP_ID,
+                'X-Knack-REST-API-Key': KNACK_API_KEY,
+                'Content-Type': 'application/json'
+            },
+            json=update_data
+        )
+        
+        if response.status_code not in [200, 201]:
+            app.logger.warning(f"[Academic Profile] Knack Object_112 update failed: {response.status_code}")
+            return False
+        
+        if subject_data.get('originalRecordId'):
+            object_113_update = {
+                'field_3132': subject_data.get('currentGrade', ''),
+                'field_3135': subject_data.get('targetGrade', ''),
+                'field_3133': subject_data.get('effortGrade', ''),
+                'field_3134': subject_data.get('behaviourGrade', ''),
+                'field_3186': subject_data.get('subjectAttendance', '')
+            }
+            
+            obj_113_response = requests.put(
+                f'{KNACK_API_URL}/objects/object_113/records/{subject_data["originalRecordId"]}',
+                headers={
+                    'X-Knack-Application-Id': KNACK_APP_ID,
+                    'X-Knack-REST-API-Key': KNACK_API_KEY,
+                    'Content-Type': 'application/json'
+                },
+                json=object_113_update
+            )
+            
+            if obj_113_response.status_code not in [200, 201]:
+                app.logger.warning(f"[Academic Profile] Knack Object_113 update failed: {obj_113_response.status_code}")
+        
+        return True
+        
+    except Exception as e:
+        app.logger.error(f"[Academic Profile] Error syncing subject to Knack: {e}")
+        return False
+
+
+@app.route('/api/academic-profile/<email>', methods=['GET'])
+def get_academic_profile(email):
+    """Get student academic profile with subjects"""
+    try:
+        source = request.args.get('source', 'supabase')
+        academic_year = request.args.get('academic_year')
+        
+        app.logger.info(f"[Academic Profile] GET request for {email}, source: {source}")
+        
+        cache_key = f'academic_profile:{email}:{academic_year or "current"}'
+        
+        if CACHE_ENABLED:
+            try:
+                cached = redis_client.get(cache_key)
+                if cached:
+                    app.logger.info(f"[Academic Profile] Cache hit for {email}")
+                    return jsonify(pickle.loads(cached))
+            except Exception as cache_error:
+                app.logger.warning(f"[Academic Profile] Cache error: {cache_error}")
+        
+        profile_data = None
+        
+        if SUPABASE_ENABLED and source == 'supabase':
+            profile_data = get_profile_from_supabase(email, academic_year)
+        
+        if not profile_data:
+            app.logger.info(f"[Academic Profile] Falling back to Knack for {email}")
+            profile_data = get_profile_from_knack(email)
+        
+        if not profile_data:
+            return jsonify({
+                'success': False,
+                'error': 'Profile not found',
+                'message': 'No academic profile found for this student'
+            }), 404
+        
+        response_data = {
+            'success': True,
+            'student': profile_data['student'],
+            'subjects': profile_data['subjects'],
+            'dataSource': profile_data.get('dataSource', 'unknown'),
+            'lastUpdated': profile_data.get('updatedAt'),
+            'academicYear': profile_data.get('academicYear')
+        }
+        
+        if CACHE_ENABLED:
+            try:
+                redis_client.setex(
+                    cache_key,
+                    CACHE_TTL.get('academic_profile', 300),
+                    pickle.dumps(response_data)
+                )
+            except Exception as cache_error:
+                app.logger.warning(f"[Academic Profile] Cache write error: {cache_error}")
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        app.logger.error(f"[Academic Profile] Error in get_academic_profile: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/academic-profile/sync', methods=['POST'])
+def sync_academic_profile():
+    """Sync academic profile to both Supabase and Knack (dual-write)"""
+    try:
+        data = request.get_json()
+        
+        student_email = data.get('studentEmail')
+        student_name = data.get('studentName')
+        profile_data = data.get('profile', {})
+        subjects_data = data.get('subjects', [])
+        academic_year = data.get('academicYear')
+        knack_record_id = data.get('knackRecordId')
+        
+        app.logger.info(f"[Academic Profile] Syncing profile for {student_email}, {len(subjects_data)} subjects")
+        
+        if not student_email:
+            return jsonify({'success': False, 'error': 'studentEmail required'}), 400
+        
+        supabase_written = False
+        knack_written = False
+        profile_id = None
+        
+        if SUPABASE_ENABLED:
+            try:
+                existing = supabase_client.table('academic_profiles')\
+                    .select('id')\
+                    .eq('student_email', student_email)\
+                    .eq('academic_year', academic_year)\
+                    .execute()
+                
+                profile_record = {
+                    'student_email': student_email,
+                    'student_name': student_name,
+                    'year_group': profile_data.get('yearGroup'),
+                    'tutor_group': profile_data.get('tutorGroup'),
+                    'attendance': profile_data.get('attendance'),
+                    'prior_attainment': profile_data.get('priorAttainment'),
+                    'upn': profile_data.get('upn'),
+                    'uci': profile_data.get('uci'),
+                    'centre_number': profile_data.get('centreNumber'),
+                    'establishment_name': profile_data.get('school'),
+                    'establishment_id': profile_data.get('establishmentId'),
+                    'academic_year': academic_year,
+                    'knack_record_id': knack_record_id,
+                    'updated_at': datetime.utcnow().isoformat()
+                }
+                
+                if existing.data:
+                    profile_id = existing.data[0]['id']
+                    app.logger.info(f"[Academic Profile] Updating existing Supabase profile: {profile_id}")
+                    
+                    supabase_client.table('academic_profiles')\
+                        .update(profile_record)\
+                        .eq('id', profile_id)\
+                        .execute()
+                else:
+                    app.logger.info(f"[Academic Profile] Creating new Supabase profile for {student_email}")
+                    
+                    result = supabase_client.table('academic_profiles')\
+                        .insert(profile_record)\
+                        .execute()
+                    
+                    profile_id = result.data[0]['id']
+                
+                supabase_client.table('student_subjects')\
+                    .delete()\
+                    .eq('profile_id', profile_id)\
+                    .execute()
+                
+                if subjects_data:
+                    subjects_to_insert = [
+                        {
+                            'profile_id': profile_id,
+                            'student_email': student_email,
+                            'subject_name': subj.get('subjectName'),
+                            'exam_type': subj.get('examType'),
+                            'exam_board': subj.get('examBoard'),
+                            'current_grade': subj.get('currentGrade'),
+                            'target_grade': subj.get('targetGrade'),
+                            'minimum_expected_grade': subj.get('minimumExpectedGrade'),
+                            'subject_target_grade': subj.get('subjectTargetGrade'),
+                            'effort_grade': subj.get('effortGrade'),
+                            'behaviour_grade': subj.get('behaviourGrade'),
+                            'subject_attendance': subj.get('subjectAttendance'),
+                            'original_record_id': subj.get('originalRecordId'),
+                            'subject_position': subj.get('position', idx + 1)
+                        }
+                        for idx, subj in enumerate(subjects_data)
+                    ]
+                    
+                    supabase_client.table('student_subjects')\
+                        .insert(subjects_to_insert)\
+                        .execute()
+                    
+                    app.logger.info(f"[Academic Profile] Inserted {len(subjects_to_insert)} subjects to Supabase")
+                
+                supabase_written = True
+                
+            except Exception as sb_error:
+                app.logger.error(f"[Academic Profile] Supabase write failed: {sb_error}")
+                app.logger.error(traceback.format_exc())
+                supabase_written = False
+        
+        if knack_record_id:
+            try:
+                for idx, subject in enumerate(subjects_data):
+                    position = subject.get('position', idx + 1)
+                    sync_subject_to_knack(subject, knack_record_id, position)
+                
+                profile_update = {
+                    'field_3066': student_name,
+                    'field_3078': profile_data.get('yearGroup'),
+                    'field_3077': profile_data.get('tutorGroup'),
+                    'field_3076': profile_data.get('attendance'),
+                    'field_3272': profile_data.get('priorAttainment'),
+                    'field_3137': profile_data.get('upn'),
+                    'field_3136': profile_data.get('uci'),
+                    'field_3138': profile_data.get('centreNumber')
+                }
+                
+                profile_update = {k: v for k, v in profile_update.items() if v is not None}
+                
+                if profile_update:
+                    response = requests.put(
+                        f'{KNACK_API_URL}/objects/object_112/records/{knack_record_id}',
+                        headers={
+                            'X-Knack-Application-Id': KNACK_APP_ID,
+                            'X-Knack-REST-API-Key': KNACK_API_KEY,
+                            'Content-Type': 'application/json'
+                        },
+                        json=profile_update
+                    )
+                    
+                    knack_written = response.status_code in [200, 201]
+                    
+                    if not knack_written:
+                        app.logger.warning(f"[Academic Profile] Knack profile update failed: {response.status_code}")
+                else:
+                    knack_written = True
+                
+            except Exception as knack_error:
+                app.logger.error(f"[Academic Profile] Knack write failed: {knack_error}")
+                knack_written = False
+        else:
+            app.logger.warning(f"[Academic Profile] No Knack record ID provided, skipping Knack sync")
+            knack_written = False
+        
+        if CACHE_ENABLED:
+            try:
+                cache_key = f'academic_profile:{student_email}:*'
+                for key in redis_client.scan_iter(match=cache_key):
+                    redis_client.delete(key)
+            except Exception as cache_error:
+                app.logger.warning(f"[Academic Profile] Cache clear error: {cache_error}")
+        
+        return jsonify({
+            'success': True,
+            'supabaseWritten': supabase_written,
+            'knackWritten': knack_written,
+            'profileId': str(profile_id) if profile_id else None,
+            'message': 'Profile synced successfully'
+        })
+        
+    except Exception as e:
+        app.logger.error(f"[Academic Profile] Error in sync_academic_profile: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/academic-profile/subject/<subject_id>', methods=['PUT'])
+def update_subject_grade(subject_id):
+    """Update individual subject grades (staff editing)"""
+    try:
+        updates = request.get_json()
+        
+        app.logger.info(f"[Academic Profile] Updating subject {subject_id}")
+        
+        supabase_updated = False
+        knack_updated = False
+        
+        if SUPABASE_ENABLED:
+            try:
+                subject_response = supabase_client.table('student_subjects')\
+                    .select('*, academic_profiles!inner(student_email, knack_record_id)')\
+                    .eq('id', subject_id)\
+                    .execute()
+                
+                if not subject_response.data:
+                    return jsonify({'success': False, 'error': 'Subject not found'}), 404
+                
+                subject = subject_response.data[0]
+                student_email = subject['academic_profiles']['student_email']
+                knack_record_id = subject['academic_profiles']['knack_record_id']
+                original_record_id = subject.get('original_record_id')
+                subject_position = subject.get('subject_position')
+                
+                update_data = {
+                    'updated_at': datetime.utcnow().isoformat()
+                }
+                
+                if 'currentGrade' in updates:
+                    update_data['current_grade'] = updates['currentGrade']
+                if 'targetGrade' in updates:
+                    update_data['target_grade'] = updates['targetGrade']
+                if 'effortGrade' in updates:
+                    update_data['effort_grade'] = updates['effortGrade']
+                if 'behaviourGrade' in updates:
+                    update_data['behaviour_grade'] = updates['behaviourGrade']
+                if 'subjectAttendance' in updates:
+                    update_data['subject_attendance'] = updates['subjectAttendance']
+                
+                supabase_client.table('student_subjects')\
+                    .update(update_data)\
+                    .eq('id', subject_id)\
+                    .execute()
+                
+                app.logger.info(f"[Academic Profile] Supabase update successful")
+                supabase_updated = True
+                
+                if original_record_id:
+                    knack_subject_update = {}
+                    
+                    if 'currentGrade' in updates:
+                        knack_subject_update['field_3132'] = updates['currentGrade']
+                    if 'targetGrade' in updates:
+                        knack_subject_update['field_3135'] = updates['targetGrade']
+                    if 'effortGrade' in updates:
+                        knack_subject_update['field_3133'] = updates['effortGrade']
+                    if 'behaviourGrade' in updates:
+                        knack_subject_update['field_3134'] = updates['behaviourGrade']
+                    if 'subjectAttendance' in updates:
+                        knack_subject_update['field_3186'] = updates['subjectAttendance']
+                    
+                    if knack_subject_update:
+                        obj_113_response = requests.put(
+                            f'{KNACK_API_URL}/objects/object_113/records/{original_record_id}',
+                            headers={
+                                'X-Knack-Application-Id': KNACK_APP_ID,
+                                'X-Knack-REST-API-Key': KNACK_API_KEY,
+                                'Content-Type': 'application/json'
+                            },
+                            json=knack_subject_update
+                        )
+                        
+                        knack_updated = obj_113_response.status_code in [200, 201]
+                
+                if knack_record_id and subject_position:
+                    full_subject = supabase_client.table('student_subjects')\
+                        .select('*')\
+                        .eq('id', subject_id)\
+                        .execute()
+                    
+                    if full_subject.data:
+                        subj = full_subject.data[0]
+                        updated_subject_data = {
+                            'subjectName': subj['subject_name'],
+                            'examType': subj['exam_type'],
+                            'examBoard': subj['exam_board'],
+                            'currentGrade': subj['current_grade'],
+                            'targetGrade': subj['target_grade'],
+                            'minimumExpectedGrade': subj['minimum_expected_grade'],
+                            'subjectTargetGrade': subj['subject_target_grade'],
+                            'effortGrade': subj['effort_grade'],
+                            'behaviourGrade': subj['behaviour_grade'],
+                            'subjectAttendance': subj['subject_attendance'],
+                            'originalRecordId': subj['original_record_id']
+                        }
+                        
+                        sync_subject_to_knack(updated_subject_data, knack_record_id, subject_position)
+                
+                if CACHE_ENABLED:
+                    cache_pattern = f'academic_profile:{student_email}:*'
+                    for key in redis_client.scan_iter(match=cache_pattern):
+                        redis_client.delete(key)
+                
+            except Exception as sb_error:
+                app.logger.error(f"[Academic Profile] Supabase update failed: {sb_error}")
+                supabase_updated = False
+        
+        return jsonify({
+            'success': True,
+            'updated': {
+                'supabase': supabase_updated,
+                'knack': knack_updated
+            }
+        })
+        
+    except Exception as e:
+        app.logger.error(f"[Academic Profile] Error in update_subject_grade: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/academic-profile/health', methods=['GET'])
+def academic_profile_health():
+    """Health check for academic profile system"""
+    try:
+        health = {
+            'supabaseConnected': SUPABASE_ENABLED,
+            'tablesExist': False,
+            'sampleData': None
+        }
+        
+        if SUPABASE_ENABLED:
+            test_query = supabase_client.table('academic_profiles')\
+                .select('id', count='exact')\
+                .limit(1)\
+                .execute()
+            
+            health['tablesExist'] = True
+            health['sampleData'] = {
+                'profileCount': test_query.count if hasattr(test_query, 'count') else 0
+            }
+        
+        return jsonify({
+            'success': True,
+            'health': health
+        })
+        
+    except Exception as e:
+        app.logger.error(f"[Academic Profile] Health check failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'health': {
+                'supabaseConnected': False,
+                'tablesExist': False
+            }
+        }), 500
+
+# ===== END ACADEMIC PROFILE ENDPOINTS =====
 
 
 if __name__ == '__main__':
