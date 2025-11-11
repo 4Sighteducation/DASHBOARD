@@ -34,6 +34,7 @@ def register_activities_routes(app, supabase: Client):
         Query params: email, cycle
         """
         try:
+            logger.info(f"[Activities API] /api/activities/recommended called with email={request.args.get('email')}, cycle={request.args.get('cycle')}")
             student_email = request.args.get('email')
             cycle = int(request.args.get('cycle', 1))
             
@@ -156,7 +157,9 @@ def register_activities_routes(app, supabase: Client):
             
         except Exception as e:
             logger.error(f"Error in get_recommended_activities: {str(e)}", exc_info=True)
-            return jsonify({"error": str(e)}), 500
+            import traceback
+            logger.error(traceback.format_exc())
+            return jsonify({"error": str(e), "type": type(e).__name__}), 500
     
     
     @app.route('/api/activities/by-problem', methods=['GET'])
@@ -234,7 +237,9 @@ def register_activities_routes(app, supabase: Client):
             
         except Exception as e:
             logger.error(f"Error in get_assigned_activities: {str(e)}", exc_info=True)
-            return jsonify({"error": str(e)}), 500
+            import traceback
+            logger.error(traceback.format_exc())
+            return jsonify({"error": str(e), "type": type(e).__name__}), 500
     
     
     @app.route('/api/activities/questions', methods=['GET'])
@@ -922,6 +927,45 @@ def register_activities_routes(app, supabase: Client):
             
         except Exception as e:
             logger.error(f"Error in check_achievements: {str(e)}", exc_info=True)
+            return jsonify({"error": str(e)}), 500
+    
+    
+    @app.route('/api/students/stats', methods=['GET'])
+    def get_student_stats():
+        """
+        Get student statistics (total_points, total_activities_completed, total_achievements)
+        Query params: email
+        """
+        try:
+            student_email = request.args.get('email')
+            
+            if not student_email:
+                return jsonify({"error": "email parameter required"}), 400
+            
+            # Ensure student exists
+            ensure_vespa_student_exists(supabase, student_email)
+            
+            # Fetch stats from vespa_students table
+            result = supabase.table('vespa_students').select(
+                'total_points, total_activities_completed, total_achievements'
+            ).eq('email', student_email).single().execute()
+            
+            if result.data:
+                return jsonify({
+                    "total_points": result.data.get('total_points', 0),
+                    "total_activities_completed": result.data.get('total_activities_completed', 0),
+                    "total_achievements": result.data.get('total_achievements', 0)
+                })
+            else:
+                # Return defaults if student doesn't exist yet
+                return jsonify({
+                    "total_points": 0,
+                    "total_activities_completed": 0,
+                    "total_achievements": 0
+                })
+            
+        except Exception as e:
+            logger.error(f"Error in get_student_stats: {str(e)}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
 

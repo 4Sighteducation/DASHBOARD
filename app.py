@@ -11535,6 +11535,32 @@ def academic_profile_health():
 
 # ===== END ACADEMIC PROFILE ENDPOINTS =====
 
+# ===== VESPA ACTIVITIES V3 API ENDPOINTS =====
+# Import and register activities API routes
+try:
+    app.logger.info(f"[Activities API] Attempting to import activities_api module...")
+    app.logger.info(f"[Activities API] SUPABASE_ENABLED = {SUPABASE_ENABLED}")
+    app.logger.info(f"[Activities API] supabase_client exists = {supabase_client is not None}")
+    
+    from activities_api import register_activities_routes
+    app.logger.info("[Activities API] Successfully imported register_activities_routes")
+    
+    if SUPABASE_ENABLED and supabase_client:
+        app.logger.info("[Activities API] Registering routes...")
+        register_activities_routes(app, supabase_client)
+        app.logger.info("✅ VESPA Activities V3 API routes registered successfully")
+    else:
+        app.logger.warning(f"⚠️ VESPA Activities V3 API routes not registered - SUPABASE_ENABLED={SUPABASE_ENABLED}, supabase_client={supabase_client is not None}")
+except ImportError as e:
+    app.logger.error(f"❌ Could not import activities_api: {e}")
+    import traceback
+    app.logger.error(traceback.format_exc())
+except Exception as e:
+    app.logger.error(f"❌ Error registering activities API routes: {e}")
+    import traceback
+    app.logger.error(traceback.format_exc())
+# ===== END VESPA ACTIVITIES V3 API ENDPOINTS =====
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 
