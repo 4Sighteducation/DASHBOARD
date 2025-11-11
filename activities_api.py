@@ -88,9 +88,10 @@ def register_activities_routes(app, supabase: Client):
                 
                 # Now query vespa_scores using student_id
                 # Note: Get all matching records and sort in Python to avoid desc=True syntax issues
+                # Note: Legacy table uses 'cycle' not 'cycle_number'
                 scores_result = supabase.table('vespa_scores').select('*')\
                     .eq('student_id', student_id)\
-                    .eq('cycle_number', cycle)\
+                    .eq('cycle', cycle)\
                     .order('created_at')\
                     .limit(10)\
                     .execute()
@@ -112,7 +113,8 @@ def register_activities_routes(app, supabase: Client):
             recommended = []
             
             for category in ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude']:
-                score_key = category.lower() + '_score'
+                # Legacy vespa_scores table uses lowercase column names without '_score' suffix
+                score_key = category.lower()
                 score = scores.get(score_key, 5)
                 
                 # Fetch activities matching: category, level, score thresholds
