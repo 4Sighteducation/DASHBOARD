@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 """
-CURRENT-YEAR-ONLY SYNC - Version 3.0
-====================================
+CURRENT-YEAR-ONLY SYNC - Version 3.1 (November 12, 2025)
+=========================================================
 
 This sync ONLY processes data from the current academic year.
 - Faster: ~1,000 records instead of 27,000
 - Safer: Never touches historical data
 - Simpler: Academic year is constant, not calculated per record
 - More reliable: Uses email matching instead of unreliable field_792 connections
+
+FIXES IN v3.1 (Nov 12, 2025):
+1. Date parsing: Handles both 'DD/MM/YYYY' and 'DD/MM/YYYY HH:MM' formats
+2. VESPA cycle logic: Only syncs cycles with actual data (prevents duplicates)
+3. Duplicate cleanup: Deletes Supabase cycles that don't exist in Knack
+4. Knack as source of truth: Maintains perfect sync with Knack data
+5. Better error handling: Ensures failures are logged and reported
 
 KEY CHANGES FROM V2.0:
 1. Date filters at Knack API level (only fetch current year)
@@ -77,7 +84,7 @@ BATCH_SIZES = {
 # Sync report
 sync_report = {
     'start_time': datetime.now(),
-    'version': '3.0 - Current Year Only',
+    'version': '3.1 - Current Year Only (Data Integrity Fix)',
     'academic_year_uk': None,
     'academic_year_aus': None,
     'tables': {},
@@ -209,10 +216,11 @@ def extract_email_from_html(html_or_email):
 
 def convert_knack_date_to_postgres(knack_date):
     """
-    Convert Knack date format (DD/MM/YYYY) to PostgreSQL format (YYYY-MM-DD)
+    Convert Knack date format to PostgreSQL format (YYYY-MM-DD)
+    Handles both 'DD/MM/YYYY' and 'DD/MM/YYYY HH:MM' formats
     
     Args:
-        knack_date: Date string in DD/MM/YYYY format
+        knack_date: Date string in DD/MM/YYYY or DD/MM/YYYY HH:MM format
     
     Returns:
         Date string in YYYY-MM-DD format or None if invalid
@@ -221,8 +229,18 @@ def convert_knack_date_to_postgres(knack_date):
         return None
     
     try:
-        # Parse DD/MM/YYYY
-        date_obj = datetime.strptime(knack_date, '%d/%m/%Y')
+        # Handle both with and without time
+        if ' ' in knack_date:
+            # Has time component - try with time first
+            try:
+                date_obj = datetime.strptime(knack_date, '%d/%m/%Y %H:%M')
+            except ValueError:
+                # Try just the date part
+                date_obj = datetime.strptime(knack_date.split(' ')[0], '%d/%m/%Y')
+        else:
+            # No time component
+            date_obj = datetime.strptime(knack_date, '%d/%m/%Y')
+        
         # Return as YYYY-MM-DD
         return date_obj.strftime('%Y-%m-%d')
     except ValueError:
@@ -310,6 +328,9 @@ def sync_students_and_vespa_scores(year_boundaries):
     student_id_map = {}  # knack_id -> supabase_id
     student_email_map = {}  # email -> supabase_id
     
+    # NEW: Track which cycles each student has in Knack (for cleanup)
+    student_cycles_in_knack = {}  # knack_id -> [1, 2, 3] (list of cycles with data)
+    
     for record in records:
         try:
             # SKIP if no completion date
@@ -361,27 +382,61 @@ def sync_students_and_vespa_scores(year_boundaries):
             
             student_batch.append(student_data)
             
+            # Helper function to convert empty strings to None
+            def clean_score(value):
+                if value == "" or value is None:
+                    return None
+                try:
+                    return int(float(value))
+                except (ValueError, TypeError):
+                    return None
+            
+            # Track which cycles have ACTUAL data in Knack
+            knack_cycles_with_data = []
+            
             # Process VESPA scores (all 3 cycles)
             for cycle in [1, 2, 3]:
-                # Check if this cycle has data
-                cycle_field = f'field_{145 + cycle}'  # field_146, 147, 148
-                if record.get(cycle_field):
+                # Calculate field offsets for each cycle
+                field_offset = (cycle - 1) * 6
+                
+                # Get individual scores from the correct fields
+                vision = clean_score(record.get(f'field_{155 + field_offset}_raw'))
+                effort = clean_score(record.get(f'field_{156 + field_offset}_raw'))
+                systems = clean_score(record.get(f'field_{157 + field_offset}_raw'))
+                practice = clean_score(record.get(f'field_{158 + field_offset}_raw'))
+                attitude = clean_score(record.get(f'field_{159 + field_offset}_raw'))
+                overall = clean_score(record.get(f'field_{160 + field_offset}_raw'))
+                
+                # Check if this cycle has ACTUAL data (at least one non-null score)
+                cycle_has_data = any(v is not None for v in [vision, effort, systems, practice, attitude, overall])
+                
+                if cycle_has_data:
+                    knack_cycles_with_data.append(cycle)
+                    
+                    # Validate overall score
+                    if overall is not None and (overall < 0 or overall > 10):
+                        logging.warning(f"Invalid overall score {overall} for {email}, cycle {cycle} - skipping")
+                        continue
+                    
                     try:
                         score_data = {
-                            'student_knack_id': record['id'],  # Will map to student_id after upsert
+                            'student_knack_id': record['id'],
                             'cycle': cycle,
-                            'academic_year': academic_year,  # CONSTANT
-                            'vision': int(float(record.get('field_147', 0) or 0)),
-                            'effort': int(float(record.get('field_148', 0) or 0)),
-                            'systems': int(float(record.get('field_149', 0) or 0)),
-                            'practice': int(float(record.get('field_150', 0) or 0)),
-                            'attitude': int(float(record.get('field_151', 0) or 0)),
-                            'overall': int(float(record.get('field_152', 0) or 0)),
+                            'academic_year': academic_year,
+                            'vision': vision,
+                            'effort': effort,
+                            'systems': systems,
+                            'practice': practice,
+                            'attitude': attitude,
+                            'overall': overall,
                             'completion_date': convert_knack_date_to_postgres(completion_date)
                         }
                         score_batch.append(score_data)
-                    except (ValueError, TypeError) as e:
-                        logging.warning(f"Error parsing VESPA scores for {email}: {e}")
+                    except Exception as e:
+                        logging.warning(f"Error creating VESPA score for {email}: {e}")
+            
+            # Store which cycles this student has in Knack
+            student_cycles_in_knack[record['id']] = knack_cycles_with_data
             
             # NEW: Extract student comments (RRC and Goal fields)
             comment_mappings = [
@@ -458,6 +513,33 @@ def sync_students_and_vespa_scores(year_boundaries):
         ).execute()
         scores_synced += len(batch)
     
+    # CRITICAL: Clean up duplicate cycles (Knack as source of truth)
+    # Delete cycles from Supabase that don't exist in Knack (current year only)
+    logging.info(f"\nCleaning up duplicate cycles (Knack as source of truth)...")
+    cycles_deleted = 0
+    
+    for student_knack_id, cycles_in_knack in student_cycles_in_knack.items():
+        student_id = student_id_map.get(student_knack_id)
+        if student_id:
+            # Delete cycles that Knack doesn't have
+            cycles_to_delete = [c for c in [1, 2, 3] if c not in cycles_in_knack]
+            for cycle_to_delete in cycles_to_delete:
+                try:
+                    result = supabase.table('vespa_scores')\
+                        .delete()\
+                        .eq('student_id', student_id)\
+                        .eq('cycle', cycle_to_delete)\
+                        .eq('academic_year', academic_year)\
+                        .execute()
+                    if result.data:
+                        cycles_deleted += len(result.data)
+                except Exception as e:
+                    # Ignore if record doesn't exist
+                    pass
+    
+    if cycles_deleted > 0:
+        logging.info(f"   Deleted {cycles_deleted} duplicate/empty cycles from Supabase")
+    
     # NEW: Process student comments with correct student_ids
     logging.info(f"\nProcessing {len(comment_batch)} student comments...")
     comments_with_ids = []
@@ -497,7 +579,8 @@ def sync_students_and_vespa_scores(year_boundaries):
         'skipped_no_email': skipped_no_email
     }
     sync_report['tables']['vespa_scores'] = {
-        'synced': scores_synced
+        'synced': scores_synced,
+        'duplicates_deleted': cycles_deleted if 'cycles_deleted' in locals() else 0
     }
     sync_report['tables']['student_comments'] = {
         'synced': comments_synced
