@@ -9976,30 +9976,81 @@ def get_report_data():
             if cycle in responses_by_cycle:
                 responses_by_cycle[cycle][question_id] = value
         
-        # Get student responses, goals, and coaching notes
-        responses_data = supabase_client.table('student_responses')\
-            .select('cycle, response_text, submitted_at')\
-            .eq('student_id', student_id)\
-            .execute()
-        
-        goals_data = supabase_client.table('student_goals')\
-            .select('cycle, goal_text, goal_set_date, goal_due_date')\
-            .eq('student_id', student_id)\
-            .execute()
-        
-        coaching_data = supabase_client.table('staff_coaching_notes')\
-            .select('cycle, coaching_text, coaching_date, staff_id')\
-            .eq('student_id', student_id)\
-            .execute()
-        
-        # Organize by cycle
+        # CRITICAL FIX: Get student responses, goals, and coaching FROM KNACK (not Supabase)
+        # Supabase may not be in sync, but Knack is always the source of truth
         student_profile = {}
-        for cycle in [1, 2, 3]:
-            student_profile[cycle] = {
-                'response': next((r for r in responses_data.data if r['cycle'] == cycle), None),
-                'goals': next((g for g in goals_data.data if g['cycle'] == cycle), None),
-                'coaching': next((c for c in coaching_data.data if c['cycle'] == cycle), None)
-            }
+        
+        if knack_obj10_id:
+            # Fetch the full Object_10 record from Knack to get all text fields
+            try:
+                headers = {
+                    'X-Knack-Application-Id': os.getenv('KNACK_APP_ID'),
+                    'X-Knack-REST-API-Key': os.getenv('KNACK_API_KEY')
+                }
+                
+                knack_record_response = requests.get(
+                    f"https://api.knack.com/v1/objects/object_10/records/{knack_obj10_id}",
+                    headers=headers,
+                    timeout=10
+                )
+                
+                if knack_record_response.ok:
+                    record = knack_record_response.json()
+                    
+                    # Extract responses by cycle (fields 2302, 2303, 2304)
+                    for cycle in [1, 2, 3]:
+                        field_map = {
+                            1: {'response': 'field_2302', 'goals': 'field_2499', 'coaching': 'field_2488'},
+                            2: {'response': 'field_2303', 'goals': 'field_2493', 'coaching': 'field_2490'},
+                            3: {'response': 'field_2304', 'goals': 'field_2494', 'coaching': 'field_2491'}
+                        }
+                        
+                        # Get response text (strip HTML)
+                        response_text = record.get(field_map[cycle]['response'], '') or record.get(field_map[cycle]['response'] + '_raw', '')
+                        if response_text:
+                            import re
+                            response_text = response_text.replace('<br>', '\n').replace('<br/>', '\n').replace('<br />', '\n')
+                            response_text = response_text.replace('</p>', '\n\n')
+                            response_text = re.sub('<[^<]+?>', '', response_text)
+                            response_text = response_text.strip()
+                        
+                        # Get goals text (strip HTML)
+                        goals_text = record.get(field_map[cycle]['goals'], '') or record.get(field_map[cycle]['goals'] + '_raw', '')
+                        if goals_text:
+                            import re
+                            goals_text = goals_text.replace('<br>', '\n').replace('<br/>', '\n').replace('<br />', '\n')
+                            goals_text = goals_text.replace('</p>', '\n\n')
+                            goals_text = re.sub('<[^<]+?>', '', goals_text)
+                            goals_text = goals_text.strip()
+                        
+                        # Get coaching text (strip HTML)
+                        coaching_text = record.get(field_map[cycle]['coaching'], '') or record.get(field_map[cycle]['coaching'] + '_raw', '')
+                        if coaching_text:
+                            import re
+                            coaching_text = coaching_text.replace('<br>', '\n').replace('<br/>', '\n').replace('<br />', '\n')
+                            coaching_text = coaching_text.replace('</p>', '\n\n')
+                            coaching_text = re.sub('<[^<]+?>', '', coaching_text)
+                            coaching_text = coaching_text.strip()
+                        
+                        student_profile[cycle] = {
+                            'response': {'response_text': response_text, 'submitted_at': None} if response_text else None,
+                            'goals': {'goal_text': goals_text, 'goal_set_date': None, 'goal_due_date': None} if goals_text else None,
+                            'coaching': {'coaching_text': coaching_text, 'coaching_date': None} if coaching_text else None
+                        }
+                    
+                    app.logger.info(f"[Report Data] Fetched text fields from Knack Object_10")
+                else:
+                    app.logger.warning(f"[Report Data] Could not fetch Knack Object_10 record, using empty profile")
+                    for cycle in [1, 2, 3]:
+                        student_profile[cycle] = {'response': None, 'goals': None, 'coaching': None}
+            except Exception as e:
+                app.logger.error(f"[Report Data] Error fetching from Knack: {e}")
+                for cycle in [1, 2, 3]:
+                    student_profile[cycle] = {'response': None, 'goals': None, 'coaching': None}
+        else:
+            # No Object_10 ID found, return empty profile
+            for cycle in [1, 2, 3]:
+                student_profile[cycle] = {'response': None, 'goals': None, 'coaching': None}
         
         # Get coaching content for each score
         coaching_content_map = {}
