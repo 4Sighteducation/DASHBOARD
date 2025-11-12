@@ -9886,6 +9886,7 @@ def get_report_data():
         # Get student's Level AND Object_10 record ID from Knack
         student_level = 'Level 3'  # Default
         knack_obj10_id = None  # CRITICAL: Need this for saves!
+        student_current_cycle = 1  # Default to Cycle 1
         if supabase_client:
             try:
                 # Try to get from Supabase students table first (if we've stored it)
@@ -9910,7 +9911,10 @@ def get_report_data():
                         level_value = obj10_records[0].get('field_568_raw') or obj10_records[0].get('field_568', '')
                         if level_value:
                             student_level = level_value
-                        app.logger.info(f"[Report Data] Student level: {student_level}, Object_10 ID: {knack_obj10_id}")
+                        # Get current cycle from Knack (field_146)
+                        student_current_cycle_raw = obj10_records[0].get('field_146_raw', '')
+                        student_current_cycle = int(student_current_cycle_raw) if student_current_cycle_raw and str(student_current_cycle_raw).isdigit() else 1
+                        app.logger.info(f"[Report Data] Student level: {student_level}, Object_10 ID: {knack_obj10_id}, Current Cycle: {student_current_cycle}")
             except Exception as e:
                 app.logger.warning(f"Could not fetch student level: {e}")
         
@@ -10090,7 +10094,8 @@ def get_report_data():
                 'course': student_data.get('course', ''),
                 'faculty': student_data.get('faculty', ''),
                 'level': student_level,
-                'knackRecordId': knack_obj10_id  # CRITICAL: Object_10 record ID for saves
+                'knackRecordId': knack_obj10_id,  # CRITICAL: Object_10 record ID for saves
+                'currentCycle': student_current_cycle  # CRITICAL: Current cycle from Knack field_146
             },
             'scores': scores_result_data,  # Deduplicated scores
             'responses': responses_by_cycle,
