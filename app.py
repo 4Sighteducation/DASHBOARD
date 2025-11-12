@@ -10412,6 +10412,24 @@ def get_staff_overview():
                     goals_text = re.sub('<[^<]+?>', '', goals_text)
                     goals_text = goals_text.strip()
                 
+                # Get staff coaching comments for target cycle (fields 2488, 2490, 2491)
+                coaching_text = ''
+                if target_cycle == 1:
+                    coaching_text = record.get('field_2488', '') or record.get('field_2488_raw', '')
+                elif target_cycle == 2:
+                    coaching_text = record.get('field_2490', '') or record.get('field_2490_raw', '')
+                elif target_cycle == 3:
+                    coaching_text = record.get('field_2491', '') or record.get('field_2491_raw', '')
+                
+                # Strip HTML from coaching text
+                if coaching_text:
+                    import re
+                    # Convert <br> and </p> to newlines, then strip all HTML
+                    coaching_text = coaching_text.replace('<br>', '\n').replace('<br/>', '\n').replace('<br />', '\n')
+                    coaching_text = coaching_text.replace('</p>', '\n\n')
+                    coaching_text = re.sub('<[^<]+?>', '', coaching_text)
+                    coaching_text = coaching_text.strip()
+                
                 # Build student data object
                 student_data = {
                     'id': record.get('id'),
@@ -10434,8 +10452,10 @@ def get_staff_overview():
                     },
                     'response': response_text,
                     'goals': goals_text,
+                    'coachingComments': coaching_text,
                     'hasResponse': bool(response_text and response_text.strip()),
-                    'hasGoals': bool(goals_text and goals_text.strip())
+                    'hasGoals': bool(goals_text and goals_text.strip()),
+                    'hasCoaching': bool(coaching_text and coaching_text.strip())
                 }
                 
                 students_data.append(student_data)
