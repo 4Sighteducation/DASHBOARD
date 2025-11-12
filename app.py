@@ -9883,8 +9883,9 @@ def get_report_data():
         
         app.logger.info(f"[Report Data] Using student_id: {student_id} for {email}")
         
-        # Get student's Level from Knack Object_10 (field_568)
+        # Get student's Level AND Object_10 record ID from Knack
         student_level = 'Level 3'  # Default
+        knack_obj10_id = None  # CRITICAL: Need this for saves!
         if supabase_client:
             try:
                 # Try to get from Supabase students table first (if we've stored it)
@@ -9894,7 +9895,7 @@ def get_report_data():
                     'X-Knack-REST-API-Key': os.getenv('KNACK_API_KEY')
                 }
                 
-                # Search Object_10 by email to get Level
+                # Search Object_10 by email to get Level AND record ID
                 obj10_response = requests.get(
                     "https://api.knack.com/v1/objects/object_10/records",
                     headers=headers,
@@ -9905,10 +9906,11 @@ def get_report_data():
                 if obj10_response.ok:
                     obj10_records = obj10_response.json().get('records', [])
                     if obj10_records:
+                        knack_obj10_id = obj10_records[0].get('id')  # CRITICAL: Get Object_10 record ID
                         level_value = obj10_records[0].get('field_568_raw') or obj10_records[0].get('field_568', '')
                         if level_value:
                             student_level = level_value
-                            app.logger.info(f"[Report Data] Student level: {student_level}")
+                        app.logger.info(f"[Report Data] Student level: {student_level}, Object_10 ID: {knack_obj10_id}")
             except Exception as e:
                 app.logger.warning(f"Could not fetch student level: {e}")
         
@@ -10036,7 +10038,8 @@ def get_report_data():
                 'group': student_data.get('group', ''),
                 'course': student_data.get('course', ''),
                 'faculty': student_data.get('faculty', ''),
-                'level': student_level
+                'level': student_level,
+                'knackRecordId': knack_obj10_id  # CRITICAL: Object_10 record ID for saves
             },
             'scores': scores_result_data,  # Deduplicated scores
             'responses': responses_by_cycle,
