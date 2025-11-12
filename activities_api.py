@@ -203,14 +203,8 @@ def register_activities_routes(app, supabase: Client):
             if not student_email:
                 return jsonify({"error": "email parameter required"}), 400
             
-            # Fetch student's activities with activity details
-            assigned_result = supabase.table('student_activities').select('''
-                *,
-                activities:activity_id (
-                    id, name, vespa_category, level, time_minutes, color, content,
-                    do_section_html, think_section_html, learn_section_html, reflect_section_html
-                )
-            ''')\
+            # Fetch student's activities (without JOIN - Python client doesn't handle it well)
+            assigned_result = supabase.table('student_activities').select('*')\
                 .eq('student_email', student_email)\
                 .eq('cycle_number', cycle)\
                 .neq('status', 'removed')\
@@ -222,17 +216,33 @@ def register_activities_routes(app, supabase: Client):
                 assigned_result.data = sorted(assigned_result.data, 
                     key=lambda x: x.get('assigned_at', ''), reverse=True)
             
+            # Fetch activity details separately
+            activity_ids = [assignment['activity_id'] for assignment in assigned_result.data]
+            
+            activities_map = {}
+            if activity_ids:
+                activities_result = supabase.table('activities').select(
+                    'id, name, vespa_category, level, time_minutes, color, difficulty, ' +
+                    'do_section_html, think_section_html, learn_section_html, reflect_section_html'
+                ).in_('id', activity_ids).execute()
+                
+                # Create map of activity_id -> activity data
+                activities_map = {a['id']: a for a in activities_result.data}
+            
             # Also fetch progress for each
             responses_result = supabase.table('activity_responses').select('*')\
                 .eq('student_email', student_email)\
                 .eq('cycle_number', cycle)\
                 .execute()
             
-            # Merge progress into activities
+            # Merge activity details and progress into assignments
             progress_map = {r['activity_id']: r for r in responses_result.data}
             
             for assignment in assigned_result.data:
                 activity_id = assignment['activity_id']
+                # Add activity details
+                assignment['activities'] = activities_map.get(activity_id)
+                # Add progress
                 assignment['progress'] = progress_map.get(activity_id)
             
             return jsonify({"assignments": assigned_result.data})
