@@ -514,21 +514,34 @@ def sync_students_and_vespa_scores(year_boundaries):
         scores_synced += len(batch)
     
     # CRITICAL: Clean up duplicate cycles (Knack as source of truth)
-    # Delete cycles from Supabase that don't exist in Knack (current year only)
+    # Only delete for students where we KNOW cycles are missing in Knack
     logging.info(f"\nCleaning up duplicate cycles (Knack as source of truth)...")
     cycles_deleted = 0
+    delete_operations = []
     
     for student_knack_id, cycles_in_knack in student_cycles_in_knack.items():
         student_id = student_id_map.get(student_knack_id)
         if student_id:
-            # Delete cycles that Knack doesn't have
-            cycles_to_delete = [c for c in [1, 2, 3] if c not in cycles_in_knack]
-            for cycle_to_delete in cycles_to_delete:
+            # Only process if student is MISSING cycles (e.g., has [1] but not [2,3])
+            if len(cycles_in_knack) < 3:
+                cycles_to_delete = [c for c in [1, 2, 3] if c not in cycles_in_knack]
+                for cycle_to_delete in cycles_to_delete:
+                    delete_operations.append({
+                        'student_id': student_id,
+                        'cycle': cycle_to_delete
+                    })
+    
+    # Batch delete operations to avoid 30,000+ individual API calls
+    if delete_operations:
+        logging.info(f"   Found {len(delete_operations)} duplicate cycles to delete")
+        for i in range(0, len(delete_operations), 50):  # Process in batches of 50
+            batch = delete_operations[i:i+50]
+            for op in batch:
                 try:
                     result = supabase.table('vespa_scores')\
                         .delete()\
-                        .eq('student_id', student_id)\
-                        .eq('cycle', cycle_to_delete)\
+                        .eq('student_id', op['student_id'])\
+                        .eq('cycle', op['cycle'])\
                         .eq('academic_year', academic_year)\
                         .execute()
                     if result.data:
@@ -536,9 +549,10 @@ def sync_students_and_vespa_scores(year_boundaries):
                 except Exception as e:
                     # Ignore if record doesn't exist
                     pass
-    
-    if cycles_deleted > 0:
+        
         logging.info(f"   Deleted {cycles_deleted} duplicate/empty cycles from Supabase")
+    else:
+        logging.info(f"   No duplicate cycles to clean up")
     
     # NEW: Process student comments with correct student_ids
     logging.info(f"\nProcessing {len(comment_batch)} student comments...")
