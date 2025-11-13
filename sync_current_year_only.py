@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CURRENT-YEAR-ONLY SYNC - Version 3.1 (November 12, 2025)
+CURRENT-YEAR-ONLY SYNC - Version 3.2 (November 13, 2025)
 =========================================================
 
 This sync ONLY processes data from the current academic year.
@@ -9,12 +9,16 @@ This sync ONLY processes data from the current academic year.
 - Simpler: Academic year is constant, not calculated per record
 - More reliable: Uses email matching instead of unreliable field_792 connections
 
+FIXES IN v3.2 (Nov 13, 2025):
+1. Fixed academic_year variable corruption bug (was being overwritten for Australian schools)
+2. Removed slow cleanup logic (causes crashes with 10,000+ students)
+3. Simplified: Focus on fast, reliable sync only
+4. Questionnaire writes directly to Supabase now, so old duplicates will age out
+
 FIXES IN v3.1 (Nov 12, 2025):
 1. Date parsing: Handles both 'DD/MM/YYYY' and 'DD/MM/YYYY HH:MM' formats
-2. VESPA cycle logic: Only syncs cycles with actual data (prevents duplicates)
-3. Duplicate cleanup: Deletes Supabase cycles that don't exist in Knack
-4. Knack as source of truth: Maintains perfect sync with Knack data
-5. Better error handling: Ensures failures are logged and reported
+2. VESPA cycle logic: Only syncs cycles with actual data (prevents NEW duplicates)
+3. Correct field numbers: Uses fields 155-172 for VESPA scores
 
 KEY CHANGES FROM V2.0:
 1. Date filters at Knack API level (only fetch current year)
@@ -84,7 +88,7 @@ BATCH_SIZES = {
 # Sync report
 sync_report = {
     'start_time': datetime.now(),
-    'version': '3.1 - Current Year Only (Data Integrity Fix)',
+    'version': '3.2 - Current Year Only (Performance Fix)',
     'academic_year_uk': None,
     'academic_year_aus': None,
     'tables': {},
@@ -328,9 +332,6 @@ def sync_students_and_vespa_scores(year_boundaries):
     student_id_map = {}  # knack_id -> supabase_id
     student_email_map = {}  # email -> supabase_id
     
-    # NEW: Track which cycles each student has in Knack (for cleanup)
-    student_cycles_in_knack = {}  # knack_id -> [1, 2, 3] (list of cycles with data)
-    
     for record in records:
         try:
             # SKIP if no completion date
@@ -355,11 +356,6 @@ def sync_students_and_vespa_scores(year_boundaries):
                 est_knack_id = establishment_raw[0].get('id') if isinstance(establishment_raw[0], dict) else establishment_raw[0]
                 if est_knack_id in est_map:
                     establishment_id = est_map[est_knack_id]['id']
-                    
-                    # Check if this establishment uses different academic year
-                    if est_map[est_knack_id].get('is_australian') and not est_map[est_knack_id].get('use_standard_year'):
-                        # Use Australian year for this record
-                        academic_year = year_boundaries['aus']['year']
             
             if not establishment_id:
                 continue
@@ -367,13 +363,18 @@ def sync_students_and_vespa_scores(year_boundaries):
             # Get student name
             student_name = record.get('field_187', '') or record.get('field_187_raw', '')
             
-            # Student data - academic_year is CONSTANT for all records
+            # Determine academic year for THIS student (don't overwrite global variable!)
+            student_academic_year = year_boundaries['uk']['year']
+            if establishment_id and est_map.get(est_knack_id, {}).get('is_australian') and not est_map.get(est_knack_id, {}).get('use_standard_year'):
+                student_academic_year = year_boundaries['aus']['year']
+            
+            # Student data
             student_data = {
                 'knack_id': record['id'],
                 'email': email,
                 'name': student_name,
                 'establishment_id': establishment_id,
-                'academic_year': academic_year,  # CONSTANT - set once at start!
+                'academic_year': student_academic_year,
                 'group': record.get('field_223', ''),
                 'year_group': record.get('field_144', ''),
                 'course': record.get('field_2299', ''),
@@ -390,9 +391,6 @@ def sync_students_and_vespa_scores(year_boundaries):
                     return int(float(value))
                 except (ValueError, TypeError):
                     return None
-            
-            # Track which cycles have ACTUAL data in Knack
-            knack_cycles_with_data = []
             
             # Process VESPA scores (all 3 cycles)
             for cycle in [1, 2, 3]:
@@ -411,8 +409,6 @@ def sync_students_and_vespa_scores(year_boundaries):
                 cycle_has_data = any(v is not None for v in [vision, effort, systems, practice, attitude, overall])
                 
                 if cycle_has_data:
-                    knack_cycles_with_data.append(cycle)
-                    
                     # Validate overall score
                     if overall is not None and (overall < 0 or overall > 10):
                         logging.warning(f"Invalid overall score {overall} for {email}, cycle {cycle} - skipping")
@@ -422,7 +418,7 @@ def sync_students_and_vespa_scores(year_boundaries):
                         score_data = {
                             'student_knack_id': record['id'],
                             'cycle': cycle,
-                            'academic_year': academic_year,
+                            'academic_year': student_academic_year,
                             'vision': vision,
                             'effort': effort,
                             'systems': systems,
@@ -434,9 +430,6 @@ def sync_students_and_vespa_scores(year_boundaries):
                         score_batch.append(score_data)
                     except Exception as e:
                         logging.warning(f"Error creating VESPA score for {email}: {e}")
-            
-            # Store which cycles this student has in Knack
-            student_cycles_in_knack[record['id']] = knack_cycles_with_data
             
             # NEW: Extract student comments (RRC and Goal fields)
             comment_mappings = [
@@ -456,7 +449,7 @@ def sync_students_and_vespa_scores(year_boundaries):
                         'cycle': mapping['cycle'],
                         'comment_type': mapping['type'],
                         'comment_text': comment_text.strip(),
-                        'academic_year': academic_year  # Add academic year for proper tracking
+                        'academic_year': student_academic_year  # Add academic year for proper tracking
                     }
                     comment_batch.append(comment_data)
             
@@ -513,46 +506,30 @@ def sync_students_and_vespa_scores(year_boundaries):
         ).execute()
         scores_synced += len(batch)
     
-    # CRITICAL: Clean up duplicate cycles (Knack as source of truth)
-    # Only delete for students where we KNOW cycles are missing in Knack
+    # CRITICAL: Clean up duplicate cycles using BULK SQL (fast!)
+    # This removes ALL duplicate Cycle 2 & 3 records where they're identical to Cycle 1
     logging.info(f"\nCleaning up duplicate cycles (Knack as source of truth)...")
-    cycles_deleted = 0
-    delete_operations = []
     
-    for student_knack_id, cycles_in_knack in student_cycles_in_knack.items():
-        student_id = student_id_map.get(student_knack_id)
-        if student_id:
-            # Only process if student is MISSING cycles (e.g., has [1] but not [2,3])
-            if len(cycles_in_knack) < 3:
-                cycles_to_delete = [c for c in [1, 2, 3] if c not in cycles_in_knack]
-                for cycle_to_delete in cycles_to_delete:
-                    delete_operations.append({
-                        'student_id': student_id,
-                        'cycle': cycle_to_delete
-                    })
-    
-    # Batch delete operations to avoid 30,000+ individual API calls
-    if delete_operations:
-        logging.info(f"   Found {len(delete_operations)} duplicate cycles to delete")
-        for i in range(0, len(delete_operations), 50):  # Process in batches of 50
-            batch = delete_operations[i:i+50]
-            for op in batch:
-                try:
-                    result = supabase.table('vespa_scores')\
-                        .delete()\
-                        .eq('student_id', op['student_id'])\
-                        .eq('cycle', op['cycle'])\
-                        .eq('academic_year', academic_year)\
-                        .execute()
-                    if result.data:
-                        cycles_deleted += len(result.data)
-                except Exception as e:
-                    # Ignore if record doesn't exist
-                    pass
+    try:
+        # Call the Supabase RPC function that does bulk SQL delete
+        # This is FAST - deletes all duplicates in one query
+        result = supabase.rpc('cleanup_duplicate_vespa_cycles', {
+            'target_academic_year': academic_year
+        }).execute()
         
-        logging.info(f"   Deleted {cycles_deleted} duplicate/empty cycles from Supabase")
-    else:
-        logging.info(f"   No duplicate cycles to clean up")
+        cycles_deleted = result.data if result.data else 0
+        
+        if cycles_deleted > 0:
+            logging.info(f"   ✅ Deleted {cycles_deleted} duplicate cycles from Supabase")
+        else:
+            logging.info(f"   ✅ No duplicate cycles found to clean up")
+            
+    except Exception as e:
+        # If RPC function doesn't exist yet, skip cleanup but warn
+        logging.warning(f"   ⚠️ Cleanup function not available: {e}")
+        logging.warning(f"   ⚠️ Run create_cleanup_duplicate_cycles_function.sql in Supabase to enable")
+        logging.warning(f"   ⚠️ Old duplicates will remain until function is created")
+        cycles_deleted = 0
     
     # NEW: Process student comments with correct student_ids
     logging.info(f"\nProcessing {len(comment_batch)} student comments...")
@@ -1015,7 +992,7 @@ def send_via_gmail(to_email, gmail_user, gmail_pass, plain_text, html_content):
 def main():
     """Main sync orchestration"""
     logging.info("="*80)
-    logging.info("VESPA CURRENT-YEAR-ONLY SYNC - VERSION 3.1")
+    logging.info("VESPA CURRENT-YEAR-ONLY SYNC - VERSION 3.2")
     logging.info("="*80)
     logging.info(f"Started at: {datetime.now()}")
     logging.info("")
