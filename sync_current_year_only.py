@@ -1001,7 +1001,7 @@ def send_via_gmail(to_email, gmail_user, gmail_pass, plain_text, html_content):
 def main():
     """Main sync orchestration"""
     logging.info("="*80)
-    logging.info("VESPA CURRENT-YEAR-ONLY SYNC - VERSION 3.0")
+    logging.info("VESPA CURRENT-YEAR-ONLY SYNC - VERSION 3.1")
     logging.info("="*80)
     logging.info(f"Started at: {datetime.now()}")
     logging.info("")
