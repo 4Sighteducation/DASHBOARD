@@ -10258,24 +10258,42 @@ def get_staff_overview():
         
         app.logger.info(f"[Staff Overview] Fetching students with filters: {json.dumps(filters)}")
         
-        # Fetch connected student records from Object_10
+        # Fetch connected student records from Object_10 with pagination
         try:
-            obj10_response = requests.get(
-                "https://api.knack.com/v1/objects/object_10/records",
-                headers=headers,
-                params={
-                    'filters': json.dumps(filters),
-                    'rows_per_page': 1000  # Get up to 1000 students
-                },
-                timeout=30
-            )
+            obj10_records = []
+            page = 1
+            total_pages = 1
             
-            if not obj10_response.ok:
-                app.logger.error(f"[Staff Overview] Knack API error: {obj10_response.status_code} - {obj10_response.text}")
-                return jsonify({'error': 'Failed to fetch student data from Knack'}), 500
+            # Loop through all pages to get ALL students
+            while page <= total_pages:
+                app.logger.info(f"[Staff Overview] Fetching page {page}/{total_pages}")
+                
+                obj10_response = requests.get(
+                    "https://api.knack.com/v1/objects/object_10/records",
+                    headers=headers,
+                    params={
+                        'filters': json.dumps(filters),
+                        'rows_per_page': 1000,  # Max per page
+                        'page': page
+                    },
+                    timeout=30
+                )
+                
+                if not obj10_response.ok:
+                    app.logger.error(f"[Staff Overview] Knack API error on page {page}: {obj10_response.status_code} - {obj10_response.text}")
+                    return jsonify({'error': 'Failed to fetch student data from Knack'}), 500
+                
+                response_data = obj10_response.json()
+                page_records = response_data.get('records', [])
+                obj10_records.extend(page_records)
+                
+                # Update total pages from response
+                total_pages = response_data.get('total_pages', 1)
+                page += 1
+                
+                app.logger.info(f"[Staff Overview] Page {page-1}: Got {len(page_records)} students, Total so far: {len(obj10_records)}")
             
-            obj10_records = obj10_response.json().get('records', [])
-            app.logger.info(f"[Staff Overview] Found {len(obj10_records)} connected students")
+            app.logger.info(f"[Staff Overview] ✅ Found {len(obj10_records)} total connected students across {total_pages} pages")
             
         except Exception as e:
             app.logger.error(f"[Staff Overview] Error fetching Object_10: {e}")
