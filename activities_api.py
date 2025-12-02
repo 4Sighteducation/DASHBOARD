@@ -628,6 +628,21 @@ def register_activities_routes(app, supabase: Client):
             if not student_email or not activity_id:
                 return jsonify({"error": "studentEmail and activityId required"}), 400
             
+            logger.info(f"[Complete Activity] 📤 Request for {activity_id}, student: {student_email}, cycle: {cycle}")
+            
+            # CRITICAL: Check if activity is ALREADY completed - prevent duplicate points!
+            existing_response = supabase.table('activity_responses').select('id, status')\
+                .eq('student_email', student_email)\
+                .eq('activity_id', activity_id)\
+                .eq('cycle_number', cycle)\
+                .maybeSingle()\
+                .execute()
+            
+            was_already_completed = existing_response.data and existing_response.data.get('status') == 'completed'
+            
+            if was_already_completed:
+                logger.info(f"[Complete Activity] ⚠️ Activity already completed - will update responses but NOT award points")
+            
             # Get academic year
             student_record = supabase.table('vespa_students').select('current_academic_year')\
                 .eq('email', student_email)\
@@ -663,21 +678,30 @@ def register_activities_routes(app, supabase: Client):
                 .execute()
             
             # Update student totals (increment completed count AND add points)
-            student_stats = supabase.table('vespa_students').select('total_activities_completed, total_points')\
-                .eq('email', student_email)\
-                .single()\
-                .execute()
-            
-            current_count = student_stats.data.get('total_activities_completed', 0) if student_stats.data else 0
-            current_points = student_stats.data.get('total_points', 0) if student_stats.data else 0
-            
-            supabase.table('vespa_students').update({
-                "total_activities_completed": current_count + 1,
-                "total_points": current_points + points_earned,  # Add points to total
-                "last_activity_at": datetime.utcnow().isoformat()
-            }).eq('email', student_email).execute()
-            
-            logger.info(f"[Complete Activity] ✅ Points awarded: {points_earned}, New total: {current_points + points_earned}")
+            # ONLY award points if this is the FIRST time completing this activity in this cycle
+            if not was_already_completed:
+                student_stats = supabase.table('vespa_students').select('total_activities_completed, total_points')\
+                    .eq('email', student_email)\
+                    .single()\
+                    .execute()
+                
+                current_count = student_stats.data.get('total_activities_completed', 0) if student_stats.data else 0
+                current_points = student_stats.data.get('total_points', 0) if student_stats.data else 0
+                
+                supabase.table('vespa_students').update({
+                    "total_activities_completed": current_count + 1,
+                    "total_points": current_points + points_earned,  # Add points to total
+                    "last_activity_at": datetime.utcnow().isoformat()
+                }).eq('email', student_email).execute()
+                
+                logger.info(f"[Complete Activity] ✅ Points awarded: {points_earned}, New total: {current_points + points_earned}")
+            else:
+                # Still update last_activity_at for re-submissions
+                supabase.table('vespa_students').update({
+                    "last_activity_at": datetime.utcnow().isoformat()
+                }).eq('email', student_email).execute()
+                
+                logger.info(f"[Complete Activity] 📝 Re-submission saved (no new points - already completed)")
             
             # Log history
             supabase.table('activity_history').insert({
