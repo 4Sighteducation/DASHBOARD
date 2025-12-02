@@ -52,16 +52,16 @@ def register_activities_routes(app, supabase: Client):
             
             scores = None
             level = 'Level 2'
+            actual_cycle = cycle  # Track the actual cycle from cache
             
             if vespa_student_result.data:
                 cached_scores = vespa_student_result.data.get('latest_vespa_scores')
                 level = vespa_student_result.data.get('current_level', 'Level 2')
                 
-                # Check if cached scores exist and match the requested cycle
+                # Use cached scores if they exist (always use latest, ignore requested cycle)
                 if cached_scores and isinstance(cached_scores, dict):
-                    cached_cycle = cached_scores.get('cycle_number')
-                    if cached_cycle == cycle:
-                        scores = cached_scores
+                    scores = cached_scores
+                    actual_cycle = cached_scores.get('cycle') or cached_scores.get('cycle_number') or cycle
             
             # If no cached scores or wrong cycle, fetch from vespa_scores table (legacy)
             if not scores:
@@ -154,7 +154,7 @@ def register_activities_routes(app, supabase: Client):
                 "recommended": recommended,
                 "vespaScores": scores,
                 "level": level,
-                "cycle": cycle
+                "cycle": actual_cycle  # Return the actual cycle from cache, not input parameter
             })
             
         except Exception as e:
@@ -1012,14 +1012,16 @@ def ensure_vespa_student_exists(supabase: Client, student_email: str, knack_attr
                 .execute()
             
             if not existing.data:
-                # Create minimal record
-                supabase.table('vespa_students').insert({
-                    "email": student_email,
-                    "auth_provider": "knack",
-                    "status": "active",
-                    "is_active": True
-                }).execute()
-                logger.info(f"Created minimal vespa_student record for {student_email}")
+                # ❌ DO NOT CREATE STUDENT HERE!
+                # This was creating orphaned students with NULL school_id
+                # Students should be created by upload system or sync with full data
+                logger.warning(
+                    f"⚠️  Student {student_email} does not exist in vespa_students. "
+                    f"Student should be uploaded first via upload system. "
+                    f"Response will be stored but student won't be visible until uploaded."
+                )
+                # NOTE: We still allow the questionnaire response to be saved
+                # The student will be linked when they are properly uploaded later
             else:
                 logger.debug(f"vespa_student already exists for {student_email}")
     except Exception as e:
