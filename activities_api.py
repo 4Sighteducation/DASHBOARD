@@ -302,8 +302,11 @@ def register_activities_routes(app, supabase: Client):
             cycle = data.get('cycle', 1)
             selected_via = data.get('selectedVia', 'student_choice')
             
+            logger.info(f"[Start Activity] 📥 Request: email={student_email}, activity={activity_id}, cycle={cycle}, via={selected_via}")
+            
             if not student_email or not activity_id:
-                return jsonify({"error": "studentEmail and activityId required"}), 400
+                logger.error(f"[Start Activity] ❌ Missing required fields")
+                return jsonify({"error": "studentEmail and activityId required", "success": False}), 400
             
             # Ensure student exists
             ensure_vespa_student_exists(supabase, student_email)
@@ -316,7 +319,19 @@ def register_activities_routes(app, supabase: Client):
             
             academic_year = student_record.data.get('current_academic_year', '2025/2026') if student_record.data else '2025/2026'
             
-            # Create response record
+            # Check if record already exists - get full record including responses
+            existing = supabase.table('activity_responses').select('*')\
+                .eq('student_email', student_email)\
+                .eq('activity_id', activity_id)\
+                .eq('cycle_number', cycle)\
+                .execute()
+            
+            if existing.data and len(existing.data) > 0:
+                # Record already exists, return full record with responses
+                logger.info(f"[Start Activity] ✅ Record already exists: {existing.data[0]['id']}, responses: {len(existing.data[0].get('responses', {}) or {})}")
+                return jsonify({"success": True, "response": existing.data[0], "existed": True})
+            
+            # Create new response record
             response_data = {
                 "student_email": student_email,
                 "activity_id": activity_id,
@@ -328,39 +343,49 @@ def register_activities_routes(app, supabase: Client):
                 "started_at": datetime.utcnow().isoformat()
             }
             
-            # Use upsert to handle duplicates gracefully
-            result = supabase.table('activity_responses').upsert(
-                response_data,
-                on_conflict='student_email,activity_id,cycle_number'
-            ).execute()
+            result = supabase.table('activity_responses').insert(response_data).execute()
             
-            # Update student_activities if not already there
-            supabase.table('student_activities').upsert({
-                "student_email": student_email,
-                "activity_id": activity_id,
-                "cycle_number": cycle,
-                "assigned_by": selected_via if selected_via != 'student_choice' else 'auto',
-                "status": "started",
-                "assigned_at": datetime.utcnow().isoformat()
-            }, on_conflict='student_email,activity_id,cycle_number').execute()
+            logger.info(f"[Start Activity] ✅ Created new record for {student_email}, activity {activity_id}")
+            
+            # Also create student_activities record if not exists
+            existing_sa = supabase.table('student_activities').select('id')\
+                .eq('student_email', student_email)\
+                .eq('activity_id', activity_id)\
+                .eq('cycle_number', cycle)\
+                .execute()
+            
+            if not existing_sa.data or len(existing_sa.data) == 0:
+                supabase.table('student_activities').insert({
+                    "student_email": student_email,
+                    "activity_id": activity_id,
+                    "cycle_number": cycle,
+                    "assigned_by": selected_via if selected_via != 'student_choice' else 'auto',
+                    "status": "started",
+                    "assigned_at": datetime.utcnow().isoformat()
+                }).execute()
             
             # Log history
-            supabase.table('activity_history').insert({
-                "student_email": student_email,
-                "activity_id": activity_id,
-                "action": "started",
-                "triggered_by": "student",
-                "triggered_by_email": student_email,
-                "cycle_number": cycle,
-                "academic_year": academic_year,
-                "timestamp": datetime.utcnow().isoformat()
-            }).execute()
+            try:
+                supabase.table('activity_history').insert({
+                    "student_email": student_email,
+                    "activity_id": activity_id,
+                    "action": "started",
+                    "triggered_by": "student",
+                    "triggered_by_email": student_email,
+                    "cycle_number": cycle,
+                    "academic_year": academic_year,
+                    "timestamp": datetime.utcnow().isoformat()
+                }).execute()
+            except Exception as history_err:
+                logger.warning(f"[Start Activity] History log failed: {history_err}")
             
-            return jsonify({"success": True, "response": result.data[0] if result.data else {}})
+            return jsonify({"success": True, "response": result.data[0] if result.data else {}, "existed": False})
             
         except Exception as e:
-            logger.error(f"Error in start_activity: {str(e)}", exc_info=True)
-            return jsonify({"error": str(e)}), 500
+            logger.error(f"[Start Activity] ❌ Error: {str(e)}", exc_info=True)
+            import traceback
+            logger.error(traceback.format_exc())
+            return jsonify({"error": str(e), "success": False}), 500
     
     
     @app.route('/api/activities/save', methods=['POST'])
@@ -377,8 +402,11 @@ def register_activities_routes(app, supabase: Client):
             responses = data.get('responses', {})
             time_minutes = data.get('timeMinutes', 0)
             
+            logger.info(f"[Save Progress] 📥 Received save request: email={student_email}, activity={activity_id}, cycle={cycle}, responses_count={len(responses)}")
+            
             if not student_email or not activity_id:
-                return jsonify({"error": "studentEmail and activityId required"}), 400
+                logger.error(f"[Save Progress] ❌ Missing required fields: email={student_email}, activity={activity_id}")
+                return jsonify({"error": "studentEmail and activityId required", "success": False}), 400
             
             # Concatenate text responses for search
             responses_text = ' '.join([
@@ -393,31 +421,61 @@ def register_activities_routes(app, supabase: Client):
             
             academic_year = student_record.data.get('current_academic_year', '2025/2026') if student_record.data else '2025/2026'
             
-            # Use UPSERT to create record if it doesn't exist
-            upsert_data = {
-                "student_email": student_email,
-                "activity_id": activity_id,
-                "cycle_number": cycle,
-                "academic_year": academic_year,
-                "responses": responses,
-                "responses_text": responses_text if responses_text else '',
-                "time_spent_minutes": time_minutes,
-                "status": "in_progress",
-                "updated_at": datetime.utcnow().isoformat()
-            }
+            # First, check if a record exists for this activity
+            existing = supabase.table('activity_responses').select('id, status')\
+                .eq('student_email', student_email)\
+                .eq('activity_id', activity_id)\
+                .eq('cycle_number', cycle)\
+                .execute()
             
-            result = supabase.table('activity_responses').upsert(
-                upsert_data,
-                on_conflict='student_email,activity_id,cycle_number'
-            ).execute()
+            logger.info(f"[Save Progress] 🔍 Existing record check: found {len(existing.data) if existing.data else 0} records")
             
-            logger.info(f"[Save Progress] ✅ Saved for {student_email}, activity {activity_id}, cycle {cycle}")
+            if existing.data and len(existing.data) > 0:
+                # UPDATE existing record
+                record_id = existing.data[0]['id']
+                logger.info(f"[Save Progress] 📝 Updating existing record {record_id}")
+                
+                update_data = {
+                    "responses": responses,
+                    "responses_text": responses_text if responses_text else '',
+                    "time_spent_minutes": time_minutes,
+                    "status": "in_progress",
+                    "updated_at": datetime.utcnow().isoformat()
+                }
+                
+                result = supabase.table('activity_responses').update(update_data)\
+                    .eq('id', record_id)\
+                    .execute()
+                
+                logger.info(f"[Save Progress] ✅ Updated record {record_id} for {student_email}")
+            else:
+                # INSERT new record
+                logger.info(f"[Save Progress] 📝 Creating new record for {student_email}, activity {activity_id}")
+                
+                insert_data = {
+                    "student_email": student_email,
+                    "activity_id": activity_id,
+                    "cycle_number": cycle,
+                    "academic_year": academic_year,
+                    "responses": responses,
+                    "responses_text": responses_text if responses_text else '',
+                    "time_spent_minutes": time_minutes,
+                    "status": "in_progress",
+                    "started_at": datetime.utcnow().isoformat(),
+                    "updated_at": datetime.utcnow().isoformat()
+                }
+                
+                result = supabase.table('activity_responses').insert(insert_data).execute()
+                
+                logger.info(f"[Save Progress] ✅ Inserted new record for {student_email}, activity {activity_id}")
             
             return jsonify({"success": True, "saved": True})
             
         except Exception as e:
-            logger.error(f"Error in save_activity_progress: {str(e)}", exc_info=True)
-            return jsonify({"error": str(e)}), 500
+            logger.error(f"[Save Progress] ❌ Error: {str(e)}", exc_info=True)
+            import traceback
+            logger.error(traceback.format_exc())
+            return jsonify({"error": str(e), "success": False}), 500
     
     
     @app.route('/api/students/welcome-status', methods=['GET'])
