@@ -635,7 +635,7 @@ def register_activities_routes(app, supabase: Client):
                 .eq('student_email', student_email)\
                 .eq('activity_id', activity_id)\
                 .eq('cycle_number', cycle)\
-                .maybeSingle()\
+                .maybe_single()\
                 .execute()
             
             was_already_completed = existing_response.data and existing_response.data.get('status') == 'completed'
