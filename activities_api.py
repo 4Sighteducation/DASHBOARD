@@ -380,25 +380,38 @@ def register_activities_routes(app, supabase: Client):
             if not student_email or not activity_id:
                 return jsonify({"error": "studentEmail and activityId required"}), 400
             
-            # Update responses
-            update_data = {
-                "responses": responses,
-                "time_spent_minutes": time_minutes,
-                "updated_at": datetime.utcnow().isoformat()
-            }
-            
             # Concatenate text responses for search
             responses_text = ' '.join([
                 str(v) for v in responses.values() if isinstance(v, str)
             ])
-            if responses_text:
-                update_data["responses_text"] = responses_text
             
-            result = supabase.table('activity_responses').update(update_data)\
-                .eq('student_email', student_email)\
-                .eq('activity_id', activity_id)\
-                .eq('cycle_number', cycle)\
+            # Get academic year
+            student_record = supabase.table('vespa_students').select('current_academic_year')\
+                .eq('email', student_email)\
+                .single()\
                 .execute()
+            
+            academic_year = student_record.data.get('current_academic_year', '2025/2026') if student_record.data else '2025/2026'
+            
+            # Use UPSERT to create record if it doesn't exist
+            upsert_data = {
+                "student_email": student_email,
+                "activity_id": activity_id,
+                "cycle_number": cycle,
+                "academic_year": academic_year,
+                "responses": responses,
+                "responses_text": responses_text if responses_text else '',
+                "time_spent_minutes": time_minutes,
+                "status": "in_progress",
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            
+            result = supabase.table('activity_responses').upsert(
+                upsert_data,
+                on_conflict='student_email,activity_id,cycle_number'
+            ).execute()
+            
+            logger.info(f"[Save Progress] ✅ Saved for {student_email}, activity {activity_id}, cycle {cycle}")
             
             return jsonify({"success": True, "saved": True})
             
@@ -1060,7 +1073,10 @@ def register_activities_routes(app, supabase: Client):
             if not email:
                 return jsonify({"error": "email parameter required"}), 400
             
-            query = supabase.table('notifications').select('*').eq('recipient_email', email)
+            # Always exclude dismissed notifications
+            query = supabase.table('notifications').select('*')\
+                .eq('recipient_email', email)\
+                .eq('is_dismissed', False)
             
             if unread_only:
                 query = query.eq('is_read', False)
@@ -1071,6 +1087,8 @@ def register_activities_routes(app, supabase: Client):
             if result.data:
                 result.data = sorted(result.data, 
                     key=lambda x: x.get('created_at', ''), reverse=True)[:50]
+            
+            logger.info(f"[Notifications] Fetched {len(result.data or [])} for {email}")
             
             return jsonify({"notifications": result.data})
             
