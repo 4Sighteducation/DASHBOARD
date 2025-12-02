@@ -1,12 +1,13 @@
--- Simple fix: Add current_cycle to existing RPC
--- Based on actual working RPC structure
+-- Fix RPC to include current_cycle field
+-- The get_connected_students_for_staff RPC doesn't return current_cycle!
 
+-- Drop and recreate with current_cycle added
 DROP FUNCTION IF EXISTS get_connected_students_for_staff(text, uuid, text);
 
 CREATE OR REPLACE FUNCTION get_connected_students_for_staff(
-  connection_type_filter text,
+  staff_email_param text,
   school_id_param uuid,
-  staff_email_param text
+  connection_type_filter text DEFAULT 'tutor'
 )
 RETURNS TABLE (
   id uuid,
@@ -15,7 +16,7 @@ RETURNS TABLE (
   last_name text,
   full_name text,
   current_year_group text,
-  current_cycle integer,  -- NEW!
+  current_cycle integer,  -- ← ADDED THIS!
   student_group text,
   gender text,
   connection_type text,
@@ -43,17 +44,17 @@ BEGIN
   RETURN QUERY
   SELECT 
     vs.id,
-    vs.email::text,
-    vs.first_name::text,
-    vs.last_name::text,
-    vs.full_name::text,
-    vs.current_year_group::text,
-    vs.current_cycle,  -- NEW!
-    vs.student_group::text,
-    vs.gender::text,
-    ssc.staff_role::text as connection_type,
+    vs.email,
+    vs.first_name,
+    vs.last_name,
+    vs.full_name,
+    vs.current_year_group,
+    vs.current_cycle,  -- ← ADDED THIS!
+    vs.student_group,
+    vs.gender,
+    ssc.connection_type,
     vs.school_id,
-    COALESCE(vs.school_name, 'Unknown')::text,
+    s.school_name,
     vs.account_id,
     
     -- Activity counts
@@ -75,12 +76,13 @@ BEGIN
     
   FROM vespa_students vs
   INNER JOIN staff_student_connections ssc ON ssc.student_email = vs.email
+  LEFT JOIN establishments e ON e.id = vs.school_id
   LEFT JOIN activity_responses ar ON ar.student_email = vs.email
   LEFT JOIN activities a ON a.id = ar.activity_id
   
   WHERE ssc.staff_email = staff_email_param
     AND vs.school_id = school_id_param
-    AND (connection_type_filter IS NULL OR ssc.staff_role = connection_type_filter)
+    AND ssc.connection_type = connection_type_filter
   
   GROUP BY 
     vs.id,
@@ -89,29 +91,30 @@ BEGIN
     vs.last_name,
     vs.full_name,
     vs.current_year_group,
-    vs.current_cycle,  -- NEW!
+    vs.current_cycle,  -- ← ADDED THIS!
     vs.student_group,
     vs.gender,
-    ssc.staff_role,
+    ssc.connection_type,
     vs.school_id,
-    vs.school_name,
+    COALESCE(e.name, e.school_name, vs.school_name, 'Unknown School') as school_name,
     vs.account_id
   
   ORDER BY vs.last_name, vs.first_name;
 END;
 $$;
 
--- Test it (with CORRECT parameter order)
+-- Test it
 SELECT 
   email,
   full_name,
-  current_cycle,  -- Should return 3 for Alena!
-  total_activities,
-  connection_type
+  current_cycle,  -- ← Should now be included!
+  total_activities
 FROM get_connected_students_for_staff(
-  'tutor',                                        -- connection_type (1st)
-  'b4bbffc9-7fb6-415a-9a8a-49648995f6b3'::uuid,  -- school_id (2nd)
-  'tut7@vespa.academy'                            -- staff_email (3rd)
+  'tut7@vespa.academy',
+  'b4bbffc9-7fb6-415a-9a8a-49648995f6b3'::uuid,
+  'tutor'
 )
 WHERE email = 'aramsey@vespa.academy';
+
+COMMENT ON FUNCTION get_connected_students_for_staff IS 'Returns connected students for staff member - UPDATED to include current_cycle field';
 

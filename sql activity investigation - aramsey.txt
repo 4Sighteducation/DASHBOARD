@@ -1,0 +1,145 @@
+| email                 | current_cycle | scores_cycle | vision | effort | systems | practice | attitude | completed_date | total_activities_completed | total_points | has_seen_welcome_cycle_1 | has_seen_welcome_cycle_2 | has_seen_welcome_cycle_3 |
+| --------------------- | ------------- | ------------ | ------ | ------ | ------- | -------- | -------- | -------------- | -------------------------- | ------------ | ------------------------ | ------------------------ | ------------------------ |
+| aramsey@vespa.academy | 3             | 3            | 9      | 2      | 5       | 4        | 8        | 2025-10-20     | 0                          | 0            | false                    | false                    | false                    |
+
+
+| table_name         | cycle_number | status  | count |
+| ------------------ | ------------ | ------- | ----- |
+| activity_responses | 1            | removed | 63    |
+| activity_responses | 3            | removed | 7     |
+
+| table_name         | cycle_number | status  | count |
+| ------------------ | ------------ | ------- | ----- |
+| student_activities | 1            | started | 1     |
+| student_activities | 3            | started | 7     |
+
+
+-- 4. DETAILED VIEW: What activities does Alena actually have?
+-- Show first 10 from each table
+SELECT 
+  'activity_responses' as source_table,
+  ar.id,
+  ar.activity_id,
+  a.name as activity_name,
+  ar.cycle_number,
+  ar.status,
+  ar.selected_via,
+  ar.started_at,
+  ar.completed_at,
+  ar.points_earned
+FROM activity_responses ar
+LEFT JOIN activities a ON ar.activity_id = a.id
+WHERE ar.student_email = 'aramsey@vespa.academy'
+ORDER BY ar.cycle_number, ar.started_at DESC
+LIMIT 10; 
+threw an error -
+Error: Failed to run sql query: ERROR: 42703: column ar.points_earned does not exist LINE 12: ar.points_earned ^
+
+| source_table       | id                                   | activity_id                          | activity_name          | cycle_number | status  | assigned_by | assigned_at                   |
+| ------------------ | ------------------------------------ | ------------------------------------ | ---------------------- | ------------ | ------- | ----------- | ----------------------------- |
+| student_activities | a99df8ad-d5ab-492f-83be-ed9cc0e00c8b | 57b5b06a-1e7f-4f42-a1fc-6415b7aa2226 | What's Stopping You    | 1            | started | auto        | 2025-12-02 01:20:10.800977+00 |
+| student_activities | 23396244-f914-49f2-9e57-8d3e12222d04 | 1ac06645-e628-42e3-a509-4169fbe0bca9 | SMART Goals            | 3            | started | auto        | 2025-12-02 14:24:51.480979+00 |
+| student_activities | 892fedf5-6c73-43f9-8ed1-ab5ed0dce31d | 7d27666e-71b7-4493-b17d-b925174edf6e | 20 Questions           | 3            | started | auto        | 2025-12-02 14:24:50.858912+00 |
+| student_activities | f37d4b17-a755-416d-b435-1c91399c0d61 | 4e46fef2-2ed6-41f3-94be-2d1db5942c63 | Mental Contrasting     | 3            | started | auto        | 2025-12-02 14:24:50.206097+00 |
+| student_activities | 52052e08-7343-4fdc-998d-d1b84e552668 | 25d59761-0ce1-4227-be4d-fc8188a30f00 | Rule of 3              | 3            | started | auto        | 2025-12-02 14:22:04.933591+00 |
+| student_activities | 4620ce9d-de0d-48a1-a815-caee268c8739 | 20675111-83f5-426f-94ad-c855cd4909c7 | Project Progress Chart | 3            | started | auto        | 2025-12-02 14:21:23.661059+00 |
+| student_activities | c551b340-241b-4d12-b45f-e254e94238a7 | 59041492-2995-45bb-b35c-099bf636629c | Weekly Planner         | 3            | started | auto        | 2025-12-02 14:21:23.098199+00 |
+| student_activities | 0f2e7a56-3267-407a-9fc5-73b636c83bcd | aadb04c0-781c-4397-a097-0127141be79a | Working Weeks          | 3            | started | auto        | 2025-12-02 14:21:22.509261+00 |
+
+-- 6. FIND ACTIVE (NOT REMOVED) ACTIVITIES
+-- What would the API actually return? - Success. No rows returned
+
+| cycle_number | active_count |
+| ------------ | ------------ |
+| 1            | 1            |
+| 3            | 7            |
+
+| routine_name                   | routine_type | routine_definition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| get_student_activity_responses | FUNCTION     | 
+DECLARE
+  staff_account_id_var UUID;
+  student_in_school BOOLEAN;
+BEGIN
+  -- Verify staff member exists and is in the school
+  SELECT vs.account_id INTO staff_account_id_var
+  FROM vespa_staff vs
+  WHERE vs.email = staff_email_param 
+  AND vs.school_id = school_id_param;
+  
+  IF staff_account_id_var IS NULL THEN
+    RAISE EXCEPTION 'Staff member not found or not in specified school';
+  END IF;
+  
+  -- Verify student is in the same school
+  SELECT EXISTS(
+    SELECT 1 FROM vespa_students
+    WHERE email = student_email_param
+    AND school_id = school_id_param
+  ) INTO student_in_school;
+  
+  IF NOT student_in_school THEN
+    RAISE EXCEPTION 'Student not found or not in specified school';
+  END IF;
+  
+  -- Return activity responses with activity details
+  RETURN QUERY
+  SELECT 
+    ar.id,
+    ar.student_email,
+    ar.activity_id,
+    ar.cycle_number,
+    ar.academic_year,
+    ar.status,
+    ar.selected_via,
+    ar.started_at,
+    ar.completed_at,
+    ar.time_spent_minutes,
+    ar.word_count,
+    ar.responses,
+    ar.responses_text,
+    ar.staff_feedback,
+    ar.staff_feedback_by,
+    ar.staff_feedback_at,
+    ar.feedback_read_by_student,
+    ar.feedback_read_at,
+    ar.year_group,
+    ar.student_group,
+    ar.created_at,
+    ar.updated_at,
+    -- Activity details
+    a.name as activity_name,
+    a.vespa_category as activity_category,
+    a.level as activity_level,
+    a.time_minutes as activity_time_minutes,
+    a.difficulty as activity_difficulty,
+    a.do_section_html as activity_do_section,
+    a.think_section_html as activity_think_section,
+    a.learn_section_html as activity_learn_section,
+    a.reflect_section_html as activity_reflect_section
+  FROM activity_responses ar
+  JOIN activities a ON ar.activity_id = a.id
+  WHERE ar.student_email = student_email_param
+  AND ar.status != 'removed'
+  ORDER BY ar.created_at DESC;
+END;
+ |
+
+-- 8. SIMULATE RPC CALL (See what staff dashboard would get)
+-- This is roughly what the RPC does = Success. No rows returned
+
+| cycle_number | activity_id                          | name                   | sa_status | ar_status | issue            |
+| ------------ | ------------------------------------ | ---------------------- | --------- | --------- | ---------------- |
+| 1            | 57b5b06a-1e7f-4f42-a1fc-6415b7aa2226 | What's Stopping You    | started   | removed   | STATUS MISMATCH! |
+| 3            | 20675111-83f5-426f-94ad-c855cd4909c7 | Project Progress Chart | started   | removed   | STATUS MISMATCH! |
+| 3            | 25d59761-0ce1-4227-be4d-fc8188a30f00 | Rule of 3              | started   | removed   | STATUS MISMATCH! |
+| 3            | 4e46fef2-2ed6-41f3-94be-2d1db5942c63 | Mental Contrasting     | started   | removed   | STATUS MISMATCH! |
+| 3            | 59041492-2995-45bb-b35c-099bf636629c | Weekly Planner         | started   | removed   | STATUS MISMATCH! |
+| 3            | 7d27666e-71b7-4493-b17d-b925174edf6e | 20 Questions           | started   | removed   | STATUS MISMATCH! |
+| 3            | 1ac06645-e628-42e3-a509-4169fbe0bca9 | SMART Goals            | started   | removed   | STATUS MISMATCH! |
+| 3            | aadb04c0-781c-4397-a097-0127141be79a | Working Weeks          | started   | removed   | STATUS MISMATCH! |
+
+
+| report  | current_cycle | active_responses | active_assignments | removed_responses | removed_assignments |
+| ------- | ------------- | ---------------- | ------------------ | ----------------- | ------------------- |
+| Summary | 3             | 0                | 8                  | 70                | 0                   |
