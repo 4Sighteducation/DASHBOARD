@@ -397,6 +397,79 @@ def register_activities_routes(app, supabase: Client):
             return jsonify({"error": str(e)}), 500
     
     
+    @app.route('/api/students/welcome-status', methods=['GET'])
+    def get_welcome_modal_status():
+        """
+        Check if student has seen welcome modal for a specific cycle
+        Query params: email, cycle
+        Returns: { has_seen: true/false, cycle: X }
+        """
+        try:
+            student_email = request.args.get('email')
+            cycle = int(request.args.get('cycle', 1))
+            
+            if not student_email:
+                return jsonify({"error": "email parameter required"}), 400
+            
+            # Query vespa_students for has_seen_welcome_cycle_X
+            field_name = f'has_seen_welcome_cycle_{cycle}'
+            result = supabase.table('vespa_students').select(field_name)\
+                .eq('email', student_email)\
+                .single()\
+                .execute()
+            
+            has_seen = False
+            if result.data and field_name in result.data:
+                has_seen = result.data[field_name] or False
+            
+            logger.info(f"[Welcome Status] {student_email} Cycle {cycle}: {has_seen}")
+            
+            return jsonify({
+                "has_seen": has_seen,
+                "cycle": cycle,
+                "email": student_email
+            })
+            
+        except Exception as e:
+            logger.error(f"Error in get_welcome_modal_status: {str(e)}", exc_info=True)
+            return jsonify({"error": str(e)}), 500
+    
+    
+    @app.route('/api/students/welcome-seen', methods=['POST'])
+    def mark_welcome_modal_seen():
+        """
+        Mark that student has seen welcome modal for a specific cycle
+        Body: { email, cycle }
+        """
+        try:
+            data = request.json
+            student_email = data.get('email')
+            cycle = int(data.get('cycle', 1))
+            
+            if not student_email:
+                return jsonify({"error": "email required"}), 400
+            
+            # Update has_seen_welcome_cycle_X field
+            field_name = f'has_seen_welcome_cycle_{cycle}'
+            update_data = {field_name: True}
+            
+            result = supabase.table('vespa_students').update(update_data)\
+                .eq('email', student_email)\
+                .execute()
+            
+            logger.info(f"[Welcome Seen] {student_email} Cycle {cycle} marked as seen")
+            
+            return jsonify({
+                "success": True,
+                "cycle": cycle,
+                "email": student_email
+            })
+            
+        except Exception as e:
+            logger.error(f"Error in mark_welcome_modal_seen: {str(e)}", exc_info=True)
+            return jsonify({"error": str(e)}), 500
+    
+    
     @app.route('/api/activities/remove', methods=['POST'])
     def remove_student_activity():
         """
