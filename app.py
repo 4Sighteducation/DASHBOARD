@@ -9461,6 +9461,7 @@ def submit_questionnaire():
                 completion_date = datetime.now().strftime('%Y-%m-%d')
                 vespa_data = {
                     'student_id': student_id,
+                    'student_email': student_email,  # For activities app linking
                     'cycle': cycle,
                     'vision': vespa_scores.get('VISION'),
                     'effort': vespa_scores.get('EFFORT'),
@@ -9478,6 +9479,16 @@ def submit_questionnaire():
                 ).execute()
                 
                 app.logger.info(f"[Questionnaire Submit] VESPA scores written for cycle {cycle}")
+                
+                # Sync scores to vespa_students cache for activities app
+                try:
+                    sync_result = supabase_client.rpc(
+                        'sync_latest_vespa_scores_to_student',
+                        {'p_student_email': student_email}
+                    ).execute()
+                    app.logger.info(f"[Questionnaire Submit] Synced scores to activities cache: {student_email}")
+                except Exception as e:
+                    app.logger.warning(f"[Questionnaire Submit] Cache sync failed (non-critical): {e}")
                 
                 # 3. Write question responses (32 rows)
                 response_batch = []
@@ -9848,22 +9859,23 @@ def get_report_data():
             return jsonify({'error': 'Database not available'}), 500
         
         # Get student record
-        # Handle duplicates by finding the student_id that has vespa_scores
+        # Handle duplicates by finding the MOST RECENT student_id with scores
         student_records = supabase_client.table('students')\
-            .select('id, name, email, establishment_id, year_group, group, course, faculty')\
+            .select('id, name, email, establishment_id, year_group, group, course, faculty, academic_year, created_at')\
             .eq('email', email)\
+            .order('created_at', desc=True)\
             .execute()
         
         if not student_records.data:
             return jsonify({'error': 'Student not found'}), 404
         
-        # If multiple student records, find the one with scores
+        # If multiple student records, find the MOST RECENT one with scores
         student_data = None
         student_id = None
         
         if len(student_records.data) > 1:
-            app.logger.warning(f"[Report Data] Found {len(student_records.data)} duplicate student records for {email}")
-            # Check which one has scores
+            app.logger.warning(f"[Report Data] Found {len(student_records.data)} student records for {email}")
+            # Check from most recent to oldest
             for record in student_records.data:
                 score_check = supabase_client.table('vespa_scores')\
                     .select('id')\
@@ -9873,10 +9885,10 @@ def get_report_data():
                 if score_check.data:
                     student_data = record
                     student_id = record['id']
-                    app.logger.info(f"[Report Data] Using student_id {student_id} (has scores)")
+                    app.logger.info(f"[Report Data] Using student_id {student_id} (academic_year: {record.get('academic_year')})")
                     break
         
-        # If no duplicate or no scores found, use first/only record
+        # If no duplicate or no scores found, use first (most recent) record
         if not student_data:
             student_data = student_records.data[0]
             student_id = student_data['id']
@@ -9949,9 +9961,10 @@ def get_report_data():
                         app.logger.warning(f"Could not fetch logo: {e}")
         
         # Get VESPA scores for all cycles (most recent per cycle if duplicates exist)
+        # Use student_email to get scores across all student_id records (handles multi-year students)
         all_scores_raw = supabase_client.table('vespa_scores')\
             .select('cycle, vision, effort, systems, practice, attitude, overall, completion_date')\
-            .eq('student_id', student_id)\
+            .eq('student_email', email)\
             .order('completion_date', desc=True)\
             .execute()
         
@@ -9966,9 +9979,11 @@ def get_report_data():
         scores_result_data = sorted(scores_by_cycle.values(), key=lambda x: x['cycle'])
         
         # Get question responses for all cycles
+        # Note: question_responses still uses student_id, so we need to get ALL student_ids for this email
+        all_student_ids = [record['id'] for record in student_records.data]
         responses_result = supabase_client.table('question_responses')\
             .select('cycle, question_id, response_value')\
-            .eq('student_id', student_id)\
+            .in_('student_id', all_student_ids)\
             .execute()
         
         # Organize responses by cycle

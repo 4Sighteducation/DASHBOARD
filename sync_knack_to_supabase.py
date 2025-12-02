@@ -594,6 +594,7 @@ def sync_students_and_vespa_scores():
                         
                         vespa_data = {
                             'student_id': student_id,
+                            'student_email': student_email,  # For activities app linking
                             'cycle': cycle,
                             'vision': vision,
                             'effort': effort,
