@@ -203,18 +203,17 @@ def register_activities_routes(app, supabase: Client):
             if not student_email:
                 return jsonify({"error": "email parameter required"}), 400
             
-            # Fetch student's activities (without JOIN - Python client doesn't handle it well)
-            assigned_result = supabase.table('student_activities').select('*')\
+            # Fetch student's activities from activity_responses (source of truth!)
+            # student_activities table can be out of sync - activity_responses is authoritative
+            responses_result = supabase.table('activity_responses').select('*')\
                 .eq('student_email', student_email)\
                 .eq('cycle_number', cycle)\
                 .neq('status', 'removed')\
-                .order('assigned_at')\
+                .order('started_at', desc=True)\
                 .execute()
             
-            # Sort assignments by assigned_at descending (most recent first)
-            if assigned_result.data:
-                assigned_result.data = sorted(assigned_result.data, 
-                    key=lambda x: x.get('assigned_at', ''), reverse=True)
+            # Use responses as assignments
+            assigned_result = responses_result
             
             # Fetch activity details separately
             activity_ids = [assignment['activity_id'] for assignment in assigned_result.data]
@@ -229,21 +228,13 @@ def register_activities_routes(app, supabase: Client):
                 # Create map of activity_id -> activity data
                 activities_map = {a['id']: a for a in activities_result.data}
             
-            # Also fetch progress for each
-            responses_result = supabase.table('activity_responses').select('*')\
-                .eq('student_email', student_email)\
-                .eq('cycle_number', cycle)\
-                .execute()
-            
-            # Merge activity details and progress into assignments
-            progress_map = {r['activity_id']: r for r in responses_result.data}
-            
+            # Merge activity details into responses (responses already have progress data)
             for assignment in assigned_result.data:
                 activity_id = assignment['activity_id']
                 # Add activity details
                 assignment['activities'] = activities_map.get(activity_id)
-                # Add progress
-                assignment['progress'] = progress_map.get(activity_id)
+                # Progress is already in the assignment (it's from activity_responses)
+                assignment['progress'] = assignment  # Self-reference for compatibility
             
             return jsonify({"assignments": assigned_result.data})
             
