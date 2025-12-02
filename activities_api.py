@@ -638,6 +638,43 @@ def register_activities_routes(app, supabase: Client):
                     related_achievement_id=achievements_earned[0].get('id') if achievements_earned else None
                 )
             
+            # Notify staff who assigned the activity
+            try:
+                # Get who assigned this activity
+                assignment = supabase.table('student_activities')\
+                    .select('assigned_by')\
+                    .eq('student_email', student_email)\
+                    .eq('activity_id', activity_id)\
+                    .eq('cycle_number', cycle)\
+                    .single()\
+                    .execute()
+                
+                if assignment.data and assignment.data.get('assigned_by'):
+                    staff_email = assignment.data['assigned_by']
+                    activity_name = get_activity_name(supabase, activity_id)
+                    
+                    # Get student name
+                    student_data = supabase.table('vespa_students')\
+                        .select('full_name, first_name')\
+                        .eq('email', student_email)\
+                        .single()\
+                        .execute()
+                    
+                    student_name = student_data.data.get('first_name') or student_data.data.get('full_name', student_email) if student_data.data else student_email
+                    
+                    create_notification(
+                        supabase,
+                        staff_email,
+                        'activity_completed',
+                        '✅ Activity Completed!',
+                        f"{student_name} completed: {activity_name}",
+                        action_url=f"#activity-dashboard?student={student_email}",
+                        related_activity_id=activity_id
+                    )
+                    logger.info(f"[Complete Activity] Notified staff {staff_email}")
+            except Exception as notif_err:
+                logger.warning(f"Failed to notify staff: {notif_err}")
+            
             return jsonify({
                 "success": True,
                 "completed": True,
@@ -1064,6 +1101,30 @@ def register_activities_routes(app, supabase: Client):
             
         except Exception as e:
             logger.error(f"Error in mark_notification_read: {str(e)}", exc_info=True)
+            return jsonify({"error": str(e)}), 500
+    
+    
+    @app.route('/api/notifications/dismiss', methods=['POST'])
+    def dismiss_notification():
+        """
+        Dismiss a notification
+        Body: { notificationId }
+        """
+        try:
+            data = request.json
+            notification_id = data.get('notificationId')
+            
+            if not notification_id:
+                return jsonify({"error": "notificationId required"}), 400
+            
+            supabase.table('notifications').update({
+                "is_dismissed": True
+            }).eq('id', notification_id).execute()
+            
+            return jsonify({"success": True})
+            
+        except Exception as e:
+            logger.error(f"Error in dismiss_notification: {str(e)}", exc_info=True)
             return jsonify({"error": str(e)}), 500
     
     
