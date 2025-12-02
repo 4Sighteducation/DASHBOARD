@@ -10,6 +10,7 @@ from flask import request, jsonify
 from datetime import datetime
 from supabase import Client
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -1124,6 +1125,67 @@ def register_activities_routes(app, supabase: Client):
         except Exception as e:
             logger.error(f"Error in get_student_stats: {str(e)}", exc_info=True)
             return jsonify({"error": str(e)}), 500
+    
+    
+    @app.route('/api/students/gamification', methods=['GET'])
+    def get_student_gamification():
+        """
+        Get full gamification data for student (stats, achievements, streak)
+        Query params: email
+        """
+        try:
+            student_email = request.args.get('email')
+            
+            if not student_email:
+                return jsonify({"error": "email parameter required"}), 400
+            
+            # Ensure student exists
+            ensure_vespa_student_exists(supabase, student_email)
+            
+            # Fetch stats from vespa_students table
+            stats_result = supabase.table('vespa_students').select(
+                'total_points, total_activities_completed, total_achievements, current_streak_days'
+            ).eq('email', student_email).single().execute()
+            
+            stats = stats_result.data if stats_result.data else {
+                'total_points': 0,
+                'total_activities_completed': 0,
+                'total_achievements': 0,
+                'current_streak_days': 0
+            }
+            
+            # Calculate actual streak from completed responses
+            responses_result = supabase.table('activity_responses').select('completed_at')\
+                .eq('student_email', student_email)\
+                .eq('status', 'completed')\
+                .not_.is_('completed_at', 'null')\
+                .execute()
+            
+            current_streak = _calculate_streak(responses_result.data) if responses_result.data else 0
+            
+            # Update streak in vespa_students if different
+            if current_streak != stats.get('current_streak_days', 0):
+                supabase.table('vespa_students').update({
+                    'current_streak_days': current_streak
+                }).eq('email', student_email).execute()
+            
+            # Fetch all achievements
+            achievements_result = supabase.table('student_achievements').select('*')\
+                .eq('student_email', student_email)\
+                .order('date_earned', desc=True)\
+                .execute()
+            
+            return jsonify({
+                "total_points": stats.get('total_points', 0),
+                "total_activities_completed": stats.get('total_activities_completed', 0),
+                "total_achievements": stats.get('total_achievements', 0),
+                "current_streak": current_streak,
+                "achievements": achievements_result.data if achievements_result.data else []
+            })
+            
+        except Exception as e:
+            logger.error(f"Error in get_student_gamification: {str(e)}", exc_info=True)
+            return jsonify({"error": str(e)}), 500
 
 
 # ==========================================
@@ -1177,9 +1239,10 @@ def ensure_vespa_student_exists(supabase: Client, student_email: str, knack_attr
 def create_notification(supabase: Client, recipient_email: str, notification_type: str, 
                        title: str, message: str, action_url: str = None, 
                        related_activity_id: str = None, related_response_id: str = None, 
-                       related_achievement_id: str = None, priority: str = 'normal'):
+                       related_achievement_id: str = None, priority: str = 'normal',
+                       send_email: bool = True):
     """
-    Helper to create notifications
+    Helper to create notifications and optionally send email
     
     Args:
         supabase: Supabase client
@@ -1192,6 +1255,7 @@ def create_notification(supabase: Client, recipient_email: str, notification_typ
         related_response_id: Optional related response ID
         related_achievement_id: Optional related achievement ID
         priority: Priority level (urgent/high/normal/low)
+        send_email: Whether to send email notification
     """
     try:
         recipient_type = "student" if "student" in notification_type else "staff"
@@ -1211,8 +1275,133 @@ def create_notification(supabase: Client, recipient_email: str, notification_typ
         }
         
         supabase.table('notifications').insert(notification).execute()
+        
+        # Send email notification if enabled
+        if send_email and should_send_email(supabase, recipient_email, notification_type):
+            send_email_notification(recipient_email, title, message, notification_type)
+            
     except Exception as e:
         logger.error(f"Error creating notification: {str(e)}")
+
+
+def should_send_email(supabase: Client, email: str, notification_type: str) -> bool:
+    """
+    Check if user has email notifications enabled for this type
+    """
+    try:
+        result = supabase.table('vespa_students').select('notification_preferences')\
+            .eq('email', email)\
+            .single()\
+            .execute()
+        
+        if result.data and result.data.get('notification_preferences'):
+            prefs = result.data['notification_preferences']
+            # Default to True if not set
+            return prefs.get(f'email_{notification_type}', True)
+        
+        return True  # Default to sending emails
+    except:
+        return True  # Default to sending emails on error
+
+
+def send_email_notification(to_email: str, subject: str, message: str, notification_type: str):
+    """
+    Send email notification via SendGrid
+    """
+    import requests
+    
+    try:
+        sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
+        from_email = os.environ.get('SENDGRID_FROM_EMAIL', 'noreply@vespa.academy')
+        
+        if not sendgrid_api_key:
+            logger.warning("SendGrid API key not configured, skipping email")
+            return
+        
+        # Build email HTML
+        html_content = build_email_html(subject, message, notification_type)
+        
+        # SendGrid API request
+        headers = {
+            'Authorization': f'Bearer {sendgrid_api_key}',
+            'Content-Type': 'application/json'
+        }
+        
+        payload = {
+            'personalizations': [{'to': [{'email': to_email}]}],
+            'from': {'email': from_email, 'name': 'VESPA Activities'},
+            'subject': subject,
+            'content': [
+                {'type': 'text/plain', 'value': message},
+                {'type': 'text/html', 'value': html_content}
+            ]
+        }
+        
+        response = requests.post(
+            'https://api.sendgrid.com/v3/mail/send',
+            headers=headers,
+            json=payload
+        )
+        
+        if response.status_code == 202:
+            logger.info(f"Email sent successfully to {to_email}")
+        else:
+            logger.error(f"SendGrid error: {response.status_code} - {response.text}")
+            
+    except Exception as e:
+        logger.error(f"Error sending email: {str(e)}")
+
+
+def build_email_html(subject: str, message: str, notification_type: str) -> str:
+    """
+    Build HTML email template
+    """
+    icon = {
+        'feedback_received': '💬',
+        'activity_assigned': '📚',
+        'achievement_earned': '🏆',
+        'reminder': '⏰',
+        'milestone': '🎯',
+        'staff_note': '✉️',
+        'encouragement': '⭐'
+    }.get(notification_type, '🔔')
+    
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f5f9fc;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <tr>
+                <td style="background: linear-gradient(135deg, #079baa 0%, #057a87 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">VESPA Activities</h1>
+                </td>
+            </tr>
+            <tr>
+                <td style="background: white; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <div style="text-align: center; font-size: 48px; margin-bottom: 20px;">{icon}</div>
+                    <h2 style="color: #23356f; margin: 0 0 16px 0; text-align: center;">{subject}</h2>
+                    <p style="color: #495057; line-height: 1.6; margin: 0 0 24px 0; text-align: center;">{message}</p>
+                    <div style="text-align: center;">
+                        <a href="https://vespa.knack.com" style="display: inline-block; background: #079baa; color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600;">
+                            View in VESPA
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: center; padding: 20px; color: #6c757d; font-size: 12px;">
+                    <p style="margin: 0;">You're receiving this because you have email notifications enabled.</p>
+                    <p style="margin: 8px 0 0 0;">To change your preferences, visit your VESPA dashboard settings.</p>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
 
 
 def check_and_award_achievements(supabase: Client, student_email: str):
@@ -1310,9 +1499,64 @@ def check_and_award_achievements(supabase: Client, student_email: str):
         return []
 
 
+def _calculate_streak(responses):
+    """
+    Calculate current streak (consecutive days with completions)
+    
+    Args:
+        responses: List of completed activity responses
+        
+    Returns:
+        Number of consecutive days with completions (ending today or yesterday)
+    """
+    from datetime import date, timedelta
+    
+    if not responses:
+        return 0
+    
+    # Extract unique completion dates
+    completed_dates = set()
+    for response in responses:
+        completed_at = response.get('completed_at')
+        if completed_at:
+            try:
+                if isinstance(completed_at, str):
+                    dt = datetime.fromisoformat(completed_at.replace('Z', '+00:00'))
+                else:
+                    dt = completed_at
+                completed_dates.add(dt.date())
+            except Exception:
+                pass
+    
+    if not completed_dates:
+        return 0
+    
+    # Sort dates in descending order
+    sorted_dates = sorted(completed_dates, reverse=True)
+    
+    # Check if streak includes today or yesterday
+    today = date.today()
+    if sorted_dates[0] < today - timedelta(days=1):
+        return 0  # Streak is broken
+    
+    # Count consecutive days
+    streak = 1
+    for i in range(len(sorted_dates) - 1):
+        if (sorted_dates[i] - sorted_dates[i + 1]).days == 1:
+            streak += 1
+        else:
+            break
+    
+    return streak
+
+
 def evaluate_achievement_criteria(responses, criteria, activities_by_category):
     """
     Evaluate if achievement criteria is met
+    
+    Supports two formats:
+    - Simple: {"min_completed": 5} or {"category": "Vision", "min_completed": 5}
+    - Complex: {"type": "activities_completed", "count": 5}
     
     Args:
         responses: List of completed activity responses
@@ -1323,6 +1567,29 @@ def evaluate_achievement_criteria(responses, criteria, activities_by_category):
         True if criteria is met, False otherwise
     """
     try:
+        # Support simple format: {"min_completed": X}
+        min_completed = criteria.get('min_completed')
+        if min_completed is not None:
+            category = criteria.get('category')
+            
+            if category:
+                # Count completions in specific category
+                category_activity_ids = activities_by_category.get(category, [])
+                completed_in_category = [
+                    r for r in responses 
+                    if r.get('activity_id') in category_activity_ids
+                ]
+                return len(completed_in_category) >= min_completed
+            else:
+                # Count all completions
+                return len(responses) >= min_completed
+        
+        # Support simple format: {"streak_days": X}
+        streak_days = criteria.get('streak_days')
+        if streak_days is not None:
+            return _calculate_streak(responses) >= streak_days
+        
+        # Legacy type-based format
         criteria_type = criteria.get('type')
         
         if criteria_type == 'activities_completed':
