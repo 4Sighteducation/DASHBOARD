@@ -1191,18 +1191,24 @@ def register_activities_routes(app, supabase: Client):
             data = request.json
             notification_id = data.get('notificationId')
             
-            if not notification_id:
-                return jsonify({"error": "notificationId required"}), 400
+            logger.info(f"[Dismiss Notification] 📥 Request to dismiss: {notification_id}")
             
-            supabase.table('notifications').update({
+            if not notification_id:
+                logger.error("[Dismiss Notification] ❌ No notificationId provided")
+                return jsonify({"error": "notificationId required", "success": False}), 400
+            
+            # Update the notification
+            result = supabase.table('notifications').update({
                 "is_dismissed": True
             }).eq('id', notification_id).execute()
             
-            return jsonify({"success": True})
+            logger.info(f"[Dismiss Notification] ✅ Dismissed notification {notification_id}, result: {len(result.data) if result.data else 0} rows affected")
+            
+            return jsonify({"success": True, "dismissed": notification_id})
             
         except Exception as e:
-            logger.error(f"Error in dismiss_notification: {str(e)}", exc_info=True)
-            return jsonify({"error": str(e)}), 500
+            logger.error(f"[Dismiss Notification] ❌ Error: {str(e)}", exc_info=True)
+            return jsonify({"error": str(e), "success": False}), 500
     
     
     @app.route('/api/notifications/create', methods=['POST'])
