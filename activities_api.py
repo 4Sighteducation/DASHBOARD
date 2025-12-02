@@ -397,11 +397,68 @@ def register_activities_routes(app, supabase: Client):
             return jsonify({"error": str(e)}), 500
     
     
+    @app.route('/api/activities/remove', methods=['POST'])
+    def remove_student_activity():
+        """
+        Student removes activity from their dashboard (soft delete)
+        Body: { studentEmail, activityId, cycle? }
+        """
+        try:
+            data = request.json
+            student_email = data.get('studentEmail')
+            activity_id = data.get('activityId')
+            cycle = data.get('cycle', 1)
+            
+            if not student_email or not activity_id:
+                return jsonify({"error": "studentEmail and activityId required"}), 400
+            
+            logger.info(f"[Remove Activity] Student {student_email} removing activity {activity_id} cycle {cycle}")
+            
+            # Update activity_responses to 'removed' status
+            result = supabase.table('activity_responses').update({
+                "status": "removed",
+                "updated_at": datetime.utcnow().isoformat()
+            })\
+                .eq('student_email', student_email)\
+                .eq('activity_id', activity_id)\
+                .eq('cycle_number', cycle)\
+                .execute()
+            
+            # Update student_activities if exists
+            supabase.table('student_activities').update({"status": "removed"})\
+                .eq('student_email', student_email)\
+                .eq('activity_id', activity_id)\
+                .eq('cycle_number', cycle)\
+                .execute()
+            
+            # Log history
+            supabase.table('activity_history').insert({
+                "student_email": student_email,
+                "activity_id": activity_id,
+                "action": "removed",
+                "triggered_by": "student",
+                "triggered_by_email": student_email,
+                "cycle_number": cycle,
+                "timestamp": datetime.utcnow().isoformat()
+            }).execute()
+            
+            logger.info(f"[Remove Activity] ✅ Activity removed successfully")
+            
+            return jsonify({
+                "success": True,
+                "message": "Activity removed successfully"
+            })
+            
+        except Exception as e:
+            logger.error(f"Error in remove_student_activity: {str(e)}", exc_info=True)
+            return jsonify({"error": str(e)}), 500
+    
+    
     @app.route('/api/activities/complete', methods=['POST'])
     def complete_activity():
         """
         Complete an activity (final submission)
-        Body: { studentEmail, activityId, cycle?, responses, reflection?, timeMinutes?, wordCount? }
+        Body: { studentEmail, activityId, cycle?, responses, reflection?, timeMinutes?, wordCount?, pointsEarned? }
         """
         try:
             data = request.json
@@ -412,6 +469,7 @@ def register_activities_routes(app, supabase: Client):
             reflection = data.get('reflection', '')
             time_minutes = data.get('timeMinutes', 0)
             word_count = data.get('wordCount', 0)
+            points_earned = data.get('pointsEarned', 10)  # Default 10 points (Level 2)
             
             if not student_email or not activity_id:
                 return jsonify({"error": "studentEmail and activityId required"}), 400
@@ -431,6 +489,7 @@ def register_activities_routes(app, supabase: Client):
                 "responses_text": reflection or ' '.join([str(v) for v in responses.values() if isinstance(v, str)]),
                 "time_spent_minutes": time_minutes,
                 "word_count": word_count,
+                "points_earned": points_earned,  # Save points earned for this activity
                 "completed_at": datetime.utcnow().isoformat(),
                 "updated_at": datetime.utcnow().isoformat()
             }
@@ -448,18 +507,22 @@ def register_activities_routes(app, supabase: Client):
                 .eq('cycle_number', cycle)\
                 .execute()
             
-            # Update student totals (increment completed count)
-            # Note: This might need a database function, for now we'll update directly
-            student_stats = supabase.table('vespa_students').select('total_activities_completed')\
+            # Update student totals (increment completed count AND add points)
+            student_stats = supabase.table('vespa_students').select('total_activities_completed, total_points')\
                 .eq('email', student_email)\
                 .single()\
                 .execute()
             
             current_count = student_stats.data.get('total_activities_completed', 0) if student_stats.data else 0
+            current_points = student_stats.data.get('total_points', 0) if student_stats.data else 0
+            
             supabase.table('vespa_students').update({
                 "total_activities_completed": current_count + 1,
+                "total_points": current_points + points_earned,  # Add points to total
                 "last_activity_at": datetime.utcnow().isoformat()
             }).eq('email', student_email).execute()
+            
+            logger.info(f"[Complete Activity] ✅ Points awarded: {points_earned}, New total: {current_points + points_earned}")
             
             # Log history
             supabase.table('activity_history').insert({

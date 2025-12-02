@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-ACT Trust - VESPA Results 2025-2026 Cycle 1</title>
+    
+    <!-- Reveal.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/black.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <style>
+        :root {
+            --eact-purple: #667eea;
+            --eact-dark-purple: #764ba2;
+            --eact-green: #28a745;
+            --eact-blue: #3b82f6;
+            --eact-orange: #f59e0b;
+            --eact-red: #dc3545;
+        }
+        
+        .reveal {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .reveal .slides section {
+            background: radial-gradient(circle at center, #120D31, #3E1E6D, #000000);
+            padding: 15px 30px;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        
+        .reveal h1, .reveal h2, .reveal h3 {
+            color: #ffffff;
+            text-transform: none;
+            font-weight: 700;
+        }
+        
+        .reveal h1 {
+            font-size: 2.2em;
+            margin-bottom: 0.3em;
+            margin-top: 0;
+            text-shadow: 0 0 20px rgba(102, 126, 234, 0.8);
+        }
+        
+        .reveal h2 {
+            font-size: 1.5em;
+            color: #667eea;
+            margin-top: 0;
+            margin-bottom: 0.5em;
+        }
+        
+        .reveal h3 {
+            font-size: 1.1em;
+            color: #a78bfa;
+            margin-top: 0.5em;
+            margin-bottom: 0.5em;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .stat-value {
+            font-size: 3em;
+            font-weight: bold;
+            color: #fbbf24;
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #a78bfa;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .comparison {
+            font-size: 0.8em;
+            color: #9ca3af;
+            margin-top: 5px;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 5px 0;
+        }
+        
+        .quick-win {
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.2), rgba(32, 201, 151, 0.2));
+            border-left: 4px solid #28a745;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 8px;
+            text-align: left;
+        }
+        
+        .quick-win-title {
+            color: #10b981;
+            font-weight: 600;
+            font-size: 0.85em;
+            margin-bottom: 2px;
+        }
+        
+        .quick-win-desc {
+            font-size: 0.65em;
+            color: #d1d5db;
+            line-height: 1.2;
+        }
+        
+        .quick-win-time {
+            display: inline-block;
+            background: rgba(40, 167, 69, 0.3);
+            color: #10b981;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 700;
+            margin-left: 10px;
+        }
+        
+        .insight-card {
+            background: rgba(59, 130, 246, 0.2);
+            border-left: 3px solid #3b82f6;
+            padding: 6px;
+            margin: 3px 0;
+            border-radius: 5px;
+        }
+        
+        .insight-percentage {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #fbbf24;
+        }
+        
+        .insight-label {
+            font-size: 0.65em;
+            color: #a78bfa;
+        }
+        
+        .logo-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 120px;
+            height: 80px;
+            background: white;
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+        
+        .logo-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin: 10px auto;
+            max-width: 90%;
+        }
+        
+        .chart-container-small {
+            position: relative;
+            height: 180px;
+            margin: 10px auto;
+            max-width: 90%;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-around;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 10px;
+            min-width: 150px;
+        }
+        
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #fbbf24;
+        }
+        
+        .metric-label {
+            font-size: 0.75em;
+            color: #9ca3af;
+            text-transform: uppercase;
+        }
+        
+        .status-above {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .status-below {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        
+        .status-onpar {
+            color: #6b7280;
+            font-weight: 600;
+        }
+        
+        .highlight-box {
+            background: rgba(102, 126, 234, 0.2);
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            border-radius: 10px;
+            padding: 12px;
+            margin: 10px 0;
+        }
+        
+        .reveal p {
+            margin: 5px 0;
+        }
+        
+        .reveal ul {
+            text-align: left;
+            margin: 0;
+        }
+        
+        .reveal li {
+            margin: 5px 0;
+            line-height: 1.3;
+        }
+        
+        @keyframes deepSpaceGlow {
+            0%, 100% { filter: brightness(0.8); }
+            50% { filter: brightness(1.2); }
+        }
+        
+        .school-title {
+            font-size: 1.4em;
+            color: #fbbf24;
+            margin-bottom: 10px;
+            margin-top: 0;
+            padding-top: 0;
+            padding-right: 140px;
+            text-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+        }
+        
+        /* Tooltip styling */
+        .tooltip-header {
+            position: relative;
+            cursor: help;
+            text-decoration: underline dotted rgba(255, 255, 255, 0.4);
+            text-underline-offset: 3px;
+        }
+        
+        .tooltip-header:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #1f2937, #374151);
+            color: #ffffff;
+            padding: 5px 8px;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: 400;
+            white-space: normal;
+            width: 160px;
+            z-index: 1000;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.9);
+            border: 1.5px solid #667eea;
+            line-height: 1.25;
+            text-align: left;
+            margin-top: 5px;
+        }
+        
+        .tooltip-header:hover::before {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-bottom-color: #667eea;
+            z-index: 1001;
+        }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            
+            <!-- SLIDE 1: Title Slide -->
+            <section>
+                <h1>E-ACT Academy Trust</h1>
+                <h2 style="color: #a78bfa;">VESPA Cycle 1 Baseline Results</h2>
+                <h3 style="color: #9ca3af; margin-top: 40px;">Academic Year 2025/26</h3>
+                <div style="margin-top: 60px;">
+                    <img src="https://schoolsweek.co.uk/wp-content/uploads/2018/08/e-act-1920x1017.png" 
+                         alt="E-ACT Logo" 
+                         style="height: 100px; filter: brightness(1.2);">
+                </div>
+                <p style="margin-top: 60px; font-size: 0.8em; color: #6b7280;">
+                    November 2025 | 672 Students | 6 Schools
+                </p>
+            </section>
+
+            <!-- SLIDE 2: Trust Executive Summary -->
+            <section>
+                <h2>Trust-Wide Overview</h2>
+                
+                <div class="metric-row">
+                    <div class="metric">
+                        <div class="metric-value">5.77</div>
+                        <div class="metric-label">Overall Score</div>
+                        <div class="comparison">National: 5.94</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">3.64</div>
+                        <div class="metric-label">Exam Readiness</div>
+                        <div class="comparison" style="color: #10b981;">Good</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">672</div>
+                        <div class="metric-label">Students</div>
+                        <div class="comparison">6 Schools</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="trustOverviewChart"></canvas>
+                </div>
+                
+                <div class="highlight-box" style="font-size: 0.85em;">
+                    <strong style="color: #10b981;">Key Strength:</strong> Vision (6.20) - Students have clear goals<br>
+                    <strong style="color: #f59e0b;">Development Area:</strong> Systems (5.54) - Organization and planning skills
+                </div>
+            </section>
+
+            <!-- SLIDE 3: School Comparison Table -->
+            <section>
+                <h2 style="font-size: 1.2em; margin-bottom: 3px; margin-top: 0;">School Performance Comparison</h2>
+                <p style="font-size: 0.55em; color: #9ca3af; margin: 0 0 5px 0;">Cycle 1 Baseline | Ranked by Overall Score | <span style="color: #667eea; font-style: italic;">Hover over column headers for details</span></p>
+                
+                <table style="width: 96%; margin: 0 auto; font-size: 0.5em; border-collapse: collapse; border: 1px solid rgba(102, 126, 234, 0.4); box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                            <th style="padding: 5px 6px; text-align: left; font-weight: 700; border-right: 1px solid rgba(255,255,255,0.15);">School</th>
+                            <th style="padding: 5px; text-align: center; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.15); font-size: 0.9em;">n</th>
+                            <th class="tooltip-header" data-tooltip="The degree to which students report having clear goals and an idea of what they want to do in the future" style="padding: 5px; text-align: center; font-weight: 700; background: rgba(229,148,55,0.4); border-right: 1px solid rgba(255,255,255,0.15);">Vision</th>
+                            <th class="tooltip-header" data-tooltip="The degree to which students report perseverance and hard work" style="padding: 5px; text-align: center; font-weight: 700; background: rgba(134,180,240,0.4); border-right: 1px solid rgba(255,255,255,0.15);">Effort</th>
+                            <th class="tooltip-header" data-tooltip="The degree to which students report high levels of time management and organisation skills" style="padding: 5px; text-align: center; font-weight: 700; background: rgba(114,203,68,0.4); border-right: 1px solid rgba(255,255,255,0.15);">Systems</th>
+                            <th class="tooltip-header" data-tooltip="The degree to which students report understanding and using effective study techniques" style="padding: 5px; text-align: center; font-weight: 700; background: rgba(127,49,164,0.4); border-right: 1px solid rgba(255,255,255,0.15);">Practice</th>
+                            <th class="tooltip-header" data-tooltip="The degree to which students report high levels of confidence and growth mindset" style="padding: 5px; text-align: center; font-weight: 700; background: rgba(240,50,230,0.4); border-right: 1px solid rgba(255,255,255,0.15);">Attitude</th>
+                            <th class="tooltip-header" data-tooltip="An average of all VESPA scores" style="padding: 5px; text-align: center; font-weight: 700; border-right: 1px solid rgba(251,191,36,0.6); background: rgba(251,191,36,0.15);">Overall</th>
+                            <th class="tooltip-header" data-tooltip="Exam Readiness Index - The degree to which students agree with: a) I feel supported for my exams, b) I feel prepared for exams, c) I feel confident about my exams" style="padding: 5px; text-align: center; font-weight: 700; background: rgba(251,191,36,0.5);">ERI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: rgba(16, 185, 129, 0.15); border-bottom: 1px solid rgba(255,255,255,0.08);">
+                            <td style="padding: 5px 6px; font-weight: 700;">Crest Academy</td>
+                            <td style="padding: 5px; text-align: center; font-size: 0.9em;">60</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #10b981;">7.02</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #10b981;">6.60</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #10b981;">6.03</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #10b981;">6.15</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #10b981;">6.43</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; font-size: 1.3em; color: #10b981;">6.38</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 600;">3.78</td>
+                        </tr>
+                        <tr style="background: rgba(16, 185, 129, 0.1); border-bottom: 1px solid rgba(255,255,255,0.08);">
+                            <td style="padding: 5px 6px; font-weight: 700;">North Birmingham</td>
+                            <td style="padding: 5px; text-align: center; font-size: 0.9em;">88</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #10b981;">6.83</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #10b981;">6.42</td>
+                            <td style="padding: 5px; text-align: center;">5.53</td>
+                            <td style="padding: 5px; text-align: center;">5.94</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #10b981;">6.56</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; font-size: 1.3em; color: #10b981;">6.26</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #fbbf24;">3.92</td>
+                        </tr>
+                        <tr style="background: rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255,255,255,0.08);">
+                            <td style="padding: 5px 6px; font-weight: 600;">West Walsall</td>
+                            <td style="padding: 5px; text-align: center; font-size: 0.9em;">74</td>
+                            <td style="padding: 5px; text-align: center;">6.15</td>
+                            <td style="padding: 5px; text-align: center;">6.01</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #ef4444;">5.15</td>
+                            <td style="padding: 5px; text-align: center;">6.00</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #10b981;">6.31</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 600; font-size: 1.3em;">5.95</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 600;">3.69</td>
+                        </tr>
+                        <tr style="background: rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255,255,255,0.08);">
+                            <td style="padding: 5px 6px; font-weight: 600;">Montpelier</td>
+                            <td style="padding: 5px; text-align: center; font-size: 0.9em;">125</td>
+                            <td style="padding: 5px; text-align: center;">6.50</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #ef4444;">5.38</td>
+                            <td style="padding: 5px; text-align: center;">5.68</td>
+                            <td style="padding: 5px; text-align: center;">5.86</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #ef4444;">5.35</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 600; font-size: 1.3em; color: #f59e0b;">5.74</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #ef4444;">3.44</td>
+                        </tr>
+                        <tr style="background: rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255,255,255,0.08);">
+                            <td style="padding: 5px 6px; font-weight: 600;">Daventry 6th Form</td>
+                            <td style="padding: 5px; text-align: center; font-size: 0.9em;">66</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #ef4444;">5.73</td>
+                            <td style="padding: 5px; text-align: center;">5.79</td>
+                            <td style="padding: 5px; text-align: center;">5.70</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #ef4444;">5.38</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #ef4444;">5.41</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 600; font-size: 1.3em; color: #f59e0b;">5.58</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 600;">3.61</td>
+                        </tr>
+                        <tr style="background: rgba(255, 255, 255, 0.05); border-bottom: 2px solid rgba(102, 126, 234, 0.5);">
+                            <td style="padding: 5px 6px; font-weight: 600;">Ousedale</td>
+                            <td style="padding: 5px; text-align: center; font-size: 0.9em; font-weight: 600;">259</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #ef4444;">5.80</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #ef4444;">5.59</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #ef4444;">5.43</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #ef4444;">5.31</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 700; color: #ef4444;">5.41</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 600; font-size: 1.3em; color: #ef4444;">5.48</td>
+                            <td style="padding: 5px; text-align: center; font-weight: 600;">3.56</td>
+                        </tr>
+                        <tr style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.5), rgba(118, 75, 162, 0.5)); font-weight: bold; border-top: 2px solid #fbbf24; border-bottom: 2px solid #fbbf24;">
+                            <td style="padding: 6px; font-weight: 700; font-size: 1.05em; letter-spacing: 0.5px;">TRUST AVERAGE</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 700;">672</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 700; font-size: 1.1em;">6.20</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 700; font-size: 1.1em;">5.82</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 700; font-size: 1.1em;">5.54</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 700; font-size: 1.1em;">5.65</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 700; font-size: 1.1em;">5.74</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 700; font-size: 1.4em; color: #fbbf24;">5.77</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 700; font-size: 1.1em;">3.64</td>
+                        </tr>
+                        <tr style="background: rgba(255, 255, 255, 0.08); font-style: italic; opacity: 0.85;">
+                            <td style="padding: 6px; font-weight: 600; font-size: 1.05em; letter-spacing: 0.5px;">NATIONAL AVG</td>
+                            <td style="padding: 6px; text-align: center; color: #6b7280;">—</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 600;">6.36</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 600;">5.94</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 600;">5.68</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 600;">5.93</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 600;">5.79</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 600; font-size: 1.1em;">5.94</td>
+                            <td style="padding: 6px; text-align: center; font-weight: 600;">3.50</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div style="margin-top: 8px; font-size: 0.5em; text-align: center;">
+                    <span style="color: #10b981; font-weight: 600;">■ Green: Above Trust/National (+0.2)</span>
+                    <span style="margin: 0 15px;">|</span>
+                    <span style="color: #ef4444; font-weight: 600;">■ Red: Below Trust/National (-0.2)</span>
+                    <span style="margin: 0 15px;">|</span>
+                    <span style="color: #fbbf24; font-weight: 600;">Yellow: Highest in category</span>
+                </div>
+            </section>
+
+            <!-- SLIDE 4: Crest Academy - Overview -->
+            <section>
+                <div class="logo-container">
+                    <img src="assets/crest-logo.png" alt="Crest Academy">
+                </div>
+                
+                <h2 class="school-title">Crest Academy</h2>
+                
+                <div class="metric-row">
+                    <div class="metric">
+                        <div class="metric-value">6.38</div>
+                        <div class="metric-label">Overall Score</div>
+                        <div class="comparison status-above">↑ Above National (5.94)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">3.78</div>
+                        <div class="metric-label">ERI</div>
+                        <div class="comparison">60 students</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container-small">
+                    <canvas id="crestChart"></canvas>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; font-size: 0.8em;">
+                    <div style="background: rgba(16, 185, 129, 0.2); padding: 15px; border-radius: 8px;">
+                        <strong style="color: #10b981;">💪 Strongest:</strong> Vision (7.02)
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.2); padding: 15px; border-radius: 8px;">
+                        <strong style="color: #f59e0b;">🎯 Focus:</strong> Systems (6.03)
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 4: Crest Academy - Quick Wins -->
+            <section>
+                <div class="logo-container">
+                    <img src="assets/crest-logo.png" alt="Crest Academy">
+                </div>
+                
+                <h2 style="color: #28a745; font-size: 1.3em; margin-bottom: 8px; padding-right: 140px;">🚀 Quick Wins - Crest Academy</h2>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">1. Priority Coaching <span class="quick-win-time">5-7 MIN</span></div>
+                    <div class="quick-win-desc">Target 24-30 middle band students focusing on Systems patterns and goal-setting</div>
+                </div>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">2. Team Activity <span class="quick-win-time">45 MIN</span></div>
+                    <div class="quick-win-desc">Staff meeting to identify 3-5 Systems behaviors for consistent reinforcement</div>
+                </div>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">3. Weekly Planner <span class="quick-win-time">20 MIN</span></div>
+                    <div class="quick-win-desc">Students audit schedules and create balanced plans - addresses Systems (6.03)</div>
+                </div>
+                
+                <div class="grid-3" style="margin-top: 10px; font-size: 0.7em;">
+                    <div class="insight-card">
+                        <div class="insight-percentage">80.8%</div>
+                        <div class="insight-label">Growth Mindset</div>
+                    </div>
+                    <div class="insight-card">
+                        <div class="insight-percentage">77.9%</div>
+                        <div class="insight-label">Academic Momentum</div>
+                    </div>
+                    <div class="insight-card" style="border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.2);">
+                        <div class="insight-percentage" style="color: #f59e0b;">45.0%</div>
+                        <div class="insight-label">Active Learning</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 5: North Birmingham - Overview -->
+            <section>
+                <div class="logo-container">
+                    <img src="assets/E-ACT-North-Birmingham-Academy_Logo-Stacked_Full-Colour_Web.png" alt="North Birmingham">
+                </div>
+                
+                <h2 class="school-title">North Birmingham Academy</h2>
+                
+                <div class="metric-row">
+                    <div class="metric">
+                        <div class="metric-value">6.26</div>
+                        <div class="metric-label">Overall Score</div>
+                        <div class="comparison status-above">↑ Above National (5.94)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">3.92</div>
+                        <div class="metric-label">ERI - Highest</div>
+                        <div class="comparison">88 students</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container-small">
+                    <canvas id="northBirminghamChart"></canvas>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; font-size: 0.8em;">
+                    <div style="background: rgba(16, 185, 129, 0.2); padding: 15px; border-radius: 8px;">
+                        <strong style="color: #10b981;">💪 Strongest:</strong> Vision (6.83)
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.2); padding: 15px; border-radius: 8px;">
+                        <strong style="color: #f59e0b;">🎯 Focus:</strong> Systems (5.53)
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 6: North Birmingham - Quick Wins -->
+            <section>
+                <div class="logo-container">
+                    <img src="assets/E-ACT-North-Birmingham-Academy_Logo-Stacked_Full-Colour_Web.png" alt="North Birmingham">
+                </div>
+                
+                <h2 style="color: #28a745; font-size: 1.3em; margin-bottom: 8px; padding-right: 140px;">🚀 Quick Wins - North Birmingham</h2>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">1. Priority Coaching <span class="quick-win-time">5-7 MIN</span></div>
+                    <div class="quick-win-desc">Target 35-44 middle band students focusing on Systems and organization</div>
+                </div>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">2. Team Activity <span class="quick-win-time">45 MIN</span></div>
+                    <div class="quick-win-desc">Staff meeting to identify 3-5 Systems behaviors for reinforcement</div>
+                </div>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">3. Pending, Doing, Done <span class="quick-win-time">15 MIN</span></div>
+                    <div class="quick-win-desc">Visual task management using task boards - builds on organization strengths</div>
+                </div>
+                
+                <div class="grid-3" style="margin-top: 10px; font-size: 0.7em;">
+                    <div class="insight-card">
+                        <div class="insight-percentage">77.0%</div>
+                        <div class="insight-label">Growth Mindset</div>
+                    </div>
+                    <div class="insight-card">
+                        <div class="insight-percentage">75.0%</div>
+                        <div class="insight-label">Support & Help-Seeking</div>
+                    </div>
+                    <div class="insight-card" style="border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.2);">
+                        <div class="insight-percentage" style="color: #f59e0b;">43.9%</div>
+                        <div class="insight-label">Active Learning</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 7: West Walsall - Overview -->
+            <section>
+                <div class="logo-container">
+                    <img src="assets/R (1).png" alt="West Walsall">
+                </div>
+                
+                <h2 class="school-title">West Walsall Academy</h2>
+                
+                <div class="metric-row">
+                    <div class="metric">
+                        <div class="metric-value">5.95</div>
+                        <div class="metric-label">Overall Score</div>
+                        <div class="comparison status-onpar">• On Par (5.94)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">3.69</div>
+                        <div class="metric-label">ERI</div>
+                        <div class="comparison">74 students</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container-small">
+                    <canvas id="westWalsallChart"></canvas>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; font-size: 0.8em;">
+                    <div style="background: rgba(16, 185, 129, 0.2); padding: 15px; border-radius: 8px;">
+                        <strong style="color: #10b981;">💪 Strongest:</strong> Attitude (6.31)
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.2); padding: 15px; border-radius: 8px;">
+                        <strong style="color: #f59e0b;">🎯 Focus:</strong> Systems (5.15)
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 8: West Walsall - Quick Wins -->
+            <section>
+                <div class="logo-container">
+                    <img src="assets/R (1).png" alt="West Walsall">
+                </div>
+                
+                <h2 style="color: #28a745; font-size: 1.3em; margin-bottom: 8px; padding-right: 140px;">🚀 Quick Wins - West Walsall</h2>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">1. Priority Coaching <span class="quick-win-time">5-7 MIN</span></div>
+                    <div class="quick-win-desc">Target 29-37 middle band students on Systems and organization strategies</div>
+                </div>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">2. Team Activity <span class="quick-win-time">45 MIN</span></div>
+                    <div class="quick-win-desc">Staff meeting to identify 3-5 Systems behaviors for reinforcement</div>
+                </div>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">3. Weekly Planner <span class="quick-win-time">20 MIN</span></div>
+                    <div class="quick-win-desc">Address time management foundations for lowest Systems score (5.15)</div>
+                </div>
+                
+                <div class="grid-3" style="margin-top: 10px; font-size: 0.7em;">
+                    <div class="insight-card">
+                        <div class="insight-percentage">74.7%</div>
+                        <div class="insight-label">Growth Mindset</div>
+                    </div>
+                    <div class="insight-card">
+                        <div class="insight-percentage">74.3%</div>
+                        <div class="insight-label">Support & Help-Seeking</div>
+                    </div>
+                    <div class="insight-card" style="border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.2);">
+                        <div class="insight-percentage" style="color: #f59e0b;">43.2%</div>
+                        <div class="insight-label">Active Learning</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 9: Montpelier - Overview -->
+            <section>
+                <div class="logo-container">
+                    <img src="assets/montpelier-high-school-logo.png" alt="Montpelier">
+                </div>
+                
+                <h2 class="school-title">Montpelier High School</h2>
+                
+                <div class="metric-row">
+                    <div class="metric">
+                        <div class="metric-value">5.74</div>
+                        <div class="metric-label">Overall Score</div>
+                        <div class="comparison status-below">↓ Below National (5.94)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">3.44</div>
+                        <div class="metric-label">ERI</div>
+                        <div class="comparison">125 students</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container-small">
+                    <canvas id="montpelierChart"></canvas>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; font-size: 0.8em;">
+                    <div style="background: rgba(16, 185, 129, 0.2); padding: 15px; border-radius: 8px;">
+                        <strong style="color: #10b981;">💪 Strongest:</strong> Vision (6.50)
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.2); padding: 15px; border-radius: 8px;">
+                        <strong style="color: #f59e0b;">🎯 Focus:</strong> Attitude (5.35)
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 10: Montpelier - Quick Wins -->
+            <section>
+                <div class="logo-container">
+                    <img src="assets/montpelier-high-school-logo.png" alt="Montpelier">
+                </div>
+                
+                <h2 style="color: #28a745; font-size: 1.3em; margin-bottom: 8px; padding-right: 140px;">🚀 Quick Wins - Montpelier</h2>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">1. Priority Coaching <span class="quick-win-time">5-7 MIN</span></div>
+                    <div class="quick-win-desc">Target 50-62 middle band students focusing on Attitude and stress management</div>
+                </div>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">2. Team Activity <span class="quick-win-time">45 MIN</span></div>
+                    <div class="quick-win-desc">Staff meeting to identify 3-5 Attitude behaviors for reinforcement</div>
+                </div>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">3. First Aid Kit <span class="quick-win-time">15 MIN</span></div>
+                    <div class="quick-win-desc">Stress-dissolving exercises - addresses lowest Stress Management (40.8%)</div>
+                </div>
+                
+                <div class="grid-3" style="margin-top: 10px; font-size: 0.7em;">
+                    <div class="insight-card">
+                        <div class="insight-percentage">70.3%</div>
+                        <div class="insight-label">Growth Mindset</div>
+                    </div>
+                    <div class="insight-card" style="border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.2);">
+                        <div class="insight-percentage" style="color: #f59e0b;">40.8%</div>
+                        <div class="insight-label">Stress Management</div>
+                    </div>
+                    <div class="insight-card" style="border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.2);">
+                        <div class="insight-percentage" style="color: #f59e0b;">41.2%</div>
+                        <div class="insight-label">Active Learning</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 11: Daventry - Overview -->
+            <section>
+                <div class="logo-container">
+                    <img src="assets/E-ACT-Daventry-Sixth-Form_Logo-Stacked_Full-Colour_Web.png" alt="Daventry">
+                </div>
+                
+                <h2 class="school-title">Daventry 6th Form</h2>
+                
+                <div class="metric-row">
+                    <div class="metric">
+                        <div class="metric-value">5.58</div>
+                        <div class="metric-label">Overall Score</div>
+                        <div class="comparison status-below">↓ Below National (5.94)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">3.61</div>
+                        <div class="metric-label">ERI</div>
+                        <div class="comparison">66 students</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container-small">
+                    <canvas id="daventryChart"></canvas>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; font-size: 0.8em;">
+                    <div style="background: rgba(16, 185, 129, 0.2); padding: 15px; border-radius: 8px;">
+                        <strong style="color: #10b981;">💪 Strongest:</strong> Effort (5.79)
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.2); padding: 15px; border-radius: 8px;">
+                        <strong style="color: #f59e0b;">🎯 Focus:</strong> Practice (5.38)
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 12: Daventry - Quick Wins -->
+            <section>
+                <div class="logo-container">
+                    <img src="assets/E-ACT-Daventry-Sixth-Form_Logo-Stacked_Full-Colour_Web.png" alt="Daventry">
+                </div>
+                
+                <h2 style="color: #28a745; font-size: 1.3em; margin-bottom: 8px; padding-right: 140px;">🚀 Quick Wins - Daventry</h2>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">1. Priority Coaching <span class="quick-win-time">5-7 MIN</span></div>
+                    <div class="quick-win-desc">Target 26-33 middle band students on Practice strategies and Active Learning</div>
+                </div>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">2. Team Activity <span class="quick-win-time">45 MIN</span></div>
+                    <div class="quick-win-desc">Staff meeting to identify 3-5 Practice behaviors for reinforcement</div>
+                </div>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">3. High & Low Utility <span class="quick-win-time">20 MIN</span></div>
+                    <div class="quick-win-desc">Teach effective vs ineffective study techniques - addresses Active Learning (35.9%)</div>
+                </div>
+                
+                <div class="grid-3" style="margin-top: 10px; font-size: 0.7em;">
+                    <div class="insight-card">
+                        <div class="insight-percentage">70.8%</div>
+                        <div class="insight-label">Growth Mindset</div>
+                    </div>
+                    <div class="insight-card" style="border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.2);">
+                        <div class="insight-percentage" style="color: #f59e0b;">47.5%</div>
+                        <div class="insight-label">Stress Management</div>
+                    </div>
+                    <div class="insight-card" style="border-left-color: #ef4444; background: rgba(239, 68, 68, 0.2);">
+                        <div class="insight-percentage" style="color: #ef4444;">35.9%</div>
+                        <div class="insight-label">Active Learning</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 13: Ousedale - Overview -->
+            <section>
+                <div class="logo-container">
+                    <img src="assets/51A051D3872FD2795D5CC7FE41DD6E46.png" alt="Ousedale">
+                </div>
+                
+                <h2 class="school-title">Ousedale School</h2>
+                
+                <div class="metric-row">
+                    <div class="metric">
+                        <div class="metric-value">5.48</div>
+                        <div class="metric-label">Overall Score</div>
+                        <div class="comparison status-below">↓ Below National (5.94)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">3.56</div>
+                        <div class="metric-label">ERI</div>
+                        <div class="comparison">259 students - Largest</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container-small">
+                    <canvas id="ousedaleChart"></canvas>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; font-size: 0.8em;">
+                    <div style="background: rgba(16, 185, 129, 0.2); padding: 15px; border-radius: 8px;">
+                        <strong style="color: #10b981;">💪 Strongest:</strong> Vision (5.80)
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.2); padding: 15px; border-radius: 8px;">
+                        <strong style="color: #f59e0b;">🎯 Focus:</strong> Practice (5.31)
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 14: Ousedale - Quick Wins -->
+            <section>
+                <div class="logo-container">
+                    <img src="assets/51A051D3872FD2795D5CC7FE41DD6E46.png" alt="Ousedale">
+                </div>
+                
+                <h2 style="color: #28a745; font-size: 1.3em; margin-bottom: 8px; padding-right: 140px;">🚀 Quick Wins - Ousedale</h2>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">1. Priority Coaching <span class="quick-win-time">5-7 MIN</span></div>
+                    <div class="quick-win-desc">Target 103-130 middle band students on Practice strategies and Active Learning</div>
+                </div>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">2. Team Activity <span class="quick-win-time">45 MIN</span></div>
+                    <div class="quick-win-desc">Staff meeting to identify 3-5 Practice behaviors for reinforcement</div>
+                </div>
+                
+                <div class="quick-win">
+                    <div class="quick-win-title">3. High & Low Utility <span class="quick-win-time">20 MIN</span></div>
+                    <div class="quick-win-desc">Teach effective study techniques - addresses Active Learning (35.8% - lowest)</div>
+                </div>
+                
+                <div class="grid-3" style="margin-top: 10px; font-size: 0.7em;">
+                    <div class="insight-card">
+                        <div class="insight-percentage">67.8%</div>
+                        <div class="insight-label">Time Management</div>
+                    </div>
+                    <div class="insight-card" style="border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.2);">
+                        <div class="insight-percentage" style="color: #f59e0b;">48.9%</div>
+                        <div class="insight-label">Study Strategies</div>
+                    </div>
+                    <div class="insight-card" style="border-left-color: #ef4444; background: rgba(239, 68, 68, 0.2);">
+                        <div class="insight-percentage" style="color: #ef4444;">35.8%</div>
+                        <div class="insight-label">Active Learning</div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Reveal.js -->
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    
+    <script>
+        // Initialize Reveal.js
+        Reveal.initialize({
+            hash: true,
+            transition: 'slide',
+            backgroundTransition: 'fade',
+            controls: true,
+            progress: true,
+            center: true,
+            touch: true,
+            overview: true,
+            slideNumber: 'c/t'
+        });
+
+        // Chart.js configuration
+        const chartColors = {
+            vision: '#e59437',
+            effort: '#86b4f0',
+            systems: '#72cb44',
+            practice: '#7f31a4',
+            attitude: '#f032e6'
+        };
+
+        const nationalAverages = {
+            vision: 6.36,
+            effort: 5.94,
+            systems: 5.68,
+            practice: 5.93,
+            attitude: 5.79
+        };
+
+        // Chart defaults
+        Chart.defaults.color = '#d1d5db';
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+
+        // Trust Overview Chart
+        const trustCtx = document.getElementById('trustOverviewChart');
+        if (trustCtx) {
+            new Chart(trustCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude'],
+                    datasets: [{
+                        label: 'E-ACT Trust',
+                        data: [6.20, 5.82, 5.54, 5.65, 5.74],
+                        backgroundColor: [
+                            chartColors.vision,
+                            chartColors.effort,
+                            chartColors.systems,
+                            chartColors.practice,
+                            chartColors.attitude
+                        ],
+                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                        borderWidth: 2
+                    }, {
+                        label: 'National Average',
+                        data: [6.36, 5.94, 5.68, 5.93, 5.79],
+                        type: 'line',
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#ef4444'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: { color: '#d1d5db', font: { size: 14 } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 5,
+                            max: 7,
+                            ticks: { color: '#d1d5db' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#d1d5db' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Crest Academy Chart
+        const crestCtx = document.getElementById('crestChart');
+        if (crestCtx) {
+            new Chart(crestCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude'],
+                    datasets: [{
+                        label: 'Crest Academy',
+                        data: [7.02, 6.60, 6.03, 6.15, 6.43],
+                        backgroundColor: [chartColors.vision, chartColors.effort, chartColors.systems, chartColors.practice, chartColors.attitude],
+                        borderWidth: 2,
+                        borderColor: 'rgba(255, 255, 255, 0.3)'
+                    }, {
+                        label: 'National',
+                        data: [6.36, 5.94, 5.68, 5.93, 5.79],
+                        type: 'line',
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false, min: 5, max: 7.5, ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        x: { ticks: { color: '#d1d5db' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // North Birmingham Chart
+        const northBirminghamCtx = document.getElementById('northBirminghamChart');
+        if (northBirminghamCtx) {
+            new Chart(northBirminghamCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude'],
+                    datasets: [{
+                        label: 'North Birmingham',
+                        data: [6.83, 6.42, 5.53, 5.94, 6.56],
+                        backgroundColor: [chartColors.vision, chartColors.effort, chartColors.systems, chartColors.practice, chartColors.attitude],
+                        borderWidth: 2,
+                        borderColor: 'rgba(255, 255, 255, 0.3)'
+                    }, {
+                        label: 'National',
+                        data: [6.36, 5.94, 5.68, 5.93, 5.79],
+                        type: 'line',
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false, min: 5, max: 7.5, ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        x: { ticks: { color: '#d1d5db' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // West Walsall Chart
+        const westWalsallCtx = document.getElementById('westWalsallChart');
+        if (westWalsallCtx) {
+            new Chart(westWalsallCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude'],
+                    datasets: [{
+                        label: 'West Walsall',
+                        data: [6.15, 6.01, 5.15, 6.00, 6.31],
+                        backgroundColor: [chartColors.vision, chartColors.effort, chartColors.systems, chartColors.practice, chartColors.attitude],
+                        borderWidth: 2,
+                        borderColor: 'rgba(255, 255, 255, 0.3)'
+                    }, {
+                        label: 'National',
+                        data: [6.36, 5.94, 5.68, 5.93, 5.79],
+                        type: 'line',
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false, min: 4.5, max: 7, ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        x: { ticks: { color: '#d1d5db' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Montpelier Chart
+        const montpelierCtx = document.getElementById('montpelierChart');
+        if (montpelierCtx) {
+            new Chart(montpelierCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude'],
+                    datasets: [{
+                        label: 'Montpelier',
+                        data: [6.50, 5.38, 5.68, 5.86, 5.35],
+                        backgroundColor: [chartColors.vision, chartColors.effort, chartColors.systems, chartColors.practice, chartColors.attitude],
+                        borderWidth: 2,
+                        borderColor: 'rgba(255, 255, 255, 0.3)'
+                    }, {
+                        label: 'National',
+                        data: [6.36, 5.94, 5.68, 5.93, 5.79],
+                        type: 'line',
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false, min: 5, max: 7, ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        x: { ticks: { color: '#d1d5db' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Daventry Chart
+        const daventryCtx = document.getElementById('daventryChart');
+        if (daventryCtx) {
+            new Chart(daventryCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude'],
+                    datasets: [{
+                        label: 'Daventry',
+                        data: [5.73, 5.79, 5.70, 5.38, 5.41],
+                        backgroundColor: [chartColors.vision, chartColors.effort, chartColors.systems, chartColors.practice, chartColors.attitude],
+                        borderWidth: 2,
+                        borderColor: 'rgba(255, 255, 255, 0.3)'
+                    }, {
+                        label: 'National',
+                        data: [6.36, 5.94, 5.68, 5.93, 5.79],
+                        type: 'line',
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false, min: 5, max: 7, ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        x: { ticks: { color: '#d1d5db' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Ousedale Chart
+        const ousedaleCtx = document.getElementById('ousedaleChart');
+        if (ousedaleCtx) {
+            new Chart(ousedaleCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude'],
+                    datasets: [{
+                        label: 'Ousedale',
+                        data: [5.80, 5.59, 5.43, 5.31, 5.41],
+                        backgroundColor: [chartColors.vision, chartColors.effort, chartColors.systems, chartColors.practice, chartColors.attitude],
+                        borderWidth: 2,
+                        borderColor: 'rgba(255, 255, 255, 0.3)'
+                    }, {
+                        label: 'National',
+                        data: [6.36, 5.94, 5.68, 5.93, 5.79],
+                        type: 'line',
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false, min: 5, max: 7, ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        x: { ticks: { color: '#d1d5db' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

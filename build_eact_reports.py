@@ -53,6 +53,16 @@ SCHOOL_LOGOS = {
     'Daventry 6th Form': 'E-ACT-Daventry-Sixth-Form_Logo-Stacked_Full-Colour_Web.png'
 }
 
+# Completion rates provided by user (based on total enrollment)
+COMPLETION_RATES = {
+    'Daventry 6th Form': 82.0,
+    'Crest Academy': 74.0,
+    'Montpelier High School': 84.0,
+    'North Birmingham Academy': 99.0,
+    'Ousedale School': 86.0,
+    'West Walsall Academy': 79.0
+}
+
 # Statement to category mapping (from Hartpury report)
 STATEMENT_MAPPING = {
     "I've worked out the next steps in my life": 'Vision',
@@ -223,15 +233,21 @@ def load_data(csv_path):
     df = pd.read_csv(csv_path, encoding='utf-8-sig')
     
     # Filter for Cycle 1 only and exclude Bourne End Academy
-    df_cycle1 = df[(df['Cycle'] == 1) & (~df['VESPA Customer'].str.contains('Bourne End', na=False))].copy()
+    df_cycle1_all = df[(df['Cycle'] == 1) & (~df['VESPA Customer'].str.contains('Bourne End', na=False))].copy()
+    
+    # Calculate total students per school (before filtering for complete data)
+    total_students_per_school = df_cycle1_all.groupby('VESPA Customer').size().to_dict()
     
     # Keep only rows with valid VESPA scores
     vespa_cols = ['vScale', 'eScale', 'sScale', 'pScale', 'aScale', 'oScale']
-    df_cycle1 = df_cycle1[df_cycle1[vespa_cols].notna().all(axis=1)]
+    df_cycle1 = df_cycle1_all[df_cycle1_all[vespa_cols].notna().all(axis=1)].copy()
     
-    print(f"✅ Loaded {len(df_cycle1)} students with complete Cycle 1 VESPA data")
+    print(f"Loaded {len(df_cycle1)} students with complete Cycle 1 VESPA data")
     print(f"   Schools: {df_cycle1['VESPA Customer'].nunique()}")
     print(f"   Mean Overall: {df_cycle1['oScale'].mean():.2f}")
+    
+    # Store completion rates in dataframe metadata
+    df_cycle1.attrs['total_students_per_school'] = total_students_per_school
     
     return df_cycle1
 
@@ -407,10 +423,15 @@ def generate_executive_summary(df):
     for school in df['VESPA Customer'].dropna().unique():
         school_df = df[df['VESPA Customer'] == school]
         n = len(school_df)
+        # Use provided completion rates, or calculate if not available
+        completion_rate = COMPLETION_RATES.get(school, 100.0)
+        total_n = int(n / (completion_rate / 100)) if completion_rate < 100 else n
         
         school_stats.append({
             'school': school,
             'n': n,
+            'total_n': total_n,
+            'completion_rate': completion_rate,
             'vision': school_df['vScale'].mean(),
             'effort': school_df['eScale'].mean(),
             'systems': school_df['sScale'].mean(),
@@ -452,24 +473,37 @@ def generate_executive_summary(df):
         print(f"   Highest: {statement_analysis[0]['statement'][:50]}... ({statement_analysis[0]['mean']:.2f}, var={statement_analysis[0]['variance']:.2f})")
         print(f"   Lowest: {statement_analysis[-1]['statement'][:50]}... ({statement_analysis[-1]['mean']:.2f}, var={statement_analysis[-1]['variance']:.2f})")
     
+    # Calculate 12 Questionnaire Insights for Trust
+    print("\nCalculating Trust-wide Questionnaire Insights...")
+    trust_insights = calculate_all_insights(df)
+    print(f"   Calculated {len(trust_insights)} Questionnaire Insights")
+    
+    # Calculate statement analysis per school for comparison
+    print("\nCalculating statement analysis per school...")
+    school_statement_analysis = {}
+    for school in df['VESPA Customer'].dropna().unique():
+        school_df = df[df['VESPA Customer'] == school]
+        school_statement_analysis[school] = analyze_statements(school_df)
+    print(f"   Statement analysis calculated for {len(school_statement_analysis)} schools")
+    
     # Generate HTML
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"EACT_Trust_Executive_Summary_{timestamp}.html"
     
-    html = build_executive_summary_html(overall_stats, school_stats, year_group_stats, statement_analysis, df)
+    html = build_executive_summary_html(overall_stats, school_stats, year_group_stats, statement_analysis, df, school_statement_analysis, trust_insights)
     
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(html)
     
     print(f"\n{'='*80}")
-    print(f"✅ EXECUTIVE SUMMARY GENERATED")
+    print(f"EXECUTIVE SUMMARY GENERATED")
     print(f"{'='*80}")
     print(f"Filename: {filename}")
     print(f"{'='*80}\n")
     
     return filename
 
-def build_executive_summary_html(overall, schools, year_groups, statements, df):
+def build_executive_summary_html(overall, schools, year_groups, statements, df, school_statement_analysis=None, trust_insights=None):
     """Build the Executive Summary HTML document"""
     report_date = datetime.now().strftime("%B %d, %Y")
     
@@ -496,6 +530,7 @@ def build_executive_summary_html(overall, schools, year_groups, statements, df):
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         {get_css_styles()}
+        {get_insights_css()}
     </style>
 </head>
 <body>
@@ -503,10 +538,11 @@ def build_executive_summary_html(overall, schools, year_groups, statements, df):
         {generate_header(report_date, "E-ACT Academy Trust", "Executive Summary", show_logo=True)}
         {generate_exec_summary_content(overall, schools, year_groups, strongest_dim, weakest_dim, overall_status)}
         {generate_baseline_overview(overall)}
-        {generate_distributions_section(df, "E-ACT Trust")}
+        {generate_distributions_section(df, "E-ACT Trust", None)}
         {generate_school_comparison_section(schools, overall)}
         {generate_year_group_section(year_groups, "Trust")}
-        {generate_statement_section(statements)}
+        {generate_insights_section(trust_insights, "E-ACT Trust") if trust_insights else ""}
+        {generate_statement_section(statements, school_statement_analysis, schools)}
         {generate_eri_section(overall, schools, year_groups)}
         {generate_footer("E-ACT Academy Trust")}
     </div>
@@ -522,9 +558,15 @@ def generate_individual_school_report(school_name, school_df, overall_df):
     print(f"GENERATING REPORT FOR {school_name.upper()}")
     print(f"{'='*80}")
     
+    # Use provided completion rates
+    completion_rate = COMPLETION_RATES.get(school_name, 100.0)
+    total_n = int(len(school_df) / (completion_rate / 100)) if completion_rate < 100 else len(school_df)
+    
     # Overall statistics for this school
     school_stats = {
         'n_students': len(school_df),
+        'total_n': total_n,
+        'completion_rate': completion_rate,
         'vision': school_df['vScale'].mean(),
         'effort': school_df['eScale'].mean(),
         'systems': school_df['sScale'].mean(),
@@ -575,7 +617,7 @@ def generate_individual_school_report(school_name, school_df, overall_df):
         group_stats = sorted(group_stats, key=lambda x: x['overall'], reverse=True)
     
     print(f"   Year Groups: {len(year_group_stats)}")
-    print(f"   Groups (n≥5): {len(group_stats)}")
+    print(f"   Groups (n>=5): {len(group_stats)}")
     
     # Calculate 12 Questionnaire Insights
     insights = calculate_all_insights(school_df)
@@ -595,7 +637,7 @@ def generate_individual_school_report(school_name, school_df, overall_df):
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(html)
     
-    print(f"✅ REPORT GENERATED: {filename}")
+    print(f"REPORT GENERATED: {filename}")
     
     return filename
 
@@ -631,7 +673,7 @@ def build_school_report_html(school_name, stats, year_groups, groups, insights, 
         {generate_insights_section(insights, school_name)}
         {generate_year_group_section(year_groups, school_name) if year_groups else ""}
         {generate_group_section(groups, stats, school_name) if groups else ""}
-        {generate_distributions_section(df, school_name)}
+        {generate_distributions_section(df, school_name, stats.get('completion_rate'))}
         {generate_statement_section(statements)}
         {generate_recommendations_section(stats, insights, strongest_dim, weakest_dim, school_name)}
         {generate_footer(school_name)}
@@ -1066,12 +1108,34 @@ def generate_school_exec_summary(stats, strongest_dim, weakest_dim, school_name)
     vs_national = stats['overall'] - NATIONAL_AVERAGES['Overall']
     status = "above" if vs_national > 0.1 else "in line with" if vs_national > -0.1 else "below"
     
+    completion_rate = stats.get('completion_rate', 100.0)
+    total_n = stats.get('total_n', stats['n_students'])
+    
+    # Add caveat for Crest Academy if completion rate is low
+    crest_caveat = ""
+    if school_name == 'Crest Academy' and completion_rate < 80:
+        crest_caveat = f"""
+            <div style="background: #fff3cd; padding: 20px; border-radius: 10px; border-left: 4px solid #ffc107; margin-top: 20px;">
+                <h4 style="color: #856404; margin-bottom: 10px;">⚠️ Important Note on Data Completeness</h4>
+                <p style="margin: 0; color: #856404;">Crest Academy has a completion rate of {completion_rate:.0f}% ({stats['n_students']} of {total_n} students). 
+                While the school shows the highest overall score ({stats['overall']:.2f}), this should be interpreted with caution as lower completion rates 
+                may indicate that students who completed the assessment are not fully representative of the entire student population. 
+                Higher completion rates (typically 80%+) provide more reliable insights into overall school performance.</p>
+            </div>
+        """
+    
     return f"""
         <div class="executive-summary">
             <h2>Executive Summary</h2>
             <p>This comprehensive VESPA Cycle 1 baseline analysis for <strong>{school_name}</strong> examines student mindset and study skills 
-            across <strong>{stats['n_students']} students</strong>. This baseline assessment establishes the starting point for tracking 
-            student development throughout the 2025/26 academic year.</p>
+            across <strong>{stats['n_students']} students</strong> (of {total_n} total students, {completion_rate:.0f}% completion rate). 
+            This baseline assessment establishes the starting point for tracking student development throughout the 2025/26 academic year.</p>
+            
+            <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #06b6d4;">
+                <p style="margin: 0;"><strong>Data Completeness:</strong> {completion_rate:.0f}% of students completed the full VESPA assessment. 
+                {"This represents a strong response rate, providing reliable insights into school-wide performance." if completion_rate >= 80 
+                else "While this provides valuable insights, higher completion rates (80%+) would strengthen the representativeness of these findings."}</p>
+            </div>
             
             <p style="margin-top: 15px;"><strong>Overall Performance:</strong> {school_name} students score {status} national 
             average ({stats['overall']:.2f} vs {NATIONAL_AVERAGES['Overall']}), demonstrating {"strong" if vs_national > 0 else "solid"} 
@@ -1083,6 +1147,8 @@ def generate_school_exec_summary(stats, strongest_dim, weakest_dim, school_name)
             
             <p style="margin-top: 15px;"><strong>Key Strengths:</strong> Students demonstrate particular strength in {strongest_dim.title()} ({stats[strongest_dim]:.2f}), 
             while {weakest_dim.title()} ({stats[weakest_dim]:.2f}) presents an opportunity for targeted development.</p>
+            
+            {crest_caveat}
         </div>
 """
 
@@ -1117,6 +1183,21 @@ def generate_baseline_overview(stats):
                 Baseline VESPA scores for {stats['n_students']} students compared to national averages.
                 This establishes the starting point for measuring growth through Cycles 2 and 3.
             </p>
+            
+            <div style="background: #e8f4f8; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #06b6d4;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Understanding Baseline Scores</h3>
+                <p style="margin-bottom: 15px;"><strong>What are baseline scores?</strong> These are the initial VESPA measurements taken at the start of the academic year. They represent students' current mindset and study skills before targeted interventions or the natural progression through their courses.</p>
+                
+                <p style="margin-bottom: 15px;"><strong>Why compare to national averages?</strong> National benchmarks provide essential context for interpreting scores. They help us understand:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Relative performance:</strong> Are students performing above, at, or below typical levels?</li>
+                    <li><strong>Starting position:</strong> Where do we begin our improvement journey?</li>
+                    <li><strong>Realistic expectations:</strong> What level of performance is typical for similar students?</li>
+                    <li><strong>Priority identification:</strong> Which dimensions need the most attention?</li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>What do the indicators mean?</strong> Scores marked as "Above National" indicate strength areas where students are performing better than typical. "On Par" suggests performance is in line with national expectations. "Below National" highlights areas where students may benefit from additional support or intervention.</p>
+            </div>
             
             <div class="stats-grid">
                 {compare_to_nat(stats['vision'], 'Vision')}
@@ -1173,6 +1254,7 @@ def generate_school_comparison_section(schools, overall):
                         <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
                         <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">{school['overall']:.2f}</div>
                         <div style="font-size: 0.8em; opacity: 0.8;">n = {school['n']} students | ERI: {school['eri']:.2f}</div>
+                        <div style="font-size: 0.75em; opacity: 0.85; margin-top: 5px;">Completion: {school.get('completion_rate', 100):.0f}%</div>
                     </div>
                 </div>
 """
@@ -1190,9 +1272,10 @@ def generate_school_comparison_section(schools, overall):
         
         row_bg = '#f8f9fa' if schools.index(school) % 2 == 0 else '#ffffff'
         
+        completion_note = f" ({school.get('completion_rate', 100):.0f}%)" if school.get('completion_rate') else ""
         table_rows += f"""
                     <tr style="background: {row_bg}; border-bottom: 1px solid #e9ecef;">
-                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">{school['school']} (n={school['n']})</td>
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">{school['school']} (n={school['n']}{completion_note})</td>
                         <td style="padding: 14px; text-align: center;">{indicator(school['vision'], NATIONAL_AVERAGES['Vision'])}</td>
                         <td style="padding: 14px; text-align: center;">{indicator(school['effort'], NATIONAL_AVERAGES['Effort'])}</td>
                         <td style="padding: 14px; text-align: center;">{indicator(school['systems'], NATIONAL_AVERAGES['Systems'])}</td>
@@ -1254,6 +1337,19 @@ def generate_school_comparison_section(schools, overall):
                 <span style="color: #28a745;">↑ Above National (+0.2)</span>
                 <span style="color: #666;">• On Par with National (±0.2)</span>
                 <span style="color: #dc3545;">↓ Below National (-0.2)</span>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 20px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                <h4 style="color: #856404; margin-bottom: 10px;">📊 Understanding School Comparisons</h4>
+                <p style="margin-bottom: 10px; color: #856404;"><strong>What are we comparing?</strong> This table shows how each school's average VESPA scores compare to national benchmarks. The completion rates shown in parentheses indicate the percentage of students who completed the full assessment.</p>
+                <p style="margin-bottom: 10px; color: #856404;"><strong>Why compare to national?</strong> National comparisons provide context for understanding whether scores are typical, above average, or below average. This helps identify:</p>
+                <ul style="margin-left: 20px; line-height: 1.8; color: #856404;">
+                    <li>Schools performing exceptionally well that can share best practices</li>
+                    <li>Schools that may benefit from additional support or interventions</li>
+                    <li>Dimensions where the Trust as a whole is strong or needs development</li>
+                    <li>Variation across schools that might indicate different approaches or contexts</li>
+                </ul>
+                <p style="margin: 0; color: #856404;"><strong>Interpreting completion rates:</strong> Higher completion rates (80%+) provide more reliable and representative data. Lower completion rates may indicate that respondents are not fully representative of the entire student population, which should be considered when interpreting results.</p>
             </div>
         </div>
 """
@@ -1546,6 +1642,23 @@ def generate_insights_section(insights, school_name):
                 are crucial for academic success. Percentages represent students who agreed or strongly agreed (scores of 4-5).
             </p>
             
+            <div style="background: #e8f4f8; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #06b6d4;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Understanding Questionnaire Insights</h3>
+                <p style="margin-bottom: 15px;"><strong>What are these insights?</strong> Rather than looking at individual questions in isolation, these insights group related questions together to measure broader psychological constructs. This approach provides a more reliable and meaningful picture of student characteristics.</p>
+                
+                <p style="margin-bottom: 15px;"><strong>Why are they important?</strong> Research in educational psychology has shown that these factors significantly influence academic success:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Growth Mindset:</strong> Beliefs about intelligence and learning capacity affect motivation and resilience</li>
+                    <li><strong>Academic Momentum:</strong> Drive and ambition influence effort and achievement</li>
+                    <li><strong>Resilience:</strong> Ability to bounce back from setbacks impacts long-term success</li>
+                    <li><strong>Time Management:</strong> Organizational skills directly affect academic performance</li>
+                    <li><strong>Support & Help-Seeking:</strong> Willingness to ask for help improves learning outcomes</li>
+                    <li><strong>Study Strategies:</strong> Effective learning techniques enhance retention and understanding</li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>How to interpret percentages:</strong> Higher percentages (75%+) indicate that most students demonstrate positive characteristics in that area. Lower percentages (below 40%) suggest that many students may benefit from targeted support or intervention. These insights help identify which psychological factors are strengths and which need development.</p>
+            </div>
+            
             <div style="margin: 25px 0; padding: 20px; background: linear-gradient(to right, #f8f9fa, #ffffff); border-radius: 10px; border-left: 4px solid #667eea;">
                 <h4 style="color: #2c3e50; margin-bottom: 10px;">Understanding the Ratings</h4>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
@@ -1658,9 +1771,13 @@ def generate_group_section(groups, school_stats, school_name):
 """
     return html
 
-def generate_distributions_section(df, org_name):
+def generate_distributions_section(df, org_name, completion_rate=None):
     """Generate score distribution charts section"""
-    html = """
+    completion_note = ""
+    if completion_rate is not None:
+        completion_note = f"<p style='background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px;'><strong>Data Completeness:</strong> This analysis is based on {completion_rate:.0f}% of students who completed the full VESPA assessment. Results should be interpreted with awareness that some students did not complete all sections.</p>"
+    
+    html = f"""
         <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
             <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
                 SCORE DISTRIBUTIONS
@@ -1669,7 +1786,31 @@ def generate_distributions_section(df, org_name):
         
         <div class="section">
             <h2>📈 Score Distribution Analysis</h2>
-            <p>Distribution of VESPA scores for Cycle 1 baseline. Bar charts show school percentages, red lines show national distribution.</p>
+            {completion_note}
+            <p style="margin-bottom: 20px;">Distribution of VESPA scores for Cycle 1 baseline. Bar charts show {org_name} percentages, red lines show national distribution.</p>
+            
+            <div style="background: #e8f4f8; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #06b6d4;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Understanding Score Distributions</h3>
+                <p style="margin-bottom: 15px;"><strong>What are we looking at?</strong> These charts show how student scores are spread across the 1-10 scale for each VESPA dimension. The bars represent the percentage of students at each score level, while the red line shows the national average distribution.</p>
+                
+                <p style="margin-bottom: 15px;"><strong>Why are distributions insightful?</strong> While average scores tell us the central tendency, distributions reveal the full picture of student performance. They show:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Score spread:</strong> Are students clustered around similar scores (narrow distribution) or spread widely (broad distribution)?</li>
+                    <li><strong>Performance patterns:</strong> Do we have many high performers, many low performers, or a balanced spread?</li>
+                    <li><strong>Tail identification:</strong> Which students are at the extremes and may need targeted support or recognition?</li>
+                    <li><strong>Normality:</strong> Does our distribution follow expected patterns or show unusual clustering?</li>
+                </ul>
+                
+                <p style="margin-bottom: 15px;"><strong>Comparing to National:</strong> When our distribution differs from the national pattern, it reveals important insights:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>More students at higher scores:</strong> Indicates strength in that dimension - students are performing above typical levels</li>
+                    <li><strong>More students at lower scores:</strong> Suggests a development opportunity - students may need additional support or intervention</li>
+                    <li><strong>Different shape:</strong> A distribution that's more spread out suggests greater diversity in student experiences, while a tighter distribution indicates more consistent performance across students</li>
+                    <li><strong>Skewed patterns:</strong> If scores cluster at one end, it may indicate systemic factors (e.g., strong school culture or specific challenges)</li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>What does this tell us?</strong> Distribution analysis helps identify whether improvements are needed across the board (if many students score low) or if targeted interventions for specific groups would be more effective. It also helps validate whether average scores accurately represent the student population or if they're masking important variations.</p>
+            </div>
 """
     
     col_map = {'Vision': 'vScale', 'Effort': 'eScale', 'Systems': 'sScale', 
@@ -1692,8 +1833,8 @@ def generate_distributions_section(df, org_name):
 """
     return html
 
-def generate_statement_section(statements):
-    """Generate statement-level analysis section with variance"""
+def generate_statement_section(statements, school_statement_analysis=None, schools=None):
+    """Generate statement-level analysis section with variance and school comparisons"""
     
     # Top 5 statements
     top_5_html = ""
@@ -1729,6 +1870,117 @@ def generate_statement_section(statements):
                         </li>
 """
     
+    # Generate school comparison table if data available
+    school_comparison_html = ""
+    if school_statement_analysis and schools:
+        # Create a mapping of statement text to Trust mean
+        trust_means = {stmt['statement']: stmt['mean'] for stmt in statements}
+        
+        # Get top 10 and bottom 10 statements for comparison
+        key_statements = statements[:10] + statements[-10:]
+        
+        school_comparison_html = f"""
+            <div style="margin-top: 50px; padding: 30px; background: linear-gradient(to right, #f8f9fa, #ffffff); border-radius: 12px; border: 1px solid #e9ecef;">
+                <h3 style="color: #2c3e50; margin-bottom: 25px; font-size: 1.6em;">School-by-School Statement Comparison</h3>
+                <p style="color: #666; margin-bottom: 30px;">
+                    This table shows how each school compares to the Trust average for key statements. 
+                    Schools can use this to identify where they perform above or below Trust averages, 
+                    helping them understand their relative strengths and areas for development.
+                </p>
+                
+                <div style="overflow-x: auto; margin-top: 20px;">
+                    <table style="width: 100%; min-width: 1000px; border-collapse: collapse; background: white;">
+                        <thead>
+                            <tr>
+                                <th style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px; text-align: left; position: sticky; left: 0; z-index: 10;">Statement</th>
+                                <th style="background: #667eea; color: white; padding: 12px; text-align: center;">Trust Avg</th>
+"""
+        
+        # Add school columns
+        for school in schools:
+            school_name_short = school['school'].replace(' Academy', '').replace(' School', '').replace(' 6th Form', '')
+            school_comparison_html += f"""
+                                <th style="background: #667eea; color: white; padding: 12px; text-align: center; font-size: 0.9em;">{school_name_short}</th>
+"""
+        
+        school_comparison_html += """
+                            </tr>
+                        </thead>
+                        <tbody>
+"""
+        
+        # Add rows for each key statement
+        for stmt in key_statements:
+            stmt_text = stmt['statement']
+            trust_mean = stmt['mean']
+            
+            # Truncate long statements
+            display_text = stmt_text[:60] + "..." if len(stmt_text) > 60 else stmt_text
+            
+            school_comparison_html += f"""
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="{stmt_text}">{display_text}</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">{trust_mean:.2f}</td>
+"""
+            
+            # Add school scores
+            for school in schools:
+                school_name = school['school']
+                school_stmts = school_statement_analysis.get(school_name, [])
+                school_mean = None
+                for s in school_stmts:
+                    if s['statement'] == stmt_text:
+                        school_mean = s['mean']
+                        break
+                
+                if school_mean is not None:
+                    diff = school_mean - trust_mean
+                    if diff > 0.2:
+                        color = '#28a745'
+                        indicator = '↑'
+                    elif diff < -0.2:
+                        color = '#dc3545'
+                        indicator = '↓'
+                    else:
+                        color = '#666'
+                        indicator = '•'
+                    
+                    school_comparison_html += f"""
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: {color}; font-weight: 600;">{school_mean:.2f}</span>
+                                    <br><small style="color: {color};">{indicator} {diff:+.2f}</small>
+                                </td>
+"""
+                else:
+                    school_comparison_html += """
+                                <td style="padding: 10px; text-align: center; color: #999;">-</td>
+"""
+            
+            school_comparison_html += """
+                            </tr>
+"""
+        
+        school_comparison_html += """
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e8f4f8; border-radius: 8px; border-left: 4px solid #06b6d4;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">How to Interpret This Table</h4>
+                    <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
+                        <li><strong>Trust Avg:</strong> The average score across all E-ACT schools for this statement</li>
+                        <li><strong>School Scores:</strong> Each school's average score, with the difference from Trust average shown below</li>
+                        <li><strong>↑ (Green):</strong> School scores significantly above Trust average (+0.2 or more) - a strength</li>
+                        <li><strong>• (Gray):</strong> School scores in line with Trust average (±0.2) - typical performance</li>
+                        <li><strong>↓ (Red):</strong> School scores significantly below Trust average (-0.2 or more) - development opportunity</li>
+                    </ul>
+                    <p style="margin-top: 15px; color: #555;"><strong>Use this to:</strong> Identify which schools excel in specific areas (for peer learning), 
+                    understand where your school sits relative to Trust peers, and prioritize interventions based on statements where your school 
+                    scores below Trust averages.</p>
+                </div>
+            </div>
+"""
+    
     html = f"""
         <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
             <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
@@ -1762,6 +2014,8 @@ def generate_statement_section(statements):
                         </ol>
                     </div>
                 </div>
+                
+                {school_comparison_html}
                 
                 <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
                     <h4 style="color: #2c3e50; margin-bottom: 10px;">Interpretation Guide</h4>
@@ -1986,7 +2240,7 @@ def generate_footer(org_name):
 
 def main():
     """Main execution function"""
-    csv_path = r"C:\Users\tonyd\OneDrive - 4Sight Education Ltd\Apps\DASHBOARD\DASHBOARD\DASHBOARD-Vue\EACT - Cycle 1.csv"
+    csv_path = r"C:\Users\tonyd\OneDrive - 4Sight Education Ltd\Apps\DASHBOARD\DASHBOARD\DASHBOARD-Vue\E-ACTv2Dashboard.csv"
     
     try:
         # Load data
@@ -2013,7 +2267,7 @@ def main():
                 school_files.append(filename)
         
         print(f"\n{'='*80}")
-        print("🎉 ALL REPORTS GENERATED SUCCESSFULLY!")
+        print("ALL REPORTS GENERATED SUCCESSFULLY!")
         print(f"{'='*80}")
         print(f"\nExecutive Summary: {exec_filename}")
         print(f"\nIndividual School Reports:")
@@ -2024,7 +2278,7 @@ def main():
         return exec_filename, school_files
         
     except Exception as e:
-        print(f"\n❌ Error generating reports: {e}")
+        print(f"\nERROR: Error generating reports: {e}")
         import traceback
         traceback.print_exc()
         return None, []

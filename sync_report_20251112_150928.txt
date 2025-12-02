@@ -1,0 +1,151 @@
+================================================================================
+VESPA SYNC REPORT - ENHANCED
+================================================================================
+Date: 2025-11-12 15:09:28 UTC
+Duration: 6:02:18.337976
+Script Version: 2.0 (Multi-Year Support)
+
+================================================================================
+EXECUTIVE SUMMARY
+================================================================================
+Total New Records: 52,142
+Total Errors: 226
+Total Skipped: 772
+Overall Status: PARTIAL SUCCESS (226 errors encountered)
+
+================================================================================
+DETAILED TABLE SUMMARY
+================================================================================
+
+ESTABLISHMENTS
+--------------------------------------------------------------------------------
+  Records Before Sync: 127
+  Records After Sync:  127
+  New/Updated:         0
+  Updated:             0
+  Errors:              0
+  Processing Time:     0:00:09.400245
+  Status: OK - Excellent
+
+STUDENTS
+--------------------------------------------------------------------------------
+  Records Before Sync: 36,446
+  Records After Sync:  36,470
+  New/Updated:         24
+  Updated:             0
+  Errors:              0
+  Processing Time:     3:29:30.912936
+  Status: OK - Excellent
+
+VESPA_SCORES
+--------------------------------------------------------------------------------
+  Records Before Sync: 110,737
+  Records After Sync:  111,395
+  New/Updated:         658
+  Updated:             0
+  Errors:              0
+  Processing Time:     3:29:30.896872
+  Status: OK - Excellent
+
+STAFF_ADMINS
+--------------------------------------------------------------------------------
+  Records Before Sync: 519
+  Records After Sync:  524
+  New/Updated:         5
+  Errors:              0
+  Processing Time:     0:00:42.375020
+  Status: OK - Excellent
+
+SUPER_USERS
+--------------------------------------------------------------------------------
+  Records Before Sync: 9
+  Records After Sync:  9
+  New/Updated:         0
+  Errors:              0
+  Processing Time:     0:00:01.080452
+  Status: OK - Excellent
+
+ACADEMIC_PROFILES
+--------------------------------------------------------------------------------
+  Records Before Sync: 846
+  Records After Sync:  12,738
+  New/Updated:         11,892
+  Errors:              223
+  Processing Time:     2:23:27.297565
+  Status: ERROR - Needs attention
+
+STUDENT_SUBJECTS
+--------------------------------------------------------------------------------
+  Records Before Sync: 0
+  Records After Sync:  0
+  New/Updated:         0
+  Errors:              0
+  Processing Time:     2:23:27.297562
+  Status: OK - Excellent
+
+QUESTION_RESPONSES
+--------------------------------------------------------------------------------
+  Records Before Sync: 1,257,503
+  Records After Sync:  1,284,670
+  New/Updated:         27,167
+  Updated:             0
+  Skipped:             772
+  Skip Rate:           2.8%
+  Duplicates Removed:  256
+  Errors:              3
+  Processing Time:     0:06:04.666133
+  Status: WARNING - Minor issues
+
+SCHOOL_STATISTICS
+--------------------------------------------------------------------------------
+  Records Before Sync: 1,650
+  Records After Sync:  1,812
+  New/Updated:         162
+  Errors:              0
+  Processing Time:     0:02:15.461062
+  Status: OK - Excellent
+
+QUESTION_STATISTICS
+--------------------------------------------------------------------------------
+  Records Before Sync: 224
+  Records After Sync:  12,458
+  New/Updated:         12,234
+  Errors:              0
+  Processing Time:     0:00:04.481585
+  Status: OK - Excellent
+
+================================================================================
+OPERATIONS PERFORMED
+================================================================================
+
+Update Academic Year:
+  Status: COMPLETED
+  Records Updated: 0
+
+Calculate Eri:
+  Status: COMPLETED
+  ERI Records: 6
+
+================================================================================
+ISSUES REQUIRING ATTENTION
+================================================================================
+
+WARNINGS:
+  - Only 49.7% of staff admins have establishment connections
+  - Some question responses skipped due to missing student links
+  - 772 question responses skipped due to missing student links
+  - 256 duplicate responses removed (multiple Object_29 records for same student)
+
+ERRORS (First 10):
+  - Error syncing psychometric record 68fdb3986eb346033cc8139c: [WinError 10054] An existing connection was forcibly closed by the remote host
+  - Error syncing psychometric record 68bb0f87cc624402f2d56ed6: [WinError 10054] An existing connection was forcibly closed by the remote host
+  - Error syncing psychometric record 68bb17fc08cff903088a3127: [WinError 10054] An existing connection was forcibly closed by the remote host
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+  HIGH ERROR COUNT: Check log file for details and contact support.
+
+================================================================================
+END OF REPORT
+================================================================================

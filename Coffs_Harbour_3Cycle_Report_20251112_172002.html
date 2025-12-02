@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffs Harbour Senior College - VESPA 3 Cycle Analysis Report</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .report-header {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .report-header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .report-header h2 {
+            color: #667eea;
+            font-size: 1.8em;
+        }
+        
+        .report-date {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .executive-summary {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .executive-summary h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .key-insights {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .section h3 {
+            color: #764ba2;
+            margin: 20px 0 10px 0;
+            font-size: 1.4em;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 8px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-card h4 {
+            font-size: 0.8em;
+            opacity: 0.95;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        
+        .stat-card .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 4px 0;
+        }
+        
+        .stat-card .change {
+            font-size: 0.75em;
+            margin-top: 2px;
+            opacity: 0.9;
+        }
+        
+        .stat-card small {
+            font-size: 0.7em;
+            opacity: 0.8;
+            display: block;
+            margin-top: 4px;
+        }
+        
+        .chart-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .responsive-chart {
+            width: 100%;
+            height: auto;
+            max-width: 100%;
+            overflow: hidden;
+            page-break-inside: avoid;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .neutral {
+            color: #6c757d;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: white;
+            opacity: 0.9;
+        }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                max-width: 100%;
+                padding: 15px;
+            }
+            .report-header button {
+                display: none !important;
+            }
+            .chart-container {
+                page-break-inside: avoid;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="report-header">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <img src="https://tse1.mm.bing.net/th/id/OIP.nkwhBIhBwNKWVejzrRlb1wHaBr?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3" 
+                     alt="Coffs Harbour Logo" 
+                     style="height: 80px; object-fit: contain;">
+                <img src="https://vespa.academy/_astro/vespalogo.BGrK1ARl.png" 
+                     alt="VESPA Logo" 
+                     style="height: 70px; object-fit: contain;">
+            </div>
+            <h1 style="color: #2c3e50; margin-bottom: 10px;">Coffs Harbour Senior College</h1>
+            <h2 style="color: #667eea;">VESPA 3 Cycle Analysis Report</h2>
+            <p class="report-date">Generated: November 12, 2025</p>
+            
+            <div style="margin-top: 20px;">
+                <button onclick="window.print();" style="
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    color: white;
+                    border: none;
+                    padding: 12px 30px;
+                    font-size: 1em;
+                    font-weight: 600;
+                    border-radius: 25px;
+                    cursor: pointer;
+                    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.4)';" 
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.3)';">
+                    Download as PDF
+                </button>
+            </div>
+        </div>
+
+        <div class="executive-summary">
+            <h2>Executive Summary</h2>
+            <p>This comprehensive VESPA analysis for Coffs Harbour Senior College examines student mindset and study skills development 
+            across 86 students through three assessment cycles during the 2024/25 academic year.</p>
+            
+            <div class="key-insights" style="margin-top: 25px;">
+                <h3 style="color: #667eea; margin-bottom: 20px;">Key Findings & Takeaways</h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+
+                    <div style="background: rgba(102, 126, 234, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Overall Progress</h4>
+                        <p>23 students completed all 3 cycles, showing an average improvement of +0.70 points. 
+                        52.2% of students improved their overall VESPA score from Cycle 1 to Cycle 3.</p>
+                    </div>
+
+                    <div style="background: rgba(114, 203, 68, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #72cb44;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Strongest Growth Area</h4>
+                        <p>Practice showed the most significant improvement across the three cycles (+1.09 points), 
+                        indicating effective development in this key area.</p>
+                    </div>
+
+                    <div style="background: rgba(229, 148, 55, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #e59437;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Strongest Belief</h4>
+                        <p>Students demonstrate strong agreement with "I understand why education is important for my future" (Score: 4.52), 
+                        showing solid foundation in Vision.</p>
+                    </div>
+
+                    <div style="background: rgba(240, 50, 230, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #f032e6;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Development Area</h4>
+                        <p>Students need support with "I don't let a poor test/assessment result get me down for too long" (Score: 3.39), 
+                        representing a priority area for targeted intervention.</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 35px; border-radius: 12px;">
+            <h2 style="color: white; font-size: 2em; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 15px; margin-bottom: 25px;">Cycle Analysis</h2>
+            
+            <div style="margin-top: 20px;">
+                <ul style="list-style: none; padding: 0;">
+
+                    <li style="margin: 15px 0; padding-left: 25px; border-left: 3px solid rgba(255,255,255,0.5); color: white; font-size: 1.05em; line-height: 1.6;">Analysis across three cycles shows overall progression from 6.2 (Cycle 1) through 6.3 (Cycle 2) to 6.9 (Cycle 3), demonstrating the effectiveness of the VESPA intervention program.</li>
+
+                    <li style="margin: 15px 0; padding-left: 25px; border-left: 3px solid rgba(255,255,255,0.5); color: white; font-size: 1.05em; line-height: 1.6;">Cycle 2 to Cycle 3 progression shows particularly strong improvements in Practice (+0.87), Attitude (+0.87), indicating students are developing enhanced mindsets and study approaches.</li>
+
+                    <li style="margin: 15px 0; padding-left: 25px; border-left: 3px solid rgba(255,255,255,0.5); color: white; font-size: 1.05em; line-height: 1.6;">Statement-level analysis reveals students show greatest improvement in areas like "I can control my nerves in tests/practical assessments", demonstrating targeted growth in specific competencies.</li>
+
+                    <li style="margin: 15px 0; padding-left: 25px; border-left: 3px solid rgba(255,255,255,0.5); color: white; font-size: 1.05em; line-height: 1.6;">Students score lowest on systematic study approach statements, particularly "I don't let a poor test/assessment result get me down for too long", identifying specific areas for targeted intervention.</li>
+
+                </ul>
+            </div>
+            
+            <div style="margin-top: 40px;">
+                <h3 style="color: white; font-size: 1.4em; margin-bottom: 25px;">Strategic Recommendations</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+
+                    <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid #ff6b6b;">
+                        <span style="background: #ff6b6b; color: white; padding: 4px 12px; border-radius: 15px; font-size: 0.85em; font-weight: 600;">High Priority</span>
+                        <h4 style="margin: 12px 0 8px 0; color: white; font-size: 1.1em;">Support Effort Development</h4>
+                        <p style="color: rgba(255,255,255,0.9); line-height: 1.5;">Focus on building effort skills, as this area shows minimal overall progression (+0.13 points) across cycles.</p>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid #feca57;">
+                        <span style="background: #feca57; color: white; padding: 4px 12px; border-radius: 15px; font-size: 0.85em; font-weight: 600;">Medium Priority</span>
+                        <h4 style="margin: 12px 0 8px 0; color: white; font-size: 1.1em;">Leverage Practice Success</h4>
+                        <p style="color: rgba(255,255,255,0.9); line-height: 1.5;">Build on the strong Practice improvement (+0.87) as a model for other dimensions.</p>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid #ff6b6b;">
+                        <span style="background: #ff6b6b; color: white; padding: 4px 12px; border-radius: 15px; font-size: 0.85em; font-weight: 600;">High Priority</span>
+                        <h4 style="margin: 12px 0 8px 0; color: white; font-size: 1.1em;">Address Core Study Skills</h4>
+                        <p style="color: rgba(255,255,255,0.9); line-height: 1.5;">Implement targeted interventions for "I don't let a poor test/assessment result get me down for too long" which shows the lowest performance.</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 400px;">
+                SECTION 1: VESPA RESULTS
+            </h1>
+        </div>
+
+        <div class="section" style="padding: 25px 15px;">
+            <h2>Cycle Progression Analysis</h2>
+            <p style="margin-bottom: 20px;">
+                Analysis of VESPA scores across three assessment cycles shows distinct patterns in each dimension.
+                The following data represents mean scores and progression metrics for students who participated in each cycle.
+            </p>
+            
+            <h3>Cycle 1 to Cycle 2 Changes</h3>
+            <div class="stats-grid">
+
+                <div class="stat-card">
+                    <h4>Vision</h4>
+                    <div class="value">+0.21</div>
+                    <div class="change">42% improved</div>
+                </div>
+
+                <div class="stat-card">
+                    <h4>Effort</h4>
+                    <div class="value">+0.09</div>
+                    <div class="change">31% improved</div>
+                </div>
+
+                <div class="stat-card">
+                    <h4>Systems</h4>
+                    <div class="value">+0.19</div>
+                    <div class="change">36% improved</div>
+                </div>
+
+                <div class="stat-card">
+                    <h4>Practice</h4>
+                    <div class="value">+0.17</div>
+                    <div class="change">41% improved</div>
+                </div>
+
+                <div class="stat-card">
+                    <h4>Attitude</h4>
+                    <div class="value">+0.14</div>
+                    <div class="change">43% improved</div>
+                </div>
+
+            </div>
+            
+            <h3>Cycle 2 to Cycle 3 Changes</h3>
+            <div class="stats-grid">
+
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h4>Vision</h4>
+                    <div class="value">+0.75</div>
+                    <div class="change">40% improved</div>
+                    <small style="opacity: 0.8;">n=20</small>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h4>Effort</h4>
+                    <div class="value">+0.22</div>
+                    <div class="change">35% improved</div>
+                    <small style="opacity: 0.8;">n=23</small>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h4>Systems</h4>
+                    <div class="value">+0.57</div>
+                    <div class="change">48% improved</div>
+                    <small style="opacity: 0.8;">n=23</small>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h4>Practice</h4>
+                    <div class="value">+0.87</div>
+                    <div class="change">43% improved</div>
+                    <small style="opacity: 0.8;">n=23</small>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h4>Attitude</h4>
+                    <div class="value">+0.87</div>
+                    <div class="change">61% improved</div>
+                    <small style="opacity: 0.8;">n=23</small>
+                </div>
+
+            </div>
+            
+            <h3>Overall Journey: Start to Finish</h3>
+            <div class="stats-grid">
+
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h4>Vision Overall</h4>
+                    <div class="value">+1.00</div>
+                    <div class="change">C1: 7.2 → C2: 7.5 → C3: 8.2</div>
+                    <small style="opacity: 0.8;">n=20 completed all</small>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h4>Effort Overall</h4>
+                    <div class="value">+0.13</div>
+                    <div class="change">C1: 6.1 → C2: 6.0 → C3: 6.2</div>
+                    <small style="opacity: 0.8;">n=23 completed all</small>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h4>Systems Overall</h4>
+                    <div class="value">+0.70</div>
+                    <div class="change">C1: 6.0 → C2: 6.1 → C3: 6.7</div>
+                    <small style="opacity: 0.8;">n=23 completed all</small>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h4>Practice Overall</h4>
+                    <div class="value">+1.09</div>
+                    <div class="change">C1: 6.1 → C2: 6.3 → C3: 7.2</div>
+                    <small style="opacity: 0.8;">n=23 completed all</small>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h4>Attitude Overall</h4>
+                    <div class="value">+0.70</div>
+                    <div class="change">C1: 6.3 → C2: 6.1 → C3: 7.0</div>
+                    <small style="opacity: 0.8;">n=23 completed all</small>
+                </div>
+
+            </div>
+
+            <div class="chart-container responsive-chart">
+                <div>                            <div id="cycle-prog" class="plotly-graph-div" style="height:700px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("cycle-prog")) {                    Plotly.newPlot(                        "cycle-prog",                        [{"line":{"color":"#e59437","width":4},"marker":{"size":12,"symbol":"circle"},"mode":"lines+markers","name":"Coffs Vision","showlegend":false,"x":["Cycle 1","Cycle 2","Cycle 3"],"y":[6.632911392405063,6.901408450704225,7.913043478260869],"type":"scatter","xaxis":"x","yaxis":"y"},{"line":{"color":"rgba(128, 128, 128, 0.5)","dash":"dash","width":2},"mode":"lines","name":"National Average","showlegend":false,"x":["Cycle 1","Cycle 2","Cycle 3"],"y":[6.1,6.34,6.55],"type":"scatter","xaxis":"x","yaxis":"y"},{"line":{"color":"#86b4f0","width":4},"marker":{"size":12,"symbol":"circle"},"mode":"lines+markers","name":"Coffs Effort","showlegend":false,"x":["Cycle 1","Cycle 2","Cycle 3"],"y":[5.784810126582278,6.0,6.217391304347826],"type":"scatter","xaxis":"x2","yaxis":"y2"},{"line":{"color":"rgba(128, 128, 128, 0.5)","dash":"dash","width":2},"mode":"lines","name":"National Average","showlegend":false,"x":["Cycle 1","Cycle 2","Cycle 3"],"y":[5.49,5.65,5.94],"type":"scatter","xaxis":"x2","yaxis":"y2"},{"line":{"color":"#72cb44","width":4},"marker":{"size":12,"symbol":"circle"},"mode":"lines+markers","name":"Coffs Systems","showlegend":false,"x":["Cycle 1","Cycle 2","Cycle 3"],"y":[5.3544303797468356,5.6891891891891895,6.6521739130434785],"type":"scatter","xaxis":"x3","yaxis":"y3"},{"line":{"color":"rgba(128, 128, 128, 0.5)","dash":"dash","width":2},"mode":"lines","name":"National Average","showlegend":false,"x":["Cycle 1","Cycle 2","Cycle 3"],"y":[5.27,5.52,5.73],"type":"scatter","xaxis":"x3","yaxis":"y3"},{"line":{"color":"#7f31a4","width":4},"marker":{"size":12,"symbol":"circle"},"mode":"lines+markers","name":"Coffs Practice","showlegend":false,"x":["Cycle 1","Cycle 2","Cycle 3"],"y":[5.632911392405063,5.864864864864865,7.173913043478261],"type":"scatter","xaxis":"x4","yaxis":"y4"},{"line":{"color":"rgba(128, 128, 128, 0.5)","dash":"dash","width":2},"mode":"lines","name":"National Average","showlegend":false,"x":["Cycle 1","Cycle 2","Cycle 3"],"y":[5.75,5.98,6.35],"type":"scatter","xaxis":"x4","yaxis":"y4"},{"line":{"color":"#f032e6","width":4},"marker":{"size":12,"symbol":"circle"},"mode":"lines+markers","name":"Coffs Attitude","showlegend":false,"x":["Cycle 1","Cycle 2","Cycle 3"],"y":[5.9113924050632916,5.878378378378378,6.956521739130435],"type":"scatter","xaxis":"x5","yaxis":"y5"},{"line":{"color":"rgba(128, 128, 128, 0.5)","dash":"dash","width":2},"mode":"lines","name":"National Average","showlegend":false,"x":["Cycle 1","Cycle 2","Cycle 3"],"y":[5.59,5.93,6.07],"type":"scatter","xaxis":"x5","yaxis":"y5"},{"line":{"color":"#ffd700","width":4},"marker":{"size":12,"symbol":"circle"},"mode":"lines+markers","name":"Coffs Overall","showlegend":false,"x":["Cycle 1","Cycle 2","Cycle 3"],"y":[5.848101265822785,6.027027027027027,6.913043478260869],"type":"scatter","xaxis":"x6","yaxis":"y6"},{"line":{"color":"rgba(128, 128, 128, 0.5)","dash":"dash","width":2},"mode":"lines","name":"National Average","showlegend":false,"x":["Cycle 1","Cycle 2","Cycle 3"],"y":[5.64,5.88,6.13],"type":"scatter","xaxis":"x6","yaxis":"y6"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"anchor":"y","domain":[0.0,0.26666666666666666]},"yaxis":{"anchor":"x","domain":[0.575,1.0],"title":{"text":"Score"},"range":[3,10]},"xaxis2":{"anchor":"y2","domain":[0.3666666666666667,0.6333333333333333]},"yaxis2":{"anchor":"x2","domain":[0.575,1.0],"title":{"text":"Score"},"range":[3,10]},"xaxis3":{"anchor":"y3","domain":[0.7333333333333334,1.0]},"yaxis3":{"anchor":"x3","domain":[0.575,1.0],"title":{"text":"Score"},"range":[3,10]},"xaxis4":{"anchor":"y4","domain":[0.0,0.26666666666666666]},"yaxis4":{"anchor":"x4","domain":[0.0,0.425],"title":{"text":"Score"},"range":[3,10]},"xaxis5":{"anchor":"y5","domain":[0.3666666666666667,0.6333333333333333]},"yaxis5":{"anchor":"x5","domain":[0.0,0.425],"title":{"text":"Score"},"range":[3,10]},"xaxis6":{"anchor":"y6","domain":[0.7333333333333334,1.0]},"yaxis6":{"anchor":"x6","domain":[0.0,0.425],"title":{"text":"Score"},"range":[3,10]},"annotations":[{"font":{"size":16},"showarrow":false,"text":"Vision","x":0.13333333333333333,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Effort","x":0.5,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Systems","x":0.8666666666666667,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Practice","x":0.13333333333333333,"xanchor":"center","xref":"paper","y":0.425,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Attitude","x":0.5,"xanchor":"center","xref":"paper","y":0.425,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Overall","x":0.8666666666666667,"xanchor":"center","xref":"paper","y":0.425,"yanchor":"bottom","yref":"paper"},{"font":{"color":"green","size":10},"showarrow":false,"text":"\u2191 +1.0","x":"Cycle 3","xref":"x","y":7.913043478260869,"yref":"y","yshift":15},{"font":{"color":"green","size":10},"showarrow":false,"text":"\u2191 +0.2","x":"Cycle 3","xref":"x2","y":6.217391304347826,"yref":"y2","yshift":15},{"font":{"color":"green","size":10},"showarrow":false,"text":"\u2191 +1.0","x":"Cycle 3","xref":"x3","y":6.6521739130434785,"yref":"y3","yshift":15},{"font":{"color":"green","size":10},"showarrow":false,"text":"\u2191 +1.3","x":"Cycle 3","xref":"x4","y":7.173913043478261,"yref":"y4","yshift":15},{"font":{"color":"green","size":10},"showarrow":false,"text":"\u2191 +1.1","x":"Cycle 3","xref":"x5","y":6.956521739130435,"yref":"y5","yshift":15},{"font":{"color":"green","size":10},"showarrow":false,"text":"\u2191 +0.9","x":"Cycle 3","xref":"x6","y":6.913043478260869,"yref":"y6","yshift":15}],"title":{"text":"VESPA Score Progression: Students Who Completed All 3 Cycles"},"font":{"family":"Arial, sans-serif"},"height":700,"showlegend":false,"paper_bgcolor":"rgba(248,249,250,1)","plot_bgcolor":"white"},                        {"responsive": true}                    )                };            </script>        </div>
+            </div>
+
+        </div>
+
+        <div class="section">
+            <h2>Score Distribution Analysis</h2>
+            <p>Distribution of VESPA scores showing all 3 cycles for each element. Bar charts show Coffs Harbour percentages, red lines show national distribution.</p>
+
+            <div class="chart-container responsive-chart" style="margin: 20px 0;">
+                <div>                            <div id="dist-vision" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-vision")) {                    Plotly.newPlot(                        "dist-vision",                        [{"marker":{"color":"#e59437"},"name":"Coffs","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[1.2658227848101267,0.0,11.39240506329114,3.79746835443038,6.329113924050633,21.518987341772153,16.455696202531644,24.050632911392405,7.59493670886076,7.59493670886076],"type":"bar","xaxis":"x","yaxis":"y"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[1.6520392359318534,4.629151609017381,10.979177422130443,8.294613663741181,10.497332644983652,21.717432455687486,10.583376355188436,16.8129409740148,6.332817071072104,8.501118568232663],"type":"scatter","xaxis":"x","yaxis":"y"},{"marker":{"color":"#e59437"},"name":"Coffs","opacity":0.7,"showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.0,2.8169014084507045,8.450704225352112,7.042253521126761,8.450704225352112,16.901408450704224,4.225352112676056,28.169014084507044,7.042253521126761,16.901408450704224],"type":"bar","xaxis":"x2","yaxis":"y2"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.9874801622288838,3.2622112502204197,9.733733027684712,7.300299770763534,9.345794392523365,22.235937224475403,12.9606771292541,18.797390230999824,6.630223946393935,8.746252865455828],"type":"scatter","xaxis":"x2","yaxis":"y2"},{"marker":{"color":"#e59437"},"name":"Coffs","opacity":0.7,"showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.0,0.0,0.0,0.0,4.3478260869565215,34.78260869565217,4.3478260869565215,13.043478260869565,8.695652173913043,34.78260869565217],"type":"bar","xaxis":"x3","yaxis":"y3"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[1.208791208791209,2.60989010989011,9.835164835164836,5.879120879120879,7.71978021978022,21.208791208791208,13.324175824175825,19.560439560439562,7.087912087912088,11.565934065934066],"type":"scatter","xaxis":"x3","yaxis":"y3"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"anchor":"y","domain":[0.0,0.27999999999999997],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"Percentage (%)"}},"xaxis2":{"anchor":"y2","domain":[0.36,0.6399999999999999],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis2":{"anchor":"x2","domain":[0.0,1.0],"title":{"text":""}},"xaxis3":{"anchor":"y3","domain":[0.72,1.0],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis3":{"anchor":"x3","domain":[0.0,1.0],"title":{"text":""}},"annotations":[{"font":{"size":16},"showarrow":false,"text":"Cycle 1","x":0.13999999999999999,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Cycle 2","x":0.49999999999999994,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Cycle 3","x":0.86,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 6.6\u003cbr\u003eNational: 6.1","x":5.5,"xref":"x","y":26.455696202531648,"yref":"y"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 6.9\u003cbr\u003eNational: 6.3","x":5.5,"xref":"x2","y":30.98591549295775,"yref":"y2"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 7.9\u003cbr\u003eNational: 6.5","x":5.5,"xref":"x3","y":38.26086956521739,"yref":"y3"}],"title":{"text":"Vision Score Distributions Across Cycles"},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+            </div>
+
+            <div class="chart-container responsive-chart" style="margin: 20px 0;">
+                <div>                            <div id="dist-effort" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-effort")) {                    Plotly.newPlot(                        "dist-effort",                        [{"marker":{"color":"#86b4f0"},"name":"Coffs","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[8.860759493670885,2.5316455696202533,8.860759493670885,8.860759493670885,18.9873417721519,7.59493670886076,16.455696202531644,7.59493670886076,16.455696202531644,3.79746835443038],"type":"bar","xaxis":"x","yaxis":"y"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[5.506797453106178,3.751505764928584,15.470659094820169,11.719153329891585,13.319566339700566,14.86835312338668,12.596799173980383,8.879710893133712,10.9963861641714,2.8910686628807434],"type":"scatter","xaxis":"x","yaxis":"y"},{"marker":{"color":"#86b4f0"},"name":"Coffs","opacity":0.7,"showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[4.054054054054054,5.405405405405405,9.45945945945946,8.108108108108109,14.864864864864865,10.81081081081081,16.216216216216218,10.81081081081081,17.56756756756757,2.7027027027027026],"type":"bar","xaxis":"x2","yaxis":"y2"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[3.808852054311409,3.226944101569388,14.75930171045671,10.985716804796333,14.336095926644333,15.076706048315994,14.441897372597426,9.539763710104038,10.897548933168753,2.9271733380356197],"type":"scatter","xaxis":"x2","yaxis":"y2"},{"marker":{"color":"#86b4f0"},"name":"Coffs","opacity":0.7,"showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[13.043478260869565,0.0,13.043478260869565,0.0,8.695652173913043,13.043478260869565,8.695652173913043,8.695652173913043,30.434782608695656,4.3478260869565215],"type":"bar","xaxis":"x3","yaxis":"y3"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[3.4340659340659343,2.60989010989011,13.956043956043956,11.236263736263737,10.604395604395604,14.47802197802198,14.780219780219781,10.384615384615385,12.967032967032969,5.549450549450549],"type":"scatter","xaxis":"x3","yaxis":"y3"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"anchor":"y","domain":[0.0,0.27999999999999997],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"Percentage (%)"}},"xaxis2":{"anchor":"y2","domain":[0.36,0.6399999999999999],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis2":{"anchor":"x2","domain":[0.0,1.0],"title":{"text":""}},"xaxis3":{"anchor":"y3","domain":[0.72,1.0],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis3":{"anchor":"x3","domain":[0.0,1.0],"title":{"text":""}},"annotations":[{"font":{"size":16},"showarrow":false,"text":"Cycle 1","x":0.13999999999999999,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Cycle 2","x":0.49999999999999994,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Cycle 3","x":0.86,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 5.8\u003cbr\u003eNational: 5.5","x":5.5,"xref":"x","y":20.886075949367093,"yref":"y"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 6.0\u003cbr\u003eNational: 5.7","x":5.5,"xref":"x2","y":19.324324324324326,"yref":"y2"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 6.2\u003cbr\u003eNational: 5.9","x":5.5,"xref":"x3","y":33.478260869565226,"yref":"y3"}],"title":{"text":"Effort Score Distributions Across Cycles"},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+            </div>
+
+            <div class="chart-container responsive-chart" style="margin: 20px 0;">
+                <div>                            <div id="dist-systems" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-systems")) {                    Plotly.newPlot(                        "dist-systems",                        [{"marker":{"color":"#72cb44"},"name":"Coffs","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[5.063291139240507,10.126582278481013,7.59493670886076,11.39240506329114,11.39240506329114,24.050632911392405,7.59493670886076,17.72151898734177,5.063291139240507,0.0],"type":"bar","xaxis":"x","yaxis":"y"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[5.937016004130098,6.728618138014111,11.787988298055412,17.157115814833936,9.292720702116675,19.204956117707795,9.10342453966615,13.027017725004303,4.112889347788676,3.6482533126828427],"type":"scatter","xaxis":"x","yaxis":"y"},{"marker":{"color":"#72cb44"},"name":"Coffs","opacity":0.7,"showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.7027027027027026,5.405405405405405,10.81081081081081,9.45945945945946,10.81081081081081,25.675675675675674,12.162162162162163,14.864864864864865,8.108108108108109,0.0],"type":"bar","xaxis":"x2","yaxis":"y2"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[4.672897196261682,4.884500088167871,10.544877446658438,15.200141068594606,9.680832304708165,22.14776935284782,10.791747487215659,14.106859460412627,4.232057838123788,3.7383177570093453],"type":"scatter","xaxis":"x2","yaxis":"y2"},{"marker":{"color":"#72cb44"},"name":"Coffs","opacity":0.7,"showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.0,4.3478260869565215,4.3478260869565215,17.391304347826086,4.3478260869565215,13.043478260869565,0.0,34.78260869565217,21.73913043478261,0.0],"type":"bar","xaxis":"x3","yaxis":"y3"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[4.34065934065934,4.56043956043956,10.76923076923077,13.901098901098901,8.214285714285714,21.428571428571427,9.89010989010989,15.714285714285714,5.0,6.181318681318682],"type":"scatter","xaxis":"x3","yaxis":"y3"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"anchor":"y","domain":[0.0,0.27999999999999997],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"Percentage (%)"}},"xaxis2":{"anchor":"y2","domain":[0.36,0.6399999999999999],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis2":{"anchor":"x2","domain":[0.0,1.0],"title":{"text":""}},"xaxis3":{"anchor":"y3","domain":[0.72,1.0],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis3":{"anchor":"x3","domain":[0.0,1.0],"title":{"text":""}},"annotations":[{"font":{"size":16},"showarrow":false,"text":"Cycle 1","x":0.13999999999999999,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Cycle 2","x":0.49999999999999994,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Cycle 3","x":0.86,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 5.4\u003cbr\u003eNational: 5.3","x":5.5,"xref":"x","y":26.455696202531648,"yref":"y"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 5.7\u003cbr\u003eNational: 5.5","x":5.5,"xref":"x2","y":28.243243243243242,"yref":"y2"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 6.7\u003cbr\u003eNational: 5.7","x":5.5,"xref":"x3","y":38.26086956521739,"yref":"y3"}],"title":{"text":"Systems Score Distributions Across Cycles"},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+            </div>
+
+            <div class="chart-container responsive-chart" style="margin: 20px 0;">
+                <div>                            <div id="dist-practice" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-practice")) {                    Plotly.newPlot(                        "dist-practice",                        [{"marker":{"color":"#7f31a4"},"name":"Coffs","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[5.063291139240507,6.329113924050633,7.59493670886076,15.18987341772152,16.455696202531644,11.39240506329114,11.39240506329114,11.39240506329114,11.39240506329114,3.79746835443038],"type":"bar","xaxis":"x","yaxis":"y"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[3.5450008604371024,4.611942866976424,8.94854586129754,13.62932369643779,18.241266563414214,10.032696609877819,16.296678712786093,11.805197040096369,7.726725176389605,5.162622612287042],"type":"scatter","xaxis":"x","yaxis":"y"},{"marker":{"color":"#7f31a4"},"name":"Coffs","opacity":0.7,"showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[4.054054054054054,2.7027027027027026,5.405405405405405,13.513513513513514,22.972972972972975,9.45945945945946,18.91891891891892,8.108108108108109,10.81081081081081,4.054054054054054],"type":"bar","xaxis":"x2","yaxis":"y2"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.662669723152883,3.650149885381767,7.758772703226945,12.608005642743784,18.69158878504673,8.922588608710985,18.05678010932816,13.648386527949215,8.640451419502734,5.360606594956797],"type":"scatter","xaxis":"x2","yaxis":"y2"},{"marker":{"color":"#7f31a4"},"name":"Coffs","opacity":0.7,"showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.0,0.0,0.0,13.043478260869565,17.391304347826086,0.0,21.73913043478261,21.73913043478261,8.695652173913043,17.391304347826086],"type":"bar","xaxis":"x3","yaxis":"y3"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.39010989010989,3.131868131868132,6.648351648351649,10.302197802197801,16.263736263736263,9.093406593406593,17.417582417582416,14.945054945054945,10.686813186813186,9.12087912087912],"type":"scatter","xaxis":"x3","yaxis":"y3"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"anchor":"y","domain":[0.0,0.27999999999999997],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"Percentage (%)"}},"xaxis2":{"anchor":"y2","domain":[0.36,0.6399999999999999],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis2":{"anchor":"x2","domain":[0.0,1.0],"title":{"text":""}},"xaxis3":{"anchor":"y3","domain":[0.72,1.0],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis3":{"anchor":"x3","domain":[0.0,1.0],"title":{"text":""}},"annotations":[{"font":{"size":16},"showarrow":false,"text":"Cycle 1","x":0.13999999999999999,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Cycle 2","x":0.49999999999999994,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Cycle 3","x":0.86,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 5.6\u003cbr\u003eNational: 5.8","x":5.5,"xref":"x","y":18.10126582278481,"yref":"y"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 5.9\u003cbr\u003eNational: 6.0","x":5.5,"xref":"x2","y":25.270270270270274,"yref":"y2"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 7.2\u003cbr\u003eNational: 6.3","x":5.5,"xref":"x3","y":23.91304347826087,"yref":"y3"}],"title":{"text":"Practice Score Distributions Across Cycles"},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+            </div>
+
+            <div class="chart-container responsive-chart" style="margin: 20px 0;">
+                <div>                            <div id="dist-attitude" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-attitude")) {                    Plotly.newPlot(                        "dist-attitude",                        [{"marker":{"color":"#f032e6"},"name":"Coffs","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.5316455696202533,3.79746835443038,13.924050632911392,6.329113924050633,5.063291139240507,26.582278481012654,15.18987341772152,17.72151898734177,7.59493670886076,1.2658227848101267],"type":"bar","xaxis":"x","yaxis":"y"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[3.7687145069695407,6.763035622096025,11.719153329891585,9.998279125795904,12.01170194458785,20.616072965066255,11.839614524178282,13.233522629495784,6.694200653932198,3.3557046979865772],"type":"scatter","xaxis":"x","yaxis":"y"},{"marker":{"color":"#f032e6"},"name":"Coffs","opacity":0.7,"showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.7027027027027026,10.81081081081081,8.108108108108109,2.7027027027027026,13.513513513513514,17.56756756756757,17.56756756756757,13.513513513513514,10.81081081081081,2.7027027027027026],"type":"bar","xaxis":"x2","yaxis":"y2"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.503967554223241,4.761065067889262,9.927702345265384,8.993122906013049,11.814494798095573,21.07212131899136,14.106859460412627,14.776935284782224,7.758772703226945,4.284958561100335],"type":"scatter","xaxis":"x2","yaxis":"y2"},{"marker":{"color":"#f032e6"},"name":"Coffs","opacity":0.7,"showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.0,4.3478260869565215,4.3478260869565215,4.3478260869565215,13.043478260869565,17.391304347826086,8.695652173913043,17.391304347826086,17.391304347826086,13.043478260869565],"type":"bar","xaxis":"x3","yaxis":"y3"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.0604395604395602,5.0,9.258241758241759,9.368131868131869,10.357142857142858,19.340659340659343,15.32967032967033,14.752747252747254,8.543956043956044,5.989010989010989],"type":"scatter","xaxis":"x3","yaxis":"y3"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"anchor":"y","domain":[0.0,0.27999999999999997],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"Percentage (%)"}},"xaxis2":{"anchor":"y2","domain":[0.36,0.6399999999999999],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis2":{"anchor":"x2","domain":[0.0,1.0],"title":{"text":""}},"xaxis3":{"anchor":"y3","domain":[0.72,1.0],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis3":{"anchor":"x3","domain":[0.0,1.0],"title":{"text":""}},"annotations":[{"font":{"size":16},"showarrow":false,"text":"Cycle 1","x":0.13999999999999999,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Cycle 2","x":0.49999999999999994,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Cycle 3","x":0.86,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 5.9\u003cbr\u003eNational: 5.6","x":5.5,"xref":"x","y":29.240506329113924,"yref":"y"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 5.9\u003cbr\u003eNational: 5.9","x":5.5,"xref":"x2","y":19.324324324324326,"yref":"y2"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 7.0\u003cbr\u003eNational: 6.1","x":5.5,"xref":"x3","y":19.130434782608695,"yref":"y3"}],"title":{"text":"Attitude Score Distributions Across Cycles"},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+            </div>
+
+            <div class="chart-container responsive-chart" style="margin: 20px 0;">
+                <div>                            <div id="dist-overall" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-overall")) {                    Plotly.newPlot(                        "dist-overall",                        [{"marker":{"color":"#ffd700"},"name":"Coffs","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.0,2.5316455696202533,7.59493670886076,13.924050632911392,17.72151898734177,17.72151898734177,21.518987341772153,15.18987341772152,3.79746835443038,0.0],"type":"bar","xaxis":"x","yaxis":"y"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.7399759077611426,2.5985200481844775,8.483909826191706,14.86835312338668,20.08260196179659,21.717432455687486,16.10738255033557,10.204784030287387,3.923593185338152,1.2734469110308038],"type":"scatter","xaxis":"x","yaxis":"y"},{"marker":{"color":"#ffd700"},"name":"Coffs","opacity":0.7,"showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.0,4.054054054054054,2.7027027027027026,13.513513513513514,18.91891891891892,13.513513513513514,28.37837837837838,12.162162162162163,6.756756756756757,0.0],"type":"bar","xaxis":"x2","yaxis":"y2"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.2821371892082525,2.1512960677129254,6.18938458825604,13.119379298183741,18.47998589314054,23.082348792100156,19.978839710809382,10.9504496561453,3.985187797566567,1.7809910068770938],"type":"scatter","xaxis":"x2","yaxis":"y2"},{"marker":{"color":"#ffd700"},"name":"Coffs","opacity":0.7,"showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.0,0.0,4.3478260869565215,8.695652173913043,13.043478260869565,17.391304347826086,8.695652173913043,17.391304347826086,30.434782608695656,0.0],"type":"bar","xaxis":"x3","yaxis":"y3"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":false,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.43956043956043955,1.7307692307692308,6.923076923076923,11.401098901098901,15.54945054945055,20.576923076923077,20.10989010989011,13.296703296703297,6.153846153846154,3.818681318681319],"type":"scatter","xaxis":"x3","yaxis":"y3"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"anchor":"y","domain":[0.0,0.27999999999999997],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"Percentage (%)"}},"xaxis2":{"anchor":"y2","domain":[0.36,0.6399999999999999],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis2":{"anchor":"x2","domain":[0.0,1.0],"title":{"text":""}},"xaxis3":{"anchor":"y3","domain":[0.72,1.0],"title":{"text":"Score"},"range":[0.5,10.5]},"yaxis3":{"anchor":"x3","domain":[0.0,1.0],"title":{"text":""}},"annotations":[{"font":{"size":16},"showarrow":false,"text":"Cycle 1","x":0.13999999999999999,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Cycle 2","x":0.49999999999999994,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Cycle 3","x":0.86,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 5.8\u003cbr\u003eNational: 5.6","x":5.5,"xref":"x","y":23.67088607594937,"yref":"y"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 6.0\u003cbr\u003eNational: 5.9","x":5.5,"xref":"x2","y":31.21621621621622,"yref":"y2"},{"font":{"size":10},"showarrow":false,"text":"Coffs: 6.9\u003cbr\u003eNational: 6.1","x":5.5,"xref":"x3","y":33.478260869565226,"yref":"y3"}],"title":{"text":"Overall Score Distributions Across Cycles"},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                SECTION 2: STATEMENT LEVEL ANALYSIS
+            </h1>
+        </div>
+
+        <div class="section">
+            <h2>VESPA Statement Analysis</h2>
+            <p style="margin-bottom: 20px;">Detailed analysis of individual VESPA statement responses reveals specific strengths and development areas. 
+            Each statement is analyzed across all three cycles to identify overall progression patterns from baseline to final assessment.</p>
+
+            <h3>Statements Showing Greatest Improvement (Cycle 2 to Cycle 3)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Statement</th>
+                        <th>Category</th>
+                        <th>Cycle 1</th>
+                        <th>Cycle 2</th>
+                        <th>Cycle 3</th>
+                        <th>C2→C3 Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td style="padding: 10px;">I can control my nerves in tests/practical assessments</td>
+                        <td style="padding: 10px; text-align: center;">Attitude</td>
+                        <td style="padding: 10px; text-align: center;">3.24</td>
+                        <td style="padding: 10px; text-align: center;">3.12</td>
+                        <td style="padding: 10px; text-align: center;">3.84</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">+0.73</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I feel I can cope with the pressure at school/college/University</td>
+                        <td style="padding: 10px; text-align: center;">Attitude</td>
+                        <td style="padding: 10px; text-align: center;">3.59</td>
+                        <td style="padding: 10px; text-align: center;">3.49</td>
+                        <td style="padding: 10px; text-align: center;">3.94</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">+0.45</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I have a positive view of myself</td>
+                        <td style="padding: 10px; text-align: center;">Attitude</td>
+                        <td style="padding: 10px; text-align: center;">3.56</td>
+                        <td style="padding: 10px; text-align: center;">3.40</td>
+                        <td style="padding: 10px; text-align: center;">3.81</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">+0.42</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I've worked out the next steps in my life</td>
+                        <td style="padding: 10px; text-align: center;">Vision</td>
+                        <td style="padding: 10px; text-align: center;">3.40</td>
+                        <td style="padding: 10px; text-align: center;">3.49</td>
+                        <td style="padding: 10px; text-align: center;">3.88</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">+0.39</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">When preparing for a test/exam I teach someone else the material</td>
+                        <td style="padding: 10px; text-align: center;">Practice</td>
+                        <td style="padding: 10px; text-align: center;">2.85</td>
+                        <td style="padding: 10px; text-align: center;">2.66</td>
+                        <td style="padding: 10px; text-align: center;">3.03</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">+0.37</td>
+                    </tr>
+
+                </tbody>
+            </table>
+
+            <h3>Statements Showing Decline (Cycle 2 to Cycle 3)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Statement</th>
+                        <th>Category</th>
+                        <th>Cycle 1</th>
+                        <th>Cycle 2</th>
+                        <th>Cycle 3</th>
+                        <th>C2→C3 Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td style="padding: 10px;">Your intelligence is something about you that you can change very much</td>
+                        <td style="padding: 10px; text-align: center;">Attitude</td>
+                        <td style="padding: 10px; text-align: center;">3.83</td>
+                        <td style="padding: 10px; text-align: center;">3.94</td>
+                        <td style="padding: 10px; text-align: center;">3.94</td>
+                        <td style="padding: 10px; text-align: center;" class="negative">-0.00</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I like hearing feedback about how I can improve</td>
+                        <td style="padding: 10px; text-align: center;">Attitude</td>
+                        <td style="padding: 10px; text-align: center;">4.28</td>
+                        <td style="padding: 10px; text-align: center;">4.41</td>
+                        <td style="padding: 10px; text-align: center;">4.34</td>
+                        <td style="padding: 10px; text-align: center;" class="negative">-0.07</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I strive to achieve the goals I set for myself</td>
+                        <td style="padding: 10px; text-align: center;">Vision</td>
+                        <td style="padding: 10px; text-align: center;">4.06</td>
+                        <td style="padding: 10px; text-align: center;">4.21</td>
+                        <td style="padding: 10px; text-align: center;">4.12</td>
+                        <td style="padding: 10px; text-align: center;" class="negative">-0.08</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I am a hard working student</td>
+                        <td style="padding: 10px; text-align: center;">Effort</td>
+                        <td style="padding: 10px; text-align: center;">3.91</td>
+                        <td style="padding: 10px; text-align: center;">3.97</td>
+                        <td style="padding: 10px; text-align: center;">3.84</td>
+                        <td style="padding: 10px; text-align: center;" class="negative">-0.13</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I'm not happy unless my work is the best it can be</td>
+                        <td style="padding: 10px; text-align: center;">Effort</td>
+                        <td style="padding: 10px; text-align: center;">3.79</td>
+                        <td style="padding: 10px; text-align: center;">3.97</td>
+                        <td style="padding: 10px; text-align: center;">3.81</td>
+                        <td style="padding: 10px; text-align: center;" class="negative">-0.16</td>
+                    </tr>
+
+                </tbody>
+            </table>
+
+            <h3>Strongest Beliefs (Top Performing Overall)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Statement</th>
+                        <th>Category</th>
+                        <th>Cycle 1</th>
+                        <th>Cycle 2</th>
+                        <th>Cycle 3</th>
+                        <th>Average</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td style="padding: 10px;">I understand why education is important for my future</td>
+                        <td style="padding: 10px; text-align: center;">Vision</td>
+                        <td style="padding: 10px; text-align: center;">4.53</td>
+                        <td style="padding: 10px; text-align: center;">4.47</td>
+                        <td style="padding: 10px; text-align: center;">4.56</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">4.52</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I enjoy learning new things</td>
+                        <td style="padding: 10px; text-align: center;">Vision</td>
+                        <td style="padding: 10px; text-align: center;">4.39</td>
+                        <td style="padding: 10px; text-align: center;">4.38</td>
+                        <td style="padding: 10px; text-align: center;">4.56</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">4.44</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I always meet deadlines</td>
+                        <td style="padding: 10px; text-align: center;">Systems</td>
+                        <td style="padding: 10px; text-align: center;">4.33</td>
+                        <td style="padding: 10px; text-align: center;">4.35</td>
+                        <td style="padding: 10px; text-align: center;">4.47</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">4.38</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I like hearing feedback about how I can improve</td>
+                        <td style="padding: 10px; text-align: center;">Attitude</td>
+                        <td style="padding: 10px; text-align: center;">4.28</td>
+                        <td style="padding: 10px; text-align: center;">4.41</td>
+                        <td style="padding: 10px; text-align: center;">4.34</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">4.34</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I strive to achieve the goals I set for myself</td>
+                        <td style="padding: 10px; text-align: center;">Vision</td>
+                        <td style="padding: 10px; text-align: center;">4.06</td>
+                        <td style="padding: 10px; text-align: center;">4.21</td>
+                        <td style="padding: 10px; text-align: center;">4.12</td>
+                        <td style="padding: 10px; text-align: center;" class="positive">4.13</td>
+                    </tr>
+
+                </tbody>
+            </table>
+            
+            <h3>Areas for Development (Lowest Performing)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Statement</th>
+                        <th>Category</th>
+                        <th>Cycle 1</th>
+                        <th>Cycle 2</th>
+                        <th>Cycle 3</th>
+                        <th>Average</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td style="padding: 10px;">I don't let a poor test/assessment result get me down for too long</td>
+                        <td style="padding: 10px; text-align: center;">Attitude</td>
+                        <td style="padding: 10px; text-align: center;">3.23</td>
+                        <td style="padding: 10px; text-align: center;">3.29</td>
+                        <td style="padding: 10px; text-align: center;">3.66</td>
+                        <td style="padding: 10px; text-align: center;" class="negative">3.39</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I use all my independent study time effectively</td>
+                        <td style="padding: 10px; text-align: center;">Effort</td>
+                        <td style="padding: 10px; text-align: center;">3.05</td>
+                        <td style="padding: 10px; text-align: center;">3.15</td>
+                        <td style="padding: 10px; text-align: center;">3.31</td>
+                        <td style="padding: 10px; text-align: center;" class="negative">3.17</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">I spread out my revision, rather than cramming at the last minute</td>
+                        <td style="padding: 10px; text-align: center;">Practice</td>
+                        <td style="padding: 10px; text-align: center;">3.01</td>
+                        <td style="padding: 10px; text-align: center;">3.18</td>
+                        <td style="padding: 10px; text-align: center;">3.28</td>
+                        <td style="padding: 10px; text-align: center;" class="negative">3.16</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">When revising I mix different kinds of topics/subjects in one study session</td>
+                        <td style="padding: 10px; text-align: center;">Practice</td>
+                        <td style="padding: 10px; text-align: center;">2.92</td>
+                        <td style="padding: 10px; text-align: center;">2.93</td>
+                        <td style="padding: 10px; text-align: center;">3.09</td>
+                        <td style="padding: 10px; text-align: center;" class="negative">2.98</td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px;">When preparing for a test/exam I teach someone else the material</td>
+                        <td style="padding: 10px; text-align: center;">Practice</td>
+                        <td style="padding: 10px; text-align: center;">2.85</td>
+                        <td style="padding: 10px; text-align: center;">2.66</td>
+                        <td style="padding: 10px; text-align: center;">3.03</td>
+                        <td style="padding: 10px; text-align: center;" class="negative">2.85</td>
+                    </tr>
+
+                </tbody>
+            </table>
+
+        <div style="margin-top: 50px; padding: 30px; background: linear-gradient(to right, #f8f9fa, #ffffff); border-radius: 12px; border: 1px solid #e9ecef;">
+            <h3 style="color: #2c3e50; margin-bottom: 25px; font-size: 1.6em;">Statement Agreement Analysis</h3>
+            <p style="color: #666; margin-bottom: 30px;">Analysis of which statements students most and least agree with across all assessment cycles.</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <div style="background: #fff; padding: 25px; border-radius: 10px; border: 2px solid #28a745;">
+                    <h4 style="color: #28a745; margin-bottom: 20px; font-size: 1.2em;">Top 5 - Students Strongly Agree</h4>
+                    <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+
+                        <li style="margin-bottom: 12px; color: #333;">
+                            <strong>I understand why education is important for my future</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Average Score: 4.52 | Category: Vision
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 12px; color: #333;">
+                            <strong>I enjoy learning new things</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Average Score: 4.44 | Category: Vision
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 12px; color: #333;">
+                            <strong>I always meet deadlines</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Average Score: 4.38 | Category: Systems
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 12px; color: #333;">
+                            <strong>I like hearing feedback about how I can improve</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Average Score: 4.34 | Category: Attitude
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 12px; color: #333;">
+                            <strong>I strive to achieve the goals I set for myself</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Average Score: 4.13 | Category: Vision
+                            </span>
+                        </li>
+
+                    </ol>
+                </div>
+                
+                <div style="background: #fff; padding: 25px; border-radius: 10px; border: 2px solid #dc3545;">
+                    <h4 style="color: #dc3545; margin-bottom: 20px; font-size: 1.2em;">Bottom 5 - Students Least Agree</h4>
+                    <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+
+                        <li style="margin-bottom: 12px; color: #333;">
+                            <strong>I don't let a poor test/assessment result get me down for too long</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Average Score: 3.39 | Category: Attitude
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 12px; color: #333;">
+                            <strong>I use all my independent study time effectively</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Average Score: 3.17 | Category: Effort
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 12px; color: #333;">
+                            <strong>I spread out my revision, rather than cramming at the last minute</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Average Score: 3.16 | Category: Practice
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 12px; color: #333;">
+                            <strong>When revising I mix different kinds of topics/subjects in one study session</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Average Score: 2.98 | Category: Practice
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 12px; color: #333;">
+                            <strong>When preparing for a test/exam I teach someone else the material</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Average Score: 2.85 | Category: Practice
+                            </span>
+                        </li>
+
+                    </ol>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                <p style="margin: 0; font-size: 0.95em; color: #555;">
+                    <strong>Interpretation Guide:</strong> Scores above 4.0 indicate strong agreement, scores between 3.0-4.0 show moderate agreement, 
+                    and scores below 3.0 suggest areas where students lack confidence or need additional support.
+                </p>
+            </div>
+        </div>
+
+        </div>
+
+        <div class="section">
+            <h2>Year Group Analysis</h2>
+            <p>Performance breakdown by year group across the three cycles.</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Year Group</th>
+                        <th>Students</th>
+                        <th>Cycle 1 Overall</th>
+                        <th>Cycle 2 Overall</th>
+                        <th>Cycle 3 Overall</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td style="font-weight: 600;">Year 13.0</td>
+                        <td>84</td>
+                        <td>5.87</td>
+                        <td>6.03</td>
+                        <td>6.91</td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Gender Analysis</h2>
+            <p>Performance comparison by gender across the three cycles.</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Gender</th>
+                        <th>Students</th>
+                        <th>Cycle 1 Overall</th>
+                        <th>Cycle 2 Overall</th>
+                        <th>Cycle 3 Overall</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td style="font-weight: 600;">Female</td>
+                        <td>51</td>
+                        <td>5.80</td>
+                        <td>6.00</td>
+                        <td>6.95</td>
+                    </tr>
+
+                    <tr>
+                        <td style="font-weight: 600;">Male</td>
+                        <td>17</td>
+                        <td>6.18</td>
+                        <td>6.67</td>
+                        <td>-</td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Student Support, Preparedness & Confidence</h2>
+            <p>Analysis of three key metrics tracked across the assessment cycles.</p>
+            
+            <div class="grid-container">
+
+                <div class="card">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">Support</h3>
+
+                    <div style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;">
+                        <div style="font-size: 0.9em; color: #666;">Cycle 1</div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #2c3e50;">3.80</div>
+                        <div style="font-size: 0.8em; color: #999;">n = 80</div>
+                    </div>
+
+                    <div style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;">
+                        <div style="font-size: 0.9em; color: #666;">Cycle 2</div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #2c3e50;">4.04</div>
+                        <div style="font-size: 0.8em; color: #999;">n = 68</div>
+                    </div>
+
+                    <div style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;">
+                        <div style="font-size: 0.9em; color: #666;">Cycle 3</div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #2c3e50;">4.06</div>
+                        <div style="font-size: 0.8em; color: #999;">n = 32</div>
+                    </div>
+
+                </div>
+
+                <div class="card">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">Preparedness</h3>
+
+                    <div style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;">
+                        <div style="font-size: 0.9em; color: #666;">Cycle 1</div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #2c3e50;">3.35</div>
+                        <div style="font-size: 0.8em; color: #999;">n = 80</div>
+                    </div>
+
+                    <div style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;">
+                        <div style="font-size: 0.9em; color: #666;">Cycle 2</div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #2c3e50;">3.37</div>
+                        <div style="font-size: 0.8em; color: #999;">n = 68</div>
+                    </div>
+
+                    <div style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;">
+                        <div style="font-size: 0.9em; color: #666;">Cycle 3</div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #2c3e50;">3.72</div>
+                        <div style="font-size: 0.8em; color: #999;">n = 32</div>
+                    </div>
+
+                </div>
+
+                <div class="card">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">Confidence</h3>
+
+                    <div style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;">
+                        <div style="font-size: 0.9em; color: #666;">Cycle 1</div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #2c3e50;">3.45</div>
+                        <div style="font-size: 0.8em; color: #999;">n = 80</div>
+                    </div>
+
+                    <div style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;">
+                        <div style="font-size: 0.9em; color: #666;">Cycle 2</div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #2c3e50;">3.40</div>
+                        <div style="font-size: 0.8em; color: #999;">n = 68</div>
+                    </div>
+
+                    <div style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;">
+                        <div style="font-size: 0.9em; color: #666;">Cycle 3</div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #2c3e50;">3.56</div>
+                        <div style="font-size: 0.8em; color: #999;">n = 32</div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2024 VESPA Education Analytics | Confidential Report</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!-- Copy everything below this line and paste into Slides.com "Import reveal.js" -->
+
+<div class="reveal">
+    <div class="slides">
+
+<!-- SLIDE 1: Title -->
+<section>
+    <h1>E-ACT Academy Trust</h1>
+    <h2>VESPA Cycle 1 Baseline Results</h2>
+    <h3>Academic Year 2025/26</h3>
+    <p>November 2025 | 672 Students | 6 Schools</p>
+</section>
+
+<!-- SLIDE 2: Trust Overview -->
+<section>
+    <h2>Trust-Wide Overview</h2>
+    <table style="width: 80%; margin: 30px auto; font-size: 0.9em;">
+        <tr>
+            <td style="padding: 20px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">5.77</div>
+                <div style="color: #a78bfa;">Overall Score</div>
+                <div style="font-size: 0.8em; color: #9ca3af;">National: 5.94</div>
+            </td>
+            <td style="padding: 20px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">3.64</div>
+                <div style="color: #a78bfa;">Exam Readiness</div>
+                <div style="font-size: 0.8em; color: #10b981;">Good</div>
+            </td>
+            <td style="padding: 20px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">672</div>
+                <div style="color: #a78bfa;">Students</div>
+                <div style="font-size: 0.8em; color: #9ca3af;">6 Schools</div>
+            </td>
+        </tr>
+    </table>
+    
+    <div style="margin: 30px auto; padding: 20px; background: rgba(102, 126, 234, 0.2); border-radius: 10px; max-width: 80%;">
+        <p><strong style="color: #10b981;">Key Strength:</strong> Vision (6.20) - Students have clear goals</p>
+        <p><strong style="color: #f59e0b;">Development Area:</strong> Systems (5.54) - Organization & planning skills</p>
+    </div>
+    
+    <table style="width: 70%; margin: 20px auto; font-size: 0.8em;">
+        <tr>
+            <th style="padding: 10px; background: #e59437;">Vision</th>
+            <th style="padding: 10px; background: #86b4f0;">Effort</th>
+            <th style="padding: 10px; background: #72cb44;">Systems</th>
+            <th style="padding: 10px; background: #7f31a4;">Practice</th>
+            <th style="padding: 10px; background: #f032e6;">Attitude</th>
+        </tr>
+        <tr>
+            <td style="padding: 10px; text-align: center;"><strong>6.20</strong></td>
+            <td style="padding: 10px; text-align: center;"><strong>5.82</strong></td>
+            <td style="padding: 10px; text-align: center;"><strong>5.54</strong></td>
+            <td style="padding: 10px; text-align: center;"><strong>5.65</strong></td>
+            <td style="padding: 10px; text-align: center;"><strong>5.74</strong></td>
+        </tr>
+        <tr style="opacity: 0.6;">
+            <td style="padding: 5px; text-align: center; font-size: 0.9em;">Nat: 6.36</td>
+            <td style="padding: 5px; text-align: center; font-size: 0.9em;">Nat: 5.94</td>
+            <td style="padding: 5px; text-align: center; font-size: 0.9em;">Nat: 5.68</td>
+            <td style="padding: 5px; text-align: center; font-size: 0.9em;">Nat: 5.93</td>
+            <td style="padding: 5px; text-align: center; font-size: 0.9em;">Nat: 5.79</td>
+        </tr>
+    </table>
+</section>
+
+<!-- SLIDE 3: Crest Academy Overview -->
+<section>
+    <h2 style="color: #fbbf24;">Crest Academy</h2>
+    
+    <table style="width: 60%; margin: 20px auto;">
+        <tr>
+            <td style="padding: 15px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">6.38</div>
+                <div style="color: #a78bfa;">Overall Score</div>
+                <div style="font-size: 0.8em; color: #10b981;">↑ Above National</div>
+            </td>
+            <td style="padding: 15px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">3.78</div>
+                <div style="color: #a78bfa;">ERI</div>
+                <div style="font-size: 0.8em;">60 students</div>
+            </td>
+        </tr>
+    </table>
+    
+    <table style="width: 70%; margin: 20px auto; font-size: 0.8em;">
+        <tr>
+            <th style="padding: 8px; background: #e59437;">Vision</th>
+            <th style="padding: 8px; background: #86b4f0;">Effort</th>
+            <th style="padding: 8px; background: #72cb44;">Systems</th>
+            <th style="padding: 8px; background: #7f31a4;">Practice</th>
+            <th style="padding: 8px; background: #f032e6;">Attitude</th>
+        </tr>
+        <tr>
+            <td style="padding: 8px; text-align: center;"><strong>7.02</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>6.60</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>6.03</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>6.15</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>6.43</strong></td>
+        </tr>
+    </table>
+    
+    <p><strong style="color: #10b981;">💪 Strongest:</strong> Vision (7.02) | <strong style="color: #f59e0b;">🎯 Focus:</strong> Systems (6.03)</p>
+</section>
+
+<!-- SLIDE 4: Crest Quick Wins -->
+<section>
+    <h2 style="color: #28a745;">🚀 Quick Wins - Crest Academy</h2>
+    
+    <div style="text-align: left; max-width: 85%; margin: 0 auto;">
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">1. Priority Coaching <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">5-7 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Target 24-30 middle band students focusing on Systems patterns</p>
+        </div>
+        
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">2. Team Activity <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">45 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Staff meeting to identify 3-5 Systems behaviors</p>
+        </div>
+        
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">3. Weekly Planner <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">20 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Students create balanced schedules - addresses Systems</p>
+        </div>
+    </div>
+    
+    <table style="width: 80%; margin: 20px auto; font-size: 0.75em;">
+        <tr>
+            <td style="padding: 10px; text-align: center; background: rgba(59, 130, 246, 0.2);">
+                <div style="font-size: 1.8em; color: #fbbf24;">80.8%</div>
+                <div style="color: #a78bfa;">Growth Mindset</div>
+            </td>
+            <td style="padding: 10px; text-align: center; background: rgba(59, 130, 246, 0.2);">
+                <div style="font-size: 1.8em; color: #fbbf24;">77.9%</div>
+                <div style="color: #a78bfa;">Academic Momentum</div>
+            </td>
+            <td style="padding: 10px; text-align: center; background: rgba(245, 158, 11, 0.2);">
+                <div style="font-size: 1.8em; color: #f59e0b;">45.0%</div>
+                <div style="color: #a78bfa;">Active Learning ⚠️</div>
+            </td>
+        </tr>
+    </table>
+</section>
+
+<!-- SLIDE 5: North Birmingham Overview -->
+<section>
+    <h2 style="color: #fbbf24;">North Birmingham Academy</h2>
+    
+    <table style="width: 60%; margin: 20px auto;">
+        <tr>
+            <td style="padding: 15px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">6.26</div>
+                <div style="color: #a78bfa;">Overall Score</div>
+                <div style="font-size: 0.8em; color: #10b981;">↑ Above National</div>
+            </td>
+            <td style="padding: 15px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">3.92</div>
+                <div style="color: #a78bfa;">ERI - Highest</div>
+                <div style="font-size: 0.8em;">88 students</div>
+            </td>
+        </tr>
+    </table>
+    
+    <table style="width: 70%; margin: 20px auto; font-size: 0.8em;">
+        <tr>
+            <th style="padding: 8px; background: #e59437;">Vision</th>
+            <th style="padding: 8px; background: #86b4f0;">Effort</th>
+            <th style="padding: 8px; background: #72cb44;">Systems</th>
+            <th style="padding: 8px; background: #7f31a4;">Practice</th>
+            <th style="padding: 8px; background: #f032e6;">Attitude</th>
+        </tr>
+        <tr>
+            <td style="padding: 8px; text-align: center;"><strong>6.83</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>6.42</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.53</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.94</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>6.56</strong></td>
+        </tr>
+    </table>
+    
+    <p><strong style="color: #10b981;">💪 Strongest:</strong> Vision (6.83) | <strong style="color: #f59e0b;">🎯 Focus:</strong> Systems (5.53)</p>
+</section>
+
+<!-- SLIDE 6: North Birmingham Quick Wins -->
+<section>
+    <h2 style="color: #28a745;">🚀 Quick Wins - North Birmingham</h2>
+    
+    <div style="text-align: left; max-width: 85%; margin: 0 auto;">
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">1. Priority Coaching <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">5-7 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Target 35-44 middle band students on Systems & organization</p>
+        </div>
+        
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">2. Team Activity <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">45 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Staff meeting - identify 3-5 Systems behaviors</p>
+        </div>
+        
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">3. Pending, Doing, Done <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">15 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Visual task management using task boards</p>
+        </div>
+    </div>
+    
+    <p style="font-size: 0.8em; margin-top: 20px;">
+        <strong style="color: #fbbf24;">77.0%</strong> Growth Mindset | 
+        <strong style="color: #fbbf24;">75.0%</strong> Support & Help-Seeking | 
+        <strong style="color: #f59e0b;">43.9%</strong> Active Learning ⚠️
+    </p>
+</section>
+
+<!-- SLIDE 7: West Walsall Overview -->
+<section>
+    <h2 style="color: #fbbf24;">West Walsall Academy</h2>
+    
+    <table style="width: 60%; margin: 20px auto;">
+        <tr>
+            <td style="padding: 15px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">5.95</div>
+                <div style="color: #a78bfa;">Overall Score</div>
+                <div style="font-size: 0.8em; color: #6b7280;">• On Par with National</div>
+            </td>
+            <td style="padding: 15px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">3.69</div>
+                <div style="color: #a78bfa;">ERI</div>
+                <div style="font-size: 0.8em;">74 students</div>
+            </td>
+        </tr>
+    </table>
+    
+    <table style="width: 70%; margin: 20px auto; font-size: 0.8em;">
+        <tr>
+            <th style="padding: 8px; background: #e59437;">Vision</th>
+            <th style="padding: 8px; background: #86b4f0;">Effort</th>
+            <th style="padding: 8px; background: #72cb44;">Systems</th>
+            <th style="padding: 8px; background: #7f31a4;">Practice</th>
+            <th style="padding: 8px; background: #f032e6;">Attitude</th>
+        </tr>
+        <tr>
+            <td style="padding: 8px; text-align: center;"><strong>6.15</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>6.01</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.15</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>6.00</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>6.31</strong></td>
+        </tr>
+    </table>
+    
+    <p><strong style="color: #10b981;">💪 Strongest:</strong> Attitude (6.31) | <strong style="color: #f59e0b;">🎯 Focus:</strong> Systems (5.15)</p>
+</section>
+
+<!-- SLIDE 8: West Walsall Quick Wins -->
+<section>
+    <h2 style="color: #28a745;">🚀 Quick Wins - West Walsall</h2>
+    
+    <div style="text-align: left; max-width: 85%; margin: 0 auto;">
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">1. Priority Coaching <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">5-7 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Target 29-37 middle band students on Systems</p>
+        </div>
+        
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">2. Team Activity <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">45 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Staff meeting - identify 3-5 Systems behaviors</p>
+        </div>
+        
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">3. Weekly Planner <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">20 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Address time management for lowest Systems score (5.15)</p>
+        </div>
+    </div>
+    
+    <p style="font-size: 0.8em; margin-top: 20px;">
+        <strong style="color: #fbbf24;">74.7%</strong> Growth Mindset | 
+        <strong style="color: #fbbf24;">74.3%</strong> Support & Help-Seeking | 
+        <strong style="color: #f59e0b;">43.2%</strong> Active Learning ⚠️
+    </p>
+</section>
+
+<!-- SLIDE 9: Montpelier Overview -->
+<section>
+    <h2 style="color: #fbbf24;">Montpelier High School</h2>
+    
+    <table style="width: 60%; margin: 20px auto;">
+        <tr>
+            <td style="padding: 15px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">5.74</div>
+                <div style="color: #a78bfa;">Overall Score</div>
+                <div style="font-size: 0.8em; color: #ef4444;">↓ Below National</div>
+            </td>
+            <td style="padding: 15px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">3.44</div>
+                <div style="color: #a78bfa;">ERI</div>
+                <div style="font-size: 0.8em;">125 students</div>
+            </td>
+        </tr>
+    </table>
+    
+    <table style="width: 70%; margin: 20px auto; font-size: 0.8em;">
+        <tr>
+            <th style="padding: 8px; background: #e59437;">Vision</th>
+            <th style="padding: 8px; background: #86b4f0;">Effort</th>
+            <th style="padding: 8px; background: #72cb44;">Systems</th>
+            <th style="padding: 8px; background: #7f31a4;">Practice</th>
+            <th style="padding: 8px; background: #f032e6;">Attitude</th>
+        </tr>
+        <tr>
+            <td style="padding: 8px; text-align: center;"><strong>6.50</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.38</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.68</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.86</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.35</strong></td>
+        </tr>
+    </table>
+    
+    <p><strong style="color: #10b981;">💪 Strongest:</strong> Vision (6.50) | <strong style="color: #f59e0b;">🎯 Focus:</strong> Attitude (5.35)</p>
+</section>
+
+<!-- SLIDE 10: Montpelier Quick Wins -->
+<section>
+    <h2 style="color: #28a745;">🚀 Quick Wins - Montpelier</h2>
+    
+    <div style="text-align: left; max-width: 85%; margin: 0 auto;">
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">1. Priority Coaching <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">5-7 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Target 50-62 middle band students on Attitude & stress</p>
+        </div>
+        
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">2. Team Activity <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">45 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Staff meeting - identify 3-5 Attitude behaviors</p>
+        </div>
+        
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">3. First Aid Kit <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">15 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Stress-dissolving exercises (40.8% Stress Management)</p>
+        </div>
+    </div>
+    
+    <p style="font-size: 0.8em; margin-top: 20px;">
+        <strong style="color: #fbbf24;">70.3%</strong> Growth Mindset | 
+        <strong style="color: #f59e0b;">40.8%</strong> Stress Management ⚠️ | 
+        <strong style="color: #f59e0b;">41.2%</strong> Active Learning ⚠️
+    </p>
+</section>
+
+<!-- SLIDE 11: Daventry Overview -->
+<section>
+    <h2 style="color: #fbbf24;">Daventry 6th Form</h2>
+    
+    <table style="width: 60%; margin: 20px auto;">
+        <tr>
+            <td style="padding: 15px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">5.58</div>
+                <div style="color: #a78bfa;">Overall Score</div>
+                <div style="font-size: 0.8em; color: #ef4444;">↓ Below National</div>
+            </td>
+            <td style="padding: 15px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">3.61</div>
+                <div style="color: #a78bfa;">ERI</div>
+                <div style="font-size: 0.8em;">66 students</div>
+            </td>
+        </tr>
+    </table>
+    
+    <table style="width: 70%; margin: 20px auto; font-size: 0.8em;">
+        <tr>
+            <th style="padding: 8px; background: #e59437;">Vision</th>
+            <th style="padding: 8px; background: #86b4f0;">Effort</th>
+            <th style="padding: 8px; background: #72cb44;">Systems</th>
+            <th style="padding: 8px; background: #7f31a4;">Practice</th>
+            <th style="padding: 8px; background: #f032e6;">Attitude</th>
+        </tr>
+        <tr>
+            <td style="padding: 8px; text-align: center;"><strong>5.73</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.79</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.70</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.38</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.41</strong></td>
+        </tr>
+    </table>
+    
+    <p><strong style="color: #10b981;">💪 Strongest:</strong> Effort (5.79) | <strong style="color: #f59e0b;">🎯 Focus:</strong> Practice (5.38)</p>
+</section>
+
+<!-- SLIDE 12: Daventry Quick Wins -->
+<section>
+    <h2 style="color: #28a745;">🚀 Quick Wins - Daventry</h2>
+    
+    <div style="text-align: left; max-width: 85%; margin: 0 auto;">
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">1. Priority Coaching <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">5-7 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Target 26-33 middle band students on Practice strategies</p>
+        </div>
+        
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">2. Team Activity <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">45 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Staff meeting - identify 3-5 Practice behaviors</p>
+        </div>
+        
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">3. High & Low Utility <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">20 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Teach effective study techniques - addresses Active Learning</p>
+        </div>
+    </div>
+    
+    <p style="font-size: 0.8em; margin-top: 20px;">
+        <strong style="color: #fbbf24;">70.8%</strong> Growth Mindset | 
+        <strong style="color: #f59e0b;">47.5%</strong> Stress Management | 
+        <strong style="color: #ef4444;">35.9%</strong> Active Learning ⚠️
+    </p>
+</section>
+
+<!-- SLIDE 13: Ousedale Overview -->
+<section>
+    <h2 style="color: #fbbf24;">Ousedale School</h2>
+    
+    <table style="width: 60%; margin: 20px auto;">
+        <tr>
+            <td style="padding: 15px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">5.48</div>
+                <div style="color: #a78bfa;">Overall Score</div>
+                <div style="font-size: 0.8em; color: #ef4444;">↓ Below National</div>
+            </td>
+            <td style="padding: 15px; text-align: center;">
+                <div style="font-size: 2.5em; font-weight: bold; color: #fbbf24;">3.56</div>
+                <div style="color: #a78bfa;">ERI</div>
+                <div style="font-size: 0.8em;">259 students - Largest</div>
+            </td>
+        </tr>
+    </table>
+    
+    <table style="width: 70%; margin: 20px auto; font-size: 0.8em;">
+        <tr>
+            <th style="padding: 8px; background: #e59437;">Vision</th>
+            <th style="padding: 8px; background: #86b4f0;">Effort</th>
+            <th style="padding: 8px; background: #72cb44;">Systems</th>
+            <th style="padding: 8px; background: #7f31a4;">Practice</th>
+            <th style="padding: 8px; background: #f032e6;">Attitude</th>
+        </tr>
+        <tr>
+            <td style="padding: 8px; text-align: center;"><strong>5.80</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.59</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.43</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.31</strong></td>
+            <td style="padding: 8px; text-align: center;"><strong>5.41</strong></td>
+        </tr>
+    </table>
+    
+    <p><strong style="color: #10b981;">💪 Strongest:</strong> Vision (5.80) | <strong style="color: #f59e0b;">🎯 Focus:</strong> Practice (5.31)</p>
+</section>
+
+<!-- SLIDE 14: Ousedale Quick Wins -->
+<section>
+    <h2 style="color: #28a745;">🚀 Quick Wins - Ousedale</h2>
+    
+    <div style="text-align: left; max-width: 85%; margin: 0 auto;">
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">1. Priority Coaching <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">5-7 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Target 103-130 middle band students on Practice strategies</p>
+        </div>
+        
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">2. Team Activity <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">45 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Staff meeting - identify 3-5 Practice behaviors</p>
+        </div>
+        
+        <div style="background: rgba(40, 167, 69, 0.2); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 8px;">
+            <p style="color: #10b981; font-weight: 600; margin: 0;">3. High & Low Utility <span style="background: rgba(40, 167, 69, 0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8em;">20 MIN</span></p>
+            <p style="font-size: 0.85em; margin: 5px 0 0 0;">Teach effective study techniques - Active Learning (35.8%)</p>
+        </div>
+    </div>
+    
+    <p style="font-size: 0.8em; margin-top: 20px;">
+        <strong style="color: #fbbf24;">67.8%</strong> Time Management | 
+        <strong style="color: #f59e0b;">48.9%</strong> Study Strategies | 
+        <strong style="color: #ef4444;">35.8%</strong> Active Learning ⚠️
+    </p>
+</section>
+
+    </div>
+</div>
+

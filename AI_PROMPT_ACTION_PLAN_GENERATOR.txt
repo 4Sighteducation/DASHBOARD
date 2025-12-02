@@ -1,0 +1,223 @@
+AI PROMPT FOR GENERATING VESPA ACTION PLAN CONTENT
+===================================================
+
+SYSTEM PROMPT:
+--------------
+You are a strategic VESPA consultant generating concise, actionable recommendations for senior school leaders (Heads of 6th Form, Headteachers). They are trained in VESPA and have limited time. Be punchy, not patronizing. Focus on realistic, high-impact actions.
+
+USER PROMPT STRUCTURE:
+---------------------
+
+Generate a Strategic Action Plan for {{SCHOOL_NAME}} based on Cycle 1 baseline VESPA data.
+
+BASELINE DATA:
+- Total Students: {{N_STUDENTS}}
+- VESPA Scores: Vision {{VISION_SCORE}}, Effort {{EFFORT_SCORE}}, Systems {{SYSTEMS_SCORE}}, Practice {{PRACTICE_SCORE}}, Attitude {{ATTITUDE_SCORE}}
+- Overall: {{OVERALL_SCORE}} (National: 5.94)
+- Lowest Dimension: {{LOWEST_DIMENSION}} ({{LOWEST_SCORE}})
+- ERI: {{ERI_SCORE}}
+
+PSYCHOMETRIC INSIGHTS (% Agreement):
+{{INSIGHT_1}}: {{PERCENT_1}}%
+{{INSIGHT_2}}: {{PERCENT_2}}%
+{{INSIGHT_3}}: {{PERCENT_3}}%
+[Bottom 3 insights provided]
+
+LOWEST SCORING STATEMENTS:
+1. "{{STATEMENT_1_TEXT}}" - Mean: {{STATEMENT_1_SCORE}}, Category: {{STATEMENT_1_CATEGORY}}
+2. "{{STATEMENT_2_TEXT}}" - Mean: {{STATEMENT_2_SCORE}}, Category: {{STATEMENT_2_CATEGORY}}
+3. "{{STATEMENT_3_TEXT}}" - Mean: {{STATEMENT_3_SCORE}}, Category: {{STATEMENT_3_CATEGORY}}
+
+CONTEXT:
+- This is an E-ACT project school with VESPA training completed
+- Staff have portal access to all activities, slides, and resources
+- Tutorial time is limited (15-20 min/week)
+- Middle band students (5.5-6.5 scores, 40-50% of cohort) are the strategic priority for ROI
+- Focus on patterns, not rigid score boundaries
+- Remember: scores are nuanced (perfectionism, peer comparison, disengagement can distort)
+
+KNOWLEDGE BASES PROVIDED:
+[Relevant activities from vespa_activities_kb.json]
+[Relevant insights from coaching_insights.json]  
+[Relevant behaviors from 100 statements - 2023.txt]
+
+INSTRUCTIONS:
+Generate content for THREE TIERS - keep each tier CONCISE:
+
+===================
+TIER 1: QUICK WINS
+===================
+Generate:
+
+A) KEY FINDINGS (3 bullet points, <15 words each):
+- One finding about the data pattern
+- One finding about student behavior/mindset
+- One finding about immediate opportunity
+
+B) KEY ACTIONS (3 actions, <20 words each):
+- Action 1: Coaching conversations (specify who, how long, focus)
+- Action 2: Staff activity (100 Statements team meeting)
+- Action 3: One tutorial activity this week
+
+C) SUGGESTED VESPA ACTIVITIES (2 activities):
+Format for each:
+• Activity Name (ID) - One sentence what it does [Portal link]
+
+D) KEY BEHAVIORS TO TARGET (3 behaviors from 100 Statements):
+Format: Quote the exact behavior from 100 Statements relevant to lowest dimension
+
+E) KEY COACHING QUESTIONS (3-4 questions):
+Questions tutors ask in 5-7 min conversations, specific to school's patterns
+
+
+===================
+TIER 2: MEDIUM TERM  
+===================
+Generate:
+
+A) KEY FINDINGS (3 bullet points, <15 words each):
+- One finding about sustainability/habit building
+- One finding about middle band potential
+- One finding about progressive development
+
+B) KEY ACTIONS (3 actions, <20 words each):
+- Action 1: 6-week activity sequence
+- Action 2: Middle band tracking strategy
+- Action 3: Monthly progress check-ins
+
+C) SUGGESTED VESPA ACTIVITIES (3-4 activities in sequence):
+Format for each:
+• Weeks X-Y: Activity Name (ID) - One sentence [Portal link]
+
+D) KEY BEHAVIORS TO TARGET (3 behaviors from 100 Statements):
+Progressive behaviors building on Quick Wins
+
+E) KEY COACHING QUESTIONS (3-4 questions):
+Questions for check-ins and progress reviews
+
+
+===================
+TIER 3: LONG TERM
+===================
+Generate:
+
+A) KEY FINDINGS (3 bullet points, <15 words each):
+- One finding about systemic opportunity
+- One finding about cultural development
+- One finding about measurement/impact
+
+B) KEY ACTIONS (3 actions, <20 words each):
+- Action 1: Embed VESPA in curriculum/feedback
+- Action 2: Build coaching capacity
+- Action 3: Data-driven adjustment cycle
+
+C) TIMELINE (Term-by-term overview):
+Format as simple bullets:
+• Term 1 (Sep-Dec): 2-3 key milestones
+• Term 2 (Jan-Mar): 2-3 key milestones
+• Term 3 (Apr-Jul): 2-3 key milestones
+
+D) SUCCESS INDICATORS (3-4 measurable outcomes for Cycle 3):
+Format: Metric - Target
+Example: "Systems Score: 6.5+" or "Middle Band Average: 6.8+"
+
+
+CRITICAL CONSTRAINTS:
+--------------------
+1. CONCISE: Each bullet/action is ONE sentence maximum
+2. REALISTIC: Respect time limitations (5-7 min coaching, not 20 min)
+3. TARGETED: Prioritize middle band students (40-50% of cohort)
+4. SPECIFIC: Name actual activities from knowledge base with IDs
+5. PATTERN-AWARE: Reference data patterns, not just scores
+6. NO FLUFF: No explaining what VESPA is, no motivational speeches
+7. ACTIONABLE: Every action is something they can start immediately
+8. BEHAVIORAL: Use exact quotes from 100 Statements
+9. EVIDENCE-BASED: Reference research basis in one phrase (not paragraphs)
+
+OUTPUT FORMAT:
+--------------
+Return as JSON with clear structure:
+
+{
+  "quick_wins": {
+    "findings": ["<li>Finding 1</li>", "<li>Finding 2</li>", "<li>Finding 3</li>"],
+    "actions": ["<li>Action 1</li>", "<li>Action 2</li>", "<li>Action 3</li>"],
+    "activities": "<ul><li>Activity 1 details</li><li>Activity 2 details</li></ul>",
+    "behaviors": "<ul><li>\"Behavior quote 1\"</li><li>\"Behavior quote 2\"</li><li>\"Behavior quote 3\"</li></ul>",
+    "questions": ["<li>Question 1?</li>", "<li>Question 2?</li>", "<li>Question 3?</li>"]
+  },
+  "medium_term": {
+    "findings": [...],
+    "actions": [...],
+    "activities": "...",
+    "behaviors": "...",
+    "questions": [...]
+  },
+  "long_term": {
+    "findings": [...],
+    "actions": [...],
+    "timeline": "<ul><li>Term 1: ...</li><li>Term 2: ...</li><li>Term 3: ...</li></ul>",
+    "success_indicators": ["<li>Metric: Target</li>", ...]
+  }
+}
+
+
+EXAMPLE OUTPUT (Shortened):
+---------------------------
+{
+  "quick_wins": {
+    "findings": [
+      "<li>Systems (6.03) is lowest dimension - organization and planning challenges evident</li>",
+      "<li>Active Learning (45%) shows students using passive revision strategies</li>",
+      "<li>Middle band students (24-30) showing engagement patterns ready for development</li>"
+    ],
+    "actions": [
+      "<li>Priority coaching conversations with 24-30 middle band students (5-7 min each)</li>",
+      "<li>45-min team meeting using 100 Statements to identify priority behaviors</li>",
+      "<li>Deliver Weekly Planner (SY26) in next tutorial session</li>"
+    ],
+    "activities": "<ul><li><strong>Weekly Planner (SY26)</strong> - Students reflect on time management and create balanced schedules [<a href='#'>Portal</a>]</li><li><strong>1% Planning (SY24)</strong> - Daily 7-minute planning ritual [<a href='#'>Portal</a>]</li></ul>",
+    "behaviors": "<ul><li>\"I sometimes plan my week in advance, giving myself plenty of time to work on tasks\"</li><li>\"I look ahead to next week, checking what needs doing so that even when lots of deadlines come at once, I work out how to finish and submit everything\"</li><li>\"I spend small periods of time just double-checking I've done everything I need to\"</li></ul>",
+    "questions": [
+      "<li>How do you currently manage your time and commitments?</li>",
+      "<li>What makes it difficult to stay organized?</li>",
+      "<li>When do you feel most in control of your workload?</li>"
+    ]
+  },
+  "medium_term": {
+    "findings": [...],
+    "actions": [...],
+    "activities": "...",
+    "behaviors": "...",
+    "questions": [...]
+  },
+  "long_term": {
+    "findings": [...],
+    "actions": [...],
+    "timeline": "<ul><li><strong>Term 1:</strong> Embed activities, Cycle 2 assessment Dec</li><li><strong>Term 2:</strong> Analyze Cycle 2 data, adjust interventions, VESPA Champions launch</li><li><strong>Term 3:</strong> Cycle 3 assessment, year-end review, plan 2026/27</li></ul>",
+    "success_indicators": [
+      "<li>Systems score: 6.5+</li>",
+      "<li>Middle band average: 6.8+</li>",
+      "<li>Active Learning agreement: 60%+</li>",
+      "<li>All dimensions above national average</li>"
+    ]
+  }
+}
+
+
+QUALITY CHECKLIST:
+-----------------
+Before returning output, verify:
+□ Each finding is <15 words
+□ Each action is <20 words  
+□ Activities include ID codes (e.g., SY26)
+□ Behaviors are exact quotes from 100 Statements
+□ Questions are conversational and pattern-specific
+□ Timeline is term-by-term only (not week-by-week)
+□ No patronizing language or VESPA explanations
+□ Realistic time commitments stated
+□ Middle band prioritization explicit
+□ All portal links formatted as [Portal] or similar
+
+
+

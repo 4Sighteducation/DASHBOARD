@@ -1,0 +1,1446 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ousedale School - VESPA Cycle 1 Baseline Report</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .report-header {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .executive-summary, .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .section h2, .executive-summary h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .section h3 {
+            color: #764ba2;
+            margin: 20px 0 10px 0;
+            font-size: 1.4em;
+        }
+        
+        .key-insights {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h4 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .stat-card small {
+            font-size: 0.8em;
+            opacity: 0.8;
+            display: block;
+            margin-top: 5px;
+        }
+        
+        .chart-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .neutral {
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: white;
+            opacity: 0.9;
+        }
+        
+        .eri-card {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .eri-value {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .eri-description {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        @media print {
+            @page {
+                size: A4;
+                margin: 12mm 8mm;
+            }
+            
+            body {
+                background: white !important;
+            }
+            
+            .container {
+                max-width: 100%;
+                width: 190mm;
+            }
+            
+            .report-header button {
+                display: none !important;
+            }
+        }
+    
+        
+        .insights-section {
+            margin: 30px 0;
+        }
+        
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+        
+        .insight-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .insight-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .insight-card.excellent {
+            border-left-color: #10b981;
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.05), white);
+        }
+        
+        .insight-card.good {
+            border-left-color: #3b82f6;
+            background: linear-gradient(to right, rgba(59, 130, 246, 0.05), white);
+        }
+        
+        .insight-card.average {
+            border-left-color: #f59e0b;
+            background: linear-gradient(to right, rgba(245, 158, 11, 0.05), white);
+        }
+        
+        .insight-card.poor {
+            border-left-color: #ef4444;
+            background: linear-gradient(to right, rgba(239, 68, 68, 0.05), white);
+        }
+        
+        .insight-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .insight-icon {
+            font-size: 2em;
+        }
+        
+        .insight-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .insight-percentage {
+            font-size: 2.5em;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .insight-percentage.excellent {
+            color: #10b981;
+        }
+        
+        .insight-percentage.good {
+            color: #3b82f6;
+        }
+        
+        .insight-percentage.average {
+            color: #f59e0b;
+        }
+        
+        .insight-percentage.poor {
+            color: #ef4444;
+        }
+        
+        .insight-label {
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .insight-meta {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 0.85em;
+            color: #666;
+            text-align: center;
+        }
+    
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <div class="report-header">
+            
+            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                <img src="51A051D3872FD2795D5CC7FE41DD6E46.png" 
+                     alt="Ousedale School Logo" 
+                     style="height: 100px; object-fit: contain; max-width: 400px;">
+            </div>
+        
+            <h1 style="color: #667eea; margin-bottom: 10px; text-align: center;">Ousedale School</h1>
+            <h2 style="color: #764ba2; text-align: center;">VESPA Cycle 1 Baseline Report</h2>
+            <p class="report-date" style="text-align: center;">Generated: November 12, 2025</p>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="window.print();" style="
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    color: white;
+                    border: none;
+                    padding: 12px 30px;
+                    font-size: 1em;
+                    font-weight: 600;
+                    border-radius: 25px;
+                    cursor: pointer;
+                    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.4)';" 
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.3)';">
+                    Download as PDF
+                </button>
+            </div>
+        </div>
+
+        
+        <div class="executive-summary">
+            <h2>Executive Summary</h2>
+            <p>This comprehensive VESPA Cycle 1 baseline analysis for <strong>Ousedale School</strong> examines student mindset and study skills 
+            across <strong>259 students</strong>. 
+            This baseline assessment establishes the starting point for tracking student development throughout the 2025/26 academic year.</p>
+            
+            <p style="margin-top: 15px;"><strong>Overall Performance:</strong> Ousedale School students score below national 
+            average (5.48 vs 5.94), demonstrating solid 
+            engagement with learning mindsets and study skills.</p>
+            
+            <p style="margin-top: 15px;"><strong>Exam Readiness:</strong> The school's ERI of 3.56 indicates 
+            students feel adequately prepared 
+            for their upcoming exams.</p>
+            
+            <p style="margin-top: 15px;"><strong>Key Strengths:</strong> Students demonstrate particular strength in Vision (5.80), 
+            while Practice (5.31) presents an opportunity for targeted development.</p>
+            
+            
+        </div>
+
+        
+        <div class="section">
+            <h2>📊 Cycle 1 Baseline Overview</h2>
+            <p style="margin-bottom: 20px;">
+                Baseline VESPA scores for 259 students compared to national averages.
+                This establishes the starting point for measuring growth through Cycles 2 and 3.
+            </p>
+            
+            <div style="background: #e8f4f8; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #06b6d4;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Understanding Baseline Scores</h3>
+                <p style="margin-bottom: 15px;"><strong>What are baseline scores?</strong> These are the initial VESPA measurements taken at the start of the academic year. They represent students' current mindset and study skills before targeted interventions or the natural progression through their courses.</p>
+                
+                <p style="margin-bottom: 15px;"><strong>Why compare to national averages?</strong> National benchmarks provide essential context for interpreting scores. They help us understand:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Relative performance:</strong> Are students performing above, at, or below typical levels?</li>
+                    <li><strong>Starting position:</strong> Where do we begin our improvement journey?</li>
+                    <li><strong>Realistic expectations:</strong> What level of performance is typical for similar students?</li>
+                    <li><strong>Priority identification:</strong> Which dimensions need the most attention?</li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>What do the indicators mean?</strong> Scores marked as "Above National" indicate strength areas where students are performing better than typical. "On Par" suggests performance is in line with national expectations. "Below National" highlights areas where students may benefit from additional support or intervention.</p>
+            </div>
+            
+            <div class="stats-grid">
+                
+            <div class="stat-card">
+                <h4>Vision</h4>
+                <div class="value">5.80</div>
+                <small>National: 6.36</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">↓ Below National</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Effort</h4>
+                <div class="value">5.59</div>
+                <small>National: 5.94</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">↓ Below National</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Systems</h4>
+                <div class="value">5.43</div>
+                <small>National: 5.68</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">↓ Below National</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Practice</h4>
+                <div class="value">5.31</div>
+                <small>National: 5.93</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">↓ Below National</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Attitude</h4>
+                <div class="value">5.41</div>
+                <small>National: 5.79</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">↓ Below National</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Overall</h4>
+                <div class="value">5.48</div>
+                <small>National: 5.94</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">↓ Below National</span>
+                </div>
+            </div>
+        
+            </div>
+        </div>
+
+        
+        <div class="section">
+            <h2>⭐ Exam Readiness Index</h2>
+            <p style="margin-bottom: 20px;">
+                The Exam Readiness Index (ERI) measures students' perceived preparation for exams based on three key questions:
+                feeling supported, feeling equipped, and feeling confident about achieving their potential.
+            </p>
+            
+            <div style="background: linear-gradient(135deg, #3b82f6, #3b82f6cc); color: white; padding: 40px; border-radius: 15px; text-align: center; margin: 30px 0;">
+                <div style="font-size: 1.3em; opacity: 0.95; margin-bottom: 10px;">Ousedale School Exam Readiness Index</div>
+                <div style="font-size: 4em; font-weight: bold; margin: 20px 0;">3.56</div>
+                <div style="font-size: 1.2em; opacity: 0.9; margin-bottom: 10px;">Good</div>
+                <div style="font-size: 1em; opacity: 0.85;">Students feel adequately prepared for their exam challenges</div>
+                <div style="margin-top: 20px; font-size: 0.9em; opacity: 0.8;">
+                    National Average: 3.50 | Based on 259 students
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h4>What the ERI Measures</h4>
+                <ul style="margin-top: 10px; line-height: 1.8;">
+                    <li><strong>Support:</strong> "I have the support I need to achieve this year"</li>
+                    <li><strong>Preparation:</strong> "I feel equipped to face study and revision challenges"</li>
+                    <li><strong>Confidence:</strong> "I am confident I will achieve my potential in my final exams"</li>
+                </ul>
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 600px;">
+                QUESTIONNAIRE INSIGHTS
+            </h1>
+        </div>
+        
+        <div class="section insights-section">
+            <h2>📊 12 Psychometric Insights</h2>
+            <p style="margin-bottom: 20px;">
+                These insights group related questions to measure key psychological factors that research shows 
+                are crucial for academic success. Percentages represent students who agreed or strongly agreed (scores of 4-5).
+            </p>
+            
+            <div style="background: #e8f4f8; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #06b6d4;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Understanding Questionnaire Insights</h3>
+                <p style="margin-bottom: 15px;"><strong>What are these insights?</strong> Rather than looking at individual questions in isolation, these insights group related questions together to measure broader psychological constructs. This approach provides a more reliable and meaningful picture of student characteristics.</p>
+                
+                <p style="margin-bottom: 15px;"><strong>Why are they important?</strong> Research in educational psychology has shown that these factors significantly influence academic success:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Growth Mindset:</strong> Beliefs about intelligence and learning capacity affect motivation and resilience</li>
+                    <li><strong>Academic Momentum:</strong> Drive and ambition influence effort and achievement</li>
+                    <li><strong>Resilience:</strong> Ability to bounce back from setbacks impacts long-term success</li>
+                    <li><strong>Time Management:</strong> Organizational skills directly affect academic performance</li>
+                    <li><strong>Support & Help-Seeking:</strong> Willingness to ask for help improves learning outcomes</li>
+                    <li><strong>Study Strategies:</strong> Effective learning techniques enhance retention and understanding</li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>How to interpret percentages:</strong> Higher percentages (75%+) indicate that most students demonstrate positive characteristics in that area. Lower percentages (below 40%) suggest that many students may benefit from targeted support or intervention. These insights help identify which psychological factors are strengths and which need development.</p>
+            </div>
+            
+            <div style="margin: 25px 0; padding: 20px; background: linear-gradient(to right, #f8f9fa, #ffffff); border-radius: 10px; border-left: 4px solid #667eea;">
+                <h4 style="color: #2c3e50; margin-bottom: 10px;">Understanding the Ratings</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <div style="padding: 10px; background: rgba(16, 185, 129, 0.1); border-radius: 5px; border-left: 3px solid #10b981;">
+                        <strong style="color: #10b981;">75%+ Excellent</strong><br>
+                        <small>Most students show positive indicators</small>
+                    </div>
+                    <div style="padding: 10px; background: rgba(59, 130, 246, 0.1); border-radius: 5px; border-left: 3px solid #3b82f6;">
+                        <strong style="color: #3b82f6;">60-74% Good</strong><br>
+                        <small>Majority positive, room for growth</small>
+                    </div>
+                    <div style="padding: 10px; background: rgba(245, 158, 11, 0.1); border-radius: 5px; border-left: 3px solid #f59e0b;">
+                        <strong style="color: #f59e0b;">40-59% Average</strong><br>
+                        <small>Mixed responses, needs attention</small>
+                    </div>
+                    <div style="padding: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 5px; border-left: 3px solid #ef4444;">
+                        <strong style="color: #ef4444;">&lt;40% Poor</strong><br>
+                        <small>Significant area for improvement</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="insights-grid">
+                
+            <div class="insight-card good">
+                <div class="insight-header">
+                    <div class="insight-icon">⏰</div>
+                    <div class="insight-title">Time Management</div>
+                </div>
+                <div class="insight-percentage good">67.8%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 172 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card good">
+                <div class="insight-header">
+                    <div class="insight-icon">🚀</div>
+                    <div class="insight-title">Academic Momentum</div>
+                </div>
+                <div class="insight-percentage good">66.4%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 259 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card good">
+                <div class="insight-header">
+                    <div class="insight-icon">🌱</div>
+                    <div class="insight-title">Growth Mindset</div>
+                </div>
+                <div class="insight-percentage good">65.4%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 259 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card good">
+                <div class="insight-header">
+                    <div class="insight-icon">📦</div>
+                    <div class="insight-title">Organization & Materials</div>
+                </div>
+                <div class="insight-percentage good">62.7%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 259 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card good">
+                <div class="insight-header">
+                    <div class="insight-icon">🤝</div>
+                    <div class="insight-title">Support & Help-Seeking</div>
+                </div>
+                <div class="insight-percentage good">62.3%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 259 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card average">
+                <div class="insight-header">
+                    <div class="insight-icon">💪</div>
+                    <div class="insight-title">Resilience Factor</div>
+                </div>
+                <div class="insight-percentage average">57.3%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 259 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card average">
+                <div class="insight-header">
+                    <div class="insight-icon">🎯</div>
+                    <div class="insight-title">Vision & Purpose</div>
+                </div>
+                <div class="insight-percentage average">55.0%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 259 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card average">
+                <div class="insight-header">
+                    <div class="insight-icon">⭐</div>
+                    <div class="insight-title">Exam Confidence</div>
+                </div>
+                <div class="insight-percentage average">53.0%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 259 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card average">
+                <div class="insight-header">
+                    <div class="insight-icon">😌</div>
+                    <div class="insight-title">Stress Management</div>
+                </div>
+                <div class="insight-percentage average">52.5%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 259 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card average">
+                <div class="insight-header">
+                    <div class="insight-icon">📖</div>
+                    <div class="insight-title">Revision Readiness</div>
+                </div>
+                <div class="insight-percentage average">51.8%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 259 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card average">
+                <div class="insight-header">
+                    <div class="insight-icon">📚</div>
+                    <div class="insight-title">Study Strategies</div>
+                </div>
+                <div class="insight-percentage average">48.9%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 259 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card poor">
+                <div class="insight-header">
+                    <div class="insight-icon">🎓</div>
+                    <div class="insight-title">Active Learning</div>
+                </div>
+                <div class="insight-percentage poor">35.8%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 259 responses per question
+                </div>
+            </div>
+
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                YEAR GROUP ANALYSIS
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>📚 VESPA Scores by Year Group</h2>
+            <p style="margin-bottom: 20px;">
+                Analysis of VESPA baseline scores across different year groups within Ousedale School.
+                Year groups are compared to understand cohort-specific patterns.
+            </p>
+            
+            <h3>Year Group Performance Overview</h3>
+            <div class="stats-grid">
+                
+                <div class="stat-card">
+                    <h4>Year 12</h4>
+                    <div class="value">5.57</div>
+                    <small>n=178 students</small>
+                    <div style="margin-top: 8px; font-size: 0.75em;">
+                        Rank: #1 of 2 | ERI: 3.66
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <h4>Year 13</h4>
+                    <div class="value">5.30</div>
+                    <small>n=80 students</small>
+                    <div style="margin-top: 8px; font-size: 0.75em;">
+                        Rank: #2 of 2 | ERI: 3.35
+                    </div>
+                </div>
+
+            </div>
+            
+            <h3>Detailed Year Group Comparison</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Year Group</th>
+                        <th style="text-align: center;">Students</th>
+                        <th style="text-align: center;">Vision</th>
+                        <th style="text-align: center;">Effort</th>
+                        <th style="text-align: center;">Systems</th>
+                        <th style="text-align: center;">Practice</th>
+                        <th style="text-align: center;">Attitude</th>
+                        <th style="text-align: center;">Overall</th>
+                        <th style="text-align: center;">ERI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 12px; font-weight: 600;">Year 12</td>
+                        <td style="padding: 12px; text-align: center;">178</td>
+                        <td style="padding: 12px; text-align: center;">5.77</td>
+                        <td style="padding: 12px; text-align: center;">5.63</td>
+                        <td style="padding: 12px; text-align: center;">5.58</td>
+                        <td style="padding: 12px; text-align: center;">5.33</td>
+                        <td style="padding: 12px; text-align: center;">5.67</td>
+                        <td style="padding: 12px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">5.57</td>
+                        <td style="padding: 12px; text-align: center; font-weight: bold;">3.66</td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 12px; font-weight: 600;">Year 13</td>
+                        <td style="padding: 12px; text-align: center;">80</td>
+                        <td style="padding: 12px; text-align: center;">5.90</td>
+                        <td style="padding: 12px; text-align: center;">5.51</td>
+                        <td style="padding: 12px; text-align: center;">5.10</td>
+                        <td style="padding: 12px; text-align: center;">5.28</td>
+                        <td style="padding: 12px; text-align: center;">4.81</td>
+                        <td style="padding: 12px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">5.30</td>
+                        <td style="padding: 12px; text-align: center; font-weight: bold;">3.35</td>
+                    </tr>
+
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h4>Year Group Analysis Insights</h4>
+                <ul style="margin-top: 10px;">
+                    <li><strong>Highest Performing:</strong> Year 12 leads with 5.57 overall score (n=178 students)</li>
+                    <li><strong>Development Focus:</strong> Use baseline differences to tailor intervention strategies by year group</li>
+                    <li><strong>ERI Comparison:</strong> Year 12 ERI: 3.66, Year 13 ERI: 3.35</li>
+                </ul>
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                GROUP ANALYSIS
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>👥 Performance by Group</h2>
+            <p style="margin-bottom: 20px;">
+                Detailed analysis of VESPA baseline scores across different tutorial/mentor groups within Ousedale School.
+                Only groups with 5 or more students are included in this analysis.
+            </p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Group</th>
+                        <th style="text-align: center;">Students</th>
+                        <th style="text-align: center;">Vision</th>
+                        <th style="text-align: center;">Effort</th>
+                        <th style="text-align: center;">Systems</th>
+                        <th style="text-align: center;">Practice</th>
+                        <th style="text-align: center;">Attitude</th>
+                        <th style="text-align: center;">Overall</th>
+                        <th style="text-align: center;">ERI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 14px; font-weight: 600;">12AMB</td>
+                        <td style="padding: 14px; text-align: center;">6</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 7.33</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 8.33</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.33</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 7.67</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 7.50</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #28a745; font-weight: 600;">↑ 7.67</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">4.44</td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 14px; font-weight: 600;">12GWT</td>
+                        <td style="padding: 14px; text-align: center;">9</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 6.11</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 7.33</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.22</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.44</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.33</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #666; font-weight: 600;">• 6.11</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.74</td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 14px; font-weight: 600;">12JW</td>
+                        <td style="padding: 14px; text-align: center;">11</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 6.45</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.55</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.00</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.82</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 7.18</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #666; font-weight: 600;">• 6.09</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">4.27</td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 14px; font-weight: 600;">12KK</td>
+                        <td style="padding: 14px; text-align: center;">16</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.94</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 6.06</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.31</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.19</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.69</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #666; font-weight: 600;">• 6.06</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.46</td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 14px; font-weight: 600;">12EL</td>
+                        <td style="padding: 14px; text-align: center;">18</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 7.00</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.72</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.83</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.11</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.89</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #666; font-weight: 600;">• 5.89</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.78</td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 14px; font-weight: 600;">12LEH</td>
+                        <td style="padding: 14px; text-align: center;">13</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.62</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.92</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 5.92</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.46</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.85</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #666; font-weight: 600;">• 5.77</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.74</td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 14px; font-weight: 600;">13DB</td>
+                        <td style="padding: 14px; text-align: center;">17</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 6.47</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.65</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.35</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.18</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.59</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #dc3545; font-weight: 600;">↓ 5.59</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.33</td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 14px; font-weight: 600;">12SRA</td>
+                        <td style="padding: 14px; text-align: center;">16</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.81</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.50</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.44</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.38</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.56</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #dc3545; font-weight: 600;">↓ 5.50</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.31</td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 14px; font-weight: 600;">12RCH</td>
+                        <td style="padding: 14px; text-align: center;">14</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.43</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.36</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.36</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.50</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.50</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #dc3545; font-weight: 600;">↓ 5.43</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.83</td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 14px; font-weight: 600;">12SS</td>
+                        <td style="padding: 14px; text-align: center;">12</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.42</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.25</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.00</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.67</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.58</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #dc3545; font-weight: 600;">↓ 5.42</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.78</td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 14px; font-weight: 600;">12DL</td>
+                        <td style="padding: 14px; text-align: center;">15</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.87</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.67</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.87</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.40</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.20</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #dc3545; font-weight: 600;">↓ 5.27</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.38</td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 14px; font-weight: 600;">12LH</td>
+                        <td style="padding: 14px; text-align: center;">15</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.80</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.47</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.53</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.93</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.67</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #dc3545; font-weight: 600;">↓ 5.27</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.62</td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 14px; font-weight: 600;">12LAC</td>
+                        <td style="padding: 14px; text-align: center;">16</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.62</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.88</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.56</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.81</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.75</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #dc3545; font-weight: 600;">↓ 5.25</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.56</td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 14px; font-weight: 600;">13DK</td>
+                        <td style="padding: 14px; text-align: center;">11</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 6.09</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.27</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.09</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.64</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.27</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #dc3545; font-weight: 600;">↓ 5.18</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.67</td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 14px; font-weight: 600;">12MT</td>
+                        <td style="padding: 14px; text-align: center;">20</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.20</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.65</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.50</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.50</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.20</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #dc3545; font-weight: 600;">↓ 5.15</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.72</td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 14px; font-weight: 600;">13RM</td>
+                        <td style="padding: 14px; text-align: center;">17</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.94</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.24</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.18</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.06</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.65</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #dc3545; font-weight: 600;">↓ 5.06</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.22</td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 14px; font-weight: 600;">13RN</td>
+                        <td style="padding: 14px; text-align: center;">14</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.64</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.29</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.29</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.57</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.00</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #dc3545; font-weight: 600;">↓ 4.86</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.07</td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 14px; font-weight: 600;">13EMS</td>
+                        <td style="padding: 14px; text-align: center;">15</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.33</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.73</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.53</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 4.67</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 3.20</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);"><span style="color: #dc3545; font-weight: 600;">↓ 4.47</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.07</td>
+                    </tr>
+
+                    
+                    <tr style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                        <td style="padding: 16px; font-weight: bold;">SCHOOL AVERAGE</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">259</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.80</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.59</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.43</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.31</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.41</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold; font-size: 1.1em;">5.48</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold; font-size: 1.1em;">3.56</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <p><strong>Note:</strong> Groups with fewer than 5 students are excluded from this table but included in school-wide statistics.</p>
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                SCORE DISTRIBUTIONS
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>📈 Score Distribution Analysis</h2>
+            <p style="margin-bottom: 20px;">Distribution of VESPA scores for Cycle 1 baseline. Bar charts show Ousedale School percentages, red lines show national distribution.</p>
+            
+            <div style="background: #e8f4f8; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #06b6d4;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Understanding Score Distributions</h3>
+                <p style="margin-bottom: 15px;"><strong>What are we looking at?</strong> These charts show how student scores are spread across the 1-10 scale for each VESPA dimension. The bars represent the percentage of students at each score level, while the red line shows the national average distribution.</p>
+                
+                <p style="margin-bottom: 15px;"><strong>Why are distributions insightful?</strong> While average scores tell us the central tendency, distributions reveal the full picture of student performance. They show:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Score spread:</strong> Are students clustered around similar scores (narrow distribution) or spread widely (broad distribution)?</li>
+                    <li><strong>Performance patterns:</strong> Do we have many high performers, many low performers, or a balanced spread?</li>
+                    <li><strong>Tail identification:</strong> Which students are at the extremes and may need targeted support or recognition?</li>
+                    <li><strong>Normality:</strong> Does our distribution follow expected patterns or show unusual clustering?</li>
+                </ul>
+                
+                <p style="margin-bottom: 15px;"><strong>Comparing to National:</strong> When our distribution differs from the national pattern, it reveals important insights:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>More students at higher scores:</strong> Indicates strength in that dimension - students are performing above typical levels</li>
+                    <li><strong>More students at lower scores:</strong> Suggests a development opportunity - students may need additional support or intervention</li>
+                    <li><strong>Different shape:</strong> A distribution that's more spread out suggests greater diversity in student experiences, while a tighter distribution indicates more consistent performance across students</li>
+                    <li><strong>Skewed patterns:</strong> If scores cluster at one end, it may indicate systemic factors (e.g., strong school culture or specific challenges)</li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>What does this tell us?</strong> Distribution analysis helps identify whether improvements are needed across the board (if many students score low) or if targeted interventions for specific groups would be more effective. It also helps validate whether average scores accurately represent the student population or if they're masking important variations.</p>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-vision" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-vision")) {                    Plotly.newPlot(                        "dist-vision",                        [{"marker":{"color":"#e59437"},"name":"School","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.7722007722007722,7.335907335907336,15.83011583011583,9.266409266409266,11.583011583011583,14.671814671814673,12.355212355212355,15.057915057915059,4.633204633204633,8.494208494208493],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[1.07,3.41,9.35,8.13,9.17,21.78,12.05,18.31,7.52,9.2],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"School: 5.8\u003cbr\u003eNational: 6.4","x":5.5,"y":22.869000000000003}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Vision Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-effort" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-effort")) {                    Plotly.newPlot(                        "dist-effort",                        [{"marker":{"color":"#86b4f0"},"name":"School","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[4.247104247104247,2.3166023166023164,14.671814671814673,11.96911196911197,15.057915057915059,17.374517374517374,11.96911196911197,8.494208494208493,11.96911196911197,1.9305019305019304],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.73,2.6,13.01,10.2,13.33,15.18,14.91,11.24,13.74,3.04],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"School: 5.6\u003cbr\u003eNational: 5.9","x":5.5,"y":18.243243243243246}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Effort Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-systems" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-systems")) {                    Plotly.newPlot(                        "dist-systems",                        [{"marker":{"color":"#72cb44"},"name":"School","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[3.474903474903475,4.247104247104247,11.583011583011583,16.602316602316602,11.96911196911197,22.393822393822393,12.355212355212355,10.424710424710424,3.474903474903475,3.474903474903475],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[3.12,4.57,10.22,14.89,10.16,22.21,10.07,15.48,5.21,4.06],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"School: 5.4\u003cbr\u003eNational: 5.7","x":5.5,"y":23.513513513513516}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Systems Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-practice" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-practice")) {                    Plotly.newPlot(                        "dist-practice",                        [{"marker":{"color":"#7f31a4"},"name":"School","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[4.247104247104247,5.405405405405405,9.652509652509652,15.057915057915059,25.096525096525095,7.335907335907336,16.216216216216218,11.196911196911197,4.247104247104247,1.5444015444015444],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[1.95,3.84,7.92,12.76,19.5,10.28,17.83,13.31,7.6,5.01],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"School: 5.3\u003cbr\u003eNational: 5.9","x":5.5,"y":26.35135135135135}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Practice Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-attitude" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-attitude")) {                    Plotly.newPlot(                        "dist-attitude",                        [{"marker":{"color":"#f032e6"},"name":"School","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[3.088803088803089,7.722007722007722,11.96911196911197,8.494208494208493,16.602316602316602,21.62162162162162,10.424710424710424,15.057915057915059,3.861003861003861,1.1583011583011582],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.48,5.96,10.21,9.6,12.1,20.95,14.29,13.81,7.33,3.23],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"School: 5.4\u003cbr\u003eNational: 5.8","x":5.5,"y":22.7027027027027}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Attitude Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-overall" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-overall")) {                    Plotly.newPlot(                        "dist-overall",                        [{"marker":{"color":"#ffd700"},"name":"School","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.3861003861003861,0.7722007722007722,8.880308880308881,18.146718146718147,24.324324324324326,21.62162162162162,15.444015444015443,6.563706563706563,3.474903474903475,0.3861003861003861],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.3,1.32,5.83,12.98,19.11,22.46,20.33,11.35,5.12,1.19],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"School: 5.5\u003cbr\u003eNational: 5.9","x":5.5,"y":25.540540540540544}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Overall Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                STATEMENT LEVEL ANALYSIS
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>📝 VESPA Statement Analysis - Baseline</h2>
+            <p style="margin-bottom: 20px;">
+                Detailed analysis of individual VESPA statement responses reveals specific strengths and development areas.
+                Each statement is scored on a 1-5 scale where higher scores indicate stronger agreement/engagement.
+            </p>
+            
+            <div style="margin-top: 50px; padding: 30px; background: linear-gradient(to right, #f8f9fa, #ffffff); border-radius: 12px; border: 1px solid #e9ecef;">
+                <h3 style="color: #2c3e50; margin-bottom: 25px; font-size: 1.6em;">Statement Agreement Analysis</h3>
+                <p style="color: #666; margin-bottom: 30px;">Analysis of which statements students most and least agree with in the baseline assessment.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div style="background: #fff; padding: 25px; border-radius: 10px; border: 2px solid #28a745;">
+                        <h4 style="color: #28a745; margin-bottom: 20px; font-size: 1.2em;">Top 5 - Students Strongly Agree</h4>
+                        <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                            
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I know what grades I want to achieve</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.20 | Category: Vision | n=259
+                                <br>Variance: 0.74 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I like hearing feedback about how I can improve</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.08 | Category: Attitude | n=259
+                                <br>Variance: 0.79 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I enjoy learning new things </strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.07 | Category: Vision | n=259
+                                <br>Variance: 0.69 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I work as hard as I can in most classes</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.00 | Category: Effort | n=259
+                                <br>Variance: 0.63 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I complete all my homework on time</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 3.93 | Category: Systems | n=259
+                                <br>Variance: 0.96 (Moderate - Consistent agreement)
+                            </span>
+                        </li>
+
+                        </ol>
+                    </div>
+                    
+                    <div style="background: #fff; padding: 25px; border-radius: 10px; border: 2px solid #dc3545;">
+                        <h4 style="color: #dc3545; margin-bottom: 20px; font-size: 1.2em;">Bottom 5 - Development Opportunities</h4>
+                        <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                            
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I spread out my revision,  rather than cramming at the last minute.</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 3.07 | Category: Practice | n=259
+                                <br>Variance: 1.18 (Moderate - Mixed responses)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I've worked out the next steps in my life</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 3.01 | Category: Vision | n=259
+                                <br>Variance: 1.85 (High - Mixed responses)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I study by explaining difficult topics outloud</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 2.78 | Category: Practice | n=259
+                                <br>Variance: 1.69 (High - Mixed responses)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>When revising I mix different kinds of topics/subjects in one study session</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 2.70 | Category: Practice | n=259
+                                <br>Variance: 1.37 (Moderate - Mixed responses)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>When revising, I work under timed conditions answering exam-style questions</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 2.48 | Category: Practice | n=259
+                                <br>Variance: 0.99 (Moderate - Consistent agreement)
+                            </span>
+                        </li>
+
+                        </ol>
+                    </div>
+                </div>
+                
+                
+                
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">Interpretation Guide</h4>
+                    <p style="margin: 0 0 10px 0; font-size: 0.95em; color: #555;">
+                        <strong>Mean Scores:</strong> Statements range from 1-5. Scores above 4.0 indicate strong agreement, 
+                        scores between 3.0-4.0 show moderate agreement, and scores below 3.0 suggest areas where students lack confidence 
+                        or need additional support.
+                    </p>
+                    <p style="margin: 0; font-size: 0.95em; color: #555;">
+                        <strong>Variance:</strong> Measures how spread out student responses are. <em>Low variance</em> (below 0.8) means 
+                        most students agree and responses are consistent - ideal for building on strengths or addressing common challenges. 
+                        <em>High variance</em> (above 1.5) indicates mixed responses where some students strongly agree while others don't - 
+                        suggesting differentiated support may be needed. <em>Moderate variance</em> (0.8-1.5) shows typical spread in student experiences.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                RECOMMENDATIONS & ACTION PLAN
+            </h1>
+        </div>
+        
+        <!-- QUICK WINS SECTION -->
+        <div class="section" style="background: linear-gradient(135deg, rgba(40, 167, 69, 0.12), rgba(32, 201, 151, 0.12)); border: 3px solid #28a745; border-radius: 15px; padding: 40px; margin-bottom: 40px; box-shadow: 0 10px 30px rgba(40, 167, 69, 0.2);">
+            
+            <div style="text-align: center; margin-bottom: 35px;">
+                <div style="background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 18px 50px; border-radius: 50px; display: inline-block; box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);">
+                    <h2 style="color: white; margin: 0; font-size: 2em; font-weight: 700; letter-spacing: 1px;">🚀 QUICK WINS</h2>
+                    <p style="margin: 8px 0 0 0; opacity: 0.95; font-size: 1em; font-weight: 500;">Implement This Week • Maximum Impact</p>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 25px;">
+                
+                <div style="background: white; padding: 28px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); border-top: 5px solid #28a745;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                        <h3 style="color: #28a745; margin: 0; font-size: 1.3em; font-weight: 600;">1. Priority Coaching</h3>
+                        <span style="background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 15px; font-size: 0.75em; font-weight: 700; letter-spacing: 0.5px;">5-7 MIN</span>
+                    </div>
+                    <p style="color: #555; margin: 0; line-height: 1.7; font-size: 0.98em;">
+                        Target 103-130 middle band students for coaching conversations focusing on Practice strategies and Active Learning (35.8% agreement - lowest in cohort).
+                    </p>
+                    <div style="margin-top: 18px; padding-top: 15px; border-top: 2px solid #e8f5e9;">
+                        <strong style="color: #28a745; font-size: 0.9em;">🎯 Focus: </strong>
+                        <span style="color: #666; font-size: 0.9em;">Students with passive revision strategies</span>
+                    </div>
+                </div>
+                
+                <div style="background: white; padding: 28px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); border-top: 5px solid #28a745;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                        <h3 style="color: #28a745; margin: 0; font-size: 1.3em; font-weight: 600;">2. Team Activity</h3>
+                        <span style="background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 15px; font-size: 0.75em; font-weight: 700; letter-spacing: 0.5px;">45 MIN</span>
+                    </div>
+                    <p style="color: #555; margin: 0; line-height: 1.7; font-size: 0.98em;">
+                        Staff meeting using 100 Statements to identify 3-5 Practice behaviors for consistent reinforcement.
+                    </p>
+                    <div style="margin-top: 18px; padding-top: 15px; border-top: 2px solid #e8f5e9;">
+                        <strong style="color: #28a745; font-size: 0.9em;">📚 Resource: </strong>
+                        <a href="#" style="color: #28a745; font-size: 0.9em; text-decoration: none; font-weight: 600;">100 Statements in Portal</a>
+                    </div>
+                </div>
+                
+                <div style="background: white; padding: 28px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); border-top: 5px solid #28a745;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                        <h3 style="color: #28a745; margin: 0; font-size: 1.3em; font-weight: 600;">3. High & Low Utility</h3>
+                        <span style="background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 15px; font-size: 0.75em; font-weight: 700; letter-spacing: 0.5px;">20 MIN</span>
+                    </div>
+                    <p style="color: #555; margin: 0; line-height: 1.7; font-size: 0.98em;">
+                        Teach difference between effective and ineffective study techniques. Directly addresses Active Learning concern (35.8% - your lowest insight).
+                    </p>
+                    <div style="margin-top: 18px; padding-top: 15px; border-top: 2px solid #e8f5e9; display: flex; gap: 12px;">
+                        <a href="#" style="color: #28a745; font-size: 0.9em; text-decoration: none; font-weight: 600;">📥 PDF</a>
+                        <a href="#" style="color: #28a745; font-size: 0.9em; text-decoration: none; font-weight: 600;">🌐 Online</a>
+                        <a href="#" style="color: #28a745; font-size: 0.9em; text-decoration: none; font-weight: 600;">📽️ Slides</a>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <div style="margin-top: 25px; padding: 22px; background: white; border-radius: 10px; border-left: 5px solid #28a745; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="font-size: 2.5em;">💡</div>
+                    <div>
+                        <strong style="color: #28a745; font-size: 1.05em;">Why Start Here:</strong>
+                        <p style="margin: 5px 0 0 0; color: #555; font-size: 0.95em; line-height: 1.6;">
+                            Coaching with middle band students on Practice strategies, team behavioral alignment, and immediate tutorial activity addressing lowest Active Learning score in your cohort.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section" contenteditable="true" style="border: 2px dashed transparent; transition: border 0.3s;" 
+             onmouseover="this.style.borderColor='#667eea'" onmouseout="this.style.borderColor='transparent'">
+            <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                <p style="margin: 0; color: #667eea; font-weight: 600;">💡 This section is editable - Click anywhere to customize recommendations for your school</p>
+            </div>
+            
+            <h2>🎯 Strategic Recommendations for Ousedale School</h2>
+            
+            <div style="margin: 25px 0;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">1. Build on Strengths</h3>
+                <div style="background: rgba(16, 185, 129, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
+                    <p><strong>Leverage Vision Performance (5.80)</strong></p>
+                    <ul style="margin-top: 10px; line-height: 1.8;">
+                        <li>Share best practices from high-performing groups with the wider school community</li>
+                        <li>Celebrate and recognize students demonstrating excellence in Vision</li>
+                        <li>Use Vision success as foundation for developing other VESPA dimensions</li>
+                        <li>Document successful strategies for replication in Cycle 2</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="margin: 25px 0;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">2. Target Development Areas</h3>
+                <div style="background: rgba(245, 158, 11, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <p><strong>Focus on Practice (5.31)</strong></p>
+                    <ul style="margin-top: 10px; line-height: 1.8;">
+                        <li><strong>Recommended Activity:</strong> Test Yourself - Active recall practice using the testing effect for improved memory retention [<a href="#" style="color: #f59e0b;">Portal</a>]</li>
+                        <li><strong>Target Behavior:</strong> <em>"I will find opportunities to test myself on the knowledge I have gained"</em></li>
+                        <li><strong>Coaching Question:</strong> <em>"Do you mostly re-read notes, or test yourself?"</em></li>
+                        <li>Integrate Practice-building activities into weekly tutorial program (one activity per fortnight)</li>
+                        <li>Monitor progress focusing on middle band students through regular check-ins</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="margin: 25px 0;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">3. Enhance Exam Readiness (ERI: 3.56)</h3>
+                <div style="background: rgba(251, 191, 36, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #fbbf24;">
+                    <p><strong>Action Required:</strong> Build on solid foundation by implementing targeted exam preparation workshops and peer mentoring programs.</p>
+                    <ul style="margin-top: 10px; line-height: 1.8;">
+                        <li>Run dedicated exam preparation workshops focusing on study techniques and time management</li>
+                        <li>Establish peer support groups for exam preparation</li>
+                        <li>Provide regular mock exams with detailed feedback</li>
+                        <li>Offer one-to-one support for students expressing low confidence</li>
+                        <li>Communicate clearly about available support services</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="margin: 25px 0;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">4. Address Questionnaire Insight Priorities</h3>
+                <div style="background: rgba(139, 92, 246, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+                    <p><strong>Focus Areas Based on Psychometric Analysis:</strong></p>
+                    <ul style="margin-top: 10px; line-height: 1.8;">
+                        
+                <li><strong>🎓 Active Learning</strong> (35.8% agreement) - 
+                Implement targeted interventions such as group workshops, peer mentoring, or one-to-one coaching sessions.</li>
+
+                <li><strong>📚 Study Strategies</strong> (48.9% agreement) - 
+                Implement targeted interventions such as group workshops, peer mentoring, or one-to-one coaching sessions.</li>
+
+                <li><strong>📖 Revision Readiness</strong> (51.8% agreement) - 
+                Implement targeted interventions such as group workshops, peer mentoring, or one-to-one coaching sessions.</li>
+
+                        <li>Review Cycle 2 results to measure impact of interventions</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="margin: 30px 0;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">📚 Suggested VESPA Activities</h3>
+                <div style="background: linear-gradient(to right, #f8f9fa, #ffffff); padding: 25px; border-radius: 10px; border: 2px solid #667eea;">
+                    <p style="margin-bottom: 15px;"><strong>Priority Focus: Practice Development</strong></p>
+                    <p style="margin-bottom: 15px; color: #666;">
+                        The following evidence-based activities are recommended to strengthen Practice skills.
+                        These can be integrated into tutorial time, assemblies, or dedicated intervention sessions.
+                    </p>
+                    <ul style="line-height: 2; margin-top: 15px;">
+                        <li>Active recall and retrieval practice training</li><li>Spaced repetition techniques workshop</li><li>Self-testing strategies and resources</li><li>Interleaving practice guidance</li><li>Exam technique and timed practice sessions</li>
+                    </ul>
+                    
+                    <div style="margin-top: 25px; padding: 20px; background: rgba(102, 126, 234, 0.08); border-radius: 8px;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Additional Universal Activities</h4>
+                        <ul style="line-height: 1.8;">
+                            <li><strong>Weekly VESPA Check-ins:</strong> 5-minute tutorial discussions on one VESPA dimension per week</li>
+                            <li><strong>Student Success Stories:</strong> Share examples of students demonstrating strong VESPA characteristics</li>
+                            <li><strong>VESPA Champions:</strong> Appoint student ambassadors to promote positive mindsets and study habits</li>
+                            <li><strong>Parent Communication:</strong> Share VESPA framework with families to support home learning</li>
+                            <li><strong>Staff CPD:</strong> Regular training on embedding VESPA principles across the curriculum</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin: 25px 0;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">5. Monitor and Evaluate</h3>
+                <div style="background: rgba(59, 130, 246, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                    <p><strong>Tracking Progress Through Cycle 2 and 3:</strong></p>
+                    <ul style="margin-top: 10px; line-height: 1.8;">
+                        <li><strong>Cycle 2 (January 2026):</strong> Target Practice increase to 5.8+ and Active Learning agreement to 48%+</li>
+                        <li><strong>Middle Band Focus:</strong> Monitor students in 5.5-6.5 range for 0.4-0.6 point gains</li>
+                        <li>Identify students showing limited improvement for early intervention</li>
+                        <li>Celebrate and share success stories of students showing significant growth</li>
+                        <li>Adjust intervention strategies based on Cycle 2 data</li>
+                        <li><strong>Cycle 3 (June 2026):</strong> Target all dimensions above 5.8</li>
+                        <li>Use data to inform next year's baseline targets and support strategies</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="margin: 30px 0; padding: 25px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05)); border-radius: 10px; border: 1px solid #667eea;">
+                <h4 style="color: #2c3e50; margin-bottom: 15px;">💭 Space for Your Notes and Additional Recommendations</h4>
+                <div style="min-height: 150px; padding: 15px; background: white; border-radius: 5px; border: 1px dashed #ccc;">
+                    <p style="color: #999; font-style: italic;">
+                        Click here to add your school-specific observations, additional recommendations, or action plans...
+                    </p>
+                    <br><br><br><br>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="footer">
+            <p>© 2025 VESPA Education Analytics | Ousedale School - Confidential Report</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Cycle 1 Baseline | Academic Year 2025/26</p>
+        </div>
+
+    </div>
+</body>
+</html>

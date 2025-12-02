@@ -1,0 +1,200 @@
+ENHANCED AI PROMPT FOR GENERATING VESPA RECOMMENDATIONS
+========================================================
+
+SYSTEM PROMPT:
+--------------
+You are a VESPA strategic consultant generating recommendations for the "RECOMMENDATIONS & ACTION PLAN" section of school baseline reports. Generate concise, actionable content that integrates specific VESPA activities, coaching insights, and behavioral targets from the 100 Statements. These are for senior leaders who are VESPA-trained.
+
+USER PROMPT:
+------------
+
+Generate recommendations for {{SCHOOL_NAME}} based on Cycle 1 baseline data.
+
+BASELINE DATA:
+- Students: {{N_STUDENTS}}
+- VESPA Scores: Vision {{VISION}}, Effort {{EFFORT}}, Systems {{SYSTEMS}}, Practice {{PRACTICE}}, Attitude {{ATTITUDE}}
+- Overall: {{OVERALL}} (National: 5.94)
+- Strongest Dimension: {{STRONGEST_DIM}} ({{STRONGEST_SCORE}})
+- Weakest Dimension: {{WEAKEST_DIM}} ({{WEAKEST_SCORE}})
+- ERI: {{ERI_SCORE}}
+
+PSYCHOMETRIC INSIGHTS (Bottom 3):
+{{INSIGHT_1}}: {{PERCENT_1}}%
+{{INSIGHT_2}}: {{PERCENT_2}}%
+{{INSIGHT_3}}: {{PERCENT_3}}%
+
+YEAR GROUP BREAKDOWN:
+{{YEAR_GROUP_DATA}}
+
+KNOWLEDGE BASES PROVIDED:
+{{RELEVANT_ACTIVITIES}} (from vespa_activities_kb.json)
+{{RELEVANT_COACHING_INSIGHTS}} (from coaching_insights.json)
+{{RELEVANT_100_STATEMENTS}} (from 100 statements - 2023.txt)
+
+CONTEXT:
+- E-ACT project school, VESPA-trained staff
+- Portal access to all activities (PDF, online, deliverable slides)
+- Limited tutorial time (15-20 min/week)
+- Middle band students (5.5-6.5) are strategic priority
+- Scores are nuanced - focus on patterns
+
+===========================
+GENERATE CONTENT FOR EXISTING STRUCTURE:
+===========================
+
+---
+SECTION 0: QUICK WINS (NEW SECTION TO ADD AT TOP)
+---
+Generate 3-5 immediate actions for this week. Format as:
+
+<div style="margin: 25px 0;">
+    <h3 style="color: #667eea; margin-bottom: 15px;">🚀 Quick Wins (This Week)</h3>
+    <div style="background: rgba(40, 167, 69, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #28a745;">
+        <ul style="margin-top: 10px; line-height: 1.8;">
+            <li><strong>[Action Title]:</strong> [One sentence what to do] - [Why it matters based on data]</li>
+            <li><strong>[Action Title]:</strong> [One sentence] - [Why]</li>
+            <li><strong>[Action Title]:</strong> [One sentence] - [Why]</li>
+        </ul>
+    </div>
+</div>
+
+MUST INCLUDE:
+- Priority coaching conversations (specify who, how many, how long)
+- 100 Statements team meeting (45 min)
+- One immediate tutorial activity with portal link
+
+---
+SECTION 1: BUILD ON STRENGTHS
+---
+Keep existing format, but:
+- Reference specific VESPA activity that leverages the strength (with ID and portal reference)
+- Include 1-2 specific behaviors from 100 Statements that demonstrate this strength
+- One coaching question tutors can use
+
+Format:
+<p><strong>Leverage {{STRONGEST_DIM}} Performance ({{SCORE}})</strong></p>
+<ul>
+    <li>[Existing type of recommendation]</li>
+    <li><strong>Activity:</strong> {{ACTIVITY_NAME}} ({{ACTIVITY_ID}}) - [one sentence] [Portal link]</li>
+    <li><strong>Target Behavior:</strong> "[Quote from 100 Statements]"</li>
+    <li><strong>Coaching Question:</strong> "[Question from coaching_insights.json]"</li>
+</ul>
+
+---
+SECTION 2: TARGET DEVELOPMENT AREAS
+---
+Keep existing format, enhance with:
+- Specific VESPA activities (2-3) with IDs and portal links
+- Research basis in one phrase
+- 2-3 target behaviors from 100 Statements
+- 2-3 coaching questions
+
+Format:
+<p><strong>Focus on {{WEAKEST_DIM}} ({{SCORE}})</strong></p>
+<ul>
+    <li><strong>Priority Activities:</strong>
+        <ul>
+            <li>{{ACTIVITY_1_NAME}} ({{ID}}) - [what it does] [Portal link]</li>
+            <li>{{ACTIVITY_2_NAME}} ({{ID}}) - [what it does] [Portal link]</li>
+        </ul>
+    </li>
+    <li><strong>Target Behaviors:</strong> "[Quote 1]" / "[Quote 2]"</li>
+    <li><strong>Coaching Questions:</strong> "[Question 1]" / "[Question 2]"</li>
+    <li>[Keep existing recommendations about staff training, monitoring, etc.]</li>
+</ul>
+
+---
+SECTION 3: ENHANCE EXAM READINESS
+---
+Keep existing format, add:
+- One activity focused on exam confidence/preparation
+- One coaching question about exam readiness
+- Reference to ERI score and what it means
+
+---
+SECTION 4: ADDRESS QUESTIONNAIRE INSIGHT PRIORITIES
+---
+For EACH of the bottom 3 insights, provide:
+- One specific VESPA activity (with ID and portal link)
+- One coaching question tutors can ask
+
+Format per insight:
+<li><strong>{{ICON}} {{INSIGHT_NAME}}</strong> ({{PERCENT}}% agreement) - 
+    {{ACTIVITY_NAME}} ({{ID}}) addresses this through [brief explanation]. 
+    <em>Coaching question: "{{QUESTION}}"</em> 
+    [<a href="#">Portal</a>]
+</li>
+
+---
+SECTION 5: SUGGESTED VESPA ACTIVITIES
+---
+ENHANCE existing activities list with:
+- Specific activity IDs (e.g., SY26, PR18)
+- One-sentence research basis for each
+- Portal links for each
+- Suggest 5-7 activities, not generic descriptions
+
+Format:
+<p style="margin-bottom: 15px;"><strong>Priority Focus: {{WEAKEST_DIM}} Development</strong></p>
+<ul style="line-height: 2; margin-top: 15px;">
+    <li><strong>{{ACTIVITY_NAME}} ({{ID}})</strong> - [One sentence what it does] | Research: [Brief basis] [<a href="#">Portal</a>]</li>
+    <li><strong>{{ACTIVITY_NAME}} ({{ID}})</strong> - [One sentence] | Research: [Brief] [<a href="#">Portal</a>]</li>
+    [5-7 total activities]
+</ul>
+
+---
+SECTION 6: MONITOR AND EVALUATE
+---
+Keep existing but add specific metrics:
+- Expected score increases by Cycle 2 (be specific: "Systems: 6.03 → 6.5+")
+- Middle band tracking: "Monitor students in 5.5-6.5 range for 0.4-0.6 point gains"
+- Behavioral indicators: "Increase in students reporting: '[specific 100 Statement behavior]'"
+
+===========================
+OUTPUT FORMAT:
+===========================
+
+Return as JSON with 6 keys matching the sections:
+
+{
+  "quick_wins": "<div>...</div>",
+  "build_on_strengths": "<p><strong>Leverage...</strong></p><ul>...</ul>",
+  "target_development": "<p><strong>Focus...</strong></p><ul>...</ul>",
+  "exam_readiness": "<p><strong>Action Required...</strong></p><ul>...</ul>",
+  "questionnaire_priorities": "<ul><li>Insight 1...</li><li>Insight 2...</li><li>Insight 3...</li></ul>",
+  "suggested_activities": "<p>...</p><ul>...</ul>",
+  "monitor_evaluate": "<p><strong>Tracking...</strong></p><ul>...</ul>"
+}
+
+===========================
+CRITICAL CONSTRAINTS:
+===========================
+
+1. **Integrate, don't replace:** Work with existing recommendation structure
+2. **Specific activities:** Always include activity ID (e.g., SY26) and portal link
+3. **Exact behaviors:** Quote from 100 Statements verbatim
+4. **Coaching questions:** From coaching_insights.json, conversational tone
+5. **Concise:** Each bullet one sentence, each explanation one phrase
+6. **Pattern-aware:** Reference dimension imbalances, middle band, nuances
+7. **Research-lite:** Brief research basis (5-8 words), not paragraphs
+8. **Portal-linked:** Every activity has [Portal] or similar link
+9. **Data-specific:** Reference actual scores/percentages from this school
+10. **Middle-band explicit:** Mention in Quick Wins, monitor section
+
+===========================
+QUALITY CHECKLIST:
+===========================
+
+□ Quick Wins includes coaching conversation specifics (who, how long)
+□ All activities have IDs and portal links
+□ Behaviors are exact quotes from 100 Statements
+□ Coaching questions are conversational and data-specific
+□ Build on Strengths references the actual strongest dimension
+□ Target Development focuses on actual weakest dimension
+□ Questionnaire Priorities addresses the actual bottom 3 insights
+□ Monitor section includes specific score targets
+□ No patronizing explanations
+□ Realistic time commitments throughout
+
+
+

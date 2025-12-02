@@ -1,0 +1,373 @@
+| column_name     | data_type                | is_nullable |
+| --------------- | ------------------------ | ----------- |
+| id              | uuid                     | NO          |
+| student_id      | uuid                     | YES         |
+| cycle           | integer                  | NO          |
+| vision          | integer                  | YES         |
+| effort          | integer                  | YES         |
+| systems         | integer                  | YES         |
+| practice        | integer                  | YES         |
+| attitude        | integer                  | YES         |
+| overall         | integer                  | YES         |
+| completion_date | date                     | YES         |
+| academic_year   | character varying        | YES         |
+| created_at      | timestamp with time zone | YES         |
+| student_email   | character varying        | YES         |
+
+| column_name                 | data_type                | is_nullable |
+| --------------------------- | ------------------------ | ----------- |
+| id                          | uuid                     | NO          |
+| email                       | character varying        | NO          |
+| current_knack_id            | character varying        | YES         |
+| historical_knack_ids        | ARRAY                    | YES         |
+| supabase_user_id            | uuid                     | YES         |
+| auth_provider               | character varying        | YES         |
+| password_reset_required     | boolean                  | YES         |
+| last_login_at               | timestamp with time zone | YES         |
+| login_count                 | integer                  | YES         |
+| first_name                  | character varying        | YES         |
+| last_name                   | character varying        | YES         |
+| full_name                   | character varying        | YES         |
+| date_of_birth               | date                     | YES         |
+| school_id                   | uuid                     | YES         |
+| school_name                 | character varying        | YES         |
+| trust_name                  | character varying        | YES         |
+| current_year_group          | character varying        | YES         |
+| current_academic_year       | character varying        | YES         |
+| student_group               | character varying        | YES         |
+| current_level               | character varying        | YES         |
+| current_cycle               | integer                  | YES         |
+| enrollment_date             | date                     | YES         |
+| expected_graduation_date    | date                     | YES         |
+| latest_vespa_scores         | jsonb                    | YES         |
+| total_points                | integer                  | YES         |
+| total_activities_completed  | integer                  | YES         |
+| total_achievements          | integer                  | YES         |
+| current_streak_days         | integer                  | YES         |
+| longest_streak_days         | integer                  | YES         |
+| status                      | character varying        | YES         |
+| is_active                   | boolean                  | YES         |
+| last_activity_at            | timestamp with time zone | YES         |
+| years_in_system             | integer                  | YES         |
+| previous_academic_years     | ARRAY                    | YES         |
+| phone_number                | character varying        | YES         |
+| parent_email                | character varying        | YES         |
+| parent_phone                | character varying        | YES         |
+| preferences                 | jsonb                    | YES         |
+| last_synced_from_knack      | timestamp with time zone | YES         |
+| knack_user_attributes       | jsonb                    | YES         |
+| sis_student_id              | character varying        | YES         |
+| exam_board_candidate_number | character varying        | YES         |
+| created_at                  | timestamp with time zone | YES         |
+| updated_at                  | timestamp with time zone | YES         |
+| created_by                  | character varying        | YES         |
+| deleted_at                  | timestamp with time zone | YES         |
+| deleted_by                  | character varying        | YES         |
+| deleted_reason              | text                     | YES         |
+| account_id                  | uuid                     | YES         |
+| gender                      | character varying        | YES         |
+
+
+| total_scores | unique_students_with_scores | unique_student_ids | oldest_score | newest_score |
+| ------------ | --------------------------- | ------------------ | ------------ | ------------ |
+| 49067        | 35812                       | 35871              | 2021-07-12   | 2025-12-06   |
+
+
+| cycle | academic_year | score_count | unique_students | avg_overall_score  |
+| ----- | ------------- | ----------- | --------------- | ------------------ |
+| 1     | 2025/2026     | 23495       | 23454           | 5.9447626841243863 |
+| 2     | 2025/2026     | 2329        | 2307            | 5.9416058394160584 |
+| 3     | 2025/2026     | 1034        | 1033            | 6.2292069632495164 |
+| 1     | 2024/2025     | 8918        | 8918            | 5.7625028033191298 |
+| 2     | 2024/2025     | 5841        | 5841            | 5.9530902242766650 |
+| 3     | 2024/2025     | 3559        | 3559            | 6.1309356560831694 |
+| 1     | 2023/2024     | 1015        | 1015            | 4.6886699507389163 |
+| 2     | 2023/2024     | 312         | 312             | 5.3397435897435897 |
+| 3     | 2023/2024     | 106         | 106             | 6.2169811320754717 |
+| 1     | 2022/2023     | 351         | 351             | 4.8490028490028490 |
+| 2     | 2022/2023     | 19          | 19              | 4.9473684210526316 |
+| 3     | 2022/2023     | 6           | 6               | 6.1666666666666667 |
+| 1     | 2021/2022     | 1446        | 1446            | 5.2641770401106501 |
+| 2     | 2021/2022     | 622         | 622             | 5.8295819935691318 |
+| 3     | 2021/2022     | 8           | 8               | 5.1250000000000000 |
+| 1     | 2020/2021     | 6           | 6               | 5.0000000000000000 |
+
+
+| total_students | students_with_cached_scores | students_missing_cache |
+| -------------- | --------------------------- | ---------------------- |
+| 36566          | 24850                       | 11716                  |
+
+
+| email                            | latest_vespa_scores                                                                                                                                                                           | current_level | updated_at                    |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ----------------------------- |
+| 20thomask@oatforge.co.uk         | {"cycle":2,"effort":3,"vision":5,"overall":5,"systems":4,"attitude":6,"practice":6,"synced_at":"2025-12-02T12:51:32.061151+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | Level 2       | 2025-12-02 12:51:32.061151+00 |
+| frowlands20@pencoedtrehigh.co.uk | {"cycle":2,"effort":6,"vision":8,"overall":6,"systems":5,"attitude":2,"practice":7,"synced_at":"2025-12-02T12:51:32.241905+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | Level 2       | 2025-12-02 12:51:32.241905+00 |
+| cali@vespa.academy               | {"cycle":2,"effort":3,"vision":3,"overall":5,"systems":6,"attitude":4,"practice":9,"synced_at":"2025-12-02T12:51:32.411638+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | Level 2       | 2025-12-02 12:51:32.411638+00 |
+| dshrukhi25@pencoedtrehigh.co.uk  | {"cycle":2,"effort":8,"vision":4,"overall":5,"systems":3,"attitude":3,"practice":5,"synced_at":"2025-12-02T12:51:31.725306+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | Level 2       | 2025-12-02 12:51:31.725306+00 |
+| martha.endacott@hartpury.ac.uk   | {"cycle":2,"effort":6,"vision":4,"overall":6,"systems":8,"attitude":7,"practice":6,"synced_at":"2025-12-02T12:51:32.581276+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | Level 2       | 2025-12-02 12:51:32.581276+00 |
+
+| student_email                          | cycles_completed | latest_completion | cached_data |
+| -------------------------------------- | ---------------- | ----------------- | ----------- |
+| 001413@student.bedfordfreeschool.co.uk | 1                | null              | null        |
+| 02ahmzak@dubaibritishschool.ae         | 1                | null              | null        |
+| 02alestr@dubaibritishschool.ae         | 1                | null              | null        |
+| 02alewad@dubaibritishschool.ae         | 1                | null              | null        |
+| 02alykab@dubaibritishschool.ae         | 1                | null              | null        |
+| 02amaman@dubaibritishschool.ae         | 1                | null              | null        |
+| 02connicki19@heolddu.org               | 1                | null              | null        |
+| 02dakdah@dubaibritishschool.ae         | 1                | null              | null        |
+| 02daujav@dubaibritishschool.ae         | 1                | null              | null        |
+| 02daukah@dubaibritishschool.ae         | 1                | null              | null        |
+| 02dengun@dubaibritishschool.ae         | 1                | null              | null        |
+| 02ewachu@dubaibritishschool.ae         | 1                | null              | null        |
+| 02galfon@dubaibritishschool.ae         | 1                | null              | null        |
+| 02gyumoo@dubaibritishschool.ae         | 1                | null              | null        |
+| 02hamshe@dubaibritishschool.ae         | 1                | null              | null        |
+| 02imoraj@dubaibritishschool.ae         | 1                | null              | null        |
+| 02julkru@dubaibritishschool.ae         | 1                | null              | null        |
+| 02lannah@dubaibritishschool.ae         | 1                | null              | null        |
+| 02larsas@dubaibritishschool.ae         | 1                | null              | null        |
+| 02liafis@dubaibritishschool.ae         | 1                | null              | null        |
+
+
+| function_name                       | arguments            | source_preview                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| sync_latest_vespa_scores_to_student | p_student_email text | 
+DECLARE
+    v_latest_scores JSONB;
+    v_current_academic_year TEXT;
+    v_student_uuid UUID;
+    v_rows_updated INTEGER;
+BEGIN
+    -- Get student's current academic year from vespa_students (if exists)
+    SELECT current_academic_year INTO v_current_academic_year
+    FROM vespa_students
+    WHERE email = p_student_email;
+    
+    -- Get latest VESPA scores with multi-year support
+    -- Strategy: Try current academic year first, then fall back to absolute latest
+    
+    IF v_current_academic_year IS NOT NULL THEN
+        -- Try to get scores from current academic year first
+        SELECT jsonb_build_object(
+            'cycle', vsc.cycle,
+            'academic_year', vsc.academic_year,
+            'vision', vsc.vision,
+            'effort', vsc.effort,
+            'systems', vsc.systems,
+            'practice', vsc.practice,
+            'attitude', vsc.attitude,
+            'overall', vsc.overall,
+            'completion_date', vsc.completion_date,
+            'synced_at', NOW()
+        )
+        INTO v_latest_scores
+        FROM vespa_scores vsc
+        INNER JOIN students s ON s.id = vsc.student_id
+        WHERE s.email = p_student_email
+          AND vsc.academic_year = v_current_academic_year
+          AND vsc.vision IS NOT NULL
+          AND vsc.overall IS NOT NULL
+        ORDER BY vsc.completion_date DESC, vsc.cycle DESC
+        LIMIT 1;
+        
+        -- Log what we found
+        IF v_latest_scores IS NOT NULL THEN
+            RAISE NOTICE 'Found scores for % in current academic year %', 
+                p_student_email, v_current_academic_year;
+        ELSE
+            RAISE NOTICE 'No scores in current year % for %, trying all years...', 
+                v_current_academic_year, p_student_email;
+        END IF;
+    END IF;
+    
+    -- If no scores in current academic year (or no current year set), get absolute latest
+    IF v_latest_scores IS NULL THEN
+        SELECT jsonb_build_object(
+            'cycle', vsc.cycle,
+            'academic_year', vsc.academic_year,
+            'vision', vsc.vision,
+            'effort', vsc.effort,
+            'systems', vsc.systems,
+            'practice', vsc.practice,
+            'attitude', vsc.attitude,
+            'overall', vsc.overall,
+            'completion_date', vsc.completion_date,
+            'synced_at', NOW(),
+            'note', 'From previous academic year'
+        )
+        INTO v_latest_scores
+        FROM vespa_scores vsc
+        INNER JOIN students s ON s.id = vsc.student_id
+        WHERE s.email = p_student_email
+          AND vsc.vision IS NOT NULL
+          AND vsc.overall IS NOT NULL
+        ORDER BY vsc.completion_date DESC, vsc.cycle DESC
+        LIMIT 1;
+        
+        IF v_latest_scores IS NOT NULL THEN
+            RAISE NOTICE 'Using previous academic year scores for %', p_student_email;
+        END IF;
+    END IF;
+    
+    IF v_latest_scores IS NULL THEN
+        RAISE NOTICE 'No VESPA scores found for student: %', p_student_email;
+        RETURN NULL;
+    END IF;
+    
+    -- Update or insert into vespa_students
+    INSERT INTO vespa_students (
+        email,
+        latest_vespa_scores,
+        updated_at
+    )
+    VALUES (
+        p_student_email,
+        v_latest_scores,
+        NOW()
+    )
+    ON CONFLICT (email) 
+    DO UPDATE SET
+        latest_vespa_scores = EXCLUDED.latest_vespa_scores,
+        updated_at = NOW();
+    
+    GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
+    
+    RAISE NOTICE 'Updated latest_vespa_scores for %: cycle %, year %', 
+        p_student_email,
+        v_latest_scores->>'cycle',
+        v_latest_scores->>'academic_year';
+    
+    RETURN v_latest_scores;
+END;
+ |
+
+| source       | student_email      | cycle | vision | effort | systems | practice | attitude | overall | completion_date | academic_year |
+| ------------ | ------------------ | ----- | ------ | ------ | ------- | -------- | -------- | ------- | --------------- | ------------- |
+| vespa_scores | cali@vespa.academy | 1     | 10     | 10     | 10      | 10       | 9        | 10      | 2025-11-11      | 2025/2026     |
+| vespa_scores | cali@vespa.academy | 1     | 10     | 10     | 10      | 10       | 9        | 10      | 2025-11-11      | 2025/2026     |
+| vespa_scores | cali@vespa.academy | 1     | 6      | 6      | 7       | 7        | 9        | 7       | 2023-10-06      | 2023/2024     |
+| vespa_scores | cali@vespa.academy | 2     | 3      | 3      | 6       | 9        | 4        | 5       | 2025-12-02      | 2025/2026     |
+
+
+| email              | latest_vespa_scores                                                                                                                                                                           | current_level | current_cycle | total_activities_completed |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------- | -------------------------- |
+| cali@vespa.academy | {"cycle":2,"effort":3,"vision":3,"overall":5,"systems":6,"attitude":4,"practice":9,"synced_at":"2025-12-02T12:51:32.411638+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | Level 2       | 1             | 0                          |
+
+
+| email                            | cached_scores                                                                                                                                                                                 | latest_cycle | vision | effort | latest_completion |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------ | ------ | ----------------- |
+| 20thomask@oatforge.co.uk         | {"cycle":2,"effort":3,"vision":5,"overall":5,"systems":4,"attitude":6,"practice":6,"synced_at":"2025-12-02T12:51:32.061151+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | 2            | 5      | 3      | 2025-12-02        |
+| frowlands20@pencoedtrehigh.co.uk | {"cycle":2,"effort":6,"vision":8,"overall":6,"systems":5,"attitude":2,"practice":7,"synced_at":"2025-12-02T12:51:32.241905+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | 2            | 8      | 6      | 2025-12-02        |
+| cali@vespa.academy               | {"cycle":2,"effort":3,"vision":3,"overall":5,"systems":6,"attitude":4,"practice":9,"synced_at":"2025-12-02T12:51:32.411638+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | 2            | 3      | 3      | 2025-12-02        |
+| dshrukhi25@pencoedtrehigh.co.uk  | {"cycle":2,"effort":8,"vision":4,"overall":5,"systems":3,"attitude":3,"practice":5,"synced_at":"2025-12-02T12:51:31.725306+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | 2            | 4      | 8      | 2025-12-02        |
+| martha.endacott@hartpury.ac.uk   | {"cycle":2,"effort":6,"vision":4,"overall":6,"systems":8,"attitude":7,"practice":6,"synced_at":"2025-12-02T12:51:32.581276+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | 2            | 4      | 6      | 2025-12-02        |
+| riley.bevan@hartpury.ac.uk       | {"cycle":2,"effort":5,"vision":8,"overall":6,"systems":6,"attitude":6,"practice":5,"synced_at":"2025-12-02T12:51:32.743851+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | 2            | 8      | 5      | 2025-12-02        |
+| harry.beard@hartpury.ac.uk       | {"cycle":2,"effort":2,"vision":4,"overall":4,"systems":4,"attitude":5,"practice":5,"synced_at":"2025-12-02T12:51:32.917492+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | 2            | 4      | 2      | 2025-12-02        |
+| freddie.milton@hartpury.ac.uk    | {"cycle":2,"effort":6,"vision":7,"overall":7,"systems":6,"attitude":6,"practice":9,"synced_at":"2025-12-02T12:51:32.148304+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | 2            | 7      | 6      | 2025-12-02        |
+| liam.cottrell@hartpury.ac.uk     | {"cycle":2,"effort":3,"vision":3,"overall":4,"systems":4,"attitude":5,"practice":4,"synced_at":"2025-12-02T12:51:32.326216+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | 2            | 3      | 3      | 2025-12-02        |
+| aayaan.ali@hartpury.ac.uk        | {"cycle":2,"effort":3,"vision":4,"overall":4,"systems":5,"attitude":3,"practice":5,"synced_at":"2025-12-02T12:51:32.492184+00:00","academic_year":"2025/2026","completion_date":"2025-12-02"} | 2            | 4      | 3      | 2025-12-02        |
+
+
+| student_email                          | latest_cycle | latest_completion | cache_status |
+| -------------------------------------- | ------------ | ----------------- | ------------ |
+| s241516@rochdalesfc.ac.uk              | 1            | null              | CACHE EXISTS |
+| browc03747@mail.theacademy.me          | 1            | null              | CACHE EXISTS |
+| 21wongd@stmarys.lpool.sch.uk           | 1            | null              | CACHE EXISTS |
+| 21buckleym@stmarys.lpool.sch.uk        | 1            | null              | CACHE EXISTS |
+| danim05873@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| 15edwardp@students-wbs.school          | 1            | null              | CACHE EXISTS |
+| jnuamah08@collegiateacademy.org.uk     | 1            | null              | CACHE EXISTS |
+| z01188@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| sverma19@collegiateacademy.org.uk      | 1            | null              | CACHE EXISTS |
+| s250422@rochdalesfc.ac.uk              | 1            | null              | CACHE EXISTS |
+| s250222@rochdalesfc.ac.uk              | 1            | null              | CACHE EXISTS |
+| z04181@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| razah03860@mail.theacademy.me          | 1            | null              | CACHE EXISTS |
+| btrotman@vespa.academy                 | 1            | null              | CACHE EXISTS |
+| ruser05868@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| z03195@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| ecollingridge13@bedales.org.uk         | 1            | null              | CACHE EXISTS |
+| 21woodk@stmarys.lpool.sch.uk           | 1            | null              | CACHE EXISTS |
+| z02479@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| 21wallacej@stmarys.lpool.sch.uk        | 1            | null              | CACHE EXISTS |
+| z02477@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| 21gibsonn@stmarys.lpool.sch.uk         | 1            | null              | CACHE EXISTS |
+| z03504@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| fkhan30@collegiateacademy.org.uk       | 1            | null              | CACHE EXISTS |
+| z04163@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| z04172@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| zkhanalvi28@collegiateacademy.org.uk   | 1            | null              | CACHE EXISTS |
+| ahussain25@collegiateacademy.org.uk    | 1            | null              | CACHE EXISTS |
+| malam23@collegiateacademy.org.uk       | 1            | null              | CACHE EXISTS |
+| 19simpb@kentcollege.kent.sch.uk        | 1            | null              | CACHE EXISTS |
+| mcmoc05863@mail.theacademy.me          | 1            | null              | CACHE EXISTS |
+| mazar30@collegiateacademy.org.uk       | 1            | null              | CACHE EXISTS |
+| menss03940@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| nadea03822@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| robec03787@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| jpadilla@vespa.academy                 | 1            | null              | CACHE EXISTS |
+| noorn05867@mail.theacademy.me          | 1            | null              | CACHE EXISTS |
+| rmahmood06@collegiateacademy.org.uk    | 1            | null              | CACHE EXISTS |
+| yafzaal02@collegiateacademy.org.uk     | 1            | null              | CACHE EXISTS |
+| s250060@rochdalesfc.ac.uk              | 1            | null              | CACHE EXISTS |
+| 21rodwellf@stmarys.lpool.sch.uk        | 1            | null              | CACHE EXISTS |
+| ismith@vespa.academy                   | 1            | null              | CACHE EXISTS |
+| yhoussien03@collegiateacademy.org.uk   | 1            | null              | CACHE EXISTS |
+| ladams@vespa.academy                   | 1            | null              | CACHE EXISTS |
+| z01997@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| ishai03765@mail.theacademy.me          | 1            | null              | CACHE EXISTS |
+| matik05187@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| maftab01@collegiateacademy.org.uk      | 1            | null              | CACHE EXISTS |
+| z03301@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| z04221@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| z03695@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| fmajeed29@collegiateacademy.org.uk     | 1            | null              | CACHE EXISTS |
+| limbs03934@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| khans03773@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| z04261@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| akaur06@collegiateacademy.org.uk       | 1            | null              | CACHE EXISTS |
+| z04345@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| z04343@bkkprep.ac.th                   | 1            | null              | CACHE EXISTS |
+| asearby13@bedales.org.uk               | 1            | null              | CACHE EXISTS |
+| khads03770@mail.theacademy.me          | 1            | null              | CACHE EXISTS |
+| arfak03744@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| alcof03920@mail.theacademy.me          | 1            | null              | CACHE EXISTS |
+| firbl04876@mail.theacademy.me          | 1            | null              | CACHE EXISTS |
+| kingatoth@students.ashtonpark.net      | 1            | null              | CACHE EXISTS |
+| bibik03830@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| 20ssanz-kozyra@thelangton.org.uk       | 1            | null              | CACHE EXISTS |
+| dangt02891@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| 20lbishaey@thelangton.org.uk           | 1            | null              | CACHE EXISTS |
+| mohaa03962@mail.theacademy.me          | 1            | null              | CACHE EXISTS |
+| mjana09@collegiateacademy.org.uk       | 1            | null              | CACHE EXISTS |
+| bkeane01@collegiateacademy.org.uk      | 1            | null              | CACHE EXISTS |
+| nitua04873@mail.theacademy.me          | 1            | null              | CACHE EXISTS |
+| nakaa05865@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| nassr03842@mail.theacademy.me          | 3            | null              | CACHE EXISTS |
+| jrobinson14@collegiateacademy.org.uk   | 3            | 2025-12-06        | CACHE EXISTS |
+| aiqbal13@collegiateacademy.org.uk      | 3            | 2025-12-06        | CACHE EXISTS |
+| ashamim29@collegiateacademy.org.uk     | 3            | 2025-12-06        | CACHE EXISTS |
+| fsardar13@collegiateacademy.org.uk     | 3            | 2025-12-06        | CACHE EXISTS |
+| asingh16@collegiateacademy.org.uk      | 3            | 2025-12-06        | CACHE EXISTS |
+| fparveen22@collegiateacademy.org.uk    | 3            | 2025-12-06        | CACHE EXISTS |
+| izaheer31@collegiateacademy.org.uk     | 3            | 2025-12-06        | CACHE EXISTS |
+| enazir27@collegiateacademy.org.uk      | 3            | 2025-12-06        | CACHE EXISTS |
+| ssheikhnoor15@collegiateacademy.org.uk | 3            | 2025-12-06        | CACHE EXISTS |
+| shashemi06@collegiateacademy.org.uk    | 3            | 2025-12-06        | CACHE EXISTS |
+| hsaddique16@collegiateacademy.org.uk   | 3            | 2025-12-06        | CACHE EXISTS |
+| dhannan16@collegiateacademy.org.uk     | 3            | 2025-12-06        | CACHE EXISTS |
+| uhabiba16@collegiateacademy.org.uk     | 3            | 2025-12-06        | CACHE EXISTS |
+| idumisani12@collegiateacademy.org.uk   | 3            | 2025-12-06        | CACHE EXISTS |
+| lfarid31@collegiateacademy.org.uk      | 3            | 2025-12-06        | CACHE EXISTS |
+| palmeida16@collegiateacademy.org.uk    | 3            | 2025-12-06        | CACHE EXISTS |
+| nhussain23@collegiateacademy.org.uk    | 3            | 2025-12-06        | CACHE EXISTS |
+| harab11@collegiateacademy.org.uk       | 3            | 2025-12-06        | CACHE EXISTS |
+| jiqbal23@collegiateacademy.org.uk      | 3            | 2025-12-06        | CACHE EXISTS |
+| mkhanom07@collegiateacademy.org.uk     | 3            | 2025-12-06        | CACHE EXISTS |
+| hkhan022@collegiateacademy.org.uk      | 3            | 2025-12-06        | CACHE EXISTS |
+| bali12@collegiateacademy.org.uk        | 3            | 2025-12-03        | CACHE EXISTS |
+| freddy.romero-brown@hartpury.ac.uk     | 2            | 2025-12-02        | CACHE EXISTS |
+| 2027marc.a@shrewsbury.in.th            | 2            | 2025-12-02        | CACHE EXISTS |
+| freddie.milton@hartpury.ac.uk          | 2            | 2025-12-02        | CACHE EXISTS |
+| 20hbatha@crest.e-act.org.uk            | 3            | 2025-12-02        | CACHE EXISTS |

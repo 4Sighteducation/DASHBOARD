@@ -1,0 +1,2225 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-ACT Trust - VESPA Cycle 1 Baseline Executive Summary</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .report-header {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .executive-summary, .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .section h2, .executive-summary h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .section h3 {
+            color: #764ba2;
+            margin: 20px 0 10px 0;
+            font-size: 1.4em;
+        }
+        
+        .key-insights {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h4 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .stat-card small {
+            font-size: 0.8em;
+            opacity: 0.8;
+            display: block;
+            margin-top: 5px;
+        }
+        
+        .chart-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .neutral {
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: white;
+            opacity: 0.9;
+        }
+        
+        .eri-card {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .eri-value {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .eri-description {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        @media print {
+            @page {
+                size: A4;
+                margin: 12mm 8mm;
+            }
+            
+            body {
+                background: white !important;
+            }
+            
+            .container {
+                max-width: 100%;
+                width: 190mm;
+            }
+            
+            .report-header button {
+                display: none !important;
+            }
+        }
+    
+        
+        .insights-section {
+            margin: 30px 0;
+        }
+        
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+        
+        .insight-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .insight-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .insight-card.excellent {
+            border-left-color: #10b981;
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.05), white);
+        }
+        
+        .insight-card.good {
+            border-left-color: #3b82f6;
+            background: linear-gradient(to right, rgba(59, 130, 246, 0.05), white);
+        }
+        
+        .insight-card.average {
+            border-left-color: #f59e0b;
+            background: linear-gradient(to right, rgba(245, 158, 11, 0.05), white);
+        }
+        
+        .insight-card.poor {
+            border-left-color: #ef4444;
+            background: linear-gradient(to right, rgba(239, 68, 68, 0.05), white);
+        }
+        
+        .insight-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .insight-icon {
+            font-size: 2em;
+        }
+        
+        .insight-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .insight-percentage {
+            font-size: 2.5em;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .insight-percentage.excellent {
+            color: #10b981;
+        }
+        
+        .insight-percentage.good {
+            color: #3b82f6;
+        }
+        
+        .insight-percentage.average {
+            color: #f59e0b;
+        }
+        
+        .insight-percentage.poor {
+            color: #ef4444;
+        }
+        
+        .insight-label {
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .insight-meta {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 0.85em;
+            color: #666;
+            text-align: center;
+        }
+    
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <div class="report-header">
+            
+            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                <img src="https://schoolsweek.co.uk/wp-content/uploads/2018/08/e-act-1920x1017.png" 
+                     alt="E-ACT Logo" 
+                     style="height: 80px; object-fit: contain; max-width: 300px;">
+            </div>
+        
+            <h1 style="color: #667eea; margin-bottom: 10px; text-align: center;">E-ACT Academy Trust</h1>
+            <h2 style="color: #764ba2; text-align: center;">Executive Summary</h2>
+            <p class="report-date" style="text-align: center;">Generated: November 12, 2025</p>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="window.print();" style="
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    color: white;
+                    border: none;
+                    padding: 12px 30px;
+                    font-size: 1em;
+                    font-weight: 600;
+                    border-radius: 25px;
+                    cursor: pointer;
+                    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.4)';" 
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.3)';">
+                    Download as PDF
+                </button>
+            </div>
+        </div>
+
+        
+        <div class="executive-summary">
+            <h2>Executive Summary</h2>
+            <p>This comprehensive VESPA Cycle 1 baseline analysis examines student mindset and study skills 
+            across the <strong>E-ACT Academy Trust</strong>, encompassing <strong>672 students</strong> 
+            from <strong>6 schools</strong>. This baseline assessment establishes the starting point 
+            for tracking student development throughout the 2025/26 academic year.</p>
+            
+            <p style="margin-top: 15px;"><strong>Overall Performance:</strong> Trust students score below national 
+            average (5.77 vs 5.94), demonstrating solid 
+            engagement with learning mindsets and study skills at this baseline stage.</p>
+            
+            <p style="margin-top: 15px;"><strong>Exam Readiness Index:</strong> The Trust's baseline ERI of 3.64 
+            indicates that students feel well-prepared 
+            for their exam challenges ahead.</p>
+            
+            <p style="margin-top: 15px;"><strong>Looking Ahead:</strong> This Cycle 1 baseline will be compared against Cycle 2 
+            (mid-year, January) and Cycle 3 (end-of-year). Typically, students experience a natural adjustment in Cycle 2 as 
+            they engage with the realities of their courses, before showing strong growth and recovery by Cycle 3.</p>
+            
+            <div class="key-insights" style="margin-top: 25px;">
+                <h3 style="color: #667eea; margin-bottom: 20px;">Key Baseline Findings</h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                    <div style="background: rgba(102, 126, 234, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Overall Baseline</h4>
+                        <p>Students demonstrate Vision as their strongest dimension (6.20), 
+                        while Systems (5.54) presents the primary development opportunity for the year ahead.</p>
+                    </div>
+                    
+                    <div style="background: rgba(114, 203, 68, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #72cb44;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Top Performing School</h4>
+                        <p>Crest Academy leads with 6.38 overall score (n=60 students). 
+                        Variation across schools indicates opportunities for peer learning and best practice sharing.</p>
+                    </div>
+                    
+                    <div style="background: rgba(245, 158, 11, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Year Group Insights</h4>
+                        <p>Year 13 students demonstrate stronger baseline performance (5.84) compared to Year 12 (5.74), reflecting their additional year of experience and maturity.</p>
+                    </div>
+                    
+                    <div style="background: rgba(251, 191, 36, 0.08); padding: 20px; border-radius: 8px; border-left: 4px solid #fbbf24;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Exam Readiness</h4>
+                        <p>Trust ERI of 3.64 reflects students' perceived preparation for exam challenges. 
+                        Individual school ERI ranges from 3.44 to 3.92, 
+                        highlighting areas for targeted support.</p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 25px; padding: 20px; background: linear-gradient(to right, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05)); border-radius: 8px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 12px;">Strategic Priorities for 2025/26</h4>
+                    <ul style="margin: 0; padding-left: 25px; line-height: 1.8;">
+                        <li><strong>Build on Strengths:</strong> Leverage strong Vision baseline (6.20) across all schools</li>
+                        <li><strong>Target Development:</strong> Focus interventions on Systems skills (current: 5.54)</li>
+                        <li><strong>Cross-School Collaboration:</strong> Facilitate sharing of best practices from Crest Academy</li>
+                        <li><strong>Enhance Exam Readiness:</strong> Implement targeted support to improve ERI, particularly in schools scoring below 3.0</li>
+                        <li><strong>Monitor Progress:</strong> Track Cycle 2 (January) to identify early intervention needs and celebrate growth</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="section">
+            <h2>📊 Cycle 1 Baseline Overview</h2>
+            <p style="margin-bottom: 20px;">
+                Baseline VESPA scores for 672 students compared to national averages.
+                This establishes the starting point for measuring growth through Cycles 2 and 3.
+            </p>
+            
+            <div style="background: #e8f4f8; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #06b6d4;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Understanding Baseline Scores</h3>
+                <p style="margin-bottom: 15px;"><strong>What are baseline scores?</strong> These are the initial VESPA measurements taken at the start of the academic year. They represent students' current mindset and study skills before targeted interventions or the natural progression through their courses.</p>
+                
+                <p style="margin-bottom: 15px;"><strong>Why compare to national averages?</strong> National benchmarks provide essential context for interpreting scores. They help us understand:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Relative performance:</strong> Are students performing above, at, or below typical levels?</li>
+                    <li><strong>Starting position:</strong> Where do we begin our improvement journey?</li>
+                    <li><strong>Realistic expectations:</strong> What level of performance is typical for similar students?</li>
+                    <li><strong>Priority identification:</strong> Which dimensions need the most attention?</li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>What do the indicators mean?</strong> Scores marked as "Above National" indicate strength areas where students are performing better than typical. "On Par" suggests performance is in line with national expectations. "Below National" highlights areas where students may benefit from additional support or intervention.</p>
+            </div>
+            
+            <div class="stats-grid">
+                
+            <div class="stat-card">
+                <h4>Vision</h4>
+                <div class="value">6.20</div>
+                <small>National: 6.36</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">• On Par</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Effort</h4>
+                <div class="value">5.82</div>
+                <small>National: 5.94</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">• On Par</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Systems</h4>
+                <div class="value">5.54</div>
+                <small>National: 5.68</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">• On Par</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Practice</h4>
+                <div class="value">5.65</div>
+                <small>National: 5.93</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">↓ Below National</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Attitude</h4>
+                <div class="value">5.74</div>
+                <small>National: 5.79</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">• On Par</span>
+                </div>
+            </div>
+        
+                
+            <div class="stat-card">
+                <h4>Overall</h4>
+                <div class="value">5.77</div>
+                <small>National: 5.94</small>
+                <div style="margin-top: 8px; font-size: 0.85em;">
+                    <span style="color: white;">• On Par</span>
+                </div>
+            </div>
+        
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                SCORE DISTRIBUTIONS
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>📈 Score Distribution Analysis</h2>
+            
+            <p style="margin-bottom: 20px;">Distribution of VESPA scores for Cycle 1 baseline. Bar charts show E-ACT Trust percentages, red lines show national distribution.</p>
+            
+            <div style="background: #e8f4f8; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #06b6d4;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Understanding Score Distributions</h3>
+                <p style="margin-bottom: 15px;"><strong>What are we looking at?</strong> These charts show how student scores are spread across the 1-10 scale for each VESPA dimension. The bars represent the percentage of students at each score level, while the red line shows the national average distribution.</p>
+                
+                <p style="margin-bottom: 15px;"><strong>Why are distributions insightful?</strong> While average scores tell us the central tendency, distributions reveal the full picture of student performance. They show:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Score spread:</strong> Are students clustered around similar scores (narrow distribution) or spread widely (broad distribution)?</li>
+                    <li><strong>Performance patterns:</strong> Do we have many high performers, many low performers, or a balanced spread?</li>
+                    <li><strong>Tail identification:</strong> Which students are at the extremes and may need targeted support or recognition?</li>
+                    <li><strong>Normality:</strong> Does our distribution follow expected patterns or show unusual clustering?</li>
+                </ul>
+                
+                <p style="margin-bottom: 15px;"><strong>Comparing to National:</strong> When our distribution differs from the national pattern, it reveals important insights:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>More students at higher scores:</strong> Indicates strength in that dimension - students are performing above typical levels</li>
+                    <li><strong>More students at lower scores:</strong> Suggests a development opportunity - students may need additional support or intervention</li>
+                    <li><strong>Different shape:</strong> A distribution that's more spread out suggests greater diversity in student experiences, while a tighter distribution indicates more consistent performance across students</li>
+                    <li><strong>Skewed patterns:</strong> If scores cluster at one end, it may indicate systemic factors (e.g., strong school culture or specific challenges)</li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>What does this tell us?</strong> Distribution analysis helps identify whether improvements are needed across the board (if many students score low) or if targeted interventions for specific groups would be more effective. It also helps validate whether average scores accurately represent the student population or if they're masking important variations.</p>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-vision" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-vision")) {                    Plotly.newPlot(                        "dist-vision",                        [{"marker":{"color":"#e59437"},"name":"School","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[1.0416666666666665,4.761904761904762,11.607142857142858,8.18452380952381,8.779761904761903,19.047619047619047,12.202380952380953,18.898809523809522,7.440476190476191,8.035714285714286],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[1.07,3.41,9.35,8.13,9.17,21.78,12.05,18.31,7.52,9.2],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"School: 6.2\u003cbr\u003eNational: 6.4","x":5.5,"y":22.869000000000003}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Vision Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-effort" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-effort")) {                    Plotly.newPlot(                        "dist-effort",                        [{"marker":{"color":"#86b4f0"},"name":"School","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[4.166666666666666,2.232142857142857,14.136904761904761,10.714285714285714,12.797619047619047,14.880952380952381,14.434523809523808,10.119047619047619,12.797619047619047,3.7202380952380953],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.73,2.6,13.01,10.2,13.33,15.18,14.91,11.24,13.74,3.04],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"School: 5.8\u003cbr\u003eNational: 5.9","x":5.5,"y":15.939}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Effort Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-systems" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-systems")) {                    Plotly.newPlot(                        "dist-systems",                        [{"marker":{"color":"#72cb44"},"name":"School","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[3.422619047619048,4.315476190476191,10.714285714285714,17.559523809523807,11.011904761904761,20.386904761904763,10.119047619047619,14.434523809523808,4.464285714285714,3.571428571428571],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[3.12,4.57,10.22,14.89,10.16,22.21,10.07,15.48,5.21,4.06],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"School: 5.5\u003cbr\u003eNational: 5.7","x":5.5,"y":23.320500000000003}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Systems Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-practice" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-practice")) {                    Plotly.newPlot(                        "dist-practice",                        [{"marker":{"color":"#7f31a4"},"name":"School","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.976190476190476,4.761904761904762,8.333333333333332,15.476190476190476,21.726190476190478,8.333333333333332,14.434523809523808,13.839285714285715,5.803571428571429,4.315476190476191],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[1.95,3.84,7.92,12.76,19.5,10.28,17.83,13.31,7.6,5.01],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"School: 5.7\u003cbr\u003eNational: 5.9","x":5.5,"y":22.812500000000004}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Practice Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-attitude" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-attitude")) {                    Plotly.newPlot(                        "dist-attitude",                        [{"marker":{"color":"#f032e6"},"name":"School","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.976190476190476,6.398809523809524,10.863095238095239,7.440476190476191,14.136904761904761,20.684523809523807,11.607142857142858,15.922619047619047,7.291666666666667,2.6785714285714284],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[2.48,5.96,10.21,9.6,12.1,20.95,14.29,13.81,7.33,3.23],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"School: 5.7\u003cbr\u003eNational: 5.8","x":5.5,"y":21.9975}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Attitude Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="responsive-chart">
+                    <div>                            <div id="dist-overall" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("dist-overall")) {                    Plotly.newPlot(                        "dist-overall",                        [{"marker":{"color":"#ffd700"},"name":"School","opacity":0.7,"showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.1488095238095238,1.488095238095238,7.142857142857142,15.922619047619047,20.089285714285715,20.535714285714285,18.75,10.119047619047619,4.910714285714286,0.8928571428571428],"type":"bar"},{"line":{"color":"red","width":2},"marker":{"size":6},"mode":"lines+markers","name":"National","showlegend":true,"x":[1,2,3,4,5,6,7,8,9,10],"y":[0.3,1.32,5.83,12.98,19.11,22.46,20.33,11.35,5.12,1.19],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"font":{"size":10},"showarrow":false,"text":"School: 5.8\u003cbr\u003eNational: 5.9","x":5.5,"y":23.583000000000002}],"xaxis":{"title":{"text":"Score"},"range":[0.5,10.5]},"legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1},"title":{"text":"Overall Score Distribution - Cycle 1"},"yaxis":{"title":{"text":"Percentage (%)"}},"height":400,"showlegend":true,"paper_bgcolor":"white","plot_bgcolor":"rgba(240,240,240,0.3)"},                        {"responsive": true}                    )                };            </script>        </div>
+                </div>
+            </div>
+
+        </div>
+
+        
+        <div class="section" style="padding: 40px;">
+            <h2 style="color: #2c3e50; font-size: 2.2em; margin-bottom: 30px; border-bottom: 3px solid #667eea; padding-bottom: 15px;">
+                School Performance Comparison - Baseline
+            </h2>
+            <p style="font-size: 1.2em; color: #555; margin-bottom: 40px;">
+                Comprehensive VESPA performance metrics across all Trust schools based on Cycle 1 baseline assessment.
+            </p>
+            
+            <div class="school-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 50px;">
+                
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #28a745;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">Crest Academy</h3>
+                        <span style="background: #28a745; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#1</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">7.02</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.60</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.03</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.15</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.43</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">6.38</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 60 students | ERI: 3.78</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #28a745;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">North Birmingham Academy</h3>
+                        <span style="background: #28a745; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#2</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.83</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.42</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.53</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.94</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.56</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">6.26</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 88 students | ERI: 3.92</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #3b82f6;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">West Walsall Academy</h3>
+                        <span style="background: #3b82f6; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#3</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.15</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.01</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.15</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.00</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.31</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">5.95</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 74 students | ERI: 3.69</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #3b82f6;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">Montpelier High School</h3>
+                        <span style="background: #3b82f6; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#4</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">6.50</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.38</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.68</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.86</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.35</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">5.74</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 125 students | ERI: 3.44</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #667eea;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">Daventry 6th Form</h3>
+                        <span style="background: #667eea; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#5</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.73</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.79</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.70</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.38</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.41</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">5.58</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 66 students | ERI: 3.61</div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #667eea;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin: 0; font-size: 1.1em; max-width: 70%;">Ousedale School</h3>
+                        <span style="background: #667eea; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">#6</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(229,148,55,0.1), rgba(229,148,55,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #e59437; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Vision</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.80</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(134,180,240,0.1), rgba(134,180,240,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #5690d6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Effort</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.59</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(114,203,68,0.1), rgba(114,203,68,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #72cb44; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Systems</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.43</div>
+                        </div>
+                        <div style="padding: 12px; background: linear-gradient(45deg, rgba(127,49,164,0.1), rgba(127,49,164,0.05)); border-radius: 8px; text-align: center;">
+                            <div style="color: #7f31a4; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Practice</div>
+                            <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.31</div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: linear-gradient(45deg, rgba(240,50,230,0.1), rgba(240,50,230,0.05)); border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #f032e6; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">Attitude</div>
+                        <div style="font-size: 1.8em; font-weight: bold; color: #2c3e50; margin-top: 5px;">5.41</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; text-align: center; color: white;">
+                        <div style="font-size: 0.9em; font-weight: 600; opacity: 0.9; text-transform: uppercase;">Overall Score</div>
+                        <div style="font-size: 2.5em; font-weight: bold; margin: 5px 0;">5.48</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">n = 259 students | ERI: 3.56</div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <h3 style="color: #2c3e50; margin-top: 50px; margin-bottom: 15px; font-size: 1.5em;">Detailed Performance Matrix</h3>
+            <p style="font-size: 0.95em; color: #666; margin-bottom: 15px;">Complete comparison showing all schools side-by-side.</p>
+            <div style="overflow-x: auto; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                <table style="width: 100%; min-width: 800px; border-collapse: separate; border-spacing: 0; background: white;">
+                    <thead>
+                        <tr>
+                            <th style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 18px; text-align: left;">School</th>
+                            <th style="background: #e59437; color: white; padding: 18px; text-align: center;">VISION</th>
+                            <th style="background: #5690d6; color: white; padding: 18px; text-align: center;">EFFORT</th>
+                            <th style="background: #72cb44; color: white; padding: 18px; text-align: center;">SYSTEMS</th>
+                            <th style="background: #7f31a4; color: white; padding: 18px; text-align: center;">PRACTICE</th>
+                            <th style="background: #f032e6; color: white; padding: 18px; text-align: center;">ATTITUDE</th>
+                            <th style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 18px; text-align: center; font-weight: bold;">OVERALL</th>
+                            <th style="background: #fbbf24; color: white; padding: 18px; text-align: center; font-weight: bold;">ERI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    
+                    <tr style="background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">Crest Academy (n=60)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 7.02</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.60</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.03</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.15</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.43</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(102, 126, 234, 0.05); font-size: 1.1em;"><span style="color: #28a745; font-weight: 600;">↑ 6.38</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.78</td>
+                    </tr>
+
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">North Birmingham Academy (n=88)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.83</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.42</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.53</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.94</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.56</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(102, 126, 234, 0.05); font-size: 1.1em;"><span style="color: #28a745; font-weight: 600;">↑ 6.26</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.92</td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">West Walsall Academy (n=74)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 6.15</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 6.01</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.15</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 6.00</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #28a745; font-weight: 600;">↑ 6.31</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(102, 126, 234, 0.05); font-size: 1.1em;"><span style="color: #666; font-weight: 600;">• 5.95</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.69</td>
+                    </tr>
+
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">Montpelier High School (n=125)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 6.50</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.38</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.68</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.86</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.35</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(102, 126, 234, 0.05); font-size: 1.1em;"><span style="color: #dc3545; font-weight: 600;">↓ 5.74</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.44</td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">Daventry 6th Form (n=66)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.73</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.79</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #666; font-weight: 600;">• 5.70</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.38</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.41</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(102, 126, 234, 0.05); font-size: 1.1em;"><span style="color: #dc3545; font-weight: 600;">↓ 5.58</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.61</td>
+                    </tr>
+
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 14px; font-weight: 600; color: #2c3e50;">Ousedale School (n=259)</td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.80</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.59</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.43</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.31</span></td>
+                        <td style="padding: 14px; text-align: center;"><span style="color: #dc3545; font-weight: 600;">↓ 5.41</span></td>
+                        <td style="padding: 14px; text-align: center; background: rgba(102, 126, 234, 0.05); font-size: 1.1em;"><span style="color: #dc3545; font-weight: 600;">↓ 5.48</span></td>
+                        <td style="padding: 14px; text-align: center; font-weight: bold;">3.56</td>
+                    </tr>
+
+                    
+                    <tr style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                        <td style="padding: 16px; font-weight: bold;">TRUST AVERAGE</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">6.20</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.82</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.54</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.65</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold;">5.74</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold; font-size: 1.1em;">5.77</td>
+                        <td style="padding: 16px; text-align: center; font-weight: bold; font-size: 1.1em;">3.64</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; gap: 30px; flex-wrap: wrap;">
+                <span style="font-weight: 600; color: #2c3e50;">Performance Indicators vs National:</span>
+                <span style="color: #28a745;">↑ Above National (+0.2)</span>
+                <span style="color: #666;">• On Par with National (±0.2)</span>
+                <span style="color: #dc3545;">↓ Below National (-0.2)</span>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 20px; background: #e8f4f8; border-radius: 8px; border-left: 4px solid #06b6d4;">
+                <h4 style="color: #2c3e50; margin-bottom: 10px;">📊 Understanding School Comparisons</h4>
+                <p style="margin-bottom: 10px; color: #555;"><strong>What are we comparing?</strong> This table shows how each school's average VESPA scores compare to national benchmarks.</p>
+                <p style="margin-bottom: 10px; color: #555;"><strong>Why compare to national?</strong> National comparisons provide context for understanding whether scores are typical, above average, or below average. This helps identify:</p>
+                <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
+                    <li>Schools performing exceptionally well that can share best practices</li>
+                    <li>Schools that may benefit from additional support or interventions</li>
+                    <li>Dimensions where the Trust as a whole is strong or needs development</li>
+                    <li>Variation across schools that might indicate different approaches or contexts</li>
+                </ul>
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                YEAR GROUP ANALYSIS
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>📚 VESPA Scores by Year Group</h2>
+            <p style="margin-bottom: 20px;">
+                Analysis of VESPA baseline scores across different year groups within Trust.
+                Year groups are compared to understand cohort-specific patterns.
+            </p>
+            
+            <h3>Year Group Performance Overview</h3>
+            <div class="stats-grid">
+                
+                <div class="stat-card">
+                    <h4>Year 13</h4>
+                    <div class="value">5.84</div>
+                    <small>n=216 students</small>
+                    <div style="margin-top: 8px; font-size: 0.75em;">
+                        Rank: #1 of 2 | ERI: 3.62
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <h4>Year 12</h4>
+                    <div class="value">5.74</div>
+                    <small>n=453 students</small>
+                    <div style="margin-top: 8px; font-size: 0.75em;">
+                        Rank: #2 of 2 | ERI: 3.64
+                    </div>
+                </div>
+
+            </div>
+            
+            <h3>Detailed Year Group Comparison</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Year Group</th>
+                        <th style="text-align: center;">Students</th>
+                        <th style="text-align: center;">Vision</th>
+                        <th style="text-align: center;">Effort</th>
+                        <th style="text-align: center;">Systems</th>
+                        <th style="text-align: center;">Practice</th>
+                        <th style="text-align: center;">Attitude</th>
+                        <th style="text-align: center;">Overall</th>
+                        <th style="text-align: center;">ERI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 12px; font-weight: 600;">Year 13</td>
+                        <td style="padding: 12px; text-align: center;">216</td>
+                        <td style="padding: 12px; text-align: center;">6.50</td>
+                        <td style="padding: 12px; text-align: center;">5.97</td>
+                        <td style="padding: 12px; text-align: center;">5.41</td>
+                        <td style="padding: 12px; text-align: center;">5.82</td>
+                        <td style="padding: 12px; text-align: center;">5.68</td>
+                        <td style="padding: 12px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">5.84</td>
+                        <td style="padding: 12px; text-align: center; font-weight: bold;">3.62</td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 12px; font-weight: 600;">Year 12</td>
+                        <td style="padding: 12px; text-align: center;">453</td>
+                        <td style="padding: 12px; text-align: center;">6.06</td>
+                        <td style="padding: 12px; text-align: center;">5.75</td>
+                        <td style="padding: 12px; text-align: center;">5.60</td>
+                        <td style="padding: 12px; text-align: center;">5.57</td>
+                        <td style="padding: 12px; text-align: center;">5.77</td>
+                        <td style="padding: 12px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">5.74</td>
+                        <td style="padding: 12px; text-align: center; font-weight: bold;">3.64</td>
+                    </tr>
+
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h4>Year Group Analysis Insights</h4>
+                <ul style="margin-top: 10px;">
+                    <li><strong>Highest Performing:</strong> Year 13 leads with 5.84 overall score (n=216 students)</li>
+                    <li><strong>Development Focus:</strong> Use baseline differences to tailor intervention strategies by year group</li>
+                    <li><strong>ERI Comparison:</strong> Year 13 ERI: 3.62, Year 12 ERI: 3.64</li>
+                </ul>
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 600px;">
+                QUESTIONNAIRE INSIGHTS
+            </h1>
+        </div>
+        
+        <div class="section insights-section">
+            <h2>📊 12 Psychometric Insights</h2>
+            <p style="margin-bottom: 20px;">
+                These insights group related questions to measure key psychological factors that research shows 
+                are crucial for academic success. Percentages represent students who agreed or strongly agreed (scores of 4-5).
+            </p>
+            
+            <div style="background: #e8f4f8; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #06b6d4;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Understanding Questionnaire Insights</h3>
+                <p style="margin-bottom: 15px;"><strong>What are these insights?</strong> Rather than looking at individual questions in isolation, these insights group related questions together to measure broader psychological constructs. This approach provides a more reliable and meaningful picture of student characteristics.</p>
+                
+                <p style="margin-bottom: 15px;"><strong>Why are they important?</strong> Research in educational psychology has shown that these factors significantly influence academic success:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Growth Mindset:</strong> Beliefs about intelligence and learning capacity affect motivation and resilience</li>
+                    <li><strong>Academic Momentum:</strong> Drive and ambition influence effort and achievement</li>
+                    <li><strong>Resilience:</strong> Ability to bounce back from setbacks impacts long-term success</li>
+                    <li><strong>Time Management:</strong> Organizational skills directly affect academic performance</li>
+                    <li><strong>Support & Help-Seeking:</strong> Willingness to ask for help improves learning outcomes</li>
+                    <li><strong>Study Strategies:</strong> Effective learning techniques enhance retention and understanding</li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>How to interpret percentages:</strong> Higher percentages (75%+) indicate that most students demonstrate positive characteristics in that area. Lower percentages (below 40%) suggest that many students may benefit from targeted support or intervention. These insights help identify which psychological factors are strengths and which need development.</p>
+            </div>
+            
+            <div style="margin: 25px 0; padding: 20px; background: linear-gradient(to right, #f8f9fa, #ffffff); border-radius: 10px; border-left: 4px solid #667eea;">
+                <h4 style="color: #2c3e50; margin-bottom: 10px;">Understanding the Ratings</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <div style="padding: 10px; background: rgba(16, 185, 129, 0.1); border-radius: 5px; border-left: 3px solid #10b981;">
+                        <strong style="color: #10b981;">75%+ Excellent</strong><br>
+                        <small>Most students show positive indicators</small>
+                    </div>
+                    <div style="padding: 10px; background: rgba(59, 130, 246, 0.1); border-radius: 5px; border-left: 3px solid #3b82f6;">
+                        <strong style="color: #3b82f6;">60-74% Good</strong><br>
+                        <small>Majority positive, room for growth</small>
+                    </div>
+                    <div style="padding: 10px; background: rgba(245, 158, 11, 0.1); border-radius: 5px; border-left: 3px solid #f59e0b;">
+                        <strong style="color: #f59e0b;">40-59% Average</strong><br>
+                        <small>Mixed responses, needs attention</small>
+                    </div>
+                    <div style="padding: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 5px; border-left: 3px solid #ef4444;">
+                        <strong style="color: #ef4444;">&lt;40% Poor</strong><br>
+                        <small>Significant area for improvement</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="insights-grid">
+                
+            <div class="insight-card good">
+                <div class="insight-header">
+                    <div class="insight-icon">🌱</div>
+                    <div class="insight-title">Growth Mindset</div>
+                </div>
+                <div class="insight-percentage good">70.8%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 632 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card good">
+                <div class="insight-header">
+                    <div class="insight-icon">🚀</div>
+                    <div class="insight-title">Academic Momentum</div>
+                </div>
+                <div class="insight-percentage good">69.5%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 632 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card good">
+                <div class="insight-header">
+                    <div class="insight-icon">⏰</div>
+                    <div class="insight-title">Time Management</div>
+                </div>
+                <div class="insight-percentage good">67.0%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 421 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card good">
+                <div class="insight-header">
+                    <div class="insight-icon">🤝</div>
+                    <div class="insight-title">Support & Help-Seeking</div>
+                </div>
+                <div class="insight-percentage good">65.8%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 632 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card good">
+                <div class="insight-header">
+                    <div class="insight-icon">📦</div>
+                    <div class="insight-title">Organization & Materials</div>
+                </div>
+                <div class="insight-percentage good">65.0%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 632 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card good">
+                <div class="insight-header">
+                    <div class="insight-icon">💪</div>
+                    <div class="insight-title">Resilience Factor</div>
+                </div>
+                <div class="insight-percentage good">60.7%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 632 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card average">
+                <div class="insight-header">
+                    <div class="insight-icon">🎯</div>
+                    <div class="insight-title">Vision & Purpose</div>
+                </div>
+                <div class="insight-percentage average">58.7%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 632 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card average">
+                <div class="insight-header">
+                    <div class="insight-icon">⭐</div>
+                    <div class="insight-title">Exam Confidence</div>
+                </div>
+                <div class="insight-percentage average">54.4%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 632 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card average">
+                <div class="insight-header">
+                    <div class="insight-icon">📖</div>
+                    <div class="insight-title">Revision Readiness</div>
+                </div>
+                <div class="insight-percentage average">52.6%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 632 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card average">
+                <div class="insight-header">
+                    <div class="insight-icon">😌</div>
+                    <div class="insight-title">Stress Management</div>
+                </div>
+                <div class="insight-percentage average">51.6%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 632 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card average">
+                <div class="insight-header">
+                    <div class="insight-icon">📚</div>
+                    <div class="insight-title">Study Strategies</div>
+                </div>
+                <div class="insight-percentage average">49.6%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 632 responses per question
+                </div>
+            </div>
+
+            <div class="insight-card poor">
+                <div class="insight-header">
+                    <div class="insight-icon">🎓</div>
+                    <div class="insight-title">Active Learning</div>
+                </div>
+                <div class="insight-percentage poor">39.4%</div>
+                <div class="insight-label">Agreement</div>
+                <div class="insight-meta">
+                    n = 632 responses per question
+                </div>
+            </div>
+
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin: 0 auto 30px; max-width: 500px;">
+                STATEMENT LEVEL ANALYSIS
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>📝 VESPA Statement Analysis - Baseline</h2>
+            <p style="margin-bottom: 20px;">
+                Detailed analysis of individual VESPA statement responses reveals specific strengths and development areas.
+                Each statement is scored on a 1-5 scale where higher scores indicate stronger agreement/engagement.
+            </p>
+            
+            <div style="margin-top: 50px; padding: 30px; background: linear-gradient(to right, #f8f9fa, #ffffff); border-radius: 12px; border: 1px solid #e9ecef;">
+                <h3 style="color: #2c3e50; margin-bottom: 25px; font-size: 1.6em;">Statement Agreement Analysis</h3>
+                <p style="color: #666; margin-bottom: 30px;">Analysis of which statements students most and least agree with in the baseline assessment.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div style="background: #fff; padding: 25px; border-radius: 10px; border: 2px solid #28a745;">
+                        <h4 style="color: #28a745; margin-bottom: 20px; font-size: 1.2em;">Top 5 - Students Strongly Agree</h4>
+                        <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                            
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I know what grades I want to achieve</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.33 | Category: Vision | n=632
+                                <br>Variance: 0.68 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I like hearing feedback about how I can improve</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.22 | Category: Attitude | n=632
+                                <br>Variance: 0.72 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I enjoy learning new things </strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.11 | Category: Vision | n=632
+                                <br>Variance: 0.70 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I work as hard as I can in most classes</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 4.02 | Category: Effort | n=632
+                                <br>Variance: 0.68 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I strive to achieve the goals I set for myself</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 3.96 | Category: Vision | n=632
+                                <br>Variance: 0.71 (Low - Consistent agreement)
+                            </span>
+                        </li>
+
+                        </ol>
+                    </div>
+                    
+                    <div style="background: #fff; padding: 25px; border-radius: 10px; border: 2px solid #dc3545;">
+                        <h4 style="color: #dc3545; margin-bottom: 20px; font-size: 1.2em;">Bottom 5 - Development Opportunities</h4>
+                        <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                            
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I've worked out the next steps in my life</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 3.15 | Category: Vision | n=632
+                                <br>Variance: 1.62 (High - Mixed responses)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I spread out my revision,  rather than cramming at the last minute.</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 3.11 | Category: Practice | n=632
+                                <br>Variance: 1.21 (Moderate - Mixed responses)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>I study by explaining difficult topics outloud</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 2.96 | Category: Practice | n=632
+                                <br>Variance: 1.59 (High - Mixed responses)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>When revising I mix different kinds of topics/subjects in one study session</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 2.86 | Category: Practice | n=632
+                                <br>Variance: 1.48 (Moderate - Mixed responses)
+                            </span>
+                        </li>
+
+                        <li style="margin-bottom: 15px; color: #333;">
+                            <strong>When revising, I work under timed conditions answering exam-style questions</strong>
+                            <br>
+                            <span style="color: #666; font-size: 0.9em;">
+                                Mean Score: 2.63 | Category: Practice | n=632
+                                <br>Variance: 1.19 (Moderate - Mixed responses)
+                            </span>
+                        </li>
+
+                        </ol>
+                    </div>
+                </div>
+                
+                
+            <div style="margin-top: 50px; padding: 30px; background: linear-gradient(to right, #f8f9fa, #ffffff); border-radius: 12px; border: 1px solid #e9ecef;">
+                <h3 style="color: #2c3e50; margin-bottom: 25px; font-size: 1.6em;">School-by-School Statement Comparison</h3>
+                <p style="color: #666; margin-bottom: 30px;">
+                    This table shows how each school compares to the Trust average for key statements. 
+                    Schools can use this to identify where they perform above or below Trust averages, 
+                    helping them understand their relative strengths and areas for development.
+                </p>
+                
+                <div style="overflow-x: auto; margin-top: 20px;">
+                    <table style="width: 100%; min-width: 1000px; border-collapse: collapse; background: white;">
+                        <thead>
+                            <tr>
+                                <th style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px; text-align: left; position: sticky; left: 0; z-index: 10;">Statement</th>
+                                <th style="background: #667eea; color: white; padding: 12px; text-align: center;">Trust Avg</th>
+
+                                <th style="background: #667eea; color: white; padding: 12px; text-align: center; font-size: 0.9em;">Crest</th>
+
+                                <th style="background: #667eea; color: white; padding: 12px; text-align: center; font-size: 0.9em;">North Birmingham</th>
+
+                                <th style="background: #667eea; color: white; padding: 12px; text-align: center; font-size: 0.9em;">West Walsall</th>
+
+                                <th style="background: #667eea; color: white; padding: 12px; text-align: center; font-size: 0.9em;">Montpelier High</th>
+
+                                <th style="background: #667eea; color: white; padding: 12px; text-align: center; font-size: 0.9em;">Daventry</th>
+
+                                <th style="background: #667eea; color: white; padding: 12px; text-align: center; font-size: 0.9em;">Ousedale</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I know what grades I want to achieve">I know what grades I want to achieve</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">4.33</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">4.63</span>
+                                    <br><small style="color: #28a745;">↑ +0.30</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.49</span>
+                                    <br><small style="color: #666;">• +0.16</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">4.54</span>
+                                    <br><small style="color: #28a745;">↑ +0.21</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.32</span>
+                                    <br><small style="color: #666;">• -0.01</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.14</span>
+                                    <br><small style="color: #666;">• -0.19</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.20</span>
+                                    <br><small style="color: #666;">• -0.13</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I like hearing feedback about how I can improve">I like hearing feedback about how I can improve</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">4.22</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.40</span>
+                                    <br><small style="color: #666;">• +0.18</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.38</span>
+                                    <br><small style="color: #666;">• +0.15</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.42</span>
+                                    <br><small style="color: #666;">• +0.20</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.22</span>
+                                    <br><small style="color: #666;">• +0.00</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.18</span>
+                                    <br><small style="color: #666;">• -0.04</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.08</span>
+                                    <br><small style="color: #666;">• -0.14</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I enjoy learning new things ">I enjoy learning new things </td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">4.11</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.10</span>
+                                    <br><small style="color: #666;">• -0.01</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.28</span>
+                                    <br><small style="color: #666;">• +0.17</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.03</span>
+                                    <br><small style="color: #666;">• -0.08</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.11</span>
+                                    <br><small style="color: #666;">• -0.00</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.14</span>
+                                    <br><small style="color: #666;">• +0.03</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.07</span>
+                                    <br><small style="color: #666;">• -0.04</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I work as hard as I can in most classes">I work as hard as I can in most classes</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">4.02</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.18</span>
+                                    <br><small style="color: #666;">• +0.16</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.10</span>
+                                    <br><small style="color: #666;">• +0.08</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.09</span>
+                                    <br><small style="color: #666;">• +0.08</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.82</span>
+                                    <br><small style="color: #666;">• -0.20</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.00</span>
+                                    <br><small style="color: #666;">• -0.02</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.00</span>
+                                    <br><small style="color: #666;">• -0.02</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I strive to achieve the goals I set for myself">I strive to achieve the goals I set for myself</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.96</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.07</span>
+                                    <br><small style="color: #666;">• +0.10</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.08</span>
+                                    <br><small style="color: #666;">• +0.12</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.03</span>
+                                    <br><small style="color: #666;">• +0.07</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.94</span>
+                                    <br><small style="color: #666;">• -0.02</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.86</span>
+                                    <br><small style="color: #666;">• -0.10</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.91</span>
+                                    <br><small style="color: #666;">• -0.05</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I complete all my homework on time">I complete all my homework on time</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.91</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.02</span>
+                                    <br><small style="color: #666;">• +0.10</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.88</span>
+                                    <br><small style="color: #666;">• -0.04</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #dc3545; font-weight: 600;">3.64</span>
+                                    <br><small style="color: #dc3545;">↓ -0.28</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.05</span>
+                                    <br><small style="color: #666;">• +0.13</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.95</span>
+                                    <br><small style="color: #666;">• +0.04</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.93</span>
+                                    <br><small style="color: #666;">• +0.01</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I am a hard working student">I am a hard working student</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.90</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.08</span>
+                                    <br><small style="color: #666;">• +0.18</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.99</span>
+                                    <br><small style="color: #666;">• +0.09</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.91</span>
+                                    <br><small style="color: #666;">• +0.00</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #dc3545; font-weight: 600;">3.61</span>
+                                    <br><small style="color: #dc3545;">↓ -0.29</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.92</span>
+                                    <br><small style="color: #666;">• +0.02</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.92</span>
+                                    <br><small style="color: #666;">• +0.02</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I take good notes in class which are useful for revision">I take good notes in class which are useful for revision</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.88</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.07</span>
+                                    <br><small style="color: #666;">• +0.19</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.82</span>
+                                    <br><small style="color: #666;">• -0.06</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #dc3545; font-weight: 600;">3.62</span>
+                                    <br><small style="color: #dc3545;">↓ -0.25</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.99</span>
+                                    <br><small style="color: #666;">• +0.11</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">4.06</span>
+                                    <br><small style="color: #666;">• +0.19</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.84</span>
+                                    <br><small style="color: #666;">• -0.04</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I have the support I need to achieve this year?">I have the support I need to achieve this year?</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.79</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.80</span>
+                                    <br><small style="color: #666;">• +0.01</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">4.10</span>
+                                    <br><small style="color: #28a745;">↑ +0.31</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">4.03</span>
+                                    <br><small style="color: #28a745;">↑ +0.24</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.68</span>
+                                    <br><small style="color: #666;">• -0.11</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.67</span>
+                                    <br><small style="color: #666;">• -0.12</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.68</span>
+                                    <br><small style="color: #666;">• -0.11</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="No matter who you are, you can change your intelligence a lot">No matter who you are, you can change your intelligence a lo...</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.77</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">4.07</span>
+                                    <br><small style="color: #28a745;">↑ +0.29</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">4.01</span>
+                                    <br><small style="color: #28a745;">↑ +0.24</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">4.01</span>
+                                    <br><small style="color: #28a745;">↑ +0.24</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.78</span>
+                                    <br><small style="color: #666;">• +0.00</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.71</span>
+                                    <br><small style="color: #666;">• -0.06</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #dc3545; font-weight: 600;">3.57</span>
+                                    <br><small style="color: #dc3545;">↓ -0.20</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I'm happy to ask questions in front of a group.">I'm happy to ask questions in front of a group.</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.35</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.68</span>
+                                    <br><small style="color: #28a745;">↑ +0.33</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.64</span>
+                                    <br><small style="color: #28a745;">↑ +0.29</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.49</span>
+                                    <br><small style="color: #666;">• +0.14</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.31</span>
+                                    <br><small style="color: #666;">• -0.04</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #dc3545; font-weight: 600;">3.05</span>
+                                    <br><small style="color: #dc3545;">↓ -0.30</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.23</span>
+                                    <br><small style="color: #666;">• -0.12</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I don't let a poor test/assessment result get me down for too long">I don't let a poor test/assessment result get me down for to...</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.33</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.57</span>
+                                    <br><small style="color: #28a745;">↑ +0.24</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.48</span>
+                                    <br><small style="color: #666;">• +0.15</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.47</span>
+                                    <br><small style="color: #666;">• +0.14</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.18</span>
+                                    <br><small style="color: #666;">• -0.15</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.23</span>
+                                    <br><small style="color: #666;">• -0.10</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.26</span>
+                                    <br><small style="color: #666;">• -0.07</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I summarise important information in diagrams, tables or lists">I summarise important information in diagrams, tables or lis...</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.29</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.20</span>
+                                    <br><small style="color: #666;">• -0.09</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.38</span>
+                                    <br><small style="color: #666;">• +0.08</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.31</span>
+                                    <br><small style="color: #666;">• +0.02</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.28</span>
+                                    <br><small style="color: #666;">• -0.01</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.29</span>
+                                    <br><small style="color: #666;">• -0.00</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.29</span>
+                                    <br><small style="color: #666;">• -0.01</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I give a lot of attention to my career planning">I give a lot of attention to my career planning</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.29</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.83</span>
+                                    <br><small style="color: #28a745;">↑ +0.54</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.45</span>
+                                    <br><small style="color: #666;">• +0.16</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.18</span>
+                                    <br><small style="color: #666;">• -0.11</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.44</span>
+                                    <br><small style="color: #666;">• +0.15</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.09</span>
+                                    <br><small style="color: #666;">• -0.20</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.14</span>
+                                    <br><small style="color: #666;">• -0.15</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I use all my independent study time effectively">I use all my independent study time effectively</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.16</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.45</span>
+                                    <br><small style="color: #28a745;">↑ +0.29</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.44</span>
+                                    <br><small style="color: #28a745;">↑ +0.28</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.16</span>
+                                    <br><small style="color: #666;">• +0.00</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #dc3545; font-weight: 600;">2.88</span>
+                                    <br><small style="color: #dc3545;">↓ -0.28</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.17</span>
+                                    <br><small style="color: #666;">• +0.01</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.09</span>
+                                    <br><small style="color: #666;">• -0.07</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I've worked out the next steps in my life">I've worked out the next steps in my life</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.15</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.53</span>
+                                    <br><small style="color: #28a745;">↑ +0.38</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.50</span>
+                                    <br><small style="color: #28a745;">↑ +0.35</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.15</span>
+                                    <br><small style="color: #666;">• -0.00</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.15</span>
+                                    <br><small style="color: #666;">• +0.00</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #dc3545; font-weight: 600;">2.89</span>
+                                    <br><small style="color: #dc3545;">↓ -0.26</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.01</span>
+                                    <br><small style="color: #666;">• -0.14</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I spread out my revision,  rather than cramming at the last minute.">I spread out my revision,  rather than cramming at the last ...</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">3.11</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.38</span>
+                                    <br><small style="color: #28a745;">↑ +0.27</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.17</span>
+                                    <br><small style="color: #666;">• +0.06</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.19</span>
+                                    <br><small style="color: #666;">• +0.08</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">2.95</span>
+                                    <br><small style="color: #666;">• -0.16</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.09</span>
+                                    <br><small style="color: #666;">• -0.02</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.07</span>
+                                    <br><small style="color: #666;">• -0.05</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="I study by explaining difficult topics outloud">I study by explaining difficult topics outloud</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">2.96</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.17</span>
+                                    <br><small style="color: #28a745;">↑ +0.21</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.02</span>
+                                    <br><small style="color: #666;">• +0.07</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.16</span>
+                                    <br><small style="color: #28a745;">↑ +0.20</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.27</span>
+                                    <br><small style="color: #28a745;">↑ +0.31</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">2.76</span>
+                                    <br><small style="color: #666;">• -0.20</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">2.78</span>
+                                    <br><small style="color: #666;">• -0.18</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="When revising I mix different kinds of topics/subjects in one study session">When revising I mix different kinds of topics/subjects in on...</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">2.86</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">2.80</span>
+                                    <br><small style="color: #666;">• -0.06</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.01</span>
+                                    <br><small style="color: #666;">• +0.15</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.12</span>
+                                    <br><small style="color: #28a745;">↑ +0.26</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">3.04</span>
+                                    <br><small style="color: #666;">• +0.17</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">2.86</span>
+                                    <br><small style="color: #666;">• -0.00</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">2.70</span>
+                                    <br><small style="color: #666;">• -0.17</small>
+                                </td>
+
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e0e0e0;">
+                                <td style="padding: 10px; font-weight: 600; color: #2c3e50; position: sticky; left: 0; background: white; border-right: 1px solid #e0e0e0;" title="When revising, I work under timed conditions answering exam-style questions">When revising, I work under timed conditions answering exam-...</td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; background: rgba(102, 126, 234, 0.05);">2.63</td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #28a745; font-weight: 600;">3.10</span>
+                                    <br><small style="color: #28a745;">↑ +0.47</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">2.77</span>
+                                    <br><small style="color: #666;">• +0.14</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">2.74</span>
+                                    <br><small style="color: #666;">• +0.11</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">2.52</span>
+                                    <br><small style="color: #666;">• -0.11</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">2.61</span>
+                                    <br><small style="color: #666;">• -0.02</small>
+                                </td>
+
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="color: #666; font-weight: 600;">2.48</span>
+                                    <br><small style="color: #666;">• -0.15</small>
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e8f4f8; border-radius: 8px; border-left: 4px solid #06b6d4;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">How to Interpret This Table</h4>
+                    <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
+                        <li><strong>Trust Avg:</strong> The average score across all E-ACT schools for this statement</li>
+                        <li><strong>School Scores:</strong> Each school's average score, with the difference from Trust average shown below</li>
+                        <li><strong>↑ (Green):</strong> School scores significantly above Trust average (+0.2 or more) - a strength</li>
+                        <li><strong>• (Gray):</strong> School scores in line with Trust average (±0.2) - typical performance</li>
+                        <li><strong>↓ (Red):</strong> School scores significantly below Trust average (-0.2 or more) - development opportunity</li>
+                    </ul>
+                    <p style="margin-top: 15px; color: #555;"><strong>Use this to:</strong> Identify which schools excel in specific areas (for peer learning), 
+                    understand where your school sits relative to Trust peers, and prioritize interventions based on statements where your school 
+                    scores below Trust averages.</p>
+                </div>
+            </div>
+
+                
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">Interpretation Guide</h4>
+                    <p style="margin: 0 0 10px 0; font-size: 0.95em; color: #555;">
+                        <strong>Mean Scores:</strong> Statements range from 1-5. Scores above 4.0 indicate strong agreement, 
+                        scores between 3.0-4.0 show moderate agreement, and scores below 3.0 suggest areas where students lack confidence 
+                        or need additional support.
+                    </p>
+                    <p style="margin: 0; font-size: 0.95em; color: #555;">
+                        <strong>Variance:</strong> Measures how spread out student responses are. <em>Low variance</em> (below 0.8) means 
+                        most students agree and responses are consistent - ideal for building on strengths or addressing common challenges. 
+                        <em>High variance</em> (above 1.5) indicates mixed responses where some students strongly agree while others don't - 
+                        suggesting differentiated support may be needed. <em>Moderate variance</em> (0.8-1.5) shows typical spread in student experiences.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        
+        <div style="background: #f0f4f8; padding: 30px 0; margin-top: 30px;">
+            <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #fbbf24; padding-bottom: 10px; margin: 0 auto 30px; max-width: 600px;">
+                EXAM READINESS INDEX (ERI)
+            </h1>
+        </div>
+        
+        <div class="section">
+            <h2>⭐ Exam Readiness Index Analysis</h2>
+            <p style="margin-bottom: 20px;">
+                The Exam Readiness Index (ERI) is calculated from three outcome questions measuring students' perceived preparation, 
+                support, and confidence for their exams. Scores range from 1-5, with higher scores indicating greater readiness.
+            </p>
+            
+            <div class="eri-card">
+                <div style="font-size: 1.2em; opacity: 0.9;">Trust-Wide Exam Readiness Index</div>
+                <div class="eri-value">3.64</div>
+                <div class="eri-description">
+                    Good - Students feel adequately prepared
+                </div>
+                <div style="margin-top: 15px; font-size: 0.9em;">
+                    Based on 672 student responses
+                </div>
+            </div>
+            
+            <h3>School ERI Comparison</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>School</th>
+                        <th style="text-align: center;">Students</th>
+                        <th style="text-align: center;">Exam Readiness Index</th>
+                        <th style="text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 14px; font-weight: 600;">North Birmingham Academy</td>
+                        <td style="padding: 14px; text-align: center;">88</td>
+                        <td style="padding: 14px; text-align: center; font-size: 1.2em; font-weight: bold; color: #3b82f6;">3.92</td>
+                        <td style="padding: 14px; text-align: center;">
+                            <span style="background: #3b82f620; color: #3b82f6; padding: 5px 15px; border-radius: 20px; font-weight: 600;">Good</span>
+                        </td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 14px; font-weight: 600;">Crest Academy</td>
+                        <td style="padding: 14px; text-align: center;">60</td>
+                        <td style="padding: 14px; text-align: center; font-size: 1.2em; font-weight: bold; color: #3b82f6;">3.78</td>
+                        <td style="padding: 14px; text-align: center;">
+                            <span style="background: #3b82f620; color: #3b82f6; padding: 5px 15px; border-radius: 20px; font-weight: 600;">Good</span>
+                        </td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 14px; font-weight: 600;">West Walsall Academy</td>
+                        <td style="padding: 14px; text-align: center;">74</td>
+                        <td style="padding: 14px; text-align: center; font-size: 1.2em; font-weight: bold; color: #3b82f6;">3.69</td>
+                        <td style="padding: 14px; text-align: center;">
+                            <span style="background: #3b82f620; color: #3b82f6; padding: 5px 15px; border-radius: 20px; font-weight: 600;">Good</span>
+                        </td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 14px; font-weight: 600;">Daventry 6th Form</td>
+                        <td style="padding: 14px; text-align: center;">66</td>
+                        <td style="padding: 14px; text-align: center; font-size: 1.2em; font-weight: bold; color: #3b82f6;">3.61</td>
+                        <td style="padding: 14px; text-align: center;">
+                            <span style="background: #3b82f620; color: #3b82f6; padding: 5px 15px; border-radius: 20px; font-weight: 600;">Good</span>
+                        </td>
+                    </tr>
+
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 14px; font-weight: 600;">Ousedale School</td>
+                        <td style="padding: 14px; text-align: center;">259</td>
+                        <td style="padding: 14px; text-align: center; font-size: 1.2em; font-weight: bold; color: #3b82f6;">3.56</td>
+                        <td style="padding: 14px; text-align: center;">
+                            <span style="background: #3b82f620; color: #3b82f6; padding: 5px 15px; border-radius: 20px; font-weight: 600;">Good</span>
+                        </td>
+                    </tr>
+
+                    <tr style="background: #ffffff;">
+                        <td style="padding: 14px; font-weight: 600;">Montpelier High School</td>
+                        <td style="padding: 14px; text-align: center;">125</td>
+                        <td style="padding: 14px; text-align: center; font-size: 1.2em; font-weight: bold; color: #f59e0b;">3.44</td>
+                        <td style="padding: 14px; text-align: center;">
+                            <span style="background: #f59e0b20; color: #f59e0b; padding: 5px 15px; border-radius: 20px; font-weight: 600;">Moderate</span>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h4>ERI Insights</h4>
+                <ul style="margin-top: 10px;">
+
+                    <li><strong>Highest ERI:</strong> North Birmingham Academy (3.92) - Students feel most confident and prepared</li>
+                    <li><strong>Focus Area:</strong> Montpelier High School (3.44) - Consider additional exam preparation support</li>
+                    <li><strong>Range:</strong> ERI scores range from 3.44 to 3.92, indicating variation in student readiness across schools</li>
+                </ul>
+            </div>
+        </div>
+
+        
+        <div class="footer">
+            <p>© 2025 VESPA Education Analytics | E-ACT Academy Trust - Confidential Report</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Cycle 1 Baseline | Academic Year 2025/26</p>
+        </div>
+
+    </div>
+</body>
+</html>

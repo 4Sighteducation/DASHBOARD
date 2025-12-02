@@ -1,0 +1,99 @@
+EXAMPLE CUSTOMIZATION FOR CREST ACADEMY
+==========================================
+
+Replace these placeholders in ACTION_PLAN_TEMPLATE.html:
+
+SCHOOL-SPECIFIC DATA:
+--------------------
+{{SCHOOL_NAME}} → Crest Academy
+{{N_STUDENTS}} → 60
+{{MIDDLE_BAND_COUNT}} → 24-30
+{{HIGH_PERFORMER_COUNT}} → 12-15
+{{LOW_SCORER_COUNT}} → 6-8
+
+BASELINE VESPA DATA:
+-------------------
+{{LOWEST_DIMENSION}} → Systems
+{{LOWEST_SCORE}} → 6.03
+{{CONCERN_INSIGHT}} → Active Learning
+{{INSIGHT_PERCENT}} → 45.0
+{{ACTIVE_LEARNING_PERCENT}} → 45.0
+
+QUICK WIN ACTIVITY (Example - Systems focus):
+--------------------------------------------
+{{QUICK_WIN_ACTIVITY_NAME}} → Weekly Planner
+{{QUICK_WIN_RATIONALE_BASED_ON_DATA}} → 67.5% of your students report organization challenges. The Weekly Planner directly addresses time management - a foundational skill for improving Systems scores.
+{{ACTIVITY_RESEARCH_BASIS}} → Time management, self-regulation, and stress management principles. Research shows structured weekly planning reduces student stress and improves workload balance.
+{{ACTIVITY_STEP_1}} → Audit current weekly schedule to identify time management issues
+{{ACTIVITY_STEP_2}} → Create a preferred weekly schedule balancing study and wellbeing
+{{ACTIVITY_STEP_3}} → Identify specific changes to implement immediately
+{{BEHAVIOR_1}} → "I sometimes plan my week in advance, giving myself plenty of time to work on tasks"
+{{BEHAVIOR_2}} → "I look ahead to next week, checking what needs doing"
+{{ACTIVITY_PDF_LINK}} → [Portal link to Weekly Planner PDF]
+{{ACTIVITY_ONLINE_LINK}} → [Portal link to online version]
+{{ACTIVITY_SLIDES_LINK}} → [Portal link to deliverable slides]
+
+MEDIUM TERM ACTIVITIES (Example sequence):
+-----------------------------------------
+ACTIVITY 1:
+{{ACTIVITY_1_NAME}} → 1% Planning
+{{VESPA_ELEMENT_1}} → SYSTEMS
+{{DURATION_1}} → 15
+{{ACTIVITY_1_DESCRIPTION}} → Dedicate 7 minutes morning and evening to strategic planning - identify 3 tasks to complete, continue, and start each day
+{{ACTIVITY_1_BEHAVIORS}} → "I spend small periods of time just double-checking I've done everything" / "I make mini-lists of tasks"
+{{ACTIVITY_1_PDF}} → [Link]
+{{ACTIVITY_1_ONLINE}} → [Link]
+{{ACTIVITY_1_SLIDES}} → [Link]
+
+ACTIVITY 2:
+{{ACTIVITY_2_NAME}} → High & Low Utility
+{{VESPA_ELEMENT_2}} → PRACTICE
+{{DURATION_2}} → 20
+{{ACTIVITY_2_DESCRIPTION}} → Identify which study techniques are high-utility (practice testing, active recall) vs low-utility (highlighting, re-reading)
+{{ACTIVITY_2_CONNECTION}} → Students now have organized time (Week 1-2) and can fill it with effective strategies
+{{ACTIVITY_2_PDF}} → [Link]
+{{ACTIVITY_2_ONLINE}} → [Link]
+{{ACTIVITY_2_SLIDES}} → [Link]
+
+ACTIVITY 3:
+{{ACTIVITY_3_NAME}} → Test Yourself
+{{VESPA_ELEMENT_3}} → PRACTICE
+{{DURATION_3}} → 15
+{{ACTIVITY_3_DESCRIPTION}} → Create self-tests to practice active recall - the testing effect for memory retention
+{{ACTIVITY_3_CONSOLIDATION}} → Applies the high-utility concept (Week 3-4) with practical testing strategy
+{{ACTIVITY_3_PDF}} → [Link]
+{{ACTIVITY_3_ONLINE}} → [Link]
+{{ACTIVITY_3_SLIDES}} → [Link]
+
+
+EXAMPLE PATTERN-BASED COACHING QUESTIONS:
+-----------------------------------------
+For Crest Academy's specific concerns, use:
+
+Systems (6.03) - Primary focus:
+- "How do you currently manage your time and commitments?"
+- "What makes it difficult to stay organized?"
+- "When do you feel most in control of your workload?"
+
+Active Learning (45%) - Secondary focus:
+- "Walk me through your last revision session - what did you actually DO?"
+- "Do you mostly re-read notes, or test yourself?"
+- "When you say you 'revised for 2 hours' - what were you doing?"
+
+
+NOTES FOR PYTHON AUTOMATION:
+---------------------------
+When you build the Python script, it should:
+1. Read school baseline data
+2. Identify lowest VESPA dimension
+3. Identify lowest 2-3 psychometric insights
+4. Match to relevant activities from vespa_activities_kb.json
+5. Match to relevant coaching questions from coaching_insights.json
+6. Extract relevant behaviors from 100 statements - 2023.txt
+7. Fill all placeholders
+8. Output customized Action Plan HTML
+
+The template structure remains constant - only data changes per school.
+
+
+

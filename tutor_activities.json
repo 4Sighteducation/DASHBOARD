@@ -1,0 +1,3658 @@
+{
+  "records": [
+    {
+      "id": "670d59509bd8580303830592",
+      "programme": "VESPA Handbook",
+      "activity_id": 218,
+      "category": "Practice",
+      "title": "PRACTICE - Environment Design (Part 2 - Digital Spaces)",
+      "group_info": {
+        "id": "6659fba1fc32ae002920bb03",
+        "identifier": "December - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "10/14/2024",
+        "date_formatted": "14/10/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1728864000000,
+        "iso_timestamp": "2024-10-14T00:00:00.000Z",
+        "timestamp": "10/14/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1728860400000,
+        "proper_iso_timestamp": "2024-10-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://vespa-academy.slides.com/vespaslides/practice-environment-design-stuff/embed?token=rbNaHkSI\" width=\"576\" height=\"420\" title=\"PRACTICE - Environment Design (Part 2)\" allowfullscreen>\n</iframe>",
+      "is_welsh": false
+    },
+    {
+      "id": "670d58f8d452ff030a61f6ce",
+      "programme": "VESPA Handbook",
+      "activity_id": 217,
+      "category": "Practice",
+      "title": "PRACTICE - Environment Design (Part 1 - Physical Spaces)",
+      "group_info": {
+        "id": "6659fb9344e03a0027f1f762",
+        "identifier": "November - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "10/14/2024",
+        "date_formatted": "14/10/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1728864000000,
+        "iso_timestamp": "2024-10-14T00:00:00.000Z",
+        "timestamp": "10/14/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1728860400000,
+        "proper_iso_timestamp": "2024-10-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://vespa-academy.slides.com/vespaslides/practice-high-low-utility/embed?token=PlK8X8Kb\" width=\"576\" height=\"420\" title=\"PRACTICE - Environment Design (Part 1- Physical Spaces)\" allowfullscreen>\n</iframe>",
+      "is_welsh": false
+    },
+    {
+      "id": "66e31b4b81c24402cfe24c29",
+      "programme": "VESPA Handbook",
+      "activity_id": 216,
+      "category": "Vision",
+      "title": "VISION - 6 Types of Goal",
+      "group_info": {
+        "id": "66df7924b74fc802ff1cfcc8",
+        "identifier": "September - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "09/12/2024",
+        "date_formatted": "12/09/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1726099200000,
+        "iso_timestamp": "2024-09-12T00:00:00.000Z",
+        "timestamp": "09/12/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1726095600000,
+        "proper_iso_timestamp": "2024-09-11T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://vespa-academy.slides.com/vespaslides/effort-disruption-cost-deep-work/embed?token=LWUwh5YB\" width=\"576\" height=\"420\" title=\"EFFORT - Six Types of Goal\" allowfullscreen>\n</iframe>",
+      "is_welsh": false
+    },
+    {
+      "id": "66df79a2b74fc802ff1cfd63",
+      "programme": "ALevel Mindset",
+      "activity_id": 215,
+      "category": "Vision",
+      "title": "Arfer Y '3' A ",
+      "group_info": {
+        "id": "607766cfef7b4f001cd28120",
+        "identifier": "October - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "08/17/2024",
+        "date_formatted": "17/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1723852800000,
+        "iso_timestamp": "2024-08-17T00:00:00.000Z",
+        "timestamp": "08/17/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1723849200000,
+        "proper_iso_timestamp": "2024-08-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/arfery3a/embed?token=3aS_dFPB;mouseWheel=true\" width=\"576\" height=\"420\" title=\"YMDRECH - Arfer Y '3' A \" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/E3-Arfer%20y%20Tair%20%E2%80%98A%E2%80%99%20%28The%20Three%20Rs%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d61650e5",
+      "programme": "VESPA Handbook",
+      "activity_id": 214,
+      "category": "Attitude",
+      "title": "ATTITUDE - Worst Case Scenarios",
+      "group_info": {
+        "id": "6659fbd344e03a0027f1f8ba",
+        "identifier": "April - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/ATTITUDE/worstcasescenarios/slides.html\" width=\"576\" height=\"420\" title=\"ATTITUDE - Worst Case Scenarios\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20Worst%20Case%20Scenarios%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d61650de",
+      "programme": "VESPA Handbook",
+      "activity_id": 213,
+      "category": "Attitude",
+      "title": "ATTITUDE - The Myth of the Curve",
+      "group_info": {
+        "id": "6659fbc709d4da002a810cec",
+        "identifier": "March - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/ATTITUDE/themythofthecurve/slides.html\" width=\"576\" height=\"420\" title=\"ATTITUDE - The Myth of the Curve\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20The%20Myth%20of%20the%20Curve%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d61650d7",
+      "programme": "VESPA Handbook",
+      "activity_id": 212,
+      "category": "Attitude",
+      "title": "ATTITUDE - Think Three Positives",
+      "group_info": {
+        "id": "6659fbb0ea57e00028d29aad",
+        "identifier": "January - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/ATTITUDE/thinkthreepositives/slides.html\" width=\"576\" height=\"420\" title=\"ATTITUDE - Think Three Positives\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20Think%20Three%20Positives%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d61650d0",
+      "programme": "VESPA Handbook",
+      "activity_id": 211,
+      "category": "Attitude",
+      "title": "ATTITUDE - O.D.A",
+      "group_info": {
+        "id": "6659fba1fc32ae002920bb03",
+        "identifier": "December - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2022",
+        "date_formatted": "25/08/2022",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1661385600000,
+        "iso_timestamp": "2022-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2022 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1661382000000,
+        "proper_iso_timestamp": "2022-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/ATTITUDE/O.D.A/slides.html\" width=\"576\" height=\"420\" title=\"ATTITUDE - O.D.A\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20ODA%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d61650c9",
+      "programme": "VESPA Handbook",
+      "activity_id": 210,
+      "category": "Attitude",
+      "title": "ATTITUDE - 5,5,5",
+      "group_info": {
+        "id": "6659fbbefc32ae002920bbaf",
+        "identifier": "Febuary - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/ATTITUDE/555/slides.html\" width=\"576\" height=\"420\" title=\"ATTITUDE - 5,5,5\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%205%2C5%2C5.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d61650c2",
+      "programme": "VESPA Handbook",
+      "activity_id": 209,
+      "category": "Attitude",
+      "title": "ATTITUDE - A Dozen Noticeboards",
+      "group_info": {
+        "id": "6659fbe86123fb002a7bc778",
+        "identifier": "June - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/ATTITUDE/adozenoticeboards/slides.html\" width=\"576\" height=\"420\" title=\"ATTITUDE - A Dozen Noticeboards\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20A%20Dozen%20Noticeboards%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d61650bb",
+      "programme": "VESPA Handbook",
+      "activity_id": 208,
+      "category": "Attitude",
+      "title": "ATTITUDE - Check ahead, Check Back",
+      "group_info": {
+        "id": "6659fbb0ea57e00028d29aad",
+        "identifier": "January - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/ATTITUDE/checkaheadcheckback/slides.html\" width=\"576\" height=\"420\" title=\"ATTITUDE - Check ahead, Check Back\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20Check%20Ahead%2C%20Check%20Back%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d61650b4",
+      "programme": "VESPA Handbook",
+      "activity_id": 207,
+      "category": "Attitude",
+      "title": "ATTITUDE - NAF vs NAch",
+      "group_info": {
+        "id": "6659fb88ea57e00028d29a05",
+        "identifier": "October - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://vespa-academy.slides.com/vespaslides/naf-vs-nach/embed?token=GgQuDi1S\" width=\"576\" height=\"420\" title=\"ATTITUDE - NAF vs NAch\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/ATTITUDE/ATTITUDE%20-%20Naf%20vs%20Nach%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d61650ad",
+      "programme": "VESPA Handbook",
+      "activity_id": 206,
+      "category": "Practice",
+      "title": "PRACTICE - Sticky Timetables",
+      "group_info": {
+        "id": "6659fbc709d4da002a810cec",
+        "identifier": "March - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/PRACTICE/stickytimetables/slides.html\" width=\"576\" height=\"420\" title=\"PRACTICE - Sticky Timetables\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Sticky%20Timetables%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d61650a6",
+      "programme": "VESPA Handbook",
+      "activity_id": 205,
+      "category": "Practice",
+      "title": "PRACTICE - The Overnight Boost",
+      "group_info": {
+        "id": "6659fbe86123fb002a7bc778",
+        "identifier": "June - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/PRACTICE/overnightboost/slides.html\" width=\"576\" height=\"420\" title=\"PRACTICE - The Overnight Boost\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20The%20Overnight%20boost%28editable%29.pdff\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d616509f",
+      "programme": "VESPA Handbook",
+      "activity_id": 204,
+      "category": "Practice",
+      "title": "PRACTICE - The Command Verb Table",
+      "group_info": {
+        "id": "6659fb88ea57e00028d29a05",
+        "identifier": "October - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/PRACTICE/commandverbtable/slides.html\" width=\"576\" height=\"420\" title=\"PRACTICE - The Command Verb Table\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20The%20Command%20Verb%20table%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165098",
+      "programme": "VESPA Handbook",
+      "activity_id": 203,
+      "category": "Practice",
+      "title": "PRACTICE - Cog P vs Cog A",
+      "group_info": {
+        "id": "6659fbdd46ca890029dd879f",
+        "identifier": "May - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/PRACTICE/cogpvscoga/slides.html\" width=\"576\" height=\"420\" title=\"PRACTICE - Cog P vs Cog A\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Cog%20P%20v%20Cog%20A%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165091",
+      "programme": "VESPA Handbook",
+      "activity_id": 202,
+      "category": "Practice",
+      "title": "PRACTICE - Test your Future Self",
+      "group_info": {
+        "id": "6659fbd344e03a0027f1f8ba",
+        "identifier": "April - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/PRACTICE/testyourfutureself/slides.html\" width=\"576\" height=\"420\" title=\"PRACTICE - Test your Future Self\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Test%20your%20future%20self%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d616508a",
+      "programme": "VESPA Handbook",
+      "activity_id": 201,
+      "category": "Practice",
+      "title": "PRACTICE - Verbal Recaps",
+      "group_info": {
+        "id": "6659fbc709d4da002a810cec",
+        "identifier": "March - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/PRACTICE/verbalrecaps/slides.html\" width=\"576\" height=\"420\" title=\"PRACTICE - Verbal Recaps\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Verbal%20Recaps%28editable%29.pdff\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165083",
+      "programme": "VESPA Handbook",
+      "activity_id": 200,
+      "category": "Practice",
+      "title": "PRACTICE - Closed Book Notetaking",
+      "group_info": {
+        "id": "6659fbbefc32ae002920bbaf",
+        "identifier": "Febuary - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/PRACTICE/closedbooknotetaking/slides.html\" width=\"576\" height=\"420\" title=\"PRACTICE - Closed Book Notetaking\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20Closed%20Book%20Notetaking%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d616507c",
+      "programme": "VESPA Handbook",
+      "activity_id": 199,
+      "category": "Practice",
+      "title": "PRACTICE - High & Low Utility",
+      "group_info": {
+        "id": "6659fbb0ea57e00028d29aad",
+        "identifier": "January - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/PRACTICE/high%26lowutility/slides.html\" width=\"576\" height=\"420\" title=\"PRACTICE - High & Low Utility\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/PRACTICE/PRACTICE%20-%20High%20and%20Low%20Utility%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165075",
+      "programme": "VESPA Handbook",
+      "activity_id": 198,
+      "category": "Systems",
+      "title": "SYSTEMS - 1% Planning",
+      "group_info": {
+        "id": "6659fbbefc32ae002920bbaf",
+        "identifier": "Febuary - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/SYSTEMS/1%25planning/slides.html\" width=\"576\" height=\"420\" title=\"SYSTEMS - 1% Planning\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%201%25%20Planning%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d616506e",
+      "programme": "VESPA Handbook",
+      "activity_id": 197,
+      "category": "Systems",
+      "title": "SYSTEMS - Cornell Notes",
+      "group_info": {
+        "id": "6659fb88ea57e00028d29a05",
+        "identifier": "October - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/SYSTEMS/cornellnotes/slides.html\" width=\"576\" height=\"420\" title=\"SYSTEMS - Cornell Notes\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Cornell%20Notes%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165067",
+      "programme": "VESPA Handbook",
+      "activity_id": 196,
+      "category": "Systems",
+      "title": "SYSTEMS - Have to, Ought to, Want to",
+      "group_info": {
+        "id": "6659fba1fc32ae002920bb03",
+        "identifier": "December - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/SYSTEMS/havetooughttowantto/slides.html\" width=\"576\" height=\"420\" title=\"SYSTEMS - Have to, Ought to, Want to\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Have%20to%2COught%20to%2CWant%20to%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165060",
+      "programme": "VESPA Handbook",
+      "activity_id": 195,
+      "category": "Systems",
+      "title": "SYSTEMS - The Catch-Up Week",
+      "group_info": {
+        "id": "6659fbb0ea57e00028d29aad",
+        "identifier": "January - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/SYSTEMS/thecatchupweek/slides.html\" width=\"576\" height=\"420\" title=\"SYSTEMS - The Catch-Up Week\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Catch%20Up%20Week%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165059",
+      "programme": "VESPA Handbook",
+      "activity_id": 194,
+      "category": "Systems",
+      "title": "SYSTEMS - Boosters & Sappers (energy Makes Time)",
+      "group_info": {
+        "id": "6659fbe86123fb002a7bc778",
+        "identifier": "June - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/SYSTEMS/boosters%26sappers/slides.html\" width=\"576\" height=\"420\" title=\"SYSTEMS - Boosters & Sappers (energy Makes Time)\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Boosters%20%26%20Sappers.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165052",
+      "programme": "VESPA Handbook",
+      "activity_id": 193,
+      "category": "Systems",
+      "title": "SYSTEMS - Pending, Doing, Done",
+      "group_info": {
+        "id": "607766cfef7b4f001cd28120",
+        "identifier": "October - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/SYSTEMS/pendingdoingdone/slides.html\" width=\"576\" height=\"420\" title=\"SYSTEMS - Pending, Doing, Done\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Pending%2C%20Doing%2C%20Done.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d616504b",
+      "programme": "VESPA Handbook",
+      "activity_id": 192,
+      "category": "Systems",
+      "title": "SYSTEMS - Night School",
+      "group_info": {
+        "id": "6659fb69a5f663002ab0b32c",
+        "identifier": "September - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/SYSTEMS/nightschool/slides.html\" width=\"576\" height=\"420\" title=\"SYSTEMS - Night School\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20Night%20School.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165044",
+      "programme": "VESPA Handbook",
+      "activity_id": 191,
+      "category": "Systems",
+      "title": "SYSTEMS - The Sunday Night Ritual",
+      "group_info": {
+        "id": "6659fbdd46ca890029dd879f",
+        "identifier": "May - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/SYSTEMS/sundaynightritual/slides.html\" width=\"576\" height=\"420\" title=\"SYSTEMS - The Sunday Night Ritual\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/SYSTEMS/SYSTEMS%20-%20The%20Sunday%20Night%20Ritual%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d616503d",
+      "programme": "VESPA Handbook",
+      "activity_id": 190,
+      "category": "Effort",
+      "title": "EFFORT - Red Flag Rescue Plans",
+      "group_info": {
+        "id": "6659fbd344e03a0027f1f8ba",
+        "identifier": "April - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/EFFORT/redflagrescue/slides.html\" width=\"576\" height=\"420\" title=\"EFFORT - Red Flag Rescue Plans\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Red%20Flag%20Rescue%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165036",
+      "programme": "VESPA Handbook",
+      "activity_id": 189,
+      "category": "Effort",
+      "title": "EFFORT - The Clarity Countdown (A safety system for difficult topics)",
+      "group_info": {
+        "id": "6659fbc709d4da002a810cec",
+        "identifier": "March - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/EFFORT/claritycountdown/slides.html\" width=\"576\" height=\"420\" title=\"EFFORT - The Clarity Countdown\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Clarity%20Countdown%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d616502f",
+      "programme": "VESPA Handbook",
+      "activity_id": 188,
+      "category": "Effort",
+      "title": "EFFORT - Activating and Sustaining",
+      "group_info": {
+        "id": "6659fbbefc32ae002920bbaf",
+        "identifier": "Febuary - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/EFFORT/activating%26sustaining/slides.html\" width=\"576\" height=\"420\" title=\"EFFORT - Activating and Sustaining\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Activating%20%26%20Sustaining%28Editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165028",
+      "programme": "VESPA Handbook",
+      "activity_id": 187,
+      "category": "Effort",
+      "title": "EFFORT - Questify",
+      "group_info": {
+        "id": "6659fbb0ea57e00028d29aad",
+        "identifier": "January - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/EFFORT/questify/slides.html\" width=\"576\" height=\"420\" title=\"EFFORT - Questify\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Questify%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165021",
+      "programme": "VESPA Handbook",
+      "activity_id": 186,
+      "category": "Effort",
+      "title": "EFFORT - Disruption Cost and Deep  Work",
+      "group_info": {
+        "id": "6659fba1fc32ae002920bb03",
+        "identifier": "December - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/EFFORT/disruptioncost%26deepwork/slides.html\" width=\"576\" height=\"420\" title=\"EFFORT - Disruption Cost and Deep  Work\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Disruption%20Cost%20and%20Deep%20Work%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d616501a",
+      "programme": "VESPA Handbook",
+      "activity_id": 185,
+      "category": "Effort",
+      "title": "EFFORT - Becoming Indestractable",
+      "group_info": {
+        "id": "6659fb9344e03a0027f1f762",
+        "identifier": "November - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/EFFORT/indestractible/slides.html\" width=\"576\" height=\"420\" title=\"EFFORT - Becoming Indestractable\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Indestractible%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d6165013",
+      "programme": "VESPA Handbook",
+      "activity_id": 184,
+      "category": "Effort",
+      "title": "EFFORT - The Peleton",
+      "group_info": {
+        "id": "6659fb9344e03a0027f1f762",
+        "identifier": "November - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/EFFORT/thepeloton/slides.html\" width=\"576\" height=\"420\" title=\"EFFORT - The Peleton\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20The%20Peleton%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66cb9078ae5c8a02d616500c",
+      "programme": "VESPA Handbook",
+      "activity_id": 183,
+      "category": "Effort",
+      "title": "EFFORT - Proactive vs Re-Active",
+      "group_info": {
+        "id": "6659fb69a5f663002ab0b32c",
+        "identifier": "September - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/25/2024",
+        "date_formatted": "25/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724544000000,
+        "iso_timestamp": "2024-08-25T00:00:00.000Z",
+        "timestamp": "08/25/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724540400000,
+        "proper_iso_timestamp": "2024-08-24T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/EFFORT/proactivevsreactive/slides.html\" width=\"576\" height=\"420\" title=\"EFFORT - Proactive vs Re-Active\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/EFFORT/EFFORT%20-%20Proactive%20vs%20Reactive%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66c37906db0d0602d3cd084c",
+      "programme": "VESPA Handbook",
+      "activity_id": 173,
+      "category": "Vision",
+      "title": "VISION - The Search For Meaning",
+      "group_info": {
+        "id": "6659fbe86123fb002a7bc778",
+        "identifier": "June - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/19/2024",
+        "date_formatted": "19/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724025600000,
+        "iso_timestamp": "2024-08-19T00:00:00.000Z",
+        "timestamp": "08/19/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724022000000,
+        "proper_iso_timestamp": "2024-08-18T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://vespa-academy.slides.com/vespaslides/victorfrankl/embed?token=E3EWar01\" width=\"576\" height=\"420\" title=\"VISION - The Search for Meaning\" allowfullscreen>\n</iframe>",
+      "is_welsh": false
+    },
+    {
+      "id": "66c37906db0d0602d3cd0841",
+      "programme": "VESPA Handbook",
+      "activity_id": 172,
+      "category": "Vision",
+      "title": "VISION - Odyssey Planning",
+      "group_info": {
+        "id": "6659fbdd46ca890029dd879f",
+        "identifier": "May - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/19/2024",
+        "date_formatted": "19/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724025600000,
+        "iso_timestamp": "2024-08-19T00:00:00.000Z",
+        "timestamp": "08/19/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724022000000,
+        "proper_iso_timestamp": "2024-08-18T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/VISION/odysseyplanning/slides.html\" width=\"576\" height=\"420\" title=\"VISION - Odyssey Planning\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Odyssey%20Planning%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66c37906db0d0602d3cd0836",
+      "programme": "VESPA Handbook",
+      "activity_id": 171,
+      "category": "Vision",
+      "title": "VISION - Lifestyle Envy vs Job Envy",
+      "group_info": {
+        "id": "6659fbd344e03a0027f1f8ba",
+        "identifier": "April - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/19/2024",
+        "date_formatted": "19/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724025600000,
+        "iso_timestamp": "2024-08-19T00:00:00.000Z",
+        "timestamp": "08/19/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724022000000,
+        "proper_iso_timestamp": "2024-08-18T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/VISION/lifestyleenvyvsjobenvy/slides.html\" width=\"576\" height=\"420\" title=\"VISION - Lifestyle Envy vs Job Envy\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Lifestyle%20vs%20Job%20Envy%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66c37906db0d0602d3cd082b",
+      "programme": "VESPA Handbook",
+      "activity_id": 170,
+      "category": "Vision",
+      "title": "VISION - Divers & Thrivers",
+      "group_info": {
+        "id": "6659fbc709d4da002a810cec",
+        "identifier": "March - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/19/2024",
+        "date_formatted": "19/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724025600000,
+        "iso_timestamp": "2024-08-19T00:00:00.000Z",
+        "timestamp": "08/19/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724022000000,
+        "proper_iso_timestamp": "2024-08-18T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/VISION/divers%26thrivers/slides.html\" width=\"576\" height=\"420\" title=\"VISION - Divers & Thrivers\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Diverandthriver%20Goals%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66c37906db0d0602d3cd0820",
+      "programme": "VESPA Handbook",
+      "activity_id": 169,
+      "category": "Vision",
+      "title": "VISION - The Paths are Well Lit",
+      "group_info": {
+        "id": "6659fbbefc32ae002920bbaf",
+        "identifier": "Febuary - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/19/2024",
+        "date_formatted": "19/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724025600000,
+        "iso_timestamp": "2024-08-19T00:00:00.000Z",
+        "timestamp": "08/19/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724022000000,
+        "proper_iso_timestamp": "2024-08-18T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/VISION/pathsarewelllit/slides.html\" width=\"576\" height=\"420\" title=\"VISION - The Paths are Well Lit\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Paths%20are%20well%20lit%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66c37906db0d0602d3cd0815",
+      "programme": "VESPA Handbook",
+      "activity_id": 168,
+      "category": "Vision",
+      "title": "VISION - Outcome Control",
+      "group_info": {
+        "id": "6659fbb0ea57e00028d29aad",
+        "identifier": "January - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/19/2024",
+        "date_formatted": "19/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724025600000,
+        "iso_timestamp": "2024-08-19T00:00:00.000Z",
+        "timestamp": "08/19/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724022000000,
+        "proper_iso_timestamp": "2024-08-18T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/VISION/outcomecontrol/slides.html\" width=\"576\" height=\"420\" title=\"VISION -Outcome Control\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Outcome%20Control%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66c37906db0d0602d3cd080a",
+      "programme": "VESPA Handbook",
+      "activity_id": 167,
+      "category": "Vision",
+      "title": "VISION - A Question of Money",
+      "group_info": {
+        "id": "6659fba1fc32ae002920bb03",
+        "identifier": "December - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/19/2024",
+        "date_formatted": "19/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724025600000,
+        "iso_timestamp": "2024-08-19T00:00:00.000Z",
+        "timestamp": "08/19/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724022000000,
+        "proper_iso_timestamp": "2024-08-18T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/VISION/aquestionofmoney/slides.html\" width=\"576\" height=\"420\" title=\"VISION - A Question of Money\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Question%20of%20Money%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66c37906db0d0602d3cd07ff",
+      "programme": "VESPA Handbook",
+      "activity_id": 166,
+      "category": "Vision",
+      "title": "VISION - Ikigai",
+      "group_info": {
+        "id": "6659fb9344e03a0027f1f762",
+        "identifier": "November - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/19/2024",
+        "date_formatted": "19/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724025600000,
+        "iso_timestamp": "2024-08-19T00:00:00.000Z",
+        "timestamp": "08/19/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724022000000,
+        "proper_iso_timestamp": "2024-08-18T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/VISION/ikigai/slides.html\" width=\"576\" height=\"420\" title=\"VISION - Ikigai\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Ikigai%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66c37906db0d0602d3cd07f4",
+      "programme": "VESPA Handbook",
+      "activity_id": 165,
+      "category": "Vision",
+      "title": "VISION - Sweet & Sour Summers",
+      "group_info": {
+        "id": "6659fb88ea57e00028d29a05",
+        "identifier": "October - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/19/2024",
+        "date_formatted": "19/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724025600000,
+        "iso_timestamp": "2024-08-19T00:00:00.000Z",
+        "timestamp": "08/19/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724022000000,
+        "proper_iso_timestamp": "2024-08-18T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/VISION/sweet%26soursummers/slides.html\" width=\"576\" height=\"420\" title=\"VISION - Sweet & Sour Summers\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%20Sweet%20%26%20Sour%20Summers%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "66c37906db0d0602d3cd07e9",
+      "programme": "VESPA Handbook",
+      "activity_id": 164,
+      "category": "Vision",
+      "title": "VISION - Another 20 Questions",
+      "group_info": {
+        "id": "6659fb69a5f663002ab0b32c",
+        "identifier": "September - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "08/19/2024",
+        "date_formatted": "19/08/2024",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1724025600000,
+        "iso_timestamp": "2024-08-19T00:00:00.000Z",
+        "timestamp": "08/19/2024 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1724022000000,
+        "proper_iso_timestamp": "2024-08-18T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://www.vespa.academy/assets/VESPAResources/VESPAHandbook/VISION/Another20questions/slides.html\" width=\"576\" height=\"420\" title=\"VISION - Another 20 Questions\" allowfullscreen>\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/VESPAHandbookPdfs/VISION/VISION%20-%2020%20More%20Questions%28editable%29.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "652801769fccf90029fc9620",
+      "programme": "VESPA Handbook",
+      "activity_id": 137,
+      "category": "ATTITUDE",
+      "title": "VESPA - Intro Slides",
+      "group_info": {
+        "id": "66df7924b74fc802ff1cfcc8",
+        "identifier": "September - VESPA Handbook"
+      },
+      "date_info": {
+        "date": "10/12/2023",
+        "date_formatted": "12/10/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1697068800000,
+        "iso_timestamp": "2023-10-12T00:00:00.000Z",
+        "timestamp": "10/12/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1697065200000,
+        "proper_iso_timestamp": "2023-10-11T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://vespa-academy.slides.com/vespaslides/vespa-intro-slides/embed?token=evj_tXoA\" width=\"576\" height=\"420\" title=\"General VESPA Intro Slides\" allowfullscreen>\n</iframe>",
+      "is_welsh": false
+    },
+    {
+      "id": "6527fdfba5bb680027f3c69d",
+      "programme": "ALevel Mindset",
+      "activity_id": 136,
+      "category": "Attitude",
+      "title": "Lladdwch Eich Beirniad",
+      "group_info": {
+        "id": "607ac98d585f77001bc1959b",
+        "identifier": "October - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "10/12/2023",
+        "date_formatted": "12/10/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1697068800000,
+        "iso_timestamp": "2023-10-12T00:00:00.000Z",
+        "timestamp": "10/12/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1697065200000,
+        "proper_iso_timestamp": "2023-10-11T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/lladdwch-eich-beirniad/embed?token=zkjLoSuq;mouseWheel=true\" width=\"576\" height=\"420\" title=\"6.AGWEDD - Lladdwch Eich Beirniad\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/A3-Lladdwch%20eich%20Beirniad.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": true
+    },
+    {
+      "id": "64ef9a2f10164b002af93b32",
+      "programme": "ALevel Mindset",
+      "activity_id": 135,
+      "category": "Practice",
+      "title": "Yr holiadur adolygu",
+      "group_info": {
+        "id": "607ac98d585f77001bc1959b",
+        "identifier": "October - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "08/30/2023",
+        "date_formatted": "30/08/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1693353600000,
+        "iso_timestamp": "2023-08-30T00:00:00.000Z",
+        "timestamp": "08/30/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1693350000000,
+        "proper_iso_timestamp": "2023-08-29T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/yr-holiadur-adolygu-c718ba/embed?token=4wscm_9c;mouseWheel=true\" width=\"576\" height=\"420\" title=\"6.AGWEDD - Lladdwch Eich Beirniad\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/P1-Yr%20Holiadur%20Adolygu.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p>e></p>",
+      "is_welsh": true
+    },
+    {
+      "id": "64ef990a3ac65d0029d44d5b",
+      "programme": "ALevel Mindset",
+      "activity_id": 134,
+      "category": "Attitude",
+      "title": "Y Gromlin Newid",
+      "group_info": {
+        "id": "607ac97f77a5c5001bd4017e",
+        "identifier": "September - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "08/30/2023",
+        "date_formatted": "30/08/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1693353600000,
+        "iso_timestamp": "2023-08-30T00:00:00.000Z",
+        "timestamp": "08/30/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1693350000000,
+        "proper_iso_timestamp": "2023-08-29T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/y-gromlin-newid/embed?token=B4KAqni4;mouseWheel=true\" width=\"576\" height=\"420\" title=\"6.GWELEDIGAETH - Nodau Smart\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/A6-Y%20Gromlin%20Newid.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": true
+    },
+    {
+      "id": "64e658e8c8524c0029e9d862",
+      "programme": "ALevel Mindset",
+      "activity_id": 133,
+      "category": "Effort",
+      "title": "Y Raddfa 1-10",
+      "group_info": {
+        "id": "607ac97f77a5c5001bd4017e",
+        "identifier": "September - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "08/23/2023",
+        "date_formatted": "23/08/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1692748800000,
+        "iso_timestamp": "2023-08-23T00:00:00.000Z",
+        "timestamp": "08/23/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1692745200000,
+        "proper_iso_timestamp": "2023-08-22T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/y-raddfa-1-10/embed?token=rj_z3Bz6;mouseWheel=true\" width=\"576\" height=\"420\" title=\"6.GWELEDIGAETH - Nodau Smart\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/E1-Y%20Raddfa%201%E2%80%9310.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": true
+    },
+    {
+      "id": "64e395f97a936c00279eb7a7",
+      "programme": "ALevel Mindset",
+      "activity_id": 132,
+      "category": "Vision",
+      "title": "Ffugio",
+      "group_info": {
+        "id": "607ac9c9585f77001bc195d7",
+        "identifier": "February - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "08/21/2023",
+        "date_formatted": "21/08/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1692576000000,
+        "iso_timestamp": "2023-08-21T00:00:00.000Z",
+        "timestamp": "08/21/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1692572400000,
+        "proper_iso_timestamp": "2023-08-20T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/ffugio/embed?token=A-glyskn;mouseWheel=true\" width=\"576\" height=\"420\" title=\"6.GWELEDIGAETH - Nodau Smart\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/V8-Ffugio.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": true
+    },
+    {
+      "id": "64e35ab96ec3930028687ab6",
+      "programme": "ALevel Mindset",
+      "activity_id": 131,
+      "category": "Vision",
+      "title": "Gwrthgyferbyniad Meddyliol",
+      "group_info": {
+        "id": "607ac9d6067d36001b5faeff",
+        "identifier": "March - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "08/21/2023",
+        "date_formatted": "21/08/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1692576000000,
+        "iso_timestamp": "2023-08-21T00:00:00.000Z",
+        "timestamp": "08/21/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1692572400000,
+        "proper_iso_timestamp": "2023-08-20T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/gwrthgyferbyniad-meddyliol/embed?token=H9vtLqRi;mouseWheel=true\" width=\"576\" height=\"420\" title=\"6.GWELEDIGAETH - Nodau Smart\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/V7-Cyferbynnu%20Meddyliol.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": true
+    },
+    {
+      "id": "64da54b6157d2a002912b777",
+      "programme": "ALevel Mindset",
+      "activity_id": 130,
+      "category": "Vision",
+      "title": "Nodau CAMPR",
+      "group_info": {
+        "id": "607ac9b777a5c5001bd401b6",
+        "identifier": "January - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "08/14/2023",
+        "date_formatted": "14/08/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1691971200000,
+        "iso_timestamp": "2023-08-14T00:00:00.000Z",
+        "timestamp": "08/14/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1691967600000,
+        "proper_iso_timestamp": "2023-08-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/nodau-smart/embed?token=zclfDKER;mouseWheel=true\" width=\"576\" height=\"420\" title=\"6.GWELEDIGAETH - Nodau Smart\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/V6-Nodau%20CAMPUS.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": true
+    },
+    {
+      "id": "64da54a71943860027d6fbdf",
+      "programme": "ALevel Mindset",
+      "activity_id": 129,
+      "category": "Vision",
+      "title": "Y diwrnod perffaith",
+      "group_info": {
+        "id": "607ac9b777a5c5001bd401b6",
+        "identifier": "January - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "08/14/2023",
+        "date_formatted": "14/08/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1691971200000,
+        "iso_timestamp": "2023-08-14T00:00:00.000Z",
+        "timestamp": "08/14/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1691967600000,
+        "proper_iso_timestamp": "2023-08-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/y-diwrnod-perffaith/embed?token=WZVRvR0x;mouseWheel=true\" width=\"576\" height=\"420\" title=\"5.GWELEDIGAETH - Y diwrnod perffaith\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/V5-Y%20Diwrnod%20Perffaith.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": true
+    },
+    {
+      "id": "64da5497deec25002a1d0425",
+      "programme": "ALevel Mindset",
+      "activity_id": 128,
+      "category": "Vision",
+      "title": "Penblwydd 21ain",
+      "group_info": {
+        "id": "607ac99a76f731001b3b03ad",
+        "identifier": "November - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "08/14/2023",
+        "date_formatted": "14/08/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1691971200000,
+        "iso_timestamp": "2023-08-14T00:00:00.000Z",
+        "timestamp": "08/14/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1691967600000,
+        "proper_iso_timestamp": "2023-08-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/gweledigaeth-gwireddu-breuddwydion/embed?token=-qPS0XWk;mouseWheel=true\" width=\"576\" height=\"420\" title=\"3.GWELEDIGAETH - Penblwydd 21ain\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/V3-Eich%20Pen-blwydd%20yn%2021.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": true
+    },
+    {
+      "id": "64da548522b7e200279b34d7",
+      "programme": "ALevel Mindset",
+      "activity_id": 127,
+      "category": "Vision",
+      "title": "Creu Dy Ddangosfwrdd",
+      "group_info": {
+        "id": "607ac97f77a5c5001bd4017e",
+        "identifier": "September - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "08/14/2023",
+        "date_formatted": "14/08/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1691971200000,
+        "iso_timestamp": "2023-08-14T00:00:00.000Z",
+        "timestamp": "08/14/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1691967600000,
+        "proper_iso_timestamp": "2023-08-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/creu-dy-ddangosfwrdd/embed?token=tRhIEOwz;mouseWheel-true\" width=\"576\" height=\"420\" title=\"4.GWELEDIGAETH - Creu Dy Ddangosfwrdd\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/V4-Gwirio%20Eich%20Dangosfwrdd.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": true
+    },
+    {
+      "id": "64da5471deec25002a1d03d6",
+      "programme": "ALevel Mindset",
+      "activity_id": 126,
+      "category": "Vision",
+      "title": "Gwireddu breuddwydion",
+      "group_info": {
+        "id": "607ac97f77a5c5001bd4017e",
+        "identifier": "September - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "08/14/2023",
+        "date_formatted": "14/08/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1691971200000,
+        "iso_timestamp": "2023-08-14T00:00:00.000Z",
+        "timestamp": "08/14/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1691967600000,
+        "proper_iso_timestamp": "2023-08-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/gwireddu-breuddwydion/embed?token=xRk_0QNv;mouseWheel=true\" width=\"576\" height=\"420\" title=\"2.GWELEDIGAETH - Gwireddu breuddwydion\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/WelshPDFs/L3/V2-Cyflawni%20Breuddwydion.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": true
+    },
+    {
+      "id": "64c246a15100b9002807845d",
+      "programme": "ALevel Mindset",
+      "activity_id": 125,
+      "category": "Vision",
+      "title": "20 cwestiwn",
+      "group_info": {
+        "id": "607ac97f77a5c5001bd4017e",
+        "identifier": "September - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "07/27/2023",
+        "date_formatted": "27/07/2023",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1690416000000,
+        "iso_timestamp": "2023-07-27T00:00:00.000Z",
+        "timestamp": "07/27/2023 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1690412400000,
+        "proper_iso_timestamp": "2023-07-26T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://slides.com/vespaslides/20-cwestiwn/embed?token=DmOZ-dZC;mouseWheel=true\" width=\"576\" height=\"420\" title=\"1. GWELEDIGAETH - 20 cwestiwn\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES//WelshPDFs/L3/V1-Ugain%20Cwestiwn.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">LAWRLWYTHWCH PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": true
+    },
+    {
+      "id": "607f3fa899ff4b001b9b3846",
+      "programme": "ALevel Mindset",
+      "activity_id": 91,
+      "category": "Attitude",
+      "title": "ATTITUDE - Stand Tall",
+      "group_info": {
+        "id": "607aca0576f731001b3b040b",
+        "identifier": "May - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRzS3wEM5_VTgO033YUMgB-L2z9Dv-fJIhjbRxuAyeTgNoFslAiAv0FethhY8KeCT4INjGgnNhdPUKA/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A8-Stand%20Tall.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 91
+    },
+    {
+      "id": "607f3f8f2e418a0021b82a33",
+      "programme": "ALevel Mindset",
+      "activity_id": 90,
+      "category": "Attitude",
+      "title": "ATTITUDE - There & Back",
+      "group_info": {
+        "id": "607aca0576f731001b3b040b",
+        "identifier": "May - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRoIOAdLx_9ZKlNRg7DqUMdE5e74GIfMLnqXrucRTbquiX1O0zlyRvmxiOzqXx53_mCsyr3UaKQSbW8/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A4-There%20%26%20Back.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 90
+    },
+    {
+      "id": "607f3f48e913fa001c6acde1",
+      "programme": "ALevel Mindset",
+      "activity_id": 89,
+      "category": "Practice",
+      "title": "PRACTICE - 2 Slow 1 Fast",
+      "group_info": {
+        "id": "607ac9f8585f77001bc19610",
+        "identifier": "April - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRsktcpCscBFf1UC4Z24R4z3fTbTa4estvnXzEHGLBNU7CXPkBIVk1bz4BxSCoUdNKdsHRDj5jpsrx7/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#a986ff;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P5-2%20Slow%2C1%20Fast.pdf\" target=\"_blank\"><span style=\"color:rgb(128, 100, 162)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 89
+    },
+    {
+      "id": "607f3f31c95d72001ecc1c3f",
+      "programme": "ALevel Mindset",
+      "activity_id": 88,
+      "category": "Practice",
+      "title": "PRACTICE - The Leitner Box",
+      "group_info": {
+        "id": "607ac9f8585f77001bc19610",
+        "identifier": "April - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://vespa-academy.slides.com/vespaslides/leitnerbox/embed?token=xnRiwm7A\" width=\"576\" height=\"420\" title=\"Practice - Leitner Box\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P4-Leitner Box.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 88
+    },
+    {
+      "id": "607f3f1a99ff4b001b9b37e1",
+      "programme": "ALevel Mindset",
+      "activity_id": 87,
+      "category": "Systems",
+      "title": "SYSTEMS - Eisenhower Matrix",
+      "group_info": {
+        "id": "607ac9f8585f77001bc19610",
+        "identifier": "April - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRF5UhctTI8Se2ceDIcZkGkGLIvCRa4La1k6iogxTyyYJSmhw8sfJgGl9FsGBAZG-prYLOuo9DP031-/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#aad950;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S7-Eisenhower Matrix.pdf\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 87
+    },
+    {
+      "id": "607f3ef9c95d72001ecc1c15",
+      "programme": "ALevel Mindset",
+      "activity_id": 86,
+      "category": "Systems",
+      "title": "SYSTEMS - Project Progress Chart",
+      "group_info": {
+        "id": "607ac9f8585f77001bc19610",
+        "identifier": "April - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vQ8Sk5zN2SN76WEZtjIjU3-47e-jfZrlXaNCA3JS2VFle0gMpA6k5tczCbBLPccyHHrKNCOPde6Hmrs/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#aad950;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S6-Project Progress Chart.pdf\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 86
+    },
+    {
+      "id": "607f3e5c3b9a8f001d7a0106",
+      "programme": "ALevel Mindset",
+      "activity_id": 85,
+      "category": "Practice",
+      "title": "PRACTICE - Mechanical vs Flexible",
+      "group_info": {
+        "id": "607ac9d6067d36001b5faeff",
+        "identifier": "March - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTtjwXnhTxF34n2bIMNTW_4cCuio3bvT8i8xBnsfq_Ga98_7SkUUyui2EDYnHB3NLLreamdUTdngecQ/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#a986ff;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P8-Mechanical vs Flexible.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 85
+    },
+    {
+      "id": "607f3e432e418a0021b82929",
+      "programme": "ALevel Mindset",
+      "activity_id": 84,
+      "category": "Attitude",
+      "title": "ATTITUDE - Stopping Negative Thoughts",
+      "group_info": {
+        "id": "607ac9d6067d36001b5faeff",
+        "identifier": "March - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vT35kw571-gm1aiHUtb291IwEXeDHSaEzyaC4TdHZ0KMHa3t6X2ITggTgClAom_FijYInxqGMMgNnWQ/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A2-Stopping Negative Thoughts.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 84
+    },
+    {
+      "id": "607f3e2fe913fa001c6accf2",
+      "programme": "ALevel Mindset",
+      "activity_id": 83,
+      "category": "Practice",
+      "title": "PRACTICE - Know the Skills",
+      "group_info": {
+        "id": "607ac9d6067d36001b5faeff",
+        "identifier": "March - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTaHAyl0PQhffLZe4mfP3AXPiDtDgBxfdUsYA9esEGszcKIZRYuG8niYH2WHrq8YSDheV4Z0qS7utGN/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P2 - Know the Skills.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 83
+    },
+    {
+      "id": "607f3e1b34c775001bf719b0",
+      "programme": "ALevel Mindset",
+      "activity_id": 82,
+      "category": "Vision",
+      "title": "VISION - Mental Contrasting",
+      "group_info": {
+        "id": "607ac9d6067d36001b5faeff",
+        "identifier": "March - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vQYoq2HBjsKIHRiDz-OYWejZYeTDlpHap80mEDJnOu7nC6WGCnMEgf4k4no3swXBP9-Pwz2CeZ_Inza/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V7 - Mental Contrasting.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 82
+    },
+    {
+      "id": "607f3d6c0f0db5001c46374f",
+      "programme": "ALevel Mindset",
+      "activity_id": 81,
+      "category": "Practice",
+      "title": "PRACTICE - Graphic Organisers",
+      "group_info": {
+        "id": "607ac9c9585f77001bc195d7",
+        "identifier": "February - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vQJq6-u3q2WKUXNFTM1kOzRKY5Rm5ZuO7b-Hl1A8ue603tGlYCGphEwcYHbEfeLXHoACih8yZ_HF2jA/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#a986ff;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P3-Graphic Organisers.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 81
+    },
+    {
+      "id": "607f3d563b9a8f001d7a0032",
+      "programme": "ALevel Mindset",
+      "activity_id": 80,
+      "category": "Systems",
+      "title": "SYSTEMS - The Lead Domino",
+      "group_info": {
+        "id": "607ac9c9585f77001bc195d7",
+        "identifier": "February - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTXrnwdccvR8R00WLsEXZi5v-AfeQGQRR9FqwoB3spPNxTA2mNj0YA-hAKxaL3zWweRQEREbp-R_Xak/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#aad950;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S8-Lead Domino.pdf\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 80
+    },
+    {
+      "id": "607f3d38e913fa001c6acc10",
+      "programme": "ALevel Mindset",
+      "activity_id": 79,
+      "category": "Effort",
+      "title": "EFFORT - Power of If",
+      "group_info": {
+        "id": "607ac9c9585f77001bc195d7",
+        "identifier": "February - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRe855LUdjF2rpM5DDwrMmth2yBenB2AwHqxIjGSJo7Fpak24hE2L0QNG0-pwwS3isnrt6h9m1JiWTb/embed?start=false&loop=false&delayms=3000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#a4c2f4;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E8-Power%20of%20If-Then%20thinking.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 79
+    },
+    {
+      "id": "607f3d230f0db5001c463714",
+      "programme": "ALevel Mindset",
+      "activity_id": 78,
+      "category": "Effort",
+      "title": "EFFORT - Working Weeks",
+      "group_info": {
+        "id": "607ac9c9585f77001bc195d7",
+        "identifier": "February - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTpnXJ3XgXiouMoWxCLPe9Lm60dZgGFjc67OfHVuBpdiKSE6LMuhrI5tOAvTxgJWe2jZhO7JPA3RFma/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a4c2f4;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E2-Working Weeks.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 78
+    },
+    {
+      "id": "607f3d0f34c775001bf7184a",
+      "programme": "ALevel Mindset",
+      "activity_id": 77,
+      "category": "Vision",
+      "title": "VISION - Fake it",
+      "group_info": {
+        "id": "607ac9c9585f77001bc195d7",
+        "identifier": "February - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vS2_ZypCen_mGaLxN3TxkeRFNLPMLOjpMo5pPPDLGoeA88BsKGsC6SU__tvWx2Djrkm8IDmbG-LuRqV/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V8 - Fake It!.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 77
+    },
+    {
+      "id": "607f3bf40f0db5001c463537",
+      "programme": "ALevel Mindset",
+      "activity_id": 76,
+      "category": "Practice",
+      "title": "PRACTICE - Right, Wrong, Right",
+      "group_info": {
+        "id": "607ac9b777a5c5001bd401b6",
+        "identifier": "January - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vS0ssy8v6pUJSTQ1-TxrhAZtv8LKydfx25oX3naDf2U6u_Lxc_nfFBd1FidK6sdeBz45aP-S_3KPedL/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#a986ff;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P6-Right,Wrong,Right.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 76
+    },
+    {
+      "id": "607f3bce508623001e2f50a3",
+      "programme": "ALevel Mindset",
+      "activity_id": 75,
+      "category": "Attitude",
+      "title": "ATTITUDE - Failing Forwards",
+      "group_info": {
+        "id": "607ac9a7841fde001b9dfa3f",
+        "identifier": "December - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vT2iQOTl6G_L_TjGWm17FLjd3R2hVft_jPqix386Gn-PeAcBxG1izEAKLu0yDbnyu_KpvLK-2YoUxBG/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#ff769c;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A5-Falling Forwards.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 75
+    },
+    {
+      "id": "607f3baa3b9a8f001d79fedf",
+      "programme": "ALevel Mindset",
+      "activity_id": 74,
+      "category": "Systems",
+      "title": "SYSTEMS - STQR",
+      "group_info": {
+        "id": "607ac9b777a5c5001bd401b6",
+        "identifier": "January - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vSEllHP-JHa0NOrsg6FVGbYze_2rD0DWSD-PMCXfsNNJNqfoHWfXzXkIsHoxBYoNb4mBcscDpXfKJv4/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#aad950;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S5-STQR.pdf\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 74
+    },
+    {
+      "id": "607f3b563b9a8f001d79fea3",
+      "programme": "ALevel Mindset",
+      "activity_id": 73,
+      "category": "Vision",
+      "title": "VISION - SMART Goals",
+      "group_info": {
+        "id": "607ac9b777a5c5001bd401b6",
+        "identifier": "January - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://vespa-academy.slides.com/vespaslides/6-gweledigaeth-nodau-smart/embed?token=RTGEEQ_N\" width=\"576\" height=\"420\" title=\"VISION - SMART GOALS\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V6 - SMART Goals.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 73
+    },
+    {
+      "id": "607f3b19e913fa001c6aca83",
+      "programme": "ALevel Mindset",
+      "activity_id": 72,
+      "category": "Vision",
+      "title": "VSION - Perfect Day",
+      "group_info": {
+        "id": "607ac9b777a5c5001bd401b6",
+        "identifier": "January - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://vespa-academy.slides.com/vespaslides/5-gweledigaeth-y-diwrnod-perffaith/embed?token=Pfmu_pJD\" width=\"576\" height=\"420\" title=\"5.VISION - Perfect Day\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V5 - Perfect Day.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 72
+    },
+    {
+      "id": "607f3a42e913fa001c6ac9ed",
+      "programme": "ALevel Mindset",
+      "activity_id": 71,
+      "category": "Practice",
+      "title": "PRACTICE - Learning from your Mistakes",
+      "group_info": {
+        "id": "607ac9a7841fde001b9dfa3f",
+        "identifier": "December - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTmMEpJXRFr85FKfguzke39J0CC5_XQ3zX0Ic_A41wg4uq6NkzLKEmwxXJxN3ah1gCNF0SXOK5HuY-6/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#a986ff;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/P7-Learn from Mistakes.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 71
+    },
+    {
+      "id": "607f3a2999ff4b001b9b33e1",
+      "programme": "ALevel Mindset",
+      "activity_id": 70,
+      "category": "Systems",
+      "title": "SYSTEMS - 2-4-8 Rule",
+      "group_info": {
+        "id": "607ac9a7841fde001b9dfa3f",
+        "identifier": "December - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRylJ33spgsHP3Rfg18cQAQRg8YubZ70lf0_B1lyCNpSROfsIF9l3VXB3Au67CzmL2TZ8HFcdwMwmQ9/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#aad950;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S4-2-4-8 Rule.pdf\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 70
+    },
+    {
+      "id": "607f3a0f99ff4b001b9b33c8",
+      "programme": "ALevel Mindset",
+      "activity_id": 69,
+      "category": "Effort",
+      "title": "EFFORT - Inner Storytelling",
+      "group_info": {
+        "id": "607ac9a7841fde001b9dfa3f",
+        "identifier": "December - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRyMEJIAVwAMDVKQcvoKQa25Q8qVLaJKBQcNacY3CL1CoMstVbsB3hltUe8lFM0nOQeHP58XNRxJbSj/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#a4c2f4;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E7 - Inner Story Telling.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 69
+    },
+    {
+      "id": "607f39f9e913fa001c6ac9b6",
+      "programme": "ALevel Mindset",
+      "activity_id": 68,
+      "category": "Effort",
+      "title": "EFFORT - 10min Rule",
+      "group_info": {
+        "id": "607ac9a7841fde001b9dfa3f",
+        "identifier": "December - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vT926XIUXfdtaoamVuKI9aL_o6VNs-yH0VxByQyQr_YPj4V3TZBZuYeqAvpVnCIy4ackQG7MonqKc5R/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#a4c2f4;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E6 - 10Min Rule.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 68
+    },
+    {
+      "id": "607f39df2e418a0021b825ba",
+      "programme": "ALevel Mindset",
+      "activity_id": 67,
+      "category": "Vision",
+      "title": "VISION - Fix your Dashboard",
+      "group_info": {
+        "id": "607ac9a7841fde001b9dfa3f",
+        "identifier": "December - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://vespa-academy.slides.com/vespaslides/4-gweledigaeth-creu-dy-ddangosfwrdd/embed?token=f7Ikyzi6\" width=\"576\" height=\"420\" title=\"VISION - Fix your dashboard\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V4 - Fix your Dashboard.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 67
+    },
+    {
+      "id": "607f37edc95d72001ecc1667",
+      "programme": "ALevel Mindset",
+      "activity_id": 66,
+      "category": "Attitude",
+      "title": "ATTITUDE - Force Field Analysis",
+      "group_info": {
+        "id": "607ac99a76f731001b3b03ad",
+        "identifier": "November - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vQfzWvUYQE1LTYentK41Bly-UrWHRHpQocZ12Jo_5M9U8FK0V0CSiwsPPG08wOe9tzJBVn3BwGCWIi3/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A1-Force Field.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 66
+    },
+    {
+      "id": "607f37bf0f0db5001c4631ed",
+      "programme": "ALevel Mindset",
+      "activity_id": 65,
+      "category": "Systems",
+      "title": "SYSTEMS - Snack don't binge",
+      "group_info": {
+        "id": "607ac99a76f731001b3b03ad",
+        "identifier": "November - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vSEIxTyDqp6bL5zsDGeaM1RVx-wm6fOBny5LRX2Djd4rc9RAkRRpRkRPisCI3CxGdg7UCjD8QDrYl51/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#aad950;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S3-Snack,don't Binge.pdf\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 65
+    },
+    {
+      "id": "607f35fc0f0db5001c463087",
+      "programme": "ALevel Mindset",
+      "activity_id": 64,
+      "category": "Effort",
+      "title": "EFFORT - Frogs & Bannisters",
+      "group_info": {
+        "id": "607ac99a76f731001b3b03ad",
+        "identifier": "November - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vThDMwe4A1Ld-QVlp7h4Mnp0HNfGTgaGxEv6n5eFnUG-Ova0JOb91XRltVEzjr7iE3L1xg2ftU3tFv7/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#a4c2f4;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E5 - Frogs & Bannisters.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 64
+    },
+    {
+      "id": "607f35262b0bda001ccd2ae7",
+      "programme": "ALevel Mindset",
+      "activity_id": 63,
+      "category": "Effort",
+      "title": "EFFORT - Recognising your Blockers",
+      "group_info": {
+        "id": "607ac99a76f731001b3b03ad",
+        "identifier": "November - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTp099qtsgaR6ZZreND9jVgS824g2jYKBf03Ea10MbQWbYd89imhHeu6I9dNTBSr92QuslOMhLB-yF1/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#a4c2f4;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E4-Recognising your Blockers.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 63
+    },
+    {
+      "id": "607f34fe3b9a8f001d79f9b6",
+      "programme": "ALevel Mindset",
+      "activity_id": 62,
+      "category": "Vision",
+      "title": "VISION - 21st Birthday",
+      "group_info": {
+        "id": "607ac99a76f731001b3b03ad",
+        "identifier": "November - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRZaY8T5EZNTK0qXAyz1NXLheBPi_8ON5qvW8VxZPdMrih1CnDJvevjdk09slxAUbN5MIpVNCy5bGjH/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V3 - 21st Birthday.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 62
+    },
+    {
+      "id": "607f31b32e418a0021b81dff",
+      "programme": "ALevel Mindset",
+      "activity_id": 61,
+      "category": "Practice",
+      "title": "PRACTICE - The Practice Questionnaire",
+      "group_info": {
+        "id": "607ac98d585f77001bc1959b",
+        "identifier": "October - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/1-jJ9-1CvD2OR9JfpTYPoxarBorrWLe-WEC5BEX3rCbQ/embed?start=false&loop=false&delayms=3000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/LEVEL2PDFS/PRACTICE - Practice Questionnaire.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 61
+    },
+    {
+      "id": "607f31810f0db5001c462b24",
+      "programme": "ALevel Mindset",
+      "activity_id": 60,
+      "category": "Attitude",
+      "title": "ATTITUDE - Kill your Critic",
+      "group_info": {
+        "id": "607ac98d585f77001bc1959b",
+        "identifier": "October - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vQicY9ZNCqELf_Dt1lGrDxAqSNmXTxIGYXnlwWXYThCDeEk_zycmDOSiPB2UsxmDFfjn3awDx2n7aAx/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A3-Kill your Critic.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 60
+    },
+    {
+      "id": "607f31572e418a0021b81db5",
+      "programme": "ALevel Mindset",
+      "activity_id": 59,
+      "category": "Systems",
+      "title": "SYSTEMS - The Breakfast Club",
+      "group_info": {
+        "id": "607ac98d585f77001bc1959b",
+        "identifier": "October - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/1jHSUnMxpyLeOpfulbBzRvY1MwEj3T-TtCy5osRBJXQc/embed?start=false&loop=false&delayms=60000\" width=\"960\" height=\"569\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#aad950;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S2-T\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 59
+    },
+    {
+      "id": "607f302c0f0db5001c4629e7",
+      "programme": "ALevel Mindset",
+      "activity_id": 58,
+      "category": "Systems",
+      "title": "SYSTEMS - The Energy Line",
+      "group_info": {
+        "id": "607ac98d585f77001bc1959b",
+        "identifier": "October - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRAi9ml-kJWDua8HTVBxRT_j8p8x11WynLtoEXIKCczlNrY_ekAKGVfMTKfwwb44pVGZD2G7PIVSBp1/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#aad950;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/S1-Energy Line.pdf\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 58
+    },
+    {
+      "id": "607f2fc63b9a8f001d79f4bb",
+      "programme": "ALevel Mindset",
+      "activity_id": 57,
+      "category": "Effort",
+      "title": "EFFORT - The Three R's of Habit",
+      "group_info": {
+        "id": "607ac98d585f77001bc1959b",
+        "identifier": "October - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vQ5IKyhc_5VDUtDte099WWyHwOj3PctlOYN2i4nYCjkpRbJF9c3ArXZtG-HPWz4cbhmBdsRitOmWgAQ/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe>\n<hr style=\"height:2px;background-color:#a4c2f4;border:none\" />\n<p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E3 - 3R's of Habit.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p>\n<hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 57
+    },
+    {
+      "id": "607f2f0434c775001bf70a4d",
+      "programme": "ALevel Mindset",
+      "activity_id": 56,
+      "category": "Attitude",
+      "title": "ATTITUDE - The Vampire Test",
+      "group_info": {
+        "id": "607ac97f77a5c5001bd4017e",
+        "identifier": "September - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vQUEhRuhkeBo6cRPnoP_FxxhZ7BXh2K_6zdR3lr8r165ZWXZ-ovxCrb-dXMyLEn9fpNyJUqfo2s6KAs/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A7-Vampire Test.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 56
+    },
+    {
+      "id": "607f2ec434c775001bf70a12",
+      "programme": "ALevel Mindset",
+      "activity_id": 55,
+      "category": "Attitude",
+      "title": "ATTITUDE - The Change Curve",
+      "group_info": {
+        "id": "607ac97f77a5c5001bd4017e",
+        "identifier": "September - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTayrTey3nhg6isYUzzGAR2MP8XiWCZkPU1pl-JId6BuDysM4FJ9t4x7XS_sdxlu4aarRI5Bza78vzv/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/A6-Change Curve.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 55
+    },
+    {
+      "id": "607f2e922b0bda001ccd240a",
+      "programme": "ALevel Mindset",
+      "activity_id": 54,
+      "category": "Effort",
+      "title": "EFFORT - One to Ten Scale",
+      "group_info": {
+        "id": "607ac97f77a5c5001bd4017e",
+        "identifier": "September - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://vespa-academy.slides.com/vespaslides/1-10scale/embed?token=5Cf2X2ni\" width=\"576\" height=\"420\" title=\"EFFORT - The 1-10 Scale\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#a4c2f4;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/E1-1-10 Scale.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 54
+    },
+    {
+      "id": "607f2e4e0f0db5001c462847",
+      "programme": "ALevel Mindset",
+      "activity_id": 53,
+      "category": "Vision",
+      "title": "VISION - Getting Dreams Done",
+      "group_info": {
+        "id": "607ac97f77a5c5001bd4017e",
+        "identifier": "September - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTMDlGbsml-Lioi8z4VltRL52mOtvGu9lnfvkQRaTk8VENI7yGISFkFrH5QFqISxtuhuqPf6raj5JSF/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V2 - Getting Dreams Done.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 53
+    },
+    {
+      "id": "607f2e2f2b0bda001ccd23a6",
+      "programme": "ALevel Mindset",
+      "activity_id": 52,
+      "category": "Vision",
+      "title": "VISION - 20 Questions",
+      "group_info": {
+        "id": "607ac97f77a5c5001bd4017e",
+        "identifier": "September - ALevel Mindset"
+      },
+      "date_info": {
+        "date": "04/20/2021",
+        "date_formatted": "20/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618876800000,
+        "iso_timestamp": "2021-04-20T00:00:00.000Z",
+        "timestamp": "04/20/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618873200000,
+        "proper_iso_timestamp": "2021-04-19T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://vespa-academy.slides.com/vespaslides/20questions/embed?token=5lGzETPx\" width=\"576\" height=\"420\" title=\"VISION - 20 Questions\" allowfullscreen>\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><span style=\"color:rgb(227, 108, 9)\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/ALEVELMindsetPdfs/V1-20 Questions.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n\t</span>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false,
+      "legacy_id": 52
+    },
+    {
+      "id": "607ae5e876f731001b3b31de",
+      "programme": "GCSE Mindset",
+      "activity_id": 51,
+      "category": "Effort",
+      "title": "EFFORT - Pre-Making Decisions",
+      "group_info": {
+        "id": "607ac930067d36001b5fae33",
+        "identifier": "May - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vSrDBIebY_XN7LcbitkTrn0d2kNTWzKI5g_c5ZvfWyyXBel7dawOIgGA191hnIZuHCOX6bKWYyxSb6Y/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a4c2f4;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT - Pre-Making Decisions.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae59a067d36001b5fcc19",
+      "programme": "GCSE Mindset",
+      "activity_id": 50,
+      "category": "Attitude",
+      "title": "ATTITUDE - First Aid Kit",
+      "group_info": {
+        "id": "607ac930067d36001b5fae33",
+        "identifier": "May - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vQb3Z9V34Ros4PCDyd-5R_xYA-q6rhKpDHkm35Ne_1mG-w1Jt98aRJjnLjqbcZPV5xY5FnY6TMxjG6q/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE - The First Aid Kit.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae4f2b9af42001b0d5fc2",
+      "programme": "GCSE Mindset",
+      "activity_id": 49,
+      "category": "Attitude",
+      "title": "ATTITUDE - \"Benefit finding, aka The Rocky Road\"",
+      "group_info": {
+        "id": "607ac92168d401001cbf45cd",
+        "identifier": "April - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vT8atD-VGIZDXp_c5kAHwb1kug18Uly-j6d3j80SjG9pHSE4X_vryo_TOfg__Or1LYCSV9xXtuNiRoj/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE - Benefit Finding.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae4b9585f77001bc1b468",
+      "programme": "GCSE Mindset",
+      "activity_id": 48,
+      "category": "Systems",
+      "title": "SYSTEMS - \"The Action Priority Matrix\"",
+      "group_info": {
+        "id": "607766bef1b3ad001b5309a2",
+        "identifier": "September - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vSbrUsO189IPU4cbZl1FxfgsXGb3gDgJK7Lrdz2MZCA-08bbG3r2pF9zy4iCuN2MBtPAt-Wf0-Ka-PW/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#aad950;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS - Action Priority Matrix.pdf\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae480f8ed44001c7b3cc5",
+      "programme": "GCSE Mindset",
+      "activity_id": 47,
+      "category": "Vision",
+      "title": "VISION - \"Now vs Most\"",
+      "group_info": {
+        "id": "607ac92168d401001cbf45cd",
+        "identifier": "April - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTDNs8i4Xw9kZhXUK3yKdnsZMxJIE58W2Y7HLDKpyxuVVaosCNjMoeJ261VJCdFZT3BiqVWnYXTnqYJ/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION - Now vs Most.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae44bb9af42001b0d5f19",
+      "programme": "GCSE Mindset",
+      "activity_id": 46,
+      "category": "Practice",
+      "title": "PRACTICE - \"High Flow Spaces\"",
+      "group_info": {
+        "id": "607ac92168d401001cbf45cd",
+        "identifier": "April - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTzr3rjG6H7Vd7ZfkQCnDcTNfyjQQ9E209iu1HSNXS7qLRK0senYBh0RCau5JuhZF6OwQPU1Teocbde/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE - High Flow Spaces.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae41176f731001b3b3062",
+      "programme": "GCSE Mindset",
+      "activity_id": 45,
+      "category": "Practice",
+      "title": "PRACTICE - \"Finding Flow\"",
+      "group_info": {
+        "id": "607ac92168d401001cbf45cd",
+        "identifier": "April - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vSVjM2YbBizHgO90AXGxiaF6jHvAEaNLxAXixE6BePt2mi8lk1RpPxZvuslEyM_A_10FbYNab7pEIxm/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE - Finding Flow.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae37c067d36001b5fca2d",
+      "programme": "GCSE Mindset",
+      "activity_id": 44,
+      "category": "Vision",
+      "title": "VISION - \"What's stopping you?\"",
+      "group_info": {
+        "id": "607ac912841fde001b9df95b",
+        "identifier": "March - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vSWgqVbW9qBWkOBrHBhApqCr6UQd_4yvGXriUg0BWmn-hyTOBd0tnHQkz4_QTHMUe6kfAq-l9QTJGXx/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION - What's Stopping You.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae352585f77001bc1b318",
+      "programme": "GCSE Mindset",
+      "activity_id": 43,
+      "category": "Practice",
+      "title": "PRACTICE - \"Test Yourself\"",
+      "group_info": {
+        "id": "607ac912841fde001b9df95b",
+        "identifier": "March - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTy2YzcJLrQrgF1_c1465zdyoHOTaNGYXnVQ6TEAv5CdMC0LDqD2OY6LymuMp91yM2CZDTS2utPvWYu/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE - Test Yourself.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae31e76f731001b3b2f82",
+      "programme": "GCSE Mindset",
+      "activity_id": 42,
+      "category": "Practice",
+      "title": "PRACTICE - \"Spaced Practice\"",
+      "group_info": {
+        "id": "607ac912841fde001b9df95b",
+        "identifier": "March - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vR19-JJ3rNEG-pAQfqWTI0sR4WhNY77pAzc6yFElfxk7mPxb1CAS3dSlncM6_5CENGkvuvkUqJE6J7H/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE - Spaced Practice.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae2f577a5c5001bd41cdf",
+      "programme": "GCSE Mindset",
+      "activity_id": 41,
+      "category": "Practice",
+      "title": "PRACTICE - \"K-SPA\"",
+      "group_info": {
+        "id": "607ac912841fde001b9df95b",
+        "identifier": "March - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTAg_rBmDE9ELNWcU403sBtPPzbi7xkuPIqnaf-jjIYSKGvIN6DyU6R0exYBhKrA20aw9DkqO_2BlKm/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE - K-SPA.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae2dd585f77001bc1b2c1",
+      "programme": "GCSE Mindset",
+      "activity_id": 40,
+      "category": "Attitude",
+      "title": "ATTITUDE - \"The Problem solving cycle\"",
+      "group_info": {
+        "id": "607ac912841fde001b9df95b",
+        "identifier": "March - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vS0pNQsbb5IWV5ZR7op-NblGMcW3RAc6rJ7hhbonS-s906_dgcZfs8sgIlXMZkZ2YTH9o9s4wyjFwja/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE - Problem Solving Cycle.pdf\" target=\"_blank\"><span style=\"color:rgb(149, 55, 52)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae195067d36001b5fc89b",
+      "programme": "GCSE Mindset",
+      "activity_id": 39,
+      "category": "Practice",
+      "title": "PRACTICE - \"Will vs Skill\"",
+      "group_info": {
+        "id": "607ac903067d36001b5fada4",
+        "identifier": "February - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRMs5dPJHVVUpoU3cSnqOhETBl2YoR_pb4HxlqOvzLxk8QJQEQDaR7x9dpJFwhqhvQJIgS2My3vNiGW/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE - Will vs Skill.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae157067d36001b5fc860",
+      "programme": "GCSE Mindset",
+      "activity_id": 38,
+      "category": "Practice",
+      "title": "PRACTICE - \"The Nine Box Grid\"",
+      "group_info": {
+        "id": "607ac903067d36001b5fada4",
+        "identifier": "February - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRqYmembtkr9nNnq1-6V1RkolaU3ONL1jllz01xrRgTMzUVPCmo3ddWARqnBsaaskm5Xa1GljmOW0vj/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE - 9 Box Grid.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae12bb9af42001b0d5c9c",
+      "programme": "GCSE Mindset",
+      "activity_id": 37,
+      "category": "Effort",
+      "title": "EFFORT - \"25min Sprints\"",
+      "group_info": {
+        "id": "607ac903067d36001b5fada4",
+        "identifier": "February - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vSfqvWrZBsH6QkVgE6bC8a3XeiL00S4ym_uOTshtZRV_A6Usd2GtDDosLzHep1j3pPghPBMTqTg412H/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a4c2f4;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT - 25min Sprints.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae0f6585f77001bc1b122",
+      "programme": "GCSE Mindset",
+      "activity_id": 36,
+      "category": "Effort",
+      "title": "EFFORT - \"Packing My Bags\"",
+      "group_info": {
+        "id": "607ac903067d36001b5fada4",
+        "identifier": "February - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRjUpAVmyCKn-98aAKR_TX4dCXnovmWSvo535f7-gLUWFo8X4vTLSkMledVDKQpq19JQG9LKjXCwk2k/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a4c2f4;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT - Packing Bags.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae0cc76f731001b3b2d90",
+      "programme": "GCSE Mindset",
+      "activity_id": 35,
+      "category": "Effort",
+      "title": "EFFORT - \"The Effort Thermometer\"",
+      "group_info": {
+        "id": "607ac903067d36001b5fada4",
+        "identifier": "February - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vShsztw01l203KvNWPleTjl6iRzDjqNaTHAqU2aKA9egN6G1rAjGCGsEuZlvxFO8HciroylTPu9fvf_/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a4c2f4;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT - Effort Thermometer.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ae00b76f731001b3b2ced",
+      "programme": "GCSE Mindset",
+      "activity_id": 34,
+      "category": "Attitude",
+      "title": "ATTITUDE - \"Managing Reactions to Feedback\"",
+      "group_info": {
+        "id": "607ac83a77a5c5001bd3ff6b",
+        "identifier": "January - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vSc54SbkQxlU-PzvepVHw1fmVM6VZwA7Woh60rYjuxWrEa3Fsh1cFu7OxEajQppiB484wyHZWVbuXea/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE - Managing Reactions.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607adfb477a5c5001bd41a42",
+      "programme": "GCSE Mindset",
+      "activity_id": 33,
+      "category": "Systems",
+      "title": "SYSTEMS - \"The bottom left\"",
+      "group_info": {
+        "id": "607ac83a77a5c5001bd3ff6b",
+        "identifier": "January - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vQM9W8U8NLmwiDF0DwplbAMgLfQIordcTamQfCv_BPwukcwgEEHKm4WHf2LSYHM8-hP26IMrzSFNFcY/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#aad950;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS - The Bottom Left.pdf\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607adf83f8ed44001c7b3887",
+      "programme": "GCSE Mindset",
+      "activity_id": 32,
+      "category": "Attitude",
+      "title": "ATTITUDE - \"The Battery\"",
+      "group_info": {
+        "id": "607767bbf1b3ad001b530a30",
+        "identifier": "November - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTGfCnsMZQw82pp-xnjNzJQjJapiGQwB1m2D4iXC2HlqC3WR4IyK3cDejvbm5ns1R4SjYXuB9sQYF7i/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE - The Battery.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607adf4ef8ed44001c7b385a",
+      "programme": "GCSE Mindset",
+      "activity_id": 31,
+      "category": "Vision",
+      "title": "VISION - \"Ten year grid\"",
+      "group_info": {
+        "id": "607ac83a77a5c5001bd3ff6b",
+        "identifier": "January - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRivCbwxHgNMUkFLQj3t-OPLbblCVpcPVXp6Qtc92NRA75X0iT-0KhaXZPBdOJKCVtOInrrCDs0gl7x/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION - 10 Year Grid.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607aded8f8ed44001c7b37f1",
+      "programme": "GCSE Mindset",
+      "activity_id": 30,
+      "category": "Vision",
+      "title": "VISION - \"Five Roads\"",
+      "group_info": {
+        "id": "607ac83a77a5c5001bd3ff6b",
+        "identifier": "January - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vR0fqNvdSUz9vr8HL4hgbuE1hzMHypEhdtXvFlydBYFxXDmVrGCHQMleEn6zXGmSyq0gqB_BFC9ydNT/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION - Five Roads.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607adcfbb9af42001b0d58b0",
+      "programme": "GCSE Mindset",
+      "activity_id": 29,
+      "category": "Vision",
+      "title": "VISION - \"Setting a personal best\"",
+      "group_info": {
+        "id": "607ac4e5067d36001b5fa80e",
+        "identifier": "December - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRKpMPyBbgXjOalk-qNwx1IwdMkvNxFakj63fcq-ACAnyvLLufKJCwphpAHl6kUC1qfE7v4TQezjJ3E/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION - Personal Best.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607adccdb9af42001b0d5885",
+      "programme": "GCSE Mindset",
+      "activity_id": 28,
+      "category": "Vision",
+      "title": "VISION - \"Success leaves clues\"",
+      "group_info": {
+        "id": "607ac4e5067d36001b5fa80e",
+        "identifier": "December - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vQmfjj30DT3mee5bA6EvBv9Wit7v-28NcZits6TZcuSk3fsUw1pO4uAJ3HYabPBTq27hLRQqCA9XHzK/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION - Success leaves Clues.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607adc49067d36001b5fc2d5",
+      "programme": "GCSE Mindset",
+      "activity_id": 27,
+      "category": "Practice",
+      "title": "PRACTICE - \"It's Time to Teach\"",
+      "group_info": {
+        "id": "607ac4e5067d36001b5fa80e",
+        "identifier": "December - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vSX-0QSoqlmrkvZzxxTEkcRTXuw6t4ZbbSWtKpQqQ00SPwhU-slwYkx5Qu-GB9F0U0D4Dy5fni8GHiH/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE - Time to Teach.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607adc19585f77001bc1abe0",
+      "programme": "GCSE Mindset",
+      "activity_id": 26,
+      "category": "Effort",
+      "title": "EFFORT - \"Three how's of independent work",
+      "group_info": {
+        "id": "607ac4e5067d36001b5fa80e",
+        "identifier": "December - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vQRJfus_kkFXeprjMEDjxicLa1LcUwAn4MJpi8YaObOjl6jUSoH03mjj_hadEz2_akH9sqrhDVsuSJH/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a4c2f4;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT - 3 How's of Independent Work.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607adbce76f731001b3b2805",
+      "programme": "GCSE Mindset",
+      "activity_id": 25,
+      "category": "Practice",
+      "title": "PRACTICE - \"The Practice Questionnaire\"",
+      "group_info": {
+        "id": "607ac4e5067d36001b5fa80e",
+        "identifier": "December - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRuvuw-dxoEDwa5WnzBq8T4sx7UNsJJgLon3cupUbabgdqjXCSjzxWZbgtT_VdVWwoIlJ4Xpk39PQ3n/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/P1-Revision Questionnaire.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ada68585f77001bc1aa47",
+      "programme": "GCSE Mindset",
+      "activity_id": 24,
+      "category": "Effort",
+      "title": "EFFORT - \"Looking under rocks\"",
+      "group_info": {
+        "id": "607767bbf1b3ad001b530a30",
+        "identifier": "November - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRaCv7FIthaDI0YXv01CdwviGn5r0mYbnPNroUPDhjrc8fn4vD84CrJ54ppputXR3s5Jir4OInCmn_v/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a4c2f4;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT - Looking under Rocks.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ada3f76f731001b3b2683",
+      "programme": "GCSE Mindset",
+      "activity_id": 23,
+      "category": "Attitude",
+      "title": "ATTITUDE - \"Network Audits\"",
+      "group_info": {
+        "id": "607767bbf1b3ad001b530a30",
+        "identifier": "November - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRrd1s67cu4ltetaErle4jFmhehdyrflRV-eeInGVJ2UlfM2morwMSb1O7cmwAl7qtV9N9pXFxXkfmD/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE - Network Audits.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ada05585f77001bc1a9e1",
+      "programme": "GCSE Mindset",
+      "activity_id": 22,
+      "category": "Systems",
+      "title": "SYSTEMS - \"Three types of attention\"",
+      "group_info": {
+        "id": "607767bbf1b3ad001b530a30",
+        "identifier": "November - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTLLLJ9rjIqyS3n0HXKTVxhhckJv6oUdWEld01I1z5zwTwLrfmUCPGc0lyclWzO14ZBKzOGlH2WsDXY/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#aad950;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS - 3 Types of Attention.pdf\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ad9ad067d36001b5fc030",
+      "programme": "GCSE Mindset",
+      "activity_id": 21,
+      "category": "Practice",
+      "title": "PRACTICE - \"Building Independent Learning\"",
+      "group_info": {
+        "id": "607767bbf1b3ad001b530a30",
+        "identifier": "November - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRyvh9BKiwWux-G8JT1YyZ119eScIOrNSLB23eVk4WKTnkV7g4PSSoDcPr-HdDl7ws6G2hfQU-n_s9F/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a986ff;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/PRACTICE - Building Independent Learning.pdf\" target=\"_blank\"><span style=\"color:rgb(95, 73, 122)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a986ff;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607ad011841fde001b9e003a",
+      "programme": "GCSE Mindset",
+      "activity_id": 20,
+      "category": "Vision",
+      "title": "VISION\" - \"Grit\"",
+      "group_info": {
+        "id": "607766cfef7b4f001cd28120",
+        "identifier": "October - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRV5HHBVTUm08jtcQ_fqzhsQda4JGh4CPC-NcyBCGETuzEbfkg3GwKUoZ3dqKptw0VW5CnnIwD--EwS/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION - Grit.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607acfdb841fde001b9dfffc",
+      "programme": "GCSE Mindset",
+      "activity_id": 19,
+      "category": "Systems",
+      "title": "SYSTEMS - \"Chunking Steps\"",
+      "group_info": {
+        "id": "607766cfef7b4f001cd28120",
+        "identifier": "October - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/17/2021",
+        "date_formatted": "17/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618617600000,
+        "iso_timestamp": "2021-04-17T00:00:00.000Z",
+        "timestamp": "04/17/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618614000000,
+        "proper_iso_timestamp": "2021-04-16T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRJgmoGj_rsssC515sC2idyJT4XNjjQlvqaiDHeBXnJwtm2_z6UvuO-J2DetRR4jvTeLuUlk_FQUDPQ/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#aad950;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS - Chunking Steps.pdf\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607767e7ef7b4f001cd281ab",
+      "programme": "GCSE Mindset",
+      "activity_id": 18,
+      "category": "Vision",
+      "title": "VISION - \"The Rule of Three\"",
+      "group_info": {
+        "id": "607766cfef7b4f001cd28120",
+        "identifier": "October - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/14/2021",
+        "date_formatted": "14/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618358400000,
+        "iso_timestamp": "2021-04-14T00:00:00.000Z",
+        "timestamp": "04/14/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618354800000,
+        "proper_iso_timestamp": "2021-04-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRe9rBebLx2Q1_OUUUFYZaucGf4FzuuklTSJiVjDse9IpwzrF9FRezFdrItnNLWRhc5GVPYBmRdq6au/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION - Rule of 3.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607767d4a41503001b5a55cb",
+      "programme": "GCSE Mindset",
+      "activity_id": 17,
+      "category": "Systems",
+      "title": "SYSTEMS - \"The Weekly Planner\"",
+      "group_info": {
+        "id": "607766cfef7b4f001cd28120",
+        "identifier": "October - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/14/2021",
+        "date_formatted": "14/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618358400000,
+        "iso_timestamp": "2021-04-14T00:00:00.000Z",
+        "timestamp": "04/14/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618354800000,
+        "proper_iso_timestamp": "2021-04-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTPJC2wVt5bHjmgk4sW4fmNncRPxZTUed3iecuUVlqzE_AalWJJL3ah9vGtQDKkCZjWU_AdgsrM6gM7/embed?start=false&loop=true&delayms=30000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#aad950;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/SYSTEMS - Weekly Planner.pdf\" target=\"_blank\"><span style=\"color:rgb(118, 146, 60)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#aad950;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607767a0d66606001b48d065",
+      "programme": "GCSE Mindset",
+      "activity_id": 16,
+      "category": "Vision",
+      "title": "VISION - \"The Roadmap\"",
+      "group_info": {
+        "id": "607766cfef7b4f001cd28120",
+        "identifier": "October - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/14/2021",
+        "date_formatted": "14/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618358400000,
+        "iso_timestamp": "2021-04-14T00:00:00.000Z",
+        "timestamp": "04/14/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618354800000,
+        "proper_iso_timestamp": "2021-04-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vRWycHafKgmAylZyUhA0lZf06v4VSj9a9LZsXuuC7hwufBYV9ycWwXaxRBHEGrcBJ5ZvKT0pV_dQFJk/embed?start=false&loop=false&delayms=3000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION - Roadmap.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "60776785f1b3ad001b530a15",
+      "programme": "GCSE Mindset",
+      "activity_id": 15,
+      "category": "Attitude",
+      "title": "ATTITUDE - Growth Mindset",
+      "group_info": {
+        "id": "607766bef1b3ad001b5309a2",
+        "identifier": "September - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/14/2021",
+        "date_formatted": "14/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618358400000,
+        "iso_timestamp": "2021-04-14T00:00:00.000Z",
+        "timestamp": "04/14/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618354800000,
+        "proper_iso_timestamp": "2021-04-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vS-vAsz7shnuyxuoV7WvyWX1p_ZNdS5ZGz9kpBR0KE6JPm3ijOWo5M8b_jNoMG3_CE0-n1BSvcTtyD2/embed?start=false&loop=false&delayms=3000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#ff769c;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/ATTITUDE - Growth Mindset.pdf\" target=\"_blank\"><span style=\"color:rgb(192, 80, 77)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#ff769c;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "60776765a41503001b5a558e",
+      "programme": "GCSE Mindset",
+      "activity_id": 14,
+      "category": "Effort",
+      "title": "EFFORT - Mission & Medal",
+      "group_info": {
+        "id": "607766bef1b3ad001b5309a2",
+        "identifier": "September - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/14/2021",
+        "date_formatted": "14/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618358400000,
+        "iso_timestamp": "2021-04-14T00:00:00.000Z",
+        "timestamp": "04/14/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618354800000,
+        "proper_iso_timestamp": "2021-04-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vSkXyL3t0pTiA3CeAkymS70ewKmnasjllb8D2k30F8QdEApqVg31-wqnIm6k61CGViILHmdulNQnow7/embed?start=false&loop=false&delayms=3000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#a4c2f4;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/EFFORT - Mision & Medal.pdf\" target=\"_blank\"><span style=\"color:rgb(31, 73, 125)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#a4c2f4;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "6077674ef1b3ad001b5309f9",
+      "programme": "GCSE Mindset",
+      "activity_id": 13,
+      "category": "Vision",
+      "title": "VISION - Personal Compass",
+      "group_info": {
+        "id": "607766bef1b3ad001b5309a2",
+        "identifier": "September - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/14/2021",
+        "date_formatted": "14/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618358400000,
+        "iso_timestamp": "2021-04-14T00:00:00.000Z",
+        "timestamp": "04/14/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618354800000,
+        "proper_iso_timestamp": "2021-04-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vTJPz5IJVQAUIhsbm_WPn7Jje7mOw1RSBIHez7uKvzqeFdjYBoB52f_tqPP5fOEtG_BNctteymNgpMe/embed?start=false&loop=false&delayms=3000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION - Personal Compass.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    },
+    {
+      "id": "607766eed66606001b48d001",
+      "programme": "GCSE Mindset",
+      "activity_id": 12,
+      "category": "Vision",
+      "title": "VISION - Motivation Diamond",
+      "group_info": {
+        "id": "607766bef1b3ad001b5309a2",
+        "identifier": "September - GCSE Mindset"
+      },
+      "date_info": {
+        "date": "04/14/2021",
+        "date_formatted": "14/04/2021",
+        "hours": "12",
+        "minutes": "00",
+        "am_pm": "AM",
+        "unix_timestamp": 1618358400000,
+        "iso_timestamp": "2021-04-14T00:00:00.000Z",
+        "timestamp": "04/14/2021 12:00 am",
+        "time": 0,
+        "proper_unix_timestamp": 1618354800000,
+        "proper_iso_timestamp": "2021-04-13T23:00:00.000Z"
+      },
+      "html_content": "<iframe src=\"https://docs.google.com/presentation/d/e/2PACX-1vSzUcBZNdXVUjJLf_cf_rc3Kmpf-0LjfUImi8CfcEX5baMJ0pXD4ceGqdiMx1y-WkzNTlgik74Llo6z/embed?start=false&loop=false&delayms=3000\" width=\"480\" height=\"299\" allowfullscreen=\"true\">\n</iframe><hr style=\"height:2px;background-color:#FFA500;border:none\" /><p style=\"text-align:center\"><strong><a href=\"https://www.vespa.academy/assets/MVIMAGES/GCSEMindsetPDFS/VISION - MotivationD.pdf\" target=\"_blank\"><span style=\"color:rgb(227, 108, 9)\">DOWNLOAD PDF</span></a></strong>\n</p><hr style=\"height:2px;background-color:#FFA500;border:none\" />",
+      "is_welsh": false
+    }
+  ]
+}
