@@ -637,13 +637,14 @@ def register_activities_routes(app, supabase: Client):
             academic_year = student_record.data.get('current_academic_year', '2025/2026') if student_record.data else '2025/2026'
             
             # Update response to completed
+            # NOTE: points_earned column may not exist in activity_responses table
+            # Points are tracked in vespa_students.total_points instead
             update_data = {
                 "status": "completed",
                 "responses": responses,
                 "responses_text": reflection or ' '.join([str(v) for v in responses.values() if isinstance(v, str)]),
                 "time_spent_minutes": time_minutes,
                 "word_count": word_count,
-                "points_earned": points_earned,  # Save points earned for this activity
                 "completed_at": datetime.utcnow().isoformat(),
                 "updated_at": datetime.utcnow().isoformat()
             }
