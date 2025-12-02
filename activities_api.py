@@ -1258,7 +1258,12 @@ def create_notification(supabase: Client, recipient_email: str, notification_typ
         send_email: Whether to send email notification
     """
     try:
-        recipient_type = "student" if "student" in notification_type else "staff"
+        # Determine recipient type based on notification type
+        # Student notifications: activity_assigned, feedback_received, achievement_earned, reminder, milestone
+        # Staff notifications: activity_completed, feedback_requested
+        student_notification_types = ['activity_assigned', 'feedback_received', 'achievement_earned', 
+                                      'reminder', 'milestone', 'encouragement', 'staff_note']
+        recipient_type = "student" if notification_type in student_notification_types else "staff"
         
         notification = {
             "recipient_email": recipient_email,
