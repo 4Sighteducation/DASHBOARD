@@ -228,15 +228,33 @@ def register_activities_routes(app, supabase: Client):
                 # Create map of activity_id -> activity data
                 activities_map = {a['id']: a for a in activities_result.data}
             
-            # Merge activity details into responses (responses already have progress data)
-            for assignment in assigned_result.data:
-                activity_id = assignment['activity_id']
-                # Add activity details
-                assignment['activities'] = activities_map.get(activity_id)
-                # Progress is already in the assignment (it's from activity_responses)
-                assignment['progress'] = assignment  # Self-reference for compatibility
+            # Build clean response (avoid circular references!)
+            assignments = []
+            for resp in assigned_result.data:
+                activity_id = resp['activity_id']
+                activity_details = activities_map.get(activity_id)
+                
+                assignments.append({
+                    'activity_id': activity_id,
+                    'student_email': resp.get('student_email'),
+                    'student_id': resp.get('student_id'),
+                    'cycle_number': resp.get('cycle_number'),
+                    'status': resp.get('status'),
+                    'started_at': resp.get('started_at'),
+                    'completed_at': resp.get('completed_at'),
+                    'assigned_by': resp.get('assigned_by'),
+                    'activities': activity_details,
+                    'progress': {
+                        'status': resp.get('status'),
+                        'started_at': resp.get('started_at'),
+                        'completed_at': resp.get('completed_at'),
+                        'responses': resp.get('responses'),
+                        'word_count': resp.get('word_count'),
+                        'time_spent_seconds': resp.get('time_spent_seconds')
+                    }
+                })
             
-            return jsonify({"assignments": assigned_result.data})
+            return jsonify({"assignments": assignments})
             
         except Exception as e:
             logger.error(f"Error in get_assigned_activities: {str(e)}", exc_info=True)
