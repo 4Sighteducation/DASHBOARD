@@ -1067,6 +1067,46 @@ def register_activities_routes(app, supabase: Client):
             return jsonify({"error": str(e)}), 500
     
     
+    @app.route('/api/notifications/create', methods=['POST'])
+    def create_notification_endpoint():
+        """
+        Create a notification for a user (used by frontend to trigger notifications)
+        Body: { recipientEmail, notificationType, title, message, relatedActivityId?, staffEmail? }
+        """
+        try:
+            data = request.json
+            recipient_email = data.get('recipientEmail')
+            notification_type = data.get('notificationType')
+            title = data.get('title')
+            message = data.get('message')
+            related_activity_id = data.get('relatedActivityId')
+            staff_email = data.get('staffEmail')
+            
+            if not recipient_email or not notification_type or not title:
+                return jsonify({"error": "recipientEmail, notificationType, and title required"}), 400
+            
+            # Get activity name if we have an activity ID
+            if related_activity_id and message and 'new activity' in message.lower():
+                activity_name = get_activity_name(supabase, related_activity_id)
+                message = f"Your tutor assigned you: {activity_name}"
+            
+            create_notification(
+                supabase,
+                recipient_email,
+                notification_type,
+                title,
+                message or f"You have a new {notification_type}",
+                action_url=f"#vespa-activities?activity={related_activity_id}&action=view" if related_activity_id else None,
+                related_activity_id=related_activity_id
+            )
+            
+            return jsonify({"success": True})
+            
+        except Exception as e:
+            logger.error(f"Error in create_notification_endpoint: {str(e)}", exc_info=True)
+            return jsonify({"error": str(e)}), 500
+    
+    
     @app.route('/api/achievements/check', methods=['GET'])
     def check_achievements():
         """
