@@ -664,11 +664,21 @@ def register_activities_routes(app, supabase: Client):
                 "updated_at": datetime.utcnow().isoformat()
             }
             
+            logger.info(f"[Complete Activity] 📝 Attempting to update activity_responses to 'completed'")
+            logger.info(f"[Complete Activity] 🔍 Query: student_email={student_email}, activity_id={activity_id}, cycle={cycle}")
+            
             result = supabase.table('activity_responses').update(update_data)\
                 .eq('student_email', student_email)\
                 .eq('activity_id', activity_id)\
                 .eq('cycle_number', cycle)\
                 .execute()
+            
+            if result.data and len(result.data) > 0:
+                logger.info(f"[Complete Activity] ✅ Updated {len(result.data)} record(s) to completed")
+                logger.info(f"[Complete Activity] 📊 Updated record status: {result.data[0].get('status')}")
+            else:
+                logger.error(f"[Complete Activity] ❌ NO RECORDS UPDATED! Check if record exists")
+                logger.error(f"[Complete Activity] 🔍 Result: {result}")
             
             # Update student_activities
             supabase.table('student_activities').update({"status": "completed"})\
