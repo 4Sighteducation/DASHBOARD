@@ -433,13 +433,18 @@ def register_activities_routes(app, supabase: Client):
             if existing.data and len(existing.data) > 0:
                 # UPDATE existing record
                 record_id = existing.data[0]['id']
-                logger.info(f"[Save Progress] 📝 Updating existing record {record_id}")
+                existing_status = existing.data[0]['status']
+                logger.info(f"[Save Progress] 📝 Updating existing record {record_id}, current status: {existing_status}")
+                
+                # DON'T overwrite 'completed' status with 'in_progress'!
+                # If activity is completed, keep it completed (allow response edits but preserve status)
+                new_status = existing_status if existing_status == 'completed' else 'in_progress'
                 
                 update_data = {
                     "responses": responses,
                     "responses_text": responses_text if responses_text else '',
                     "time_spent_minutes": time_minutes,
-                    "status": "in_progress",
+                    "status": new_status,  # Preserve completed status!
                     "updated_at": datetime.utcnow().isoformat()
                 }
                 
@@ -447,7 +452,7 @@ def register_activities_routes(app, supabase: Client):
                     .eq('id', record_id)\
                     .execute()
                 
-                logger.info(f"[Save Progress] ✅ Updated record {record_id} for {student_email}")
+                logger.info(f"[Save Progress] ✅ Updated record {record_id}, status kept as: {new_status}")
             else:
                 # INSERT new record
                 logger.info(f"[Save Progress] 📝 Creating new record for {student_email}, activity {activity_id}")
