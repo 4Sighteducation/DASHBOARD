@@ -776,7 +776,7 @@ def register_activities_routes(app, supabase: Client):
                     create_notification(
                         supabase,
                         staff_email,
-                        'activity_completed',
+                        'staff_note',  # Use valid notification type
                         '✅ Activity Completed!',
                         f"{student_name} completed: {activity_name}",
                         action_url=f"#activity-dashboard?student={student_email}",
