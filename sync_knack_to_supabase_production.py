@@ -151,6 +151,17 @@ def batch_upsert_with_retry(table: str, data: List[Dict], on_conflict: str, max_
                 result = supabase.table(table).upsert(data, on_conflict=on_conflict).execute()
                 return True
         except Exception as e:
+            # Best-effort backwards compatibility if DB schema doesn't have gender yet
+            if table == 'students' and 'gender' in str(e).lower():
+                logging.warning(f"Upsert failed due to missing gender column; retrying without gender. Error: {e}")
+                for row in data:
+                    if isinstance(row, dict):
+                        row.pop('gender', None)
+                try:
+                    supabase.table(table).upsert(data, on_conflict=on_conflict).execute()
+                    return True
+                except Exception as e2:
+                    logging.error(f"Retry without gender failed for {table}: {e2}")
             logging.error(f"Batch upsert attempt {attempt + 1} failed for {table}: {e}")
             if attempt == max_retries - 1:
                 # Try smaller batches on final attempt
@@ -332,6 +343,18 @@ def sync_students_and_vespa_scores():
                         'course': record.get('field_2299', ''),
                         'faculty': record.get('field_782', '')
                     }
+
+                    # Gender (Knack object_10 field_143 is multiple choice; normalize to a single string)
+                    gender_raw = record.get('field_143_raw')
+                    if gender_raw is None:
+                        gender_raw = record.get('field_143')
+                    gender = None
+                    if isinstance(gender_raw, list):
+                        gender = next((g for g in gender_raw if g), None)
+                    elif isinstance(gender_raw, str) and gender_raw.strip():
+                        gender = gender_raw.split(',')[0].strip()
+                    if gender:
+                        student_data['gender'] = gender
                     
                     student_batch.append(student_data)
                     students_processed.add(student_email)

@@ -176,6 +176,16 @@ def sync_establishment(establishment_knack_id):
             continue
         
         # Student data
+        gender_raw = record.get('field_143_raw')
+        if gender_raw is None:
+            gender_raw = record.get('field_143')
+        gender = None
+        if isinstance(gender_raw, list):
+            gender = next((g for g in gender_raw if g), None)
+        elif isinstance(gender_raw, str) and gender_raw.strip():
+            # Knack sometimes returns comma-separated strings for multi-choice
+            gender = gender_raw.split(',')[0].strip()
+
         student_data = {
             'knack_id': record['id'],
             'email': email.lower(),
@@ -184,7 +194,8 @@ def sync_establishment(establishment_knack_id):
             'academic_year': academic_year,
             'year_group': str(record.get('field_144_raw', '')),
             'group': str(record.get('field_223_raw', '')) if record.get('field_223_raw') else None,
-            'faculty': str(record.get('field_782_raw', '')) if record.get('field_782_raw') else None
+            'faculty': str(record.get('field_782_raw', '')) if record.get('field_782_raw') else None,
+            'gender': gender
         }
         
         student_batch.append(student_data)
@@ -229,10 +240,21 @@ def sync_establishment(establishment_knack_id):
     
     # Upsert students
     logging.info(f"Upserting {len(student_batch)} students...")
-    result = supabase.table('students').upsert(
-        student_batch,
-        on_conflict='email,academic_year'
-    ).execute()
+    try:
+        result = supabase.table('students').upsert(
+            student_batch,
+            on_conflict='email,academic_year'
+        ).execute()
+    except Exception as e:
+        # Best-effort backwards compatibility if DB schema doesn't have gender yet
+        logging.warning(f"Student upsert failed (will retry without gender): {e}")
+        for s in student_batch:
+            if 'gender' in s:
+                s.pop('gender', None)
+        result = supabase.table('students').upsert(
+            student_batch,
+            on_conflict='email,academic_year'
+        ).execute()
     
     # Map student IDs
     for student in result.data:

@@ -2899,6 +2899,7 @@ def get_comments_word_cloud():
         year_group = request.args.get('year_group')
         group = request.args.get('group')
         faculty = request.args.get('faculty')
+        gender = request.args.get('gender')
         student_id = request.args.get('student_id')  # NOT student_ID!
         
         app.logger.info(f"Word cloud request - establishment: {establishment_id}, cycle: {cycle}, academic_year: {academic_year}")
@@ -2931,6 +2932,8 @@ def get_comments_word_cloud():
             students_query = students_query.eq('group', group)
         if faculty:
             students_query = students_query.eq('faculty', faculty)
+        if gender and gender != 'all':
+            students_query = students_query.eq('gender', gender)
         if student_id:
             students_query = students_query.eq('id', student_id)
         
@@ -3102,6 +3105,7 @@ def get_comments_themes():
         year_group = request.args.get('year_group')
         group = request.args.get('group')
         faculty = request.args.get('faculty')
+        gender = request.args.get('gender')
         student_id = request.args.get('student_id')
         
         # Convert IDs if needed
@@ -3129,6 +3133,8 @@ def get_comments_themes():
             students_query = students_query.eq('group', group)
         if faculty:
             students_query = students_query.eq('faculty', faculty)
+        if gender and gender != 'all':
+            students_query = students_query.eq('gender', gender)
         if student_id:
             students_query = students_query.eq('id', student_id)
         
@@ -5629,6 +5635,36 @@ def get_faculties():
         app.logger.error(f"Failed to fetch faculties: {e}")
         return jsonify([])
 
+@app.route('/api/genders', methods=['GET'])
+def get_genders():
+    """Return available genders, optionally filtered by establishment (best-effort)."""
+    try:
+        establishment_id = request.args.get('establishment_id')
+        
+        if not establishment_id or not SUPABASE_ENABLED:
+            return jsonify([])
+        
+        # Convert Knack ID to UUID if needed
+        establishment_uuid = convert_knack_id_to_uuid(establishment_id)
+        
+        # Best-effort: genders must exist on students table (column name: gender)
+        result = supabase_client.table('students')\
+            .select('gender')\
+            .eq('establishment_id', establishment_uuid)\
+            .execute()
+        
+        if result.data:
+            genders = list(set(r.get('gender') for r in result.data if r.get('gender')))
+            genders.sort()
+            return jsonify(genders)
+        
+        return jsonify([])
+        
+    except Exception as e:
+        # If the column doesn't exist or query fails, return empty list (frontend will still render "All Genders")
+        app.logger.error(f"Failed to fetch genders: {e}")
+        return jsonify([])
+
 @app.route('/api/students/search', methods=['GET'])
 def search_students():
     """Search for students by name or email"""
@@ -5788,12 +5824,14 @@ def get_school_statistics_query():
         year_group = request.args.get('yearGroup')
         group = request.args.get('group')
         faculty = request.args.get('faculty')
+        gender = request.args.get('gender')
         student_id = request.args.get('studentId')
         
         # Check if we have any filters other than cycle
         has_other_filters = (year_group and year_group != 'all') or \
                            (group and group != 'all') or \
                            (faculty and faculty != 'all') or \
+                           (gender and gender != 'all') or \
                            student_id
         
         # Get filtered students for queries
@@ -5819,6 +5857,8 @@ def get_school_statistics_query():
                     query = query.eq('group', group)
                 if faculty and faculty != 'all':
                     query = query.eq('faculty', faculty)
+                if gender and gender != 'all':
+                    query = query.eq('gender', gender)
             
             students_batch = query.limit(limit).offset(offset).execute()
             
@@ -6609,6 +6649,7 @@ def get_qla_data_query():
         year_group = request.args.get('yearGroup')
         group = request.args.get('group')
         faculty = request.args.get('faculty')
+        gender = request.args.get('gender')
         student_id = request.args.get('studentId')
         
         app.logger.info(f"QLA endpoint called with establishment_id={establishment_id}, cycle={cycle}, academic_year={academic_year}")
@@ -6730,6 +6771,7 @@ def get_qla_data_query():
             (year_group and year_group != 'all') or 
             (group and group != 'all') or 
             (faculty and faculty != 'all') or 
+            (gender and gender != 'all') or
             student_id
         )
         
@@ -6747,6 +6789,8 @@ def get_qla_data_query():
                 students_query = students_query.eq('group', group)
             if faculty and faculty != 'all':
                 students_query = students_query.eq('faculty', faculty)
+            if gender and gender != 'all':
+                students_query = students_query.eq('gender', gender)
             if student_id:
                 # Convert student ID if needed
                 import uuid
