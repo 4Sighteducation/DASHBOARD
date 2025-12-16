@@ -5661,9 +5661,9 @@ def get_genders():
         return jsonify([])
         
     except Exception as e:
-        # If the column doesn't exist or query fails, return a 500 so we can diagnose quickly.
+        # Best-effort: if the column doesn't exist yet, don't break the dashboard.
         app.logger.error(f"Failed to fetch genders: {e}")
-        raise ApiError(f"Failed to fetch genders (does students.gender exist?): {str(e)}", 500)
+        return jsonify([])
 
 @app.route('/api/students/search', methods=['GET'])
 def search_students():
