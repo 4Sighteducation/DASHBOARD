@@ -5736,10 +5736,15 @@ def get_establishment(establishment_id):
     try:
         if not SUPABASE_ENABLED:
             raise ApiError("Supabase not configured", 503)
+
+        # Accept either Supabase UUID or Knack establishment ID
+        establishment_uuid = convert_knack_id_to_uuid(establishment_id)
+        if not establishment_uuid:
+            raise ApiError("Establishment not found", 404)
         
         result = supabase_client.table('establishments')\
             .select('id, name, knack_id, is_australian, trust_id')\
-            .eq('id', establishment_id)\
+            .eq('id', establishment_uuid)\
             .execute()
         
         if not result.data:
