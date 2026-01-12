@@ -244,6 +244,7 @@ app.logger.info("Flask logger has been configured explicitly.") # Test message
 # --- Configuration ---
 KNACK_APP_ID = os.getenv('KNACK_APP_ID')
 KNACK_API_KEY = os.getenv('KNACK_API_KEY')
+KNACK_API_URL = os.getenv('KNACK_API_URL') or 'https://api.knack.com/v1'
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY') # We'll use this later
 
 # Log configuration status (without revealing actual keys)
@@ -11622,56 +11623,62 @@ def update_subject_grade(subject_id):
                 app.logger.info(f"[Academic Profile] Supabase update persisted")
                 supabase_updated = True
                 
-                if original_record_id:
-                    knack_subject_update = {}
-                    
-                    if 'currentGrade' in updates:
-                        knack_subject_update['field_3132'] = updates['currentGrade']
-                    if 'targetGrade' in updates:
-                        knack_subject_update['field_3135'] = updates['targetGrade']
-                    if 'effortGrade' in updates:
-                        knack_subject_update['field_3133'] = updates['effortGrade']
-                    if 'behaviourGrade' in updates:
-                        knack_subject_update['field_3134'] = updates['behaviourGrade']
-                    if 'subjectAttendance' in updates:
-                        knack_subject_update['field_3186'] = updates['subjectAttendance']
-                    
-                    if knack_subject_update:
-                        obj_113_response = requests.put(
-                            f'{KNACK_API_URL}/objects/object_113/records/{original_record_id}',
-                            headers={
-                                'X-Knack-Application-Id': KNACK_APP_ID,
-                                'X-Knack-REST-API-Key': KNACK_API_KEY,
-                                'Content-Type': 'application/json'
-                            },
-                            json=knack_subject_update
-                        )
+                # Best-effort Knack sync: NEVER fail the request if Supabase updated.
+                try:
+                    if original_record_id and KNACK_APP_ID and KNACK_API_KEY:
+                        knack_subject_update = {}
                         
-                        knack_updated = obj_113_response.status_code in [200, 201]
-                
-                if knack_record_id and subject_position:
-                    full_subject = supabase_client.table('student_subjects')\
-                        .select('*')\
-                        .eq('id', subject_id)\
-                        .execute()
-                    
-                    if full_subject.data:
-                        subj = full_subject.data[0]
-                        updated_subject_data = {
-                            'subjectName': subj['subject_name'],
-                            'examType': subj['exam_type'],
-                            'examBoard': subj['exam_board'],
-                            'currentGrade': subj['current_grade'],
-                            'targetGrade': subj['target_grade'],
-                            'minimumExpectedGrade': subj['minimum_expected_grade'],
-                            'subjectTargetGrade': subj['subject_target_grade'],
-                            'effortGrade': subj['effort_grade'],
-                            'behaviourGrade': subj['behaviour_grade'],
-                            'subjectAttendance': subj['subject_attendance'],
-                            'originalRecordId': subj['original_record_id']
-                        }
+                        if 'currentGrade' in updates or 'current_grade' in updates:
+                            knack_subject_update['field_3132'] = updates.get('currentGrade', updates.get('current_grade'))
+                        if 'targetGrade' in updates or 'target_grade' in updates:
+                            knack_subject_update['field_3135'] = updates.get('targetGrade', updates.get('target_grade'))
+                        if 'effortGrade' in updates or 'effort_grade' in updates:
+                            knack_subject_update['field_3133'] = updates.get('effortGrade', updates.get('effort_grade'))
+                        if 'behaviourGrade' in updates or 'behaviour_grade' in updates:
+                            knack_subject_update['field_3134'] = updates.get('behaviourGrade', updates.get('behaviour_grade'))
+                        if 'subjectAttendance' in updates or 'subject_attendance' in updates:
+                            knack_subject_update['field_3186'] = updates.get('subjectAttendance', updates.get('subject_attendance'))
                         
-                        sync_subject_to_knack(updated_subject_data, knack_record_id, subject_position)
+                        if knack_subject_update:
+                            obj_113_response = requests.put(
+                                f'{KNACK_API_URL}/objects/object_113/records/{original_record_id}',
+                                headers={
+                                    'X-Knack-Application-Id': KNACK_APP_ID,
+                                    'X-Knack-REST-API-Key': KNACK_API_KEY,
+                                    'Content-Type': 'application/json'
+                                },
+                                json=knack_subject_update,
+                                timeout=15
+                            )
+                            
+                            knack_updated = obj_113_response.status_code in [200, 201]
+                    
+                    if knack_record_id and subject_position:
+                        full_subject = supabase_client.table('student_subjects')\
+                            .select('*')\
+                            .eq('id', subject_id)\
+                            .execute()
+                        
+                        if full_subject.data:
+                            subj = full_subject.data[0]
+                            updated_subject_data = {
+                                'subjectName': subj.get('subject_name'),
+                                'examType': subj.get('exam_type'),
+                                'examBoard': subj.get('exam_board'),
+                                'currentGrade': subj.get('current_grade'),
+                                'targetGrade': subj.get('target_grade'),
+                                'minimumExpectedGrade': subj.get('minimum_expected_grade'),
+                                'subjectTargetGrade': subj.get('subject_target_grade'),
+                                'effortGrade': subj.get('effort_grade'),
+                                'behaviourGrade': subj.get('behaviour_grade'),
+                                'subjectAttendance': subj.get('subject_attendance'),
+                                'originalRecordId': subj.get('original_record_id')
+                            }
+                            
+                            sync_subject_to_knack(updated_subject_data, knack_record_id, subject_position)
+                except Exception as knack_err:
+                    app.logger.warning(f"[Academic Profile] Knack sync failed (non-fatal): {knack_err}")
+                    app.logger.warning(traceback.format_exc())
                 
                 if CACHE_ENABLED:
                     cache_pattern = f'academic_profile:{student_email}:*'
