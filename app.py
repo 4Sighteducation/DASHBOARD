@@ -11106,6 +11106,9 @@ def get_profile_from_supabase(email, academic_year=None):
                 'school': coerce_text(school_name),
                 'establishmentId': establishment_id
             },
+            # For UI: show when this profile was last changed (snapshots touch academic_profiles.updated_at)
+            'updatedAt': coerce_text(profile.get('updated_at') or profile.get('created_at')),
+            'academicYear': coerce_text(profile.get('academic_year')),
             'subjects': [
                 {
                     'id': subj.get('id'),
@@ -11638,6 +11641,16 @@ def update_subject_grade(subject_id):
                     update_data['behaviour_grade'] = updates.get('behaviourGrade', updates.get('behaviour_grade'))
                 if 'subjectAttendance' in updates or 'subject_attendance' in updates:
                     update_data['subject_attendance'] = updates.get('subjectAttendance', updates.get('subject_attendance'))
+                if 'minimumExpectedGrade' in updates or 'minimum_expected_grade' in updates:
+                    update_data['minimum_expected_grade'] = updates.get('minimumExpectedGrade', updates.get('minimum_expected_grade'))
+                if 'subjectTargetGrade' in updates or 'subject_target_grade' in updates:
+                    update_data['subject_target_grade'] = updates.get('subjectTargetGrade', updates.get('subject_target_grade'))
+                if 'subjectName' in updates or 'subject_name' in updates:
+                    update_data['subject_name'] = updates.get('subjectName', updates.get('subject_name'))
+                if 'examType' in updates or 'exam_type' in updates:
+                    update_data['exam_type'] = updates.get('examType', updates.get('exam_type'))
+                if 'examBoard' in updates or 'exam_board' in updates:
+                    update_data['exam_board'] = updates.get('examBoard', updates.get('exam_board'))
                 
                 # Perform update and VERIFY it persisted by reading back the row.
                 update_resp = supabase_client.table('student_subjects')\
@@ -11673,6 +11686,16 @@ def update_subject_grade(subject_id):
                     ok = ok and matches('behaviour_grade', update_data.get('behaviour_grade'))
                 if 'subject_attendance' in update_data:
                     ok = ok and matches('subject_attendance', update_data.get('subject_attendance'))
+                if 'minimum_expected_grade' in update_data:
+                    ok = ok and matches('minimum_expected_grade', update_data.get('minimum_expected_grade'))
+                if 'subject_target_grade' in update_data:
+                    ok = ok and matches('subject_target_grade', update_data.get('subject_target_grade'))
+                if 'subject_name' in update_data:
+                    ok = ok and matches('subject_name', update_data.get('subject_name'))
+                if 'exam_type' in update_data:
+                    ok = ok and matches('exam_type', update_data.get('exam_type'))
+                if 'exam_board' in update_data:
+                    ok = ok and matches('exam_board', update_data.get('exam_board'))
 
                 if not ok:
                     # Most commonly caused by RLS / using anon key
