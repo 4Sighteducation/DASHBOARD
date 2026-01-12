@@ -166,12 +166,15 @@ CACHE_TTL = {
 
 # --- Supabase Setup ---
 SUPABASE_URL = os.getenv('SUPABASE_URL')
+# Prefer service role key for write operations; fall back to SUPABASE_KEY (often anon) if that's all we have.
+# NOTE: Do NOT log the key values.
+SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY') or os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 supabase_client = None
 SUPABASE_ENABLED = False
 
-if SUPABASE_URL and SUPABASE_KEY:
+if SUPABASE_URL and (SUPABASE_SERVICE_KEY or SUPABASE_KEY):
     try:
         # Create client with basic options only - avoid proxy issues on Heroku
         import os
@@ -180,9 +183,10 @@ if SUPABASE_URL and SUPABASE_KEY:
             if proxy_var in os.environ:
                 del os.environ[proxy_var]
         
-        supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        # Use service key if present (required for updates when RLS is on)
+        supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY or SUPABASE_KEY)
         SUPABASE_ENABLED = True
-        app.logger.info(f"Supabase client initialized for {SUPABASE_URL}")
+        app.logger.info(f"Supabase client initialized for {SUPABASE_URL} (service_key={'yes' if SUPABASE_SERVICE_KEY else 'no'})")
     except Exception as e:
         supabase_client = None
         SUPABASE_ENABLED = False
@@ -11564,23 +11568,58 @@ def update_subject_grade(subject_id):
                     'updated_at': datetime.utcnow().isoformat()
                 }
                 
-                if 'currentGrade' in updates:
-                    update_data['current_grade'] = updates['currentGrade']
-                if 'targetGrade' in updates:
-                    update_data['target_grade'] = updates['targetGrade']
-                if 'effortGrade' in updates:
-                    update_data['effort_grade'] = updates['effortGrade']
-                if 'behaviourGrade' in updates:
-                    update_data['behaviour_grade'] = updates['behaviourGrade']
-                if 'subjectAttendance' in updates:
-                    update_data['subject_attendance'] = updates['subjectAttendance']
+                # Accept both camelCase (frontend) and snake_case (direct API calls)
+                if 'currentGrade' in updates or 'current_grade' in updates:
+                    update_data['current_grade'] = updates.get('currentGrade', updates.get('current_grade'))
+                if 'targetGrade' in updates or 'target_grade' in updates:
+                    update_data['target_grade'] = updates.get('targetGrade', updates.get('target_grade'))
+                if 'effortGrade' in updates or 'effort_grade' in updates:
+                    update_data['effort_grade'] = updates.get('effortGrade', updates.get('effort_grade'))
+                if 'behaviourGrade' in updates or 'behaviour_grade' in updates:
+                    update_data['behaviour_grade'] = updates.get('behaviourGrade', updates.get('behaviour_grade'))
+                if 'subjectAttendance' in updates or 'subject_attendance' in updates:
+                    update_data['subject_attendance'] = updates.get('subjectAttendance', updates.get('subject_attendance'))
                 
-                supabase_client.table('student_subjects')\
+                # Perform update and VERIFY it persisted by reading back the row.
+                update_resp = supabase_client.table('student_subjects')\
                     .update(update_data)\
                     .eq('id', subject_id)\
                     .execute()
-                
-                app.logger.info(f"[Academic Profile] Supabase update successful")
+
+                # Some PostgREST configurations may return minimal; verify via a follow-up select
+                verify_resp = supabase_client.table('student_subjects')\
+                    .select('*')\
+                    .eq('id', subject_id)\
+                    .limit(1)\
+                    .execute()
+
+                if not verify_resp.data:
+                    raise Exception("Supabase update verification failed: subject row not returned")
+
+                verified = verify_resp.data[0]
+                # Determine whether requested fields now match
+                def matches(field_key, incoming):
+                    if incoming is None:
+                        return True
+                    return str(verified.get(field_key) or '') == str(incoming or '')
+
+                ok = True
+                if 'current_grade' in update_data:
+                    ok = ok and matches('current_grade', update_data.get('current_grade'))
+                if 'target_grade' in update_data:
+                    ok = ok and matches('target_grade', update_data.get('target_grade'))
+                if 'effort_grade' in update_data:
+                    ok = ok and matches('effort_grade', update_data.get('effort_grade'))
+                if 'behaviour_grade' in update_data:
+                    ok = ok and matches('behaviour_grade', update_data.get('behaviour_grade'))
+                if 'subject_attendance' in update_data:
+                    ok = ok and matches('subject_attendance', update_data.get('subject_attendance'))
+
+                if not ok:
+                    # Most commonly caused by RLS / using anon key
+                    raise Exception("Supabase update did not persist (possible RLS/permissions issue)")
+
+                app.logger.info(f"[Academic Profile] Supabase update persisted")
                 supabase_updated = True
                 
                 if original_record_id:
@@ -11641,14 +11680,27 @@ def update_subject_grade(subject_id):
                 
             except Exception as sb_error:
                 app.logger.error(f"[Academic Profile] Supabase update failed: {sb_error}")
+                app.logger.error(traceback.format_exc())
                 supabase_updated = False
         
+        if not supabase_updated:
+            return jsonify({
+                'success': False,
+                'error': 'Supabase update failed (not persisted)',
+                'updated': { 'supabase': False, 'knack': knack_updated }
+            }), 500
+
+        # Return the updated subject row so the UI can reflect the persisted values immediately
+        try:
+            updated_row = supabase_client.table('student_subjects').select('*').eq('id', subject_id).limit(1).execute()
+            subject_data = updated_row.data[0] if updated_row and updated_row.data else None
+        except Exception:
+            subject_data = None
+
         return jsonify({
             'success': True,
-            'updated': {
-                'supabase': supabase_updated,
-                'knack': knack_updated
-            }
+            'updated': { 'supabase': True, 'knack': knack_updated },
+            'subject': subject_data
         })
         
     except Exception as e:
