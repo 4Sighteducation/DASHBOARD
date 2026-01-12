@@ -11026,7 +11026,11 @@ def get_profile_from_supabase(email, academic_year=None):
                     # Fallback: stringify dict
                     return json.dumps(v)
                 # Everything else
-                return str(v).strip()
+                s = str(v).strip()
+                # Treat common placeholders / JS object stringification as missing
+                if s in ['', 'N/A', 'n/a', 'NA', 'na', '[object Object]', 'undefined', 'null']:
+                    return None
+                return s
             except Exception:
                 return str(v)
         
