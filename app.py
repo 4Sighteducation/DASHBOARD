@@ -11009,6 +11009,26 @@ def get_profile_from_supabase(email, academic_year=None):
     """Query Supabase for academic profile"""
     try:
         app.logger.info(f"[Academic Profile] Querying Supabase for {email}, year: {academic_year}")
+
+        # Helper: coerce json-ish values into clean strings for UI
+        def coerce_text(v):
+            if v is None:
+                return None
+            try:
+                # Lists: take first element
+                if isinstance(v, list):
+                    return coerce_text(v[0]) if len(v) > 0 else None
+                # Dicts: prefer common display keys
+                if isinstance(v, dict):
+                    for k in ['identifier', 'name', 'text', 'label', 'value']:
+                        if k in v and v[k]:
+                            return str(v[k]).strip()
+                    # Fallback: stringify dict
+                    return json.dumps(v)
+                # Everything else
+                return str(v).strip()
+            except Exception:
+                return str(v)
         
         query = supabase_client.table('academic_profiles').select('*').eq('student_email', email)
         
@@ -11025,6 +11045,20 @@ def get_profile_from_supabase(email, academic_year=None):
         profile_id = profile['id']
         
         app.logger.info(f"[Academic Profile] Found Supabase profile: {profile_id}")
+
+        # Enrich missing fields from students table (source of truth for school/year/tutor group in other parts of app)
+        student_row = None
+        try:
+            student_resp = supabase_client.table('students')\
+                .select('name, email, establishment_id, year_group, group, created_at')\
+                .eq('email', email)\
+                .order('created_at', desc=True)\
+                .limit(1)\
+                .execute()
+            if student_resp and student_resp.data:
+                student_row = student_resp.data[0]
+        except Exception as e:
+            app.logger.warning(f"[Academic Profile] Students enrichment lookup failed (non-fatal): {e}")
         
         subjects_response = supabase_client.table('student_subjects')\
             .select('*')\
@@ -11033,20 +11067,40 @@ def get_profile_from_supabase(email, academic_year=None):
             .execute()
         
         app.logger.info(f"[Academic Profile] Found {len(subjects_response.data)} subjects")
+
+        # Resolve school / establishment id
+        establishment_id = profile.get('establishment_id') or (student_row.get('establishment_id') if student_row else None)
+        school_name = profile.get('establishment_name')
+        if not school_name and establishment_id:
+            try:
+                est_resp = supabase_client.table('establishments')\
+                    .select('name')\
+                    .eq('id', establishment_id)\
+                    .limit(1)\
+                    .execute()
+                if est_resp and est_resp.data:
+                    school_name = est_resp.data[0].get('name')
+            except Exception as e:
+                app.logger.warning(f"[Academic Profile] Establishment name lookup failed (non-fatal): {e}")
+
+        # Tutor group & year group (avoid [object Object] in UI)
+        tutor_group = coerce_text(profile.get('tutor_group')) or coerce_text(student_row.get('group') if student_row else None)
+        year_group = coerce_text(profile.get('year_group')) or coerce_text(student_row.get('year_group') if student_row else None)
+        student_name = coerce_text(profile.get('student_name')) or coerce_text(student_row.get('name') if student_row else None)
         
         return {
             'student': {
                 'email': profile.get('student_email'),
-                'name': profile.get('student_name'),
-                'yearGroup': profile.get('year_group'),
-                'tutorGroup': profile.get('tutor_group'),
+                'name': student_name,
+                'yearGroup': year_group,
+                'tutorGroup': tutor_group,
                 'attendance': profile.get('attendance'),
                 'priorAttainment': profile.get('prior_attainment'),
                 'upn': profile.get('upn'),
                 'uci': profile.get('uci'),
                 'centreNumber': profile.get('centre_number'),
-                'school': profile.get('establishment_name'),
-                'establishmentId': profile.get('establishment_id')
+                'school': coerce_text(school_name),
+                'establishmentId': establishment_id
             },
             'subjects': [
                 {
