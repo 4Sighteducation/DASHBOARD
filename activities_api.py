@@ -46,18 +46,45 @@ def register_activities_routes(app, supabase: Client):
             ensure_vespa_student_exists(supabase, student_email)
             
             # Try to get VESPA scores from vespa_students.latest_vespa_scores first (cached)
-            vespa_student_result = supabase.table('vespa_students').select('latest_vespa_scores, current_level')\
+            # Also read year group so we can derive Level 2/3 correctly.
+            vespa_student_result = supabase.table('vespa_students').select('latest_vespa_scores, current_level, current_year_group')\
                 .eq('email', student_email)\
                 .single()\
                 .execute()
             
+            def derive_level_from_year_group(year_group_value: str | None) -> str | None:
+                """
+                Business rule:
+                - Year group < 12 => Level 2
+                - Year 12/13 or 'Ugrad' => Level 3
+                Returns None if cannot determine.
+                """
+                if not year_group_value:
+                    return None
+                yg = str(year_group_value).strip()
+                yg_l = yg.lower()
+                if 'ugrad' in yg_l or 'undergrad' in yg_l or 'undergraduate' in yg_l:
+                    return 'Level 3'
+                # Extract digits from strings like "Year 13"
+                digits = ''.join(ch for ch in yg if ch.isdigit())
+                if digits:
+                    try:
+                        n = int(digits)
+                        return 'Level 3' if n >= 12 else 'Level 2'
+                    except Exception:
+                        return None
+                return None
+
             scores = None
+            # Fallback level: derive from year group first; if still unknown, Level 2.
             level = 'Level 2'
             actual_cycle = cycle  # Track the actual cycle from cache
             
             if vespa_student_result.data:
                 cached_scores = vespa_student_result.data.get('latest_vespa_scores')
-                level = vespa_student_result.data.get('current_level', 'Level 2')
+                year_group = vespa_student_result.data.get('current_year_group')
+                derived = derive_level_from_year_group(year_group)
+                level = vespa_student_result.data.get('current_level') or derived or 'Level 2'
                 
                 # Use cached scores if they exist (always use latest, ignore requested cycle)
                 if cached_scores and isinstance(cached_scores, dict):
