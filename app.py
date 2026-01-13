@@ -11128,8 +11128,6 @@ def get_profile_from_supabase(email, academic_year=None):
                 'tutorGroup': tutor_group,
                 'attendance': profile.get('attendance'),
                 'priorAttainment': profile.get('prior_attainment'),
-                'upn': profile.get('upn'),
-                'uci': profile.get('uci'),
                 'centreNumber': profile.get('centre_number'),
                 'school': coerce_text(school_name),
                 'establishmentId': establishment_id
