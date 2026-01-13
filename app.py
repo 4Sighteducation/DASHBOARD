@@ -11091,6 +11091,34 @@ def get_profile_from_supabase(email, academic_year=None):
         tutor_group = coerce_text(profile.get('tutor_group')) or coerce_text(student_row.get('group') if student_row else None)
         year_group = coerce_text(profile.get('year_group')) or coerce_text(student_row.get('year_group') if student_row else None)
         student_name = coerce_text(profile.get('student_name')) or coerce_text(student_row.get('name') if student_row else None)
+
+        # School-wide Academic Profile UI defaults (source of truth is staff admin / account manager)
+        # These primarily control STUDENT visibility: show/hide MEG & STG (students do not get toggles).
+        ui_defaults = {
+            'studentsShowMeg': True,
+            'studentsShowStg': False,
+            'defaultPopulateTargetFromStg': False,
+            'updatedAt': None,
+            'updatedByEmail': None
+        }
+        if establishment_id:
+            try:
+                settings_resp = supabase_client.table('academic_profile_school_settings')\
+                    .select('students_show_meg, students_show_stg, default_populate_target_from_stg, updated_at, updated_by_email')\
+                    .eq('establishment_id', establishment_id)\
+                    .limit(1)\
+                    .execute()
+                if settings_resp and settings_resp.data:
+                    s = settings_resp.data[0]
+                    ui_defaults = {
+                        'studentsShowMeg': bool(s.get('students_show_meg')) if s.get('students_show_meg') is not None else True,
+                        'studentsShowStg': bool(s.get('students_show_stg')) if s.get('students_show_stg') is not None else False,
+                        'defaultPopulateTargetFromStg': bool(s.get('default_populate_target_from_stg')) if s.get('default_populate_target_from_stg') is not None else False,
+                        'updatedAt': coerce_text(s.get('updated_at')),
+                        'updatedByEmail': coerce_text(s.get('updated_by_email'))
+                    }
+            except Exception as e:
+                app.logger.warning(f"[Academic Profile] School settings lookup failed (non-fatal): {e}")
         
         return {
             'student': {
@@ -11109,6 +11137,7 @@ def get_profile_from_supabase(email, academic_year=None):
             # For UI: show when this profile was last changed (snapshots touch academic_profiles.updated_at)
             'updatedAt': coerce_text(profile.get('updated_at') or profile.get('created_at')),
             'academicYear': coerce_text(profile.get('academic_year')),
+            'uiDefaults': ui_defaults,
             'subjects': [
                 {
                     'id': subj.get('id'),
