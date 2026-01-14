@@ -200,7 +200,7 @@ else:
 CORS(app, 
      resources={r"/api/*": {"origins": ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]}},
      supports_credentials=True,
-     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'X-Knack-Application-Id', 'X-Knack-REST-API-Key', 'x-knack-application-id', 'x-knack-rest-api-key'],
+     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'X-Knack-Application-Id', 'X-Knack-REST-API-Key', 'x-knack-application-id', 'x-knack-rest-api-key', 'X-User-Role', 'x-user-role'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 # Add explicit CORS headers to all responses (belt and suspenders approach)
@@ -215,7 +215,7 @@ def after_request(response):
     if origin in allowed_origins:
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-Knack-Application-Id, X-Knack-REST-API-Key, x-knack-application-id, x-knack-rest-api-key'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-Knack-Application-Id, X-Knack-REST-API-Key, x-knack-application-id, x-knack-rest-api-key, X-User-Role, x-user-role'
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         response.headers['Access-Control-Max-Age'] = '3600'
     
@@ -11506,11 +11506,12 @@ def update_academic_profile_university_offers(email):
                 continue
             uni = str(o.get('universityName') or o.get('university_name') or '').strip()
             course = str(o.get('courseTitle') or o.get('course_title') or '').strip()
+            course_link = str(o.get('courseLink') or o.get('course_link') or '').strip()
             offer_txt = str(o.get('offer') or o.get('offerText') or '').strip()
             ucas_raw = o.get('ucasPoints') if 'ucasPoints' in o else o.get('ucas_points')
             ranking_raw = o.get('ranking') if 'ranking' in o else o.get('rank')
 
-            if not uni and not course and not offer_txt and (ucas_raw is None or str(ucas_raw).strip() == '') and (ranking_raw is None or str(ranking_raw).strip() == ''):
+            if not uni and not course and not course_link and not offer_txt and (ucas_raw is None or str(ucas_raw).strip() == '') and (ranking_raw is None or str(ranking_raw).strip() == ''):
                 continue
 
             ucas_points = None
@@ -11532,6 +11533,7 @@ def update_academic_profile_university_offers(email):
             normalized.append({
                 'universityName': uni,
                 'courseTitle': course,
+                'courseLink': course_link,
                 'offer': offer_txt,
                 'ucasPoints': ucas_points,
                 'ranking': ranking
@@ -11770,6 +11772,10 @@ def update_subject_grade(subject_id):
         updates = request.get_json()
         
         app.logger.info(f"[Academic Profile] Updating subject {subject_id}")
+
+        # Role hint from frontend (best-effort). If Student, only allow target_grade updates.
+        role_hint = (request.headers.get('X-User-Role') or request.headers.get('x-user-role') or '').strip().lower()
+        is_student_hint = role_hint in ['student', 'pupil', 'learner']
         
         supabase_updated = False
         knack_updated = False
@@ -11793,28 +11799,40 @@ def update_subject_grade(subject_id):
                 update_data = {
                     'updated_at': datetime.utcnow().isoformat()
                 }
-                
-                # Accept both camelCase (frontend) and snake_case (direct API calls)
-                if 'currentGrade' in updates or 'current_grade' in updates:
-                    update_data['current_grade'] = updates.get('currentGrade', updates.get('current_grade'))
-                if 'targetGrade' in updates or 'target_grade' in updates:
+
+                # If the caller is a Student, only allow Target updates.
+                if is_student_hint:
+                    allowed_keys = set(['targetGrade', 'target_grade'])
+                    incoming_keys = set([k for k in (updates or {}).keys() if k is not None])
+                    forbidden = [k for k in incoming_keys if k not in allowed_keys]
+                    if forbidden:
+                        return jsonify({'success': False, 'error': 'Students can only update Target grade.'}), 403
+                    if not (('targetGrade' in updates) or ('target_grade' in updates)):
+                        return jsonify({'success': False, 'error': 'Missing targetGrade'}), 400
                     update_data['target_grade'] = updates.get('targetGrade', updates.get('target_grade'))
-                if 'effortGrade' in updates or 'effort_grade' in updates:
-                    update_data['effort_grade'] = updates.get('effortGrade', updates.get('effort_grade'))
-                if 'behaviourGrade' in updates or 'behaviour_grade' in updates:
-                    update_data['behaviour_grade'] = updates.get('behaviourGrade', updates.get('behaviour_grade'))
-                if 'subjectAttendance' in updates or 'subject_attendance' in updates:
-                    update_data['subject_attendance'] = updates.get('subjectAttendance', updates.get('subject_attendance'))
-                if 'minimumExpectedGrade' in updates or 'minimum_expected_grade' in updates:
-                    update_data['minimum_expected_grade'] = updates.get('minimumExpectedGrade', updates.get('minimum_expected_grade'))
-                if 'subjectTargetGrade' in updates or 'subject_target_grade' in updates:
-                    update_data['subject_target_grade'] = updates.get('subjectTargetGrade', updates.get('subject_target_grade'))
-                if 'subjectName' in updates or 'subject_name' in updates:
-                    update_data['subject_name'] = updates.get('subjectName', updates.get('subject_name'))
-                if 'examType' in updates or 'exam_type' in updates:
-                    update_data['exam_type'] = updates.get('examType', updates.get('exam_type'))
-                if 'examBoard' in updates or 'exam_board' in updates:
-                    update_data['exam_board'] = updates.get('examBoard', updates.get('exam_board'))
+                else:
+                
+                    # Accept both camelCase (frontend) and snake_case (direct API calls)
+                    if 'currentGrade' in updates or 'current_grade' in updates:
+                        update_data['current_grade'] = updates.get('currentGrade', updates.get('current_grade'))
+                    if 'targetGrade' in updates or 'target_grade' in updates:
+                        update_data['target_grade'] = updates.get('targetGrade', updates.get('target_grade'))
+                    if 'effortGrade' in updates or 'effort_grade' in updates:
+                        update_data['effort_grade'] = updates.get('effortGrade', updates.get('effort_grade'))
+                    if 'behaviourGrade' in updates or 'behaviour_grade' in updates:
+                        update_data['behaviour_grade'] = updates.get('behaviourGrade', updates.get('behaviour_grade'))
+                    if 'subjectAttendance' in updates or 'subject_attendance' in updates:
+                        update_data['subject_attendance'] = updates.get('subjectAttendance', updates.get('subject_attendance'))
+                    if 'minimumExpectedGrade' in updates or 'minimum_expected_grade' in updates:
+                        update_data['minimum_expected_grade'] = updates.get('minimumExpectedGrade', updates.get('minimum_expected_grade'))
+                    if 'subjectTargetGrade' in updates or 'subject_target_grade' in updates:
+                        update_data['subject_target_grade'] = updates.get('subjectTargetGrade', updates.get('subject_target_grade'))
+                    if 'subjectName' in updates or 'subject_name' in updates:
+                        update_data['subject_name'] = updates.get('subjectName', updates.get('subject_name'))
+                    if 'examType' in updates or 'exam_type' in updates:
+                        update_data['exam_type'] = updates.get('examType', updates.get('exam_type'))
+                    if 'examBoard' in updates or 'exam_board' in updates:
+                        update_data['exam_board'] = updates.get('examBoard', updates.get('exam_board'))
                 
                 # Perform update and VERIFY it persisted by reading back the row.
                 update_resp = supabase_client.table('student_subjects')\
