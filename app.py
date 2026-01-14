@@ -11120,6 +11120,20 @@ def get_profile_from_supabase(email, academic_year=None):
             except Exception as e:
                 app.logger.warning(f"[Academic Profile] School settings lookup failed (non-fatal): {e}")
         
+        # University offers (optional JSONB column on academic_profiles)
+        university_offers = []
+        try:
+            raw_offers = profile.get('university_offers')
+            if isinstance(raw_offers, list):
+                university_offers = raw_offers
+            elif isinstance(raw_offers, dict):
+                # tolerate accidental dict storage
+                university_offers = [raw_offers]
+            else:
+                university_offers = []
+        except Exception:
+            university_offers = []
+
         return {
             'student': {
                 'email': profile.get('student_email'),
@@ -11130,7 +11144,8 @@ def get_profile_from_supabase(email, academic_year=None):
                 'priorAttainment': profile.get('prior_attainment'),
                 'centreNumber': profile.get('centre_number'),
                 'school': coerce_text(school_name),
-                'establishmentId': establishment_id
+                'establishmentId': establishment_id,
+                'universityOffers': university_offers
             },
             # For UI: show when this profile was last changed (snapshots touch academic_profiles.updated_at)
             'updatedAt': coerce_text(profile.get('updated_at') or profile.get('created_at')),
@@ -11435,7 +11450,9 @@ def get_academic_profile(email):
             'student': profile_data['student'],
             'subjects': profile_data['subjects'],
             'dataSource': profile_data.get('dataSource', 'unknown'),
+            # Keep legacy key but also include updatedAt (frontend expects it)
             'lastUpdated': profile_data.get('updatedAt'),
+            'updatedAt': profile_data.get('updatedAt'),
             'academicYear': profile_data.get('academicYear')
         }
         
@@ -11453,6 +11470,126 @@ def get_academic_profile(email):
         
     except Exception as e:
         app.logger.error(f"[Academic Profile] Error in get_academic_profile: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/academic-profile/<email>/university-offers', methods=['PUT'])
+def update_academic_profile_university_offers(email):
+    """Update university offers (JSON) on academic_profiles.
+    
+    Body:
+      {
+        "academicYear": "2025/2026" (optional),
+        "offers": [
+          { universityName, courseTitle, offer, ucasPoints, ranking }
+        ]
+      }
+    """
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or request.args.get('academic_year')
+        offers_in = payload.get('offers') or payload.get('universityOffers') or []
+
+        if offers_in is None:
+            offers_in = []
+        if not isinstance(offers_in, list):
+            return jsonify({'success': False, 'error': 'offers must be an array'}), 400
+
+        # Normalize + validate
+        normalized = []
+        for o in offers_in:
+            if not isinstance(o, dict):
+                continue
+            uni = str(o.get('universityName') or o.get('university_name') or '').strip()
+            course = str(o.get('courseTitle') or o.get('course_title') or '').strip()
+            offer_txt = str(o.get('offer') or o.get('offerText') or '').strip()
+            ucas_raw = o.get('ucasPoints') if 'ucasPoints' in o else o.get('ucas_points')
+            ranking_raw = o.get('ranking') if 'ranking' in o else o.get('rank')
+
+            if not uni and not course and not offer_txt and (ucas_raw is None or str(ucas_raw).strip() == '') and (ranking_raw is None or str(ranking_raw).strip() == ''):
+                continue
+
+            ucas_points = None
+            if ucas_raw is not None and str(ucas_raw).strip() != '':
+                try:
+                    ucas_points = int(float(str(ucas_raw).strip()))
+                except Exception:
+                    return jsonify({'success': False, 'error': f'Invalid UCAS points value: {ucas_raw}'}), 400
+
+            ranking = None
+            if ranking_raw is not None and str(ranking_raw).strip() != '':
+                try:
+                    ranking = int(float(str(ranking_raw).strip()))
+                except Exception:
+                    return jsonify({'success': False, 'error': f'Invalid ranking value: {ranking_raw}'}), 400
+                if ranking < 1 or ranking > 5:
+                    return jsonify({'success': False, 'error': 'Ranking must be between 1 and 5'}), 400
+
+            normalized.append({
+                'universityName': uni,
+                'courseTitle': course,
+                'offer': offer_txt,
+                'ucasPoints': ucas_points,
+                'ranking': ranking
+            })
+
+        if len(normalized) > 5:
+            return jsonify({'success': False, 'error': 'Maximum 5 university offers allowed'}), 400
+
+        # Assign missing rankings (first available 1..5)
+        used = set([o.get('ranking') for o in normalized if o.get('ranking') is not None])
+        for o in normalized:
+            if o.get('ranking') is None:
+                for r in [1, 2, 3, 4, 5]:
+                    if r not in used:
+                        o['ranking'] = r
+                        used.add(r)
+                        break
+
+        # Ensure unique rankings if any duplicates remain
+        ranks = [o.get('ranking') for o in normalized if o.get('ranking') is not None]
+        if len(ranks) != len(set(ranks)):
+            return jsonify({'success': False, 'error': 'Each offer must have a unique ranking (1-5).'}), 400
+
+        # Locate target profile row
+        q = supabase_client.table('academic_profiles').select('id').eq('student_email', email)
+        if academic_year:
+            q = q.eq('academic_year', academic_year)
+        profile_resp = q.order('created_at', desc=True).limit(1).execute()
+        if not profile_resp or not profile_resp.data:
+            return jsonify({'success': False, 'error': 'Academic profile not found'}), 404
+
+        profile_id = profile_resp.data[0]['id']
+
+        # Persist (requires column academic_profiles.university_offers JSONB)
+        update_resp = supabase_client.table('academic_profiles')\
+            .update({
+                'university_offers': normalized,
+                'updated_at': datetime.utcnow().isoformat()
+            })\
+            .eq('id', profile_id)\
+            .execute()
+
+        if not update_resp:
+            return jsonify({'success': False, 'error': 'Update failed'}), 500
+
+        # Clear cache for this student
+        if CACHE_ENABLED:
+            try:
+                cache_pattern = f'academic_profile:{email}:*'
+                for key in redis_client.scan_iter(match=cache_pattern):
+                    redis_client.delete(key)
+            except Exception as cache_error:
+                app.logger.warning(f"[Academic Profile] Cache clear error (offers): {cache_error}")
+
+        return jsonify({'success': True, 'profileId': str(profile_id), 'offers': normalized})
+
+    except Exception as e:
+        app.logger.error(f"[Academic Profile] Error in update_academic_profile_university_offers: {e}")
         app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
