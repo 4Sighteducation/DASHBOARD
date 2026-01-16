@@ -18,6 +18,7 @@ import gzip  # Add gzip for compression
 from threading import Thread
 import time
 import random  # Add random for sampling comments
+import uuid  # For UCAS application comment IDs
 
 # Add PDF generation imports
 from reportlab.lib import colors
@@ -11592,6 +11593,233 @@ def update_academic_profile_university_offers(email):
 
     except Exception as e:
         app.logger.error(f"[Academic Profile] Error in update_academic_profile_university_offers: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/academic-profile/<email>/ucas-application', methods=['GET'])
+def get_ucas_application(email):
+    """
+    Fetch UCAS Application (Supabase only)
+    Query string:
+      - academic_year (optional)
+    Returns:
+      { success: true, data: { answers, selectedCourseKey, requirementsByCourse, staffComments } | null }
+    """
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        academic_year = request.args.get('academic_year') or 'current'
+        cache_key = f'ucas_application:{email}:{academic_year}'
+
+        if CACHE_ENABLED:
+            try:
+                cached = redis_client.get(cache_key)
+                if cached:
+                    return jsonify(pickle.loads(cached))
+            except Exception as cache_error:
+                app.logger.warning(f"[UCAS Application] Cache error: {cache_error}")
+
+        resp = supabase_client.table('ucas_applications')\
+            .select('*')\
+            .eq('student_email', email)\
+            .eq('academic_year', academic_year)\
+            .order('updated_at', desc=True)\
+            .limit(1)\
+            .execute()
+
+        if not resp or not resp.data:
+            data_out = {'success': True, 'data': None}
+        else:
+            row = resp.data[0]
+            data_out = {
+                'success': True,
+                'data': {
+                    'answers': row.get('answers') or {},
+                    'selectedCourseKey': row.get('selected_course_key'),
+                    'requirementsByCourse': row.get('requirements_by_course') or {},
+                    'staffComments': row.get('staff_comments') or []
+                }
+            }
+
+        if CACHE_ENABLED:
+            try:
+                redis_client.setex(cache_key, CACHE_TTL.get('academic_profile', 300), pickle.dumps(data_out))
+            except Exception as cache_error:
+                app.logger.warning(f"[UCAS Application] Cache write error: {cache_error}")
+
+        return jsonify(data_out)
+
+    except Exception as e:
+        app.logger.error(f"[UCAS Application] Error in get_ucas_application: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/academic-profile/<email>/ucas-application', methods=['PUT'])
+def save_ucas_application(email):
+    """
+    Save UCAS Application (student-only writes)
+    Body:
+      {
+        academicYear?: "2025/2026",
+        selectedCourseKey?: string|null,
+        answers: { q1, q2, q3 },
+        requirementsByCourse?: object
+      }
+    Validation:
+      - total chars across q1+q2+q3: 350..4000 (inclusive)
+    """
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        role_hint = (request.headers.get('X-User-Role') or request.headers.get('x-user-role') or '').strip().lower()
+        is_student_hint = role_hint in ['student', 'pupil', 'learner']
+        if not is_student_hint:
+            return jsonify({'success': False, 'error': 'Only students can edit the UCAS Application'}), 403
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+        selected_course_key = payload.get('selectedCourseKey')
+        answers = payload.get('answers') or {}
+        requirements = payload.get('requirementsByCourse') or payload.get('requirements_by_course') or {}
+
+        if not isinstance(answers, dict):
+            return jsonify({'success': False, 'error': 'answers must be an object'}), 400
+        if requirements is None:
+            requirements = {}
+        if not isinstance(requirements, dict):
+            return jsonify({'success': False, 'error': 'requirementsByCourse must be an object'}), 400
+
+        q1 = str(answers.get('q1') or '')
+        q2 = str(answers.get('q2') or '')
+        q3 = str(answers.get('q3') or '')
+        total = len(q1) + len(q2) + len(q3)
+        if total < 350:
+            return jsonify({'success': False, 'error': 'Minimum 350 characters total required'}), 400
+        if total > 4000:
+            return jsonify({'success': False, 'error': 'Maximum 4000 characters total exceeded'}), 400
+
+        record = {
+            'student_email': email,
+            'academic_year': academic_year,
+            'answers': {'q1': q1, 'q2': q2, 'q3': q3},
+            'selected_course_key': selected_course_key,
+            'requirements_by_course': requirements,
+            'updated_at': datetime.utcnow().isoformat()
+        }
+
+        existing = supabase_client.table('ucas_applications')\
+            .select('id, staff_comments')\
+            .eq('student_email', email)\
+            .eq('academic_year', academic_year)\
+            .order('updated_at', desc=True)\
+            .limit(1)\
+            .execute()
+
+        if existing and existing.data:
+            row_id = existing.data[0]['id']
+            # Preserve comments
+            record['staff_comments'] = existing.data[0].get('staff_comments') or []
+            supabase_client.table('ucas_applications').update(record).eq('id', row_id).execute()
+        else:
+            supabase_client.table('ucas_applications').insert(record).execute()
+
+        # Clear cache
+        if CACHE_ENABLED:
+            try:
+                cache_key = f'ucas_application:{email}:{academic_year}'
+                redis_client.delete(cache_key)
+            except Exception as cache_error:
+                app.logger.warning(f"[UCAS Application] Cache clear error: {cache_error}")
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        app.logger.error(f"[UCAS Application] Error in save_ucas_application: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/academic-profile/<email>/ucas-application/comment', methods=['POST'])
+def add_ucas_application_comment(email):
+    """
+    Add a staff comment (staff-only)
+    Body:
+      { academicYear?: "...", staffEmail?: "...", comment: "..." }
+    Returns updated staffComments array.
+    """
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        role_hint = (request.headers.get('X-User-Role') or request.headers.get('x-user-role') or '').strip().lower()
+        is_student_hint = role_hint in ['student', 'pupil', 'learner']
+        if is_student_hint:
+            return jsonify({'success': False, 'error': 'Students cannot add comments'}), 403
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+        staff_email = (payload.get('staffEmail') or '').strip()
+        comment = (payload.get('comment') or '').strip()
+        if not comment:
+            return jsonify({'success': False, 'error': 'comment is required'}), 400
+        if len(comment) > 2000:
+            return jsonify({'success': False, 'error': 'comment is too long (max 2000 chars)'}), 400
+
+        existing = supabase_client.table('ucas_applications')\
+            .select('*')\
+            .eq('student_email', email)\
+            .eq('academic_year', academic_year)\
+            .order('updated_at', desc=True)\
+            .limit(1)\
+            .execute()
+
+        if existing and existing.data:
+            row = existing.data[0]
+            row_id = row['id']
+            staff_comments = row.get('staff_comments') or []
+        else:
+            row_id = None
+            staff_comments = []
+
+        new_comment = {
+            'id': str(uuid.uuid4()),
+            'staffEmail': staff_email or None,
+            'comment': comment,
+            'createdAt': datetime.utcnow().isoformat()
+        }
+        staff_comments = staff_comments + [new_comment]
+
+        if row_id:
+            supabase_client.table('ucas_applications').update({
+                'staff_comments': staff_comments,
+                'updated_at': datetime.utcnow().isoformat()
+            }).eq('id', row_id).execute()
+        else:
+            supabase_client.table('ucas_applications').insert({
+                'student_email': email,
+                'academic_year': academic_year,
+                'answers': {},
+                'selected_course_key': None,
+                'requirements_by_course': {},
+                'staff_comments': staff_comments,
+                'updated_at': datetime.utcnow().isoformat()
+            }).execute()
+
+        if CACHE_ENABLED:
+            try:
+                cache_key = f'ucas_application:{email}:{academic_year}'
+                redis_client.delete(cache_key)
+            except Exception as cache_error:
+                app.logger.warning(f"[UCAS Application] Cache clear error (comment): {cache_error}")
+
+        return jsonify({'success': True, 'data': {'staffComments': staff_comments}})
+
+    except Exception as e:
+        app.logger.error(f"[UCAS Application] Error in add_ucas_application_comment: {e}")
         app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
