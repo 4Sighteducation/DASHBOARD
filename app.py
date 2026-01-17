@@ -11824,6 +11824,227 @@ def add_ucas_application_comment(email):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+UCAS_VIRTUAL_TUTOR_NAME = "Virtual Tutor"
+
+UCAS_COACH_PROMPT = """You are UCAS Coach, a drafting guide for students completing the UCAS personal statement (3-question format).
+Your job is to help the student think, choose evidence, and improve clarity — NOT to write the statement for them.
+
+IMPORTANT (product requirement): Do NOT mention "AI", "model", "ChatGPT", "OpenAI", "prompt", or anything similar. Just act like a supportive tutor.
+
+CORE RULES (non-negotiable)
+1) Do NOT write the student’s UCAS answers for them. Do NOT produce a complete answer to any UCAS question.
+2) You may NOT generate more than:
+   - 6 bullet points of content ideas per UCAS question, OR
+   - a short outline (max 8 bullets total), OR
+   - micro-examples: up to 2 sample sentences maximum, clearly labelled as “example phrasing” and generic enough that the student must rewrite them.
+3) If the student asks you to “write it for me”, “finish it”, “make it perfect”, or gives too little content, refuse politely and switch to coaching:
+   - Ask 3–6 targeted questions
+   - Offer a structure and what evidence to include
+   - Provide feedback on what they have (if they share a draft)
+4) Keep the student’s voice. Don’t add achievements they didn’t mention. Don’t invent facts.
+5) Encourage specificity and evidence. Prefer “show, not tell” (what they did, what they learned, how it links to the course).
+6) Never use over-confident claims (“always”, “best”, “perfect”). Keep it realistic and grounded.
+7) If the student provides a draft, you may:
+   - critique it using a clear rubric (Course-fit, Evidence, Reflection, Specificity, Structure, Style)
+   - suggest edits as “Replace X with something like Y”, but do not rewrite the whole paragraph
+   - propose a “next sentence” prompt (a sentence starter), not the sentence itself
+8) Always end with an action the student must do next (e.g., “Add one specific example of…”, “Rewrite this line to include…”).
+
+CHARACTER GUIDANCE (app rules)
+- Total limit is 4,000 characters across all answers combined.
+- Minimum is 350 characters total across all answers combined.
+
+OUTPUT FORMAT (keep it short and practical)
+- Use short headings and bullets.
+- 5–10 lines max if there is a draft; if there is no draft, ask thoughtful questions and give a tiny outline.
+"""
+
+def _is_student_request():
+    role_hint = (request.headers.get('X-User-Role') or request.headers.get('x-user-role') or '').strip().lower()
+    return role_hint in ['student', 'pupil', 'learner']
+
+def _build_ucas_feedback_user_prompt(payload):
+    payload = payload or {}
+    answers = payload.get('answers') or {}
+    q1 = str(answers.get('q1') or '')
+    q2 = str(answers.get('q2') or '')
+    q3 = str(answers.get('q3') or '')
+    total_chars = len(q1) + len(q2) + len(q3)
+
+    course = payload.get('course') or {}
+    course_bits = []
+    if isinstance(course, dict):
+        uni = str(course.get('universityName') or '').strip()
+        title = str(course.get('courseTitle') or '').strip()
+        offer = str(course.get('offer') or '').strip()
+        pts = course.get('ucasPoints')
+        if uni or title:
+            course_bits.append(f"Course: {uni} — {title}".strip(' —'))
+        if offer:
+            course_bits.append(f"Offer requirement (grade): {offer}")
+        if pts is not None and str(pts).strip() != '':
+            course_bits.append(f"Offer requirement (UCAS points): {pts}")
+
+    if total_chars == 0:
+        return "\n".join([
+            "The student has not written any draft yet.",
+            *(course_bits or []),
+            "Task: Ask thoughtful questions to help them start (do NOT write answers).",
+            "Ask 3–6 questions and give a tiny outline (max 8 bullets total)."
+        ])
+
+    return "\n".join([
+        "Please give tutoring-style feedback to improve this UCAS 3-question statement draft.",
+        *(course_bits or []),
+        f"Total characters (all answers combined): {total_chars} (limit 4000; minimum 350).",
+        "",
+        "Draft Q1:",
+        q1 or "[empty]",
+        "",
+        "Draft Q2:",
+        q2 or "[empty]",
+        "",
+        "Draft Q3:",
+        q3 or "[empty]",
+        "",
+        "Remember: Do NOT write the statement. Provide structure, targeted questions, and specific improvement suggestions."
+    ])
+
+def _call_openai_for_ucas_feedback(user_prompt):
+    if not OPENAI_API_KEY:
+        raise ApiError("OPENAI_API_KEY not configured", 503)
+    try:
+        import openai
+        openai.api_key = OPENAI_API_KEY
+
+        resp = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": UCAS_COACH_PROMPT},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.4,
+            max_tokens=650
+        )
+        text = (resp.choices[0].message.get('content') or '').strip()
+        return text
+    except ApiError:
+        raise
+    except Exception as e:
+        app.logger.error(f"[UCAS Feedback] OpenAI call failed: {e}")
+        app.logger.error(traceback.format_exc())
+        raise ApiError("Feedback generation failed", 500)
+
+@app.route('/api/academic-profile/<email>/ucas-application/feedback', methods=['POST'])
+def generate_ucas_feedback(email):
+    """
+    Generate tutoring-style feedback for the UCAS application draft.
+    Student-only (uses X-User-Role header as a best-effort permission hint).
+    """
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        if not _is_student_request():
+            return jsonify({'success': False, 'error': 'Only students can request feedback'}), 403
+
+        payload = request.get_json() or {}
+        # academicYear is optional; we keep it for future-proofing even if unused here
+        _ = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+
+        user_prompt = _build_ucas_feedback_user_prompt(payload)
+        feedback = _call_openai_for_ucas_feedback(user_prompt)
+
+        # Safety: ensure we return something usable and not huge
+        feedback = (feedback or '').strip()
+        if len(feedback) > 4000:
+            feedback = feedback[:4000].rstrip() + "…"
+
+        return jsonify({'success': True, 'data': {'feedback': feedback}})
+    except ApiError as ae:
+        return jsonify({'success': False, 'error': str(ae)}), ae.status_code
+    except Exception as e:
+        app.logger.error(f"[UCAS Feedback] Error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/academic-profile/<email>/ucas-application/virtual-tutor-comment', methods=['POST'])
+def add_virtual_tutor_comment(email):
+    """
+    Add generated feedback as a tutor comment under "Virtual Tutor" (student-initiated).
+    """
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        if not _is_student_request():
+            return jsonify({'success': False, 'error': 'Only students can add Virtual Tutor comments'}), 403
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+        comment = (payload.get('comment') or payload.get('feedback') or '').strip()
+        if not comment:
+            return jsonify({'success': False, 'error': 'comment is required'}), 400
+        if len(comment) > 2000:
+            return jsonify({'success': False, 'error': 'comment is too long (max 2000 chars)'}), 400
+
+        existing = supabase_client.table('ucas_applications')\
+            .select('*')\
+            .eq('student_email', email)\
+            .eq('academic_year', academic_year)\
+            .order('updated_at', desc=True)\
+            .limit(1)\
+            .execute()
+
+        if existing and existing.data:
+            row = existing.data[0]
+            row_id = row['id']
+            staff_comments = row.get('staff_comments') or []
+        else:
+            row_id = None
+            staff_comments = []
+
+        new_comment = {
+            'id': str(uuid.uuid4()),
+            'staffEmail': UCAS_VIRTUAL_TUTOR_NAME,
+            'comment': comment,
+            'createdAt': datetime.utcnow().isoformat(),
+            'source': 'virtual_tutor'
+        }
+        staff_comments = staff_comments + [new_comment]
+
+        if row_id:
+            supabase_client.table('ucas_applications').update({
+                'staff_comments': staff_comments,
+                'updated_at': datetime.utcnow().isoformat()
+            }).eq('id', row_id).execute()
+        else:
+            supabase_client.table('ucas_applications').insert({
+                'student_email': email,
+                'academic_year': academic_year,
+                'answers': {},
+                'selected_course_key': None,
+                'requirements_by_course': {},
+                'staff_comments': staff_comments,
+                'updated_at': datetime.utcnow().isoformat()
+            }).execute()
+
+        if CACHE_ENABLED:
+            try:
+                cache_key = f'ucas_application:{email}:{academic_year}'
+                redis_client.delete(cache_key)
+            except Exception as cache_error:
+                app.logger.warning(f"[UCAS Application] Cache clear error (virtual tutor): {cache_error}")
+
+        return jsonify({'success': True, 'data': {'staffComments': staff_comments}})
+    except ApiError as ae:
+        return jsonify({'success': False, 'error': str(ae)}), ae.status_code
+    except Exception as e:
+        app.logger.error(f"[UCAS Virtual Tutor] Error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/academic-profile/sync', methods=['POST'])
 def sync_academic_profile():
     """Sync academic profile to both Supabase and Knack (dual-write)"""
