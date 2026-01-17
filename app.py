@@ -12416,13 +12416,16 @@ def submit_reference_invite(token):
         ref_id = row.get('reference_id')
 
         # Upsert by (reference_id, section, subject_key, author_email, author_type)
-        existing = supabase_client.table('reference_contributions')\
+        q = supabase_client.table('reference_contributions')\
             .select('id')\
             .eq('reference_id', ref_id)\
             .eq('section', section)\
             .eq('author_email', teacher_email)\
-            .eq('author_type', 'invited_teacher')\
-            .execute()
+            .eq('author_type', 'invited_teacher')
+        # If the invite is tied to a subject, avoid overwriting other-subject contributions by same teacher.
+        if subject_key:
+            q = q.eq('subject_key', subject_key)
+        existing = q.execute()
         if existing and existing.data:
             cid = existing.data[0]['id']
             supabase_client.table('reference_contributions').update({
