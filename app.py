@@ -11845,7 +11845,7 @@ CORE RULES (non-negotiable)
 5) Encourage specificity and evidence. Prefer “show, not tell” (what they did, what they learned, how it links to the course).
 6) Never use over-confident claims (“always”, “best”, “perfect”). Keep it realistic and grounded.
 7) If the student provides a draft, you may:
-   - critique it using a clear rubric (Course-fit, Evidence, Reflection, Specificity, Structure, Style)
+   - critique it using clear, plain language (Course-fit, Evidence, Reflection, Specificity, Structure, Style)
    - suggest edits as “Replace X with something like Y”, but do not rewrite the whole paragraph
    - propose a “next sentence” prompt (a sentence starter), not the sentence itself
 8) Always end with an action the student must do next (e.g., “Add one specific example of…”, “Rewrite this line to include…”).
@@ -11855,8 +11855,16 @@ CHARACTER GUIDANCE (app rules)
 - Minimum is 350 characters total across all answers combined.
 
 OUTPUT FORMAT (keep it short and practical)
-- Use short headings and bullets.
-- 5–10 lines max if there is a draft; if there is no draft, ask thoughtful questions and give a tiny outline.
+- Do NOT use markdown headings like "###" or "####".
+- Do NOT use the word "rubric".
+- Use plain headings exactly like:
+  Overall
+  Q1: Why this course?
+  Q2: How studies prepared you
+  Q3: Outside education
+  Next steps
+- Under each heading, use short bullet points (•), max 4 bullets per section.
+- If there is no draft, ask 3–6 thoughtful questions and give a tiny outline (max 8 bullets total).
 """
 
 def _is_student_request():
@@ -11924,7 +11932,7 @@ def _call_openai_for_ucas_feedback(user_prompt):
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.4,
-            max_tokens=650
+            max_tokens=750
         )
         text = (resp.choices[0].message.get('content') or '').strip()
         return text
@@ -11955,10 +11963,17 @@ def generate_ucas_feedback(email):
         user_prompt = _build_ucas_feedback_user_prompt(payload)
         feedback = _call_openai_for_ucas_feedback(user_prompt)
 
-        # Safety: ensure we return something usable and not huge
+        # Safety: ensure we return something usable and not huge, and keep formatting plain.
         feedback = (feedback or '').strip()
-        if len(feedback) > 4000:
-            feedback = feedback[:4000].rstrip() + "…"
+        # Strip markdown-style heading markers defensively
+        try:
+            import re
+            feedback = re.sub(r'(?m)^\s*#{1,6}\s*', '', feedback)
+            feedback = feedback.replace('Rubric:', 'Quick check:')
+        except Exception:
+            pass
+        if len(feedback) > 6000:
+            feedback = feedback[:6000].rstrip() + "…"
 
         return jsonify({'success': True, 'data': {'feedback': feedback}})
     except ApiError as ae:
@@ -11985,8 +12000,9 @@ def add_virtual_tutor_comment(email):
         comment = (payload.get('comment') or payload.get('feedback') or '').strip()
         if not comment:
             return jsonify({'success': False, 'error': 'comment is required'}), 400
-        if len(comment) > 2000:
-            return jsonify({'success': False, 'error': 'comment is too long (max 2000 chars)'}), 400
+        # Virtual Tutor feedback can be longer than staff comments; keep it readable but allow more room.
+        if len(comment) > 6000:
+            return jsonify({'success': False, 'error': 'comment is too long (max 6000 chars)'}), 400
 
         existing = supabase_client.table('ucas_applications')\
             .select('*')\
