@@ -11640,7 +11640,8 @@ def get_ucas_application(email):
                     'answers': row.get('answers') or {},
                     'selectedCourseKey': row.get('selected_course_key'),
                     'requirementsByCourse': row.get('requirements_by_course') or {},
-                    'staffComments': row.get('staff_comments') or []
+                    'staffComments': row.get('staff_comments') or [],
+                    'statementCompletedAt': row.get('statement_completed_at') or None
                 }
             }
 
@@ -11740,6 +11741,93 @@ def save_ucas_application(email):
 
     except Exception as e:
         app.logger.error(f"[UCAS Application] Error in save_ucas_application: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/academic-profile/<email>/ucas-application/mark-complete', methods=['POST'])
+def mark_ucas_statement_complete(email):
+    """
+    Student marks their UCAS personal statement complete.
+    This is separate from the teacher reference workflow.
+    Best-effort: triggers email notification to UCAS admins for the establishment.
+    """
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not _is_student_request():
+            return jsonify({'success': False, 'error': 'Only students can mark complete'}), 403
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+        now_iso = datetime.utcnow().isoformat()
+
+        # Upsert UCAS application row (in case student marks complete before first save)
+        wrote_db = True
+        try:
+            existing = supabase_client.table('ucas_applications')\
+                .select('id')\
+                .eq('student_email', email)\
+                .eq('academic_year', academic_year)\
+                .order('updated_at', desc=True)\
+                .limit(1)\
+                .execute()
+
+            if existing and existing.data:
+                row_id = existing.data[0]['id']
+                supabase_client.table('ucas_applications').update({
+                    'statement_completed_at': now_iso,
+                    'statement_completed_by': email,
+                    'updated_at': now_iso
+                }).eq('id', row_id).execute()
+            else:
+                supabase_client.table('ucas_applications').insert({
+                    'student_email': email,
+                    'academic_year': academic_year,
+                    'answers': {},
+                    'requirements_by_course': {},
+                    'staff_comments': [],
+                    'statement_completed_at': now_iso,
+                    'statement_completed_by': email,
+                    'updated_at': now_iso
+                }).execute()
+        except Exception as write_err:
+            wrote_db = False
+            app.logger.warning(f"[UCAS Application] Could not persist statement completion (schema missing?): {write_err}")
+
+        # Clear cache
+        if CACHE_ENABLED:
+            try:
+                cache_key = f'ucas_application:{email}:{academic_year}'
+                redis_client.delete(cache_key)
+            except Exception as cache_error:
+                app.logger.warning(f"[UCAS Application] Cache clear error (mark-complete): {cache_error}")
+
+        # Best-effort notifications (admins configured per establishment)
+        try:
+            est_id = _get_establishment_id_for_student(email, academic_year)
+            admin_emails = []
+            if est_id:
+                s = supabase_client.table('establishment_settings').select('ucas_reference_admin_emails').eq('establishment_id', est_id).limit(1).execute()
+                if s and s.data:
+                    admin_emails = s.data[0].get('ucas_reference_admin_emails') or []
+                    if isinstance(admin_emails, str):
+                        admin_emails = []
+            for a in (admin_emails or []):
+                _send_email_sendgrid(
+                    str(a).strip(),
+                    f"UCAS personal statement marked complete: {email}",
+                    f"The student has marked their UCAS personal statement complete.\nStudent: {email}\nAcademic year: {academic_year}"
+                )
+        except Exception as notify_err:
+            app.logger.info(f"[UCAS Application] Notify skipped: {notify_err}")
+
+        out = {'success': True, 'data': {'statementCompletedAt': now_iso}}
+        if not wrote_db:
+            out['warning'] = 'Could not persist completion flag (missing DB columns?).'
+        return jsonify(out)
+    except Exception as e:
+        app.logger.error(f"[UCAS Application] mark-complete error: {e}")
         app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -12126,9 +12214,31 @@ def _get_or_create_student_reference(student_email: str, academic_year: str):
     return (existing.data[0] if existing and existing.data else None)
 
 def _send_email_sendgrid(to_email: str, subject: str, body_text: str):
-    # Optional. If not configured, we just log.
+    """Best-effort SendGrid email helper (returns True/False)."""
     if not SENDGRID_API_KEY or not SENDGRID_FROM_EMAIL:
         app.logger.info(f"[UCAS Reference] Email not configured; would send to={to_email} subject={subject}")
+        return False
+
+    try:
+        url = 'https://api.sendgrid.com/v3/mail/send'
+        payload = {
+            "personalizations": [{"to": [{"email": to_email}]}],
+            "from": {"email": SENDGRID_FROM_EMAIL},
+            "subject": subject,
+            "content": [{"type": "text/plain", "value": body_text}],
+        }
+        r = requests.post(
+            url,
+            headers={"Authorization": f"Bearer {SENDGRID_API_KEY}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=15
+        )
+        if r.status_code in (200, 202):
+            return True
+        app.logger.warning(f"[UCAS Reference] SendGrid failed status={r.status_code} body={r.text[:200]}")
+        return False
+    except Exception as e:
+        app.logger.warning(f"[UCAS Reference] SendGrid error: {e}")
         return False
 
 @app.route('/reference-contribution', methods=['GET'])
@@ -12159,22 +12269,6 @@ def reference_contribution_page():
     except Exception as e:
         app.logger.error(f"[UCAS Reference] reference_contribution_page error: {e}")
         return Response("Error loading page", status=500, mimetype='text/plain')
-    try:
-        url = 'https://api.sendgrid.com/v3/mail/send'
-        payload = {
-            "personalizations": [{"to": [{"email": to_email}]}],
-            "from": {"email": SENDGRID_FROM_EMAIL},
-            "subject": subject,
-            "content": [{"type": "text/plain", "value": body_text}],
-        }
-        r = requests.post(url, headers={"Authorization": f"Bearer {SENDGRID_API_KEY}", "Content-Type": "application/json"}, json=payload, timeout=15)
-        if r.status_code in (200, 202):
-            return True
-        app.logger.warning(f"[UCAS Reference] SendGrid failed status={r.status_code} body={r.text[:200]}")
-        return False
-    except Exception as e:
-        app.logger.warning(f"[UCAS Reference] SendGrid error: {e}")
-        return False
 
 @app.route('/api/academic-profile/<email>/reference/status', methods=['GET'])
 def get_reference_status(email):
@@ -12231,14 +12325,115 @@ def get_reference_status(email):
         app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/academic-profile/<email>/reference/mark-complete', methods=['POST'])
-def mark_reference_complete(email):
-    """Student marks their application complete; triggers notifications (optional)."""
+@app.route('/api/academic-profile/<email>/reference/full', methods=['GET'])
+def get_reference_full(email):
+    """Staff-only: fetch full teacher reference (including section text + contributions)."""
     try:
         if not SUPABASE_ENABLED:
             return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
-        if not _is_student_request():
-            return jsonify({'success': False, 'error': 'Only students can mark complete'}), 403
+        if not _is_staff_request():
+            return jsonify({'success': False, 'error': 'Only staff can view full reference'}), 403
+
+        academic_year = request.args.get('academic_year') or request.args.get('academicYear') or 'current'
+        ref = _get_or_create_student_reference(email, academic_year)
+        if not ref:
+            return jsonify({'success': False, 'error': 'Could not create reference'}), 500
+
+        # Invites (same shape as status endpoint)
+        invites = supabase_client.table('reference_invites')\
+            .select('id, teacher_email, teacher_name, subject_key, allowed_sections, expires_at, used_at, revoked_at, created_at')\
+            .eq('reference_id', ref['id'])\
+            .order('created_at', desc=True)\
+            .execute()
+        invite_rows = invites.data if invites and invites.data else []
+        out_invites = []
+        for inv in invite_rows:
+            out_invites.append({
+                'id': inv.get('id'),
+                'teacherEmail': inv.get('teacher_email'),
+                'teacherName': inv.get('teacher_name'),
+                'subjectKey': inv.get('subject_key'),
+                'allowedSections': inv.get('allowed_sections') or [3],
+                'expiresAt': inv.get('expires_at'),
+                'usedAt': inv.get('used_at'),
+                'revokedAt': inv.get('revoked_at'),
+                'status': 'submitted' if inv.get('used_at') else ('revoked' if inv.get('revoked_at') else 'pending')
+            })
+
+        # Centre template (Section 1)
+        section1_text = ''
+        try:
+            est_id = ref.get('establishment_id')
+            if est_id:
+                tmpl = supabase_client.table('reference_center_templates')\
+                    .select('section1_text, updated_at')\
+                    .eq('establishment_id', est_id)\
+                    .eq('academic_year', academic_year)\
+                    .limit(1)\
+                    .execute()
+                if tmpl and tmpl.data:
+                    section1_text = tmpl.data[0].get('section1_text') or ''
+        except Exception:
+            pass
+
+        # Contributions (Section 2/3)
+        contribs = supabase_client.table('reference_contributions')\
+            .select('id, section, subject_key, author_email, author_name, author_type, text, created_at, updated_at')\
+            .eq('reference_id', ref['id'])\
+            .order('updated_at', desc=True)\
+            .execute()
+        contrib_rows = contribs.data if contribs and contribs.data else []
+        sec2 = []
+        sec3 = []
+        for c in contrib_rows:
+            out = {
+                'id': c.get('id'),
+                'section': c.get('section'),
+                'subjectKey': c.get('subject_key'),
+                'authorEmail': c.get('author_email'),
+                'authorName': c.get('author_name'),
+                'authorType': c.get('author_type'),
+                'text': c.get('text') or '',
+                'createdAt': c.get('created_at'),
+                'updatedAt': c.get('updated_at')
+            }
+            if int(c.get('section') or 0) == 2:
+                sec2.append(out)
+            elif int(c.get('section') or 0) == 3:
+                sec3.append(out)
+
+        status = ref.get('status') or 'not_started'
+        if status == 'not_started' and (invite_rows or contrib_rows or (ref.get('student_marked_complete_at') is not None)):
+            status = 'in_progress'
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'referenceId': ref.get('id'),
+                'academicYear': academic_year,
+                'status': status,
+                'studentMarkedCompleteAt': ref.get('student_marked_complete_at'),
+                'finalisedAt': ref.get('finalised_at'),
+                'section1Text': section1_text,
+                'section2': sec2,
+                'section3': sec3,
+                'invites': out_invites,
+                'updatedAt': ref.get('updated_at')
+            }
+        })
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] Full fetch error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/academic-profile/<email>/reference/mark-complete', methods=['POST'])
+def mark_reference_complete(email):
+    """Staff marks teacher reference complete (admin workflow; students cannot)."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not _is_staff_request():
+            return jsonify({'success': False, 'error': 'Only staff can mark reference complete'}), 403
 
         payload = request.get_json() or {}
         academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'

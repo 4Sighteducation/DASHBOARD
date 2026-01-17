@@ -14,6 +14,10 @@ CREATE TABLE IF NOT EXISTS ucas_applications (
   -- Staff comments
   staff_comments JSONB NOT NULL DEFAULT '[]'::jsonb,         -- [{ id, staffEmail, comment, createdAt }]
 
+  -- Student workflow flags
+  statement_completed_at TIMESTAMPTZ,
+  statement_completed_by TEXT,
+
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
