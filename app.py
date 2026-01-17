@@ -4,7 +4,7 @@ import traceback
 import requests
 from datetime import datetime, timedelta
 from types import SimpleNamespace
-from flask import Flask, request, jsonify, send_file, current_app
+from flask import Flask, request, jsonify, send_file, current_app, Response
 from dotenv import load_dotenv
 from flask_cors import CORS # Import CORS
 import logging # Import Python's standard logging
@@ -12130,6 +12130,35 @@ def _send_email_sendgrid(to_email: str, subject: str, body_text: str):
     if not SENDGRID_API_KEY or not SENDGRID_FROM_EMAIL:
         app.logger.info(f"[UCAS Reference] Email not configured; would send to={to_email} subject={subject}")
         return False
+
+@app.route('/reference-contribution', methods=['GET'])
+def reference_contribution_page():
+    """
+    Serve the external teacher contribution page with correct Content-Type.
+
+    NOTE: JSDelivr serves .html as text/plain; serving HTML from Heroku ensures browsers execute it.
+    The JS/CSS assets are still loaded from JSDelivr.
+    """
+    try:
+        # Use @main for simplicity; JSDelivr will serve JS/CSS with correct MIME types.
+        asset_base = "https://cdn.jsdelivr.net/gh/4Sighteducation/VESPA-report-v2@main/reference-contribution/dist"
+        html = f"""<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reference Contribution</title>
+    <link rel="stylesheet" href="{asset_base}/reference-contribution1a-index.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" crossorigin src="{asset_base}/reference-contribution1a.js"></script>
+  </body>
+</html>"""
+        return Response(html, status=200, mimetype='text/html')
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] reference_contribution_page error: {e}")
+        return Response("Error loading page", status=500, mimetype='text/plain')
     try:
         url = 'https://api.sendgrid.com/v3/mail/send'
         payload = {
@@ -12291,7 +12320,8 @@ def create_reference_invite(email):
 
         invite_id = (ins.data[0]['id'] if ins and ins.data else None)
 
-        base = REFERENCE_INVITE_BASE_URL or 'https://cdn.jsdelivr.net/gh/4Sighteducation/VESPA-report-v2@main/reference-contribution/dist/index.html'
+        # Prefer a real HTML page served from Heroku (JSDelivr serves .html as text/plain).
+        base = REFERENCE_INVITE_BASE_URL or (request.host_url.rstrip('/') + '/reference-contribution')
         invite_url = f"{base}?token={raw_token}"
 
         # Optional email send (best-effort)
