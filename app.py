@@ -12426,6 +12426,92 @@ def get_reference_full(email):
         app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/academic-profile/<email>/reference/contribution', methods=['POST'])
+def save_reference_contribution(email):
+    """Staff-only: create/update a single contribution for Section 2 or 3."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not _is_staff_request():
+            return jsonify({'success': False, 'error': 'Only staff can add reference contributions'}), 403
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+
+        section = payload.get('section')
+        try:
+            section = int(section)
+        except Exception:
+            section = None
+        if section not in (2, 3):
+            return jsonify({'success': False, 'error': 'section must be 2 or 3'}), 400
+
+        staff_email = (payload.get('staffEmail') or payload.get('authorEmail') or '').strip().lower()
+        if not staff_email or '@' not in staff_email:
+            return jsonify({'success': False, 'error': 'staffEmail required'}), 400
+
+        author_name = (payload.get('authorName') or '').strip() or None
+        subject_key = (payload.get('subjectKey') or '').strip() or None
+        text = (payload.get('text') or '').strip()
+        if not text:
+            return jsonify({'success': False, 'error': 'text is required'}), 400
+        if len(text) > 4000:
+            return jsonify({'success': False, 'error': 'text is too long (max 4000 chars)'}), 400
+
+        ref = _get_or_create_student_reference(email, academic_year)
+        if not ref:
+            return jsonify({'success': False, 'error': 'Could not create reference'}), 500
+
+        # Find existing contribution by (reference_id, section, author_email, subject_key)
+        try:
+            q = supabase_client.table('reference_contributions')\
+                .select('id, subject_key')\
+                .eq('reference_id', ref['id'])\
+                .eq('section', section)\
+                .eq('author_email', staff_email)\
+                .eq('author_type', 'staff')\
+                .execute()
+            existing_rows = q.data if q and q.data else []
+        except Exception:
+            existing_rows = []
+
+        match_id = None
+        for r in existing_rows:
+            sk = (r.get('subject_key') or '') if r else ''
+            if (sk or None) == (subject_key or None):
+                match_id = r.get('id')
+                break
+
+        now_iso = _now_iso()
+        record = {
+            'reference_id': ref['id'],
+            'section': section,
+            'subject_key': subject_key,
+            'author_email': staff_email,
+            'author_name': author_name,
+            'author_type': 'staff',
+            'text': text,
+            'updated_at': now_iso
+        }
+
+        if match_id:
+            supabase_client.table('reference_contributions').update(record).eq('id', match_id).execute()
+        else:
+            supabase_client.table('reference_contributions').insert(record).execute()
+
+        # Ensure reference status is at least in_progress once staff contribute
+        try:
+            if (ref.get('status') or 'not_started') == 'not_started':
+                supabase_client.table('student_references').update({'status': 'in_progress', 'updated_at': now_iso}).eq('id', ref['id']).execute()
+        except Exception:
+            pass
+
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] save contribution error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/academic-profile/<email>/reference/mark-complete', methods=['POST'])
 def mark_reference_complete(email):
     """Staff marks teacher reference complete (admin workflow; students cannot)."""
