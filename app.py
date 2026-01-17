@@ -10,6 +10,7 @@ from flask_cors import CORS # Import CORS
 import logging # Import Python's standard logging
 from functools import wraps
 import hashlib
+import secrets
 import redis
 import pickle
 import pandas as pd
@@ -12060,6 +12061,400 @@ def add_virtual_tutor_comment(email):
         app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+# =============================================================================
+# UCAS Teacher Reference (3 sections) - Supabase source of truth
+# - Staff in Knack: uses existing portal auth; backend uses role hint headers.
+# - External teachers: token invite links (no Knack auth).
+# =============================================================================
+
+REFERENCE_TOKEN_DEFAULT_TTL_DAYS = int(os.getenv('REFERENCE_TOKEN_TTL_DAYS') or 14)
+REFERENCE_INVITE_BASE_URL = (os.getenv('REFERENCE_INVITE_BASE_URL') or '').strip()  # e.g. jsDelivr URL to Vite app
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
+SENDGRID_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL')
+
+def _is_staff_request():
+    # Best-effort: anything not explicitly student is treated as staff for these endpoints.
+    role_hint = (request.headers.get('X-User-Role') or request.headers.get('x-user-role') or '').strip().lower()
+    return role_hint not in ['student', 'pupil', 'learner']
+
+def _sha256_hex(s: str) -> str:
+    return hashlib.sha256(s.encode('utf-8')).hexdigest()
+
+def _now_iso():
+    return datetime.utcnow().isoformat()
+
+def _get_establishment_id_for_student(student_email: str, academic_year: str):
+    try:
+        q = supabase_client.table('academic_profiles').select('establishment_id').eq('student_email', student_email)
+        if academic_year:
+            q = q.eq('academic_year', academic_year)
+        resp = q.order('updated_at', desc=True).limit(1).execute()
+        if resp and resp.data:
+            return resp.data[0].get('establishment_id')
+    except Exception as e:
+        app.logger.warning(f"[UCAS Reference] Could not infer establishment_id: {e}")
+    return None
+
+def _get_or_create_student_reference(student_email: str, academic_year: str):
+    existing = supabase_client.table('student_references')\
+        .select('*')\
+        .eq('student_email', student_email)\
+        .eq('academic_year', academic_year)\
+        .limit(1)\
+        .execute()
+    if existing and existing.data:
+        return existing.data[0]
+
+    est_id = _get_establishment_id_for_student(student_email, academic_year)
+    ins = supabase_client.table('student_references').insert({
+        'student_email': student_email,
+        'academic_year': academic_year,
+        'establishment_id': est_id,
+        'status': 'not_started',
+        'updated_at': _now_iso()
+    }).execute()
+    if ins and ins.data:
+        return ins.data[0]
+    # Fall back to refetch
+    existing = supabase_client.table('student_references')\
+        .select('*')\
+        .eq('student_email', student_email)\
+        .eq('academic_year', academic_year)\
+        .limit(1)\
+        .execute()
+    return (existing.data[0] if existing and existing.data else None)
+
+def _send_email_sendgrid(to_email: str, subject: str, body_text: str):
+    # Optional. If not configured, we just log.
+    if not SENDGRID_API_KEY or not SENDGRID_FROM_EMAIL:
+        app.logger.info(f"[UCAS Reference] Email not configured; would send to={to_email} subject={subject}")
+        return False
+    try:
+        url = 'https://api.sendgrid.com/v3/mail/send'
+        payload = {
+            "personalizations": [{"to": [{"email": to_email}]}],
+            "from": {"email": SENDGRID_FROM_EMAIL},
+            "subject": subject,
+            "content": [{"type": "text/plain", "value": body_text}],
+        }
+        r = requests.post(url, headers={"Authorization": f"Bearer {SENDGRID_API_KEY}", "Content-Type": "application/json"}, json=payload, timeout=15)
+        if r.status_code in (200, 202):
+            return True
+        app.logger.warning(f"[UCAS Reference] SendGrid failed status={r.status_code} body={r.text[:200]}")
+        return False
+    except Exception as e:
+        app.logger.warning(f"[UCAS Reference] SendGrid error: {e}")
+        return False
+
+@app.route('/api/academic-profile/<email>/reference/status', methods=['GET'])
+def get_reference_status(email):
+    """Student-safe status endpoint (no reference text)."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        academic_year = request.args.get('academic_year') or request.args.get('academicYear') or 'current'
+        ref = _get_or_create_student_reference(email, academic_year)
+        if not ref:
+            return jsonify({'success': False, 'error': 'Could not create reference'}), 500
+
+        invites = supabase_client.table('reference_invites')\
+            .select('id, teacher_email, teacher_name, subject_key, allowed_sections, expires_at, used_at, revoked_at, created_at')\
+            .eq('reference_id', ref['id'])\
+            .order('created_at', desc=True)\
+            .execute()
+
+        invite_rows = invites.data if invites and invites.data else []
+        out_invites = []
+        for inv in invite_rows:
+            out_invites.append({
+                'id': inv.get('id'),
+                'teacherEmail': inv.get('teacher_email'),
+                'teacherName': inv.get('teacher_name'),
+                'subjectKey': inv.get('subject_key'),
+                'allowedSections': inv.get('allowed_sections') or [3],
+                'expiresAt': inv.get('expires_at'),
+                'usedAt': inv.get('used_at'),
+                'revokedAt': inv.get('revoked_at'),
+                'status': 'submitted' if inv.get('used_at') else ('revoked' if inv.get('revoked_at') else 'pending')
+            })
+
+        # Derive progress: not_started -> in_progress when any contribution exists or any invite exists
+        status = ref.get('status') or 'not_started'
+        if status == 'not_started' and (invite_rows or (ref.get('student_marked_complete_at') is not None)):
+            status = 'in_progress'
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'referenceId': ref.get('id'),
+                'academicYear': academic_year,
+                'status': status,
+                'studentMarkedCompleteAt': ref.get('student_marked_complete_at'),
+                'finalisedAt': ref.get('finalised_at'),
+                'invites': out_invites,
+                'updatedAt': ref.get('updated_at')
+            }
+        })
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] Status error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/academic-profile/<email>/reference/mark-complete', methods=['POST'])
+def mark_reference_complete(email):
+    """Student marks their application complete; triggers notifications (optional)."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not _is_student_request():
+            return jsonify({'success': False, 'error': 'Only students can mark complete'}), 403
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+
+        ref = _get_or_create_student_reference(email, academic_year)
+        if not ref:
+            return jsonify({'success': False, 'error': 'Could not create reference'}), 500
+
+        supabase_client.table('student_references').update({
+            'status': 'completed',
+            'student_marked_complete_at': datetime.utcnow().isoformat(),
+            'updated_at': _now_iso()
+        }).eq('id', ref['id']).execute()
+
+        # Optional notifications: email UCAS admins + invited teachers (best-effort)
+        try:
+            est_id = ref.get('establishment_id')
+            admin_emails = []
+            if est_id:
+                s = supabase_client.table('establishment_settings').select('ucas_reference_admin_emails').eq('establishment_id', est_id).limit(1).execute()
+                if s and s.data:
+                    admin_emails = s.data[0].get('ucas_reference_admin_emails') or []
+                    if isinstance(admin_emails, str):
+                        admin_emails = []
+            # notify admins
+            for a in (admin_emails or []):
+                _send_email_sendgrid(str(a).strip(), f"UCAS reference ready: {email}", f"The student has marked their UCAS application complete.\nStudent: {email}\nAcademic year: {academic_year}")
+        except Exception as notify_err:
+            app.logger.info(f"[UCAS Reference] Notify skipped: {notify_err}")
+
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] mark-complete error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/academic-profile/<email>/reference/invite', methods=['POST'])
+def create_reference_invite(email):
+    """Student (or staff) invites a teacher by email. Returns a token URL."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        # Students can create invites; staff can too (rare case).
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+        teacher_email = (payload.get('teacherEmail') or '').strip().lower()
+        teacher_name = (payload.get('teacherName') or '').strip() or None
+        subject_key = (payload.get('subjectKey') or '').strip() or None
+        allowed_sections = payload.get('allowedSections') or [3]
+        if not isinstance(allowed_sections, list) or not allowed_sections:
+            allowed_sections = [3]
+        allowed_sections = [int(x) for x in allowed_sections if str(x).isdigit()]
+        allowed_sections = [x for x in allowed_sections if x in (2, 3)]
+        if not allowed_sections:
+            allowed_sections = [3]
+
+        if not teacher_email or '@' not in teacher_email:
+            return jsonify({'success': False, 'error': 'Valid teacherEmail required'}), 400
+
+        ref = _get_or_create_student_reference(email, academic_year)
+        if not ref:
+            return jsonify({'success': False, 'error': 'Could not create reference'}), 500
+
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = _sha256_hex(raw_token)
+        expires_at = (datetime.utcnow() + timedelta(days=REFERENCE_TOKEN_DEFAULT_TTL_DAYS)).isoformat()
+
+        ins = supabase_client.table('reference_invites').insert({
+            'reference_id': ref['id'],
+            'teacher_email': teacher_email,
+            'teacher_name': teacher_name,
+            'subject_key': subject_key,
+            'allowed_sections': allowed_sections,
+            'token_hash': token_hash,
+            'expires_at': expires_at,
+            'created_by': (payload.get('createdBy') or None),
+        }).execute()
+
+        invite_id = (ins.data[0]['id'] if ins and ins.data else None)
+
+        base = REFERENCE_INVITE_BASE_URL or 'https://cdn.jsdelivr.net/gh/4Sighteducation/VESPA-report-v2@main/reference-contribution/dist/index.html'
+        invite_url = f"{base}?token={raw_token}"
+
+        # Optional email send (best-effort)
+        _send_email_sendgrid(
+            teacher_email,
+            "UCAS reference request",
+            f"You have been invited to add a UCAS reference contribution.\n\nStudent: {email}\nAcademic year: {academic_year}\n\nOpen link:\n{invite_url}\n\nThis link expires in {REFERENCE_TOKEN_DEFAULT_TTL_DAYS} days."
+        )
+
+        return jsonify({'success': True, 'data': {'inviteId': invite_id, 'inviteUrl': invite_url, 'expiresAt': expires_at}})
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] Invite error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/reference/invite/<token>', methods=['GET'])
+def get_reference_invite(token):
+    """External teacher validates invite token (no Knack auth)."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not token:
+            return jsonify({'success': False, 'error': 'token required'}), 400
+        token_hash = _sha256_hex(token)
+        inv = supabase_client.table('reference_invites').select('*').eq('token_hash', token_hash).limit(1).execute()
+        if not inv or not inv.data:
+            return jsonify({'success': False, 'error': 'Invite not found'}), 404
+        row = inv.data[0]
+        if row.get('revoked_at'):
+            return jsonify({'success': False, 'error': 'Invite revoked'}), 410
+        exp = row.get('expires_at')
+        if exp:
+            try:
+                if datetime.fromisoformat(exp.replace('Z', '+00:00')) < datetime.utcnow().replace(tzinfo=None):
+                    return jsonify({'success': False, 'error': 'Invite expired'}), 410
+            except Exception:
+                pass
+
+        # Pull a little student context for UX
+        student_email = None
+        academic_year = None
+        ref = None
+        try:
+            ref_id = row.get('reference_id')
+            ref_resp = supabase_client.table('student_references').select('*').eq('id', ref_id).limit(1).execute()
+            if ref_resp and ref_resp.data:
+                ref = ref_resp.data[0]
+                student_email = ref.get('student_email')
+                academic_year = ref.get('academic_year')
+        except Exception:
+            pass
+
+        student_name = None
+        try:
+            if student_email:
+                q = supabase_client.table('academic_profiles').select('student_name').eq('student_email', student_email)
+                if academic_year:
+                    q = q.eq('academic_year', academic_year)
+                pr = q.order('updated_at', desc=True).limit(1).execute()
+                if pr and pr.data:
+                    student_name = pr.data[0].get('student_name')
+        except Exception:
+            pass
+
+        return jsonify({'success': True, 'data': {
+            'inviteId': row.get('id'),
+            'teacherEmail': row.get('teacher_email'),
+            'teacherName': row.get('teacher_name'),
+            'subjectKey': row.get('subject_key'),
+            'allowedSections': row.get('allowed_sections') or [3],
+            'expiresAt': row.get('expires_at'),
+            'usedAt': row.get('used_at'),
+            'referenceId': row.get('reference_id'),
+            'studentEmail': student_email,
+            'studentName': student_name,
+            'academicYear': academic_year
+        }})
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] Invite GET error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/reference/invite/<token>/submit', methods=['POST'])
+def submit_reference_invite(token):
+    """External teacher submits contribution via invite token (no Knack auth)."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not token:
+            return jsonify({'success': False, 'error': 'token required'}), 400
+
+        token_hash = _sha256_hex(token)
+        inv = supabase_client.table('reference_invites').select('*').eq('token_hash', token_hash).limit(1).execute()
+        if not inv or not inv.data:
+            return jsonify({'success': False, 'error': 'Invite not found'}), 404
+        row = inv.data[0]
+        if row.get('revoked_at'):
+            return jsonify({'success': False, 'error': 'Invite revoked'}), 410
+
+        payload = request.get_json() or {}
+        section = payload.get('section')
+        try:
+            section = int(section)
+        except Exception:
+            section = None
+        if section not in (2, 3):
+            return jsonify({'success': False, 'error': 'section must be 2 or 3'}), 400
+
+        allowed = row.get('allowed_sections') or [3]
+        if isinstance(allowed, list) and section not in [int(x) for x in allowed if str(x).isdigit()]:
+            return jsonify({'success': False, 'error': 'section not allowed for this invite'}), 403
+
+        text = (payload.get('text') or payload.get('comment') or '').strip()
+        if not text:
+            return jsonify({'success': False, 'error': 'text is required'}), 400
+        if len(text) > 4000:
+            return jsonify({'success': False, 'error': 'text is too long (max 4000 chars)'}), 400
+
+        teacher_email = (row.get('teacher_email') or '').strip().lower()
+        teacher_name = (payload.get('authorName') or payload.get('teacherName') or row.get('teacher_name') or '').strip() or None
+        subject_key = row.get('subject_key')
+        ref_id = row.get('reference_id')
+
+        # Upsert by (reference_id, section, subject_key, author_email, author_type)
+        existing = supabase_client.table('reference_contributions')\
+            .select('id')\
+            .eq('reference_id', ref_id)\
+            .eq('section', section)\
+            .eq('author_email', teacher_email)\
+            .eq('author_type', 'invited_teacher')\
+            .execute()
+        if existing and existing.data:
+            cid = existing.data[0]['id']
+            supabase_client.table('reference_contributions').update({
+                'text': text,
+                'author_name': teacher_name,
+                'subject_key': subject_key,
+                'updated_at': _now_iso()
+            }).eq('id', cid).execute()
+        else:
+            supabase_client.table('reference_contributions').insert({
+                'reference_id': ref_id,
+                'section': section,
+                'subject_key': subject_key,
+                'author_email': teacher_email,
+                'author_name': teacher_name,
+                'author_type': 'invited_teacher',
+                'text': text,
+                'updated_at': _now_iso()
+            }).execute()
+
+        # Mark invite used and bump reference status
+        supabase_client.table('reference_invites').update({'used_at': _now_iso()}).eq('id', row.get('id')).execute()
+        try:
+            supabase_client.table('student_references').update({'status': 'in_progress', 'updated_at': _now_iso()}).eq('id', ref_id).execute()
+        except Exception:
+            pass
+
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] Invite submit error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/academic-profile/sync', methods=['POST'])
 def sync_academic_profile():
