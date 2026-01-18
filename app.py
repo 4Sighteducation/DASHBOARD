@@ -197,10 +197,19 @@ else:
     app.logger.warning("Supabase credentials not found in environment variables")
 
 # --- Explicit CORS Configuration ---
-# Allow requests from your specific Knack domain and potentially localhost for development
+# Allow requests from Knack + local dev + teacher inbox custom domain
+ALLOWED_CORS_ORIGINS = [
+    "https://vespaacademy.knack.com",
+    "https://references.vespa.academy",
+    "https://vespa-dashboard-9a1f84ee5341.herokuapp.com",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "null",  # file:// testing
+]
+
 # Updated CORS configuration with explicit settings
 CORS(app, 
-     resources={r"/api/*": {"origins": ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]}},
+     resources={r"/api/*": {"origins": ALLOWED_CORS_ORIGINS}},
      supports_credentials=True,
      allow_headers=[
          'Content-Type', 'Authorization', 'X-Requested-With',
@@ -218,9 +227,9 @@ def after_request(response):
     app.logger.info(f"Request Origin: {origin}")
     
     # List of allowed origins
-    allowed_origins = ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]  # Added "null" for file:// testing
+    allowed_origins = ALLOWED_CORS_ORIGINS
     
-    if origin in allowed_origins:
+    if origin and origin in allowed_origins:
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-Knack-Application-Id, X-Knack-REST-API-Key, x-knack-application-id, x-knack-rest-api-key, X-User-Role, x-user-role, X-User-Email, x-user-email, X-User-Id, x-user-id, X-Establishment-Id, x-establishment-id'
