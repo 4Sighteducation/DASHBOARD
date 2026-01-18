@@ -12891,7 +12891,8 @@ def save_reference_contribution(email):
             return jsonify({'success': False, 'error': 'staffEmail required'}), 400
 
         author_name = (payload.get('authorName') or '').strip() or None
-        subject_key = (payload.get('subjectKey') or '').strip() or None
+        # Treat missing subject as a stable "General" bucket so we can de-duplicate invites reliably.
+        subject_key = (payload.get('subjectKey') or '').strip() or 'General'
         text = (payload.get('text') or '').strip()
         if not text:
             return jsonify({'success': False, 'error': 'text is required'}), 400
