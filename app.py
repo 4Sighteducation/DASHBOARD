@@ -12348,11 +12348,11 @@ def reference_inbox_page():
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Teacher Reference Inbox</title>
-    <link rel="stylesheet" href="{asset_base}/reference-inbox1a-index.css" />
+    <link rel="stylesheet" href="{asset_base}/reference-inbox1b-index.css" />
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" crossorigin src="{asset_base}/reference-inbox1a.js"></script>
+    <script type="module" crossorigin src="{asset_base}/reference-inbox1b.js"></script>
   </body>
 </html>"""
         return Response(html, status=200, mimetype='text/html')
@@ -13342,6 +13342,128 @@ def get_reference_invite_inbox(token):
         return jsonify({'success': True, 'data': {'teacherEmail': teacher_email, 'teacherName': teacher_name, 'inboxUrl': inbox_url, 'invites': out}})
     except Exception as e:
         app.logger.error(f"[UCAS Reference] Inbox error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/reference/invite/<token>/student-statement', methods=['GET'])
+def get_reference_student_statement(token):
+    """External teacher (token auth): fetch student UCAS statement (read-only) for a specific inviteId."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not token:
+            return jsonify({'success': False, 'error': 'token required'}), 400
+
+        invite_id = (request.args.get('inviteId') or request.args.get('id') or '').strip()
+        if not invite_id:
+            return jsonify({'success': False, 'error': 'inviteId is required'}), 400
+
+        # Validate token -> teacher identity
+        token_hash = _sha256_hex(token)
+        inv = supabase_client.table('reference_invites').select('*').eq('token_hash', token_hash).limit(1).execute()
+        if not inv or not inv.data:
+            return jsonify({'success': False, 'error': 'Invite not found'}), 404
+        row = inv.data[0]
+        if row.get('revoked_at'):
+            return jsonify({'success': False, 'error': 'Invite revoked'}), 410
+        exp = row.get('expires_at')
+        if exp:
+            try:
+                if datetime.fromisoformat(exp.replace('Z', '+00:00')) < datetime.utcnow().replace(tzinfo=None):
+                    return jsonify({'success': False, 'error': 'Invite expired'}), 410
+            except Exception:
+                pass
+
+        teacher_email = (row.get('teacher_email') or '').strip().lower()
+        if not teacher_email:
+            return jsonify({'success': False, 'error': 'Invite missing teacher email'}), 500
+
+        # Load the target invite and ensure it belongs to this teacher
+        tgt = supabase_client.table('reference_invites')\
+            .select('id, reference_id, teacher_email, subject_key, expires_at, revoked_at')\
+            .eq('id', invite_id)\
+            .limit(1)\
+            .execute()
+        if not tgt or not tgt.data:
+            return jsonify({'success': False, 'error': 'Invite not found'}), 404
+        target = tgt.data[0]
+        if (target.get('teacher_email') or '').strip().lower() != teacher_email:
+            return jsonify({'success': False, 'error': 'Not authorized for this invite'}), 403
+        if target.get('revoked_at'):
+            return jsonify({'success': False, 'error': 'Invite revoked'}), 410
+        exp2 = target.get('expires_at')
+        if exp2:
+            try:
+                if datetime.fromisoformat(exp2.replace('Z', '+00:00')) < datetime.utcnow().replace(tzinfo=None):
+                    return jsonify({'success': False, 'error': 'Invite expired'}), 410
+            except Exception:
+                pass
+
+        ref_id = target.get('reference_id')
+        if not ref_id:
+            return jsonify({'success': False, 'error': 'Invite missing referenceId'}), 500
+
+        # Load student identity + academic year via student_references
+        student_email = None
+        academic_year = None
+        try:
+            ref_resp = supabase_client.table('student_references')\
+                .select('student_email, academic_year')\
+                .eq('id', ref_id)\
+                .limit(1)\
+                .execute()
+            if ref_resp and ref_resp.data:
+                student_email = (ref_resp.data[0].get('student_email') or '').strip().lower()
+                academic_year = ref_resp.data[0].get('academic_year')
+        except Exception:
+            pass
+
+        if not student_email:
+            return jsonify({'success': False, 'error': 'Student not found for this invite'}), 404
+
+        # Student name (best-effort)
+        student_name = None
+        try:
+            q = supabase_client.table('academic_profiles').select('student_name').eq('student_email', student_email)
+            if academic_year:
+                q = q.eq('academic_year', academic_year)
+            pr = q.order('updated_at', desc=True).limit(1).execute()
+            if pr and pr.data:
+                student_name = pr.data[0].get('student_name')
+        except Exception:
+            pass
+
+        # UCAS application (read-only)
+        answers = {'q1': '', 'q2': '', 'q3': ''}
+        statement_completed_at = None
+        try:
+            aq = supabase_client.table('ucas_applications')\
+                .select('answers, statement_completed_at, updated_at')\
+                .eq('student_email', student_email)
+            if academic_year:
+                aq = aq.eq('academic_year', academic_year)
+            app_resp = aq.order('updated_at', desc=True).limit(1).execute()
+            if app_resp and app_resp.data:
+                rowa = app_resp.data[0] or {}
+                raw = rowa.get('answers') or {}
+                if isinstance(raw, dict):
+                    answers['q1'] = str(raw.get('q1') or '')
+                    answers['q2'] = str(raw.get('q2') or '')
+                    answers['q3'] = str(raw.get('q3') or '')
+                statement_completed_at = rowa.get('statement_completed_at')
+        except Exception:
+            pass
+
+        return jsonify({'success': True, 'data': {
+            'studentEmail': student_email,
+            'studentName': student_name,
+            'academicYear': academic_year,
+            'answers': answers,
+            'statementCompletedAt': statement_completed_at
+        }})
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] student-statement error: {e}")
         app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
