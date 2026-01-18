@@ -11847,6 +11847,77 @@ def mark_ucas_statement_complete(email):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/academic-profile/<email>/ucas-application/request-edits', methods=['POST'])
+def request_ucas_statement_edits(email):
+    """
+    Staff/Admin requests further edits to the student's UCAS personal statement.
+    - Clears statement_completed_at so it becomes "In progress" again
+    - Best-effort: emails the student with a link to log in and continue editing
+    """
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        # Staff-only (students cannot request edits on themselves via this route)
+        role_hint = (request.headers.get('X-User-Role') or request.headers.get('x-user-role') or '').strip().lower()
+        if role_hint in ['student', 'pupil', 'learner']:
+            return jsonify({'success': False, 'error': 'Only staff can request edits'}), 403
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+        now_iso = datetime.utcnow().isoformat()
+
+        # Update latest row if present
+        existing = supabase_client.table('ucas_applications')\
+            .select('id')\
+            .eq('student_email', email)\
+            .eq('academic_year', academic_year)\
+            .order('updated_at', desc=True)\
+            .limit(1)\
+            .execute()
+
+        if existing and existing.data:
+            row_id = existing.data[0]['id']
+            supabase_client.table('ucas_applications').update({
+                'statement_completed_at': None,
+                'statement_completed_by': None,
+                'updated_at': now_iso
+            }).eq('id', row_id).execute()
+        else:
+            # If no record exists, nothing to unmark; still return success so UX isn't confusing
+            pass
+
+        # Clear cache
+        if CACHE_ENABLED:
+            try:
+                cache_key = f'ucas_application:{email}:{academic_year}'
+                redis_client.delete(cache_key)
+            except Exception as cache_error:
+                app.logger.warning(f"[UCAS Application] Cache clear error (request-edits): {cache_error}")
+
+        # Best-effort: email student
+        try:
+            portal_url = os.getenv('VESPA_PORTAL_URL') or 'https://vespa.academy'
+            login_url = portal_url
+            _send_email_sendgrid(
+                str(email).strip(),
+                'UCAS personal statement: further edits requested',
+                (
+                    "Your tutor has requested further edits to your UCAS personal statement.\n\n"
+                    f"Please log in here: {login_url}\n\n"
+                    f"Academic year: {academic_year}\n"
+                )
+            )
+        except Exception as notify_err:
+            app.logger.info(f"[UCAS Application] Student notify skipped: {notify_err}")
+
+        return jsonify({'success': True, 'data': {'statementCompletedAt': None, 'updatedAt': now_iso}})
+    except Exception as e:
+        app.logger.error(f"[UCAS Application] request-edits error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/academic-profile/<email>/ucas-application/comment', methods=['POST'])
 def add_ucas_application_comment(email):
     """
