@@ -13077,7 +13077,8 @@ def create_reference_invite(email):
         contribution_url = f"{base}?token={raw_token}"
 
         # Optional email send (best-effort)
-        email_sent = True
+        email_sent = False
+        email_status = "not_attempted"
         try:
             # Throttle email sends (reduces teacher inbox spam).
             should_send = True
@@ -13087,14 +13088,13 @@ def create_reference_invite(email):
                     existing = redis_client.get(throttle_key)
                     if existing:
                         should_send = False
-                    else:
-                        redis_client.setex(throttle_key, REFERENCE_INVITE_EMAIL_THROTTLE_HOURS * 3600, b"1")
                 except Exception:
                     # If cache fails, fall back to sending.
                     should_send = True
 
             if should_send:
-                _send_email_sendgrid(
+                email_status = "attempted"
+                send_ok = _send_email_sendgrid(
                     teacher_email,
                     "UCAS reference request",
                     "\n".join([
@@ -13109,12 +13109,30 @@ def create_reference_invite(email):
                         f"This link expires in {REFERENCE_TOKEN_DEFAULT_TTL_DAYS} days."
                     ])
                 )
+                if send_ok:
+                    email_sent = True
+                    email_status = "sent"
+                    # Only throttle *after* a successful send.
+                    if CACHE_ENABLED and redis_client:
+                        try:
+                            redis_client.setex(
+                                throttle_key,
+                                REFERENCE_INVITE_EMAIL_THROTTLE_HOURS * 3600,
+                                b"1"
+                            )
+                        except Exception:
+                            pass
+                else:
+                    email_sent = False
+                    email_status = "send_failed_or_not_configured"
             else:
                 email_sent = False
+                email_status = "throttled"
         except Exception:
             email_sent = False
+            email_status = "error"
 
-        return jsonify({'success': True, 'data': {'inviteId': invite_id, 'inviteUrl': inbox_url, 'contributionUrl': contribution_url, 'inboxUrl': inbox_url, 'emailSent': email_sent, 'expiresAt': expires_at}})
+        return jsonify({'success': True, 'data': {'inviteId': invite_id, 'inviteUrl': inbox_url, 'contributionUrl': contribution_url, 'inboxUrl': inbox_url, 'emailSent': email_sent, 'emailStatus': email_status, 'expiresAt': expires_at}})
     except Exception as e:
         app.logger.error(f"[UCAS Reference] Invite error: {e}")
         app.logger.error(traceback.format_exc())
