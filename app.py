@@ -13090,11 +13090,16 @@ def create_reference_invite(email):
         email_sent = False
         email_status = "not_attempted"
         try:
-            # Throttle email sends (reduces teacher inbox spam).
+            # Throttle email sends (reduces spam from repeated clicks),
+            # but allow separate notifications per student/subject.
             should_send = True
             if CACHE_ENABLED and redis_client:
                 try:
-                    throttle_key = f"ucas_ref_invite_email_sent:{teacher_email}"
+                    # Keyed by teacher+student+academicYear+subject so teachers can still
+                    # receive emails for different students, while preventing repeated sends
+                    # for the same invite context.
+                    throttle_sig = f"{teacher_email}|{email}|{academic_year}|{subject_key or ''}"
+                    throttle_key = f"ucas_ref_invite_email_sent:{_sha256_hex(throttle_sig)}"
                     existing = redis_client.get(throttle_key)
                     if existing:
                         should_send = False
