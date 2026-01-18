@@ -12348,11 +12348,11 @@ def reference_inbox_page():
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Teacher Reference Inbox</title>
-    <link rel="stylesheet" href="{asset_base}/reference-inbox1b-index.css" />
+    <link rel="stylesheet" href="{asset_base}/reference-inbox1c-index.css" />
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" crossorigin src="{asset_base}/reference-inbox1b.js"></script>
+    <script type="module" crossorigin src="{asset_base}/reference-inbox1c.js"></script>
   </body>
 </html>"""
         return Response(html, status=200, mimetype='text/html')
