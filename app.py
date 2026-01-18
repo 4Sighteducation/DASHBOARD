@@ -202,7 +202,13 @@ else:
 CORS(app, 
      resources={r"/api/*": {"origins": ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]}},
      supports_credentials=True,
-     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'X-Knack-Application-Id', 'X-Knack-REST-API-Key', 'x-knack-application-id', 'x-knack-rest-api-key', 'X-User-Role', 'x-user-role'],
+     allow_headers=[
+         'Content-Type', 'Authorization', 'X-Requested-With',
+         'X-Knack-Application-Id', 'X-Knack-REST-API-Key', 'x-knack-application-id', 'x-knack-rest-api-key',
+         'X-User-Role', 'x-user-role',
+         'X-User-Email', 'x-user-email', 'X-User-Id', 'x-user-id',
+         'X-Establishment-Id', 'x-establishment-id'
+     ],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 # Add explicit CORS headers to all responses (belt and suspenders approach)
@@ -217,7 +223,7 @@ def after_request(response):
     if origin in allowed_origins:
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-Knack-Application-Id, X-Knack-REST-API-Key, x-knack-application-id, x-knack-rest-api-key, X-User-Role, x-user-role'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-Knack-Application-Id, X-Knack-REST-API-Key, x-knack-application-id, x-knack-rest-api-key, X-User-Role, x-user-role, X-User-Email, x-user-email, X-User-Id, x-user-id, X-Establishment-Id, x-establishment-id'
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         response.headers['Access-Control-Max-Age'] = '3600'
     
@@ -12158,6 +12164,8 @@ def add_virtual_tutor_comment(email):
 
 REFERENCE_TOKEN_DEFAULT_TTL_DAYS = int(os.getenv('REFERENCE_TOKEN_TTL_DAYS') or 14)
 REFERENCE_INVITE_BASE_URL = (os.getenv('REFERENCE_INVITE_BASE_URL') or '').strip()  # e.g. jsDelivr URL to Vite app
+REFERENCE_INBOX_BASE_URL = (os.getenv('REFERENCE_INBOX_BASE_URL') or '').strip()  # e.g. https://<heroku>/reference-inbox
+REFERENCE_INVITE_EMAIL_THROTTLE_HOURS = int(os.getenv('REFERENCE_INVITE_EMAIL_THROTTLE_HOURS') or 24)
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 SENDGRID_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL')
 
@@ -12241,6 +12249,59 @@ def _send_email_sendgrid(to_email: str, subject: str, body_text: str):
         app.logger.warning(f"[UCAS Reference] SendGrid error: {e}")
         return False
 
+
+def _get_requester_email() -> str:
+    return (request.headers.get('X-User-Email') or request.headers.get('x-user-email') or '').strip().lower()
+
+
+def _get_requester_role_hint() -> str:
+    return (request.headers.get('X-User-Role') or request.headers.get('x-user-role') or '').strip().lower()
+
+
+def _get_establishment_id_from_request(payload: dict = None) -> str:
+    payload = payload or {}
+    return (
+        (request.args.get('establishment_id') or request.args.get('establishmentId') or '')
+        or (request.headers.get('X-Establishment-Id') or request.headers.get('x-establishment-id') or '')
+        or (payload.get('establishment_id') or payload.get('establishmentId') or '')
+    ).strip()
+
+
+def _is_ucas_reference_admin(establishment_id: str) -> bool:
+    """
+    Section 1 (centre template) is staff-admin only.
+    We treat this as:
+    - role hint contains "staff_admin"/"admin"/"super" OR
+    - requester email is listed in establishment_settings.ucas_reference_admin_emails
+    """
+    if not establishment_id:
+        return False
+    if not _is_staff_request():
+        return False
+    role_hint = _get_requester_role_hint()
+    if role_hint in ('staff_admin', 'admin', 'super_user', 'superuser'):
+        return True
+
+    staff_email = _get_requester_email()
+    if not staff_email or '@' not in staff_email:
+        return False
+
+    try:
+        resp = supabase_client.table('establishment_settings')\
+            .select('ucas_reference_admin_emails')\
+            .eq('establishment_id', establishment_id)\
+            .limit(1)\
+            .execute()
+        if resp and resp.data:
+            raw = resp.data[0].get('ucas_reference_admin_emails') or []
+            if isinstance(raw, list):
+                emails = [str(x).strip().lower() for x in raw if x]
+                return staff_email in emails
+    except Exception as e:
+        app.logger.warning(f"[UCAS Management] Admin check failed: {e}")
+
+    return False
+
 @app.route('/reference-contribution', methods=['GET'])
 def reference_contribution_page():
     """
@@ -12269,6 +12330,376 @@ def reference_contribution_page():
     except Exception as e:
         app.logger.error(f"[UCAS Reference] reference_contribution_page error: {e}")
         return Response("Error loading page", status=500, mimetype='text/plain')
+
+
+@app.route('/reference-inbox', methods=['GET'])
+def reference_inbox_page():
+    """
+    Serve the external teacher inbox page with correct Content-Type.
+
+    NOTE: JSDelivr serves .html as text/plain; serving HTML from Heroku ensures browsers execute it.
+    The JS/CSS assets are still loaded from JSDelivr.
+    """
+    try:
+        asset_base = "https://cdn.jsdelivr.net/gh/4Sighteducation/VESPA-report-v2@main/reference-inbox/dist"
+        html = f"""<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teacher Reference Inbox</title>
+    <link rel="stylesheet" href="{asset_base}/reference-inbox1a-index.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" crossorigin src="{asset_base}/reference-inbox1a.js"></script>
+  </body>
+</html>"""
+        return Response(html, status=200, mimetype='text/html')
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] reference_inbox_page error: {e}")
+        return Response("Error loading page", status=500, mimetype='text/plain')
+
+
+# =============================================================================
+# UCAS Management (Staff Admin)
+# =============================================================================
+
+@app.route('/api/ucas-management/centre-template', methods=['GET'])
+def ucas_management_get_centre_template():
+    """Get centre template (Section 1) for an establishment + academic year (staff-admin only)."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not _is_staff_request():
+            return jsonify({'success': False, 'error': 'Only staff can view the centre template'}), 403
+
+        academic_year = request.args.get('academic_year') or request.args.get('academicYear') or 'current'
+        establishment_id = _get_establishment_id_from_request()
+        if not establishment_id:
+            return jsonify({'success': False, 'error': 'establishment_id is required'}), 400
+        if not _is_ucas_reference_admin(establishment_id):
+            return jsonify({'success': False, 'error': 'Only staff admins can view the centre template'}), 403
+
+        tmpl = supabase_client.table('reference_center_templates')\
+            .select('section1_text, updated_by, updated_at')\
+            .eq('establishment_id', establishment_id)\
+            .eq('academic_year', academic_year)\
+            .limit(1)\
+            .execute()
+
+        if tmpl and tmpl.data:
+            row = tmpl.data[0] or {}
+            return jsonify({
+                'success': True,
+                'data': {
+                    'establishmentId': establishment_id,
+                    'academicYear': academic_year,
+                    'templateText': row.get('section1_text') or '',
+                    'updatedBy': row.get('updated_by'),
+                    'updatedAt': row.get('updated_at')
+                }
+            })
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'establishmentId': establishment_id,
+                'academicYear': academic_year,
+                'templateText': '',
+                'updatedBy': None,
+                'updatedAt': None
+            }
+        })
+    except Exception as e:
+        app.logger.error(f"[UCAS Management] Get centre template error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/ucas-management/centre-template', methods=['PUT'])
+def ucas_management_put_centre_template():
+    """Upsert centre template (Section 1) for an establishment + academic year (staff-admin only)."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not _is_staff_request():
+            return jsonify({'success': False, 'error': 'Only staff can save the centre template'}), 403
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or payload.get('academic_year') or request.args.get('academic_year') or 'current'
+        establishment_id = _get_establishment_id_from_request(payload)
+        if not establishment_id:
+            return jsonify({'success': False, 'error': 'establishment_id is required'}), 400
+        if not _is_ucas_reference_admin(establishment_id):
+            return jsonify({'success': False, 'error': 'Only staff admins can save the centre template'}), 403
+
+        template_text = str(payload.get('templateText') or payload.get('section1Text') or '').strip()
+        if len(template_text) > 20000:
+            return jsonify({'success': False, 'error': 'templateText is too long (max 20000 chars)'}), 400
+
+        staff_email = _get_requester_email() or None
+        now_iso = _now_iso()
+
+        record = {
+            'establishment_id': establishment_id,
+            'academic_year': academic_year,
+            'section1_text': template_text,
+            'updated_by': staff_email,
+            'updated_at': now_iso
+        }
+
+        # Upsert template
+        try:
+            supabase_client.table('reference_center_templates')\
+                .upsert(record, on_conflict='establishment_id,academic_year')\
+                .execute()
+        except Exception:
+            existing = supabase_client.table('reference_center_templates')\
+                .select('id')\
+                .eq('establishment_id', establishment_id)\
+                .eq('academic_year', academic_year)\
+                .limit(1)\
+                .execute()
+            if existing and existing.data:
+                supabase_client.table('reference_center_templates').update(record).eq('id', existing.data[0]['id']).execute()
+            else:
+                supabase_client.table('reference_center_templates').insert(record).execute()
+
+        # Bootstrap admin list if missing and caller is staff_admin (best-effort)
+        try:
+            if staff_email and _get_requester_role_hint() == 'staff_admin':
+                settings = supabase_client.table('establishment_settings')\
+                    .select('id, ucas_reference_admin_emails')\
+                    .eq('establishment_id', establishment_id)\
+                    .limit(1)\
+                    .execute()
+                if not (settings and settings.data):
+                    supabase_client.table('establishment_settings').insert({
+                        'establishment_id': establishment_id,
+                        'ucas_reference_admin_emails': [staff_email],
+                        'updated_at': now_iso
+                    }).execute()
+                else:
+                    row = settings.data[0] or {}
+                    emails = row.get('ucas_reference_admin_emails') or []
+                    if isinstance(emails, list):
+                        norm = [str(x).strip().lower() for x in emails if x]
+                        if staff_email not in norm:
+                            supabase_client.table('establishment_settings').update({
+                                'ucas_reference_admin_emails': norm + [staff_email],
+                                'updated_at': now_iso
+                            }).eq('id', row.get('id')).execute()
+        except Exception:
+            pass
+
+        return jsonify({'success': True, 'data': {'establishmentId': establishment_id, 'academicYear': academic_year}})
+    except Exception as e:
+        app.logger.error(f"[UCAS Management] Save centre template error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/ucas-management/report.csv', methods=['GET'])
+def ucas_management_report_csv():
+    """
+    Download a CSV of:
+    - student name/email
+    - UCAS statement (combined)
+    - Section 1 centre template
+    - Section 2 extenuating circumstances (collated)
+    - Section 3 staff references (collated)
+    Staff-admin only.
+    """
+    try:
+        if not SUPABASE_ENABLED:
+            return Response("Supabase is not enabled", status=500, mimetype='text/plain')
+        if not _is_staff_request():
+            return Response("Only staff can export", status=403, mimetype='text/plain')
+
+        academic_year = request.args.get('academic_year') or request.args.get('academicYear') or 'current'
+        establishment_id = _get_establishment_id_from_request()
+        if not establishment_id:
+            return Response("establishment_id is required", status=400, mimetype='text/plain')
+        if not _is_ucas_reference_admin(establishment_id):
+            return Response("Only staff admins can export", status=403, mimetype='text/plain')
+
+        year12plus = (request.args.get('year12plus') or '').strip() in ('1', 'true', 'yes', 'on')
+        tutor_group = (request.args.get('tutor_group') or request.args.get('tutorGroup') or '').strip()
+        status_filter = (request.args.get('status') or 'all').strip().lower()  # all|completed|in_progress|not_started
+        q = (request.args.get('q') or '').strip().lower()
+
+        # Centre template (Section 1)
+        section1_text = ''
+        try:
+            tmpl = supabase_client.table('reference_center_templates')\
+                .select('section1_text')\
+                .eq('establishment_id', establishment_id)\
+                .eq('academic_year', academic_year)\
+                .limit(1)\
+                .execute()
+            if tmpl and tmpl.data:
+                section1_text = tmpl.data[0].get('section1_text') or ''
+        except Exception:
+            section1_text = ''
+
+        # Fetch students from academic_profiles for this establishment/year (acts as roster)
+        prof_q = supabase_client.table('academic_profiles')\
+            .select('student_email, student_name, year_group, tutor_group')\
+            .eq('establishment_id', establishment_id)
+        if academic_year:
+            prof_q = prof_q.eq('academic_year', academic_year)
+        prof_resp = prof_q.order('updated_at', desc=True).limit(20000).execute()
+        prof_rows = prof_resp.data if prof_resp and prof_resp.data else []
+
+        # De-duplicate by student_email
+        roster = {}
+        for r in prof_rows:
+            em = (r.get('student_email') or '').strip().lower()
+            if not em or '@' not in em:
+                continue
+            if em in roster:
+                continue
+            roster[em] = {
+                'email': em,
+                'name': r.get('student_name') or '',
+                'year': r.get('year_group') or '',
+                'tutor': r.get('tutor_group') or ''
+            }
+
+        students = list(roster.values())
+
+        def _parse_year(v):
+            try:
+                return int(''.join([c for c in str(v or '') if c.isdigit()]) or 0)
+            except Exception:
+                return 0
+
+        if year12plus:
+            students = [s for s in students if _parse_year(s.get('year')) >= 12]
+
+        if tutor_group:
+            tg = tutor_group.strip().lower()
+            students = [s for s in students if str(s.get('tutor') or '').strip().lower() == tg]
+
+        if q:
+            def matches(s):
+                hay = f"{s.get('name','')} {s.get('email','')} {s.get('tutor','')}".lower()
+                return q in hay
+            students = [s for s in students if matches(s)]
+
+        # Build CSV rows
+        import csv
+        out = BytesIO()
+        # Excel-friendly UTF-8 BOM
+        out.write(b'\xef\xbb\xbf')
+        text_stream = out
+
+        # Write via csv to a text wrapper
+        import io
+        wrapper = io.TextIOWrapper(text_stream, encoding='utf-8', newline='')
+        writer = csv.writer(wrapper)
+
+        writer.writerow([
+            'student_name',
+            'student_email',
+            'personal_statement',
+            'centre_template',
+            'extenuating_circumstances',
+            'staff_references'
+        ])
+
+        for s in students:
+            email = s['email']
+
+            # UCAS application
+            app_row = None
+            try:
+                app_resp = supabase_client.table('ucas_applications')\
+                    .select('answers, statement_completed_at, updated_at')\
+                    .eq('student_email', email)\
+                    .eq('academic_year', academic_year)\
+                    .order('updated_at', desc=True)\
+                    .limit(1)\
+                    .execute()
+                if app_resp and app_resp.data:
+                    app_row = app_resp.data[0]
+            except Exception:
+                app_row = None
+
+            answers = (app_row.get('answers') if app_row else None) or {}
+            q1 = str(answers.get('q1') or '')
+            q2 = str(answers.get('q2') or '')
+            q3 = str(answers.get('q3') or '')
+            personal_statement = "\n\n".join([x for x in [q1.strip(), q2.strip(), q3.strip()] if x.strip()])
+
+            statement_completed_at = (app_row.get('statement_completed_at') if app_row else None)
+            started = bool(app_row)
+            completed = bool(statement_completed_at)
+
+            if status_filter == 'completed' and not completed:
+                continue
+            if status_filter == 'in_progress' and (completed or not started):
+                continue
+            if status_filter == 'not_started' and started:
+                continue
+
+            # Reference (sections 2/3)
+            sec2_text = ''
+            sec3_text = ''
+            try:
+                ref = _get_or_create_student_reference(email, academic_year)
+                if ref and ref.get('id'):
+                    contribs = supabase_client.table('reference_contributions')\
+                        .select('section, subject_key, author_name, author_email, text, updated_at')\
+                        .eq('reference_id', ref['id'])\
+                        .order('updated_at', desc=False)\
+                        .execute()
+                    rows = contribs.data if contribs and contribs.data else []
+                    sec2_parts = []
+                    sec3_parts = []
+                    for c in rows:
+                        section = int(c.get('section') or 0)
+                        text = (c.get('text') or '').strip()
+                        if not text:
+                            continue
+                        who = (c.get('author_name') or c.get('author_email') or '').strip()
+                        subj = (c.get('subject_key') or '').strip()
+                        header = " • ".join([x for x in [who, subj] if x])
+                        block = f"{header}\n{text}" if header else text
+                        if section == 2:
+                            sec2_parts.append(block)
+                        elif section == 3:
+                            sec3_parts.append(block)
+                    sec2_text = "\n\n---\n\n".join(sec2_parts).strip()
+                    sec3_text = "\n\n---\n\n".join(sec3_parts).strip()
+            except Exception:
+                pass
+
+            writer.writerow([
+                s.get('name') or '',
+                email,
+                personal_statement,
+                section1_text or '',
+                sec2_text,
+                sec3_text
+            ])
+
+        wrapper.flush()
+        # Detach so BytesIO isn't closed
+        wrapper.detach()
+
+        filename = f"ucas-report-{academic_year}.csv".replace(' ', '_')
+        return Response(
+            out.getvalue(),
+            status=200,
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename=\"{filename}\"'}
+        )
+    except Exception as e:
+        app.logger.error(f"[UCAS Management] report.csv error: {e}")
+        app.logger.error(traceback.format_exc())
+        return Response(f"Export failed: {e}", status=500, mimetype='text/plain')
 
 @app.route('/api/academic-profile/<email>/reference/status', methods=['GET'])
 def get_reference_status(email):
@@ -12584,35 +13015,106 @@ def create_reference_invite(email):
         if not ref:
             return jsonify({'success': False, 'error': 'Could not create reference'}), 500
 
+        # De-duplicate: if there's already a pending, unrevoked, unexpired invite for the same teacher+subject,
+        # update its token instead of creating endless duplicates.
+        existing_invite_id = None
+        try:
+            q = supabase_client.table('reference_invites')\
+                .select('id, expires_at, used_at, revoked_at')\
+                .eq('reference_id', ref['id'])\
+                .eq('teacher_email', teacher_email)\
+                .eq('subject_key', subject_key)\
+                .order('created_at', desc=True)\
+                .limit(1)\
+                .execute()
+            if q and q.data:
+                row0 = q.data[0]
+                if not row0.get('revoked_at') and not row0.get('used_at'):
+                    exp0 = row0.get('expires_at')
+                    ok = True
+                    if exp0:
+                        try:
+                            ok = datetime.fromisoformat(exp0.replace('Z', '+00:00')) >= datetime.utcnow().replace(tzinfo=None)
+                        except Exception:
+                            ok = True
+                    if ok:
+                        existing_invite_id = row0.get('id')
+        except Exception:
+            existing_invite_id = None
+
         raw_token = secrets.token_urlsafe(32)
         token_hash = _sha256_hex(raw_token)
         expires_at = (datetime.utcnow() + timedelta(days=REFERENCE_TOKEN_DEFAULT_TTL_DAYS)).isoformat()
 
-        ins = supabase_client.table('reference_invites').insert({
-            'reference_id': ref['id'],
-            'teacher_email': teacher_email,
-            'teacher_name': teacher_name,
-            'subject_key': subject_key,
-            'allowed_sections': allowed_sections,
-            'token_hash': token_hash,
-            'expires_at': expires_at,
-            'created_by': (payload.get('createdBy') or None),
-        }).execute()
+        if existing_invite_id:
+            supabase_client.table('reference_invites').update({
+                'teacher_name': teacher_name,
+                'allowed_sections': allowed_sections,
+                'token_hash': token_hash,
+                'expires_at': expires_at,
+                'revoked_at': None,
+            }).eq('id', existing_invite_id).execute()
+            invite_id = existing_invite_id
+        else:
+            ins = supabase_client.table('reference_invites').insert({
+                'reference_id': ref['id'],
+                'teacher_email': teacher_email,
+                'teacher_name': teacher_name,
+                'subject_key': subject_key,
+                'allowed_sections': allowed_sections,
+                'token_hash': token_hash,
+                'expires_at': expires_at,
+                'created_by': (payload.get('createdBy') or None),
+            }).execute()
+            invite_id = (ins.data[0]['id'] if ins and ins.data else None)
 
-        invite_id = (ins.data[0]['id'] if ins and ins.data else None)
+        # Prefer inbox link as the primary URL (so teachers manage everything in one place).
+        inbox_base = REFERENCE_INBOX_BASE_URL or (request.host_url.rstrip('/') + '/reference-inbox')
+        inbox_url = f"{inbox_base}?token={raw_token}"
 
-        # Prefer a real HTML page served from Heroku (JSDelivr serves .html as text/plain).
+        # Still provide a direct single-request page for convenience.
         base = REFERENCE_INVITE_BASE_URL or (request.host_url.rstrip('/') + '/reference-contribution')
-        invite_url = f"{base}?token={raw_token}"
+        contribution_url = f"{base}?token={raw_token}"
 
         # Optional email send (best-effort)
-        _send_email_sendgrid(
-            teacher_email,
-            "UCAS reference request",
-            f"You have been invited to add a UCAS reference contribution.\n\nStudent: {email}\nAcademic year: {academic_year}\n\nOpen link:\n{invite_url}\n\nThis link expires in {REFERENCE_TOKEN_DEFAULT_TTL_DAYS} days."
-        )
+        email_sent = True
+        try:
+            # Throttle email sends (reduces teacher inbox spam).
+            should_send = True
+            if CACHE_ENABLED and redis_client:
+                try:
+                    throttle_key = f"ucas_ref_invite_email_sent:{teacher_email}"
+                    existing = redis_client.get(throttle_key)
+                    if existing:
+                        should_send = False
+                    else:
+                        redis_client.setex(throttle_key, REFERENCE_INVITE_EMAIL_THROTTLE_HOURS * 3600, b"1")
+                except Exception:
+                    # If cache fails, fall back to sending.
+                    should_send = True
 
-        return jsonify({'success': True, 'data': {'inviteId': invite_id, 'inviteUrl': invite_url, 'expiresAt': expires_at}})
+            if should_send:
+                _send_email_sendgrid(
+                    teacher_email,
+                    "UCAS reference request",
+                    "\n".join([
+                        "You have been invited to add a UCAS reference contribution.",
+                        "",
+                        f"Student: {email}",
+                        f"Academic year: {academic_year}",
+                        "",
+                        "Teacher inbox (all your requests in one place):",
+                        inbox_url,
+                        "",
+                        f"This link expires in {REFERENCE_TOKEN_DEFAULT_TTL_DAYS} days."
+                    ])
+                )
+            else:
+                email_sent = False
+        except Exception:
+            email_sent = False
+
+        return jsonify({'success': True, 'data': {'inviteId': invite_id, 'inviteUrl': inbox_url, 'contributionUrl': contribution_url, 'inboxUrl': inbox_url, 'emailSent': email_sent, 'expiresAt': expires_at}})
     except Exception as e:
         app.logger.error(f"[UCAS Reference] Invite error: {e}")
         app.logger.error(traceback.format_exc())
@@ -12678,10 +13180,284 @@ def get_reference_invite(token):
             'referenceId': row.get('reference_id'),
             'studentEmail': student_email,
             'studentName': student_name,
-            'academicYear': academic_year
+            'academicYear': academic_year,
+            # Inbox link uses any valid invite token (this token).
+            'inboxUrl': (REFERENCE_INBOX_BASE_URL or (request.host_url.rstrip('/') + '/reference-inbox')) + f"?token={token}"
         }})
     except Exception as e:
         app.logger.error(f"[UCAS Reference] Invite GET error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/reference/invite/<token>/inbox', methods=['GET'])
+def get_reference_invite_inbox(token):
+    """External teacher: list all invites for the same teacher (authorized by any valid invite token)."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not token:
+            return jsonify({'success': False, 'error': 'token required'}), 400
+
+        # Validate token -> teacher identity
+        token_hash = _sha256_hex(token)
+        inv = supabase_client.table('reference_invites').select('*').eq('token_hash', token_hash).limit(1).execute()
+        if not inv or not inv.data:
+            return jsonify({'success': False, 'error': 'Invite not found'}), 404
+        row = inv.data[0]
+        if row.get('revoked_at'):
+            return jsonify({'success': False, 'error': 'Invite revoked'}), 410
+        exp = row.get('expires_at')
+        if exp:
+            try:
+                if datetime.fromisoformat(exp.replace('Z', '+00:00')) < datetime.utcnow().replace(tzinfo=None):
+                    return jsonify({'success': False, 'error': 'Invite expired'}), 410
+            except Exception:
+                pass
+
+        teacher_email = (row.get('teacher_email') or '').strip().lower()
+        teacher_name = (row.get('teacher_name') or '').strip() or None
+        if not teacher_email:
+            return jsonify({'success': False, 'error': 'Invite missing teacher email'}), 500
+
+        # Pull all non-revoked invites for this teacher (recent first)
+        invites = supabase_client.table('reference_invites')\
+            .select('id, reference_id, teacher_email, teacher_name, subject_key, allowed_sections, expires_at, used_at, revoked_at, created_at')\
+            .eq('teacher_email', teacher_email)\
+            .order('created_at', desc=True)\
+            .limit(300)\
+            .execute()
+        invite_rows = invites.data if invites and invites.data else []
+
+        # Filter out revoked/expired invites
+        now = datetime.utcnow().replace(tzinfo=None)
+        filtered = []
+        ref_ids = []
+        for r in invite_rows:
+            if r.get('revoked_at'):
+                continue
+            exp2 = r.get('expires_at')
+            if exp2:
+                try:
+                    if datetime.fromisoformat(exp2.replace('Z', '+00:00')) < now:
+                        continue
+                except Exception:
+                    pass
+            filtered.append(r)
+            if r.get('reference_id'):
+                ref_ids.append(r.get('reference_id'))
+
+        ref_ids = list({x for x in ref_ids if x})
+
+        # Map reference_id -> (student_email, academic_year)
+        ref_map = {}
+        if ref_ids:
+            refs = supabase_client.table('student_references')\
+                .select('id, student_email, academic_year')\
+                .in_('id', ref_ids)\
+                .execute()
+            for rr in (refs.data if refs and refs.data else []):
+                ref_map[rr.get('id')] = {
+                    'studentEmail': rr.get('student_email'),
+                    'academicYear': rr.get('academic_year')
+                }
+
+        # Existing contributions for this teacher (so UI can prefill)
+        contrib_map = {}
+        try:
+            if ref_ids:
+                contribs = supabase_client.table('reference_contributions')\
+                    .select('reference_id, section, subject_key, text, updated_at')\
+                    .eq('author_email', teacher_email)\
+                    .eq('author_type', 'invited_teacher')\
+                    .in_('reference_id', ref_ids)\
+                    .execute()
+                rows = contribs.data if contribs and contribs.data else []
+                for c in rows:
+                    k = f"{c.get('reference_id')}|{c.get('subject_key') or ''}|{c.get('section')}"
+                    contrib_map[k] = {
+                        'text': c.get('text') or '',
+                        'updatedAt': c.get('updated_at')
+                    }
+        except Exception:
+            contrib_map = {}
+
+        # Student names (best-effort; fallback to email)
+        name_cache = {}
+        def get_student_name(student_email: str, academic_year: str):
+            if not student_email:
+                return None
+            key = f"{student_email}|{academic_year or ''}"
+            if key in name_cache:
+                return name_cache[key]
+            try:
+                q = supabase_client.table('academic_profiles')\
+                    .select('student_name')\
+                    .eq('student_email', student_email)
+                if academic_year:
+                    q = q.eq('academic_year', academic_year)
+                pr = q.order('updated_at', desc=True).limit(1).execute()
+                if pr and pr.data:
+                    name_cache[key] = pr.data[0].get('student_name')
+                else:
+                    name_cache[key] = None
+            except Exception:
+                name_cache[key] = None
+            return name_cache[key]
+
+        out = []
+        for r in filtered:
+            ref_id = r.get('reference_id')
+            m = ref_map.get(ref_id) or {}
+            student_email = m.get('studentEmail')
+            academic_year = m.get('academicYear')
+            student_name = get_student_name(student_email, academic_year)
+            subj = r.get('subject_key') or ''
+            existing_by_section = {}
+            allowed = r.get('allowed_sections') or [3]
+            for s in allowed if isinstance(allowed, list) else [3]:
+                try:
+                    sec = int(s)
+                except Exception:
+                    continue
+                k = f"{ref_id}|{subj}|{sec}"
+                if k in contrib_map:
+                    existing_by_section[str(sec)] = contrib_map[k]
+            out.append({
+                'inviteId': r.get('id'),
+                'referenceId': ref_id,
+                'studentEmail': student_email,
+                'studentName': student_name,
+                'academicYear': academic_year,
+                'subjectKey': r.get('subject_key'),
+                'allowedSections': r.get('allowed_sections') or [3],
+                'expiresAt': r.get('expires_at'),
+                'usedAt': r.get('used_at'),
+                'status': 'submitted' if r.get('used_at') else 'pending',
+                'createdAt': r.get('created_at'),
+                'existing': existing_by_section
+            })
+
+        inbox_url = (REFERENCE_INBOX_BASE_URL or (request.host_url.rstrip('/') + '/reference-inbox')) + f"?token={token}"
+        return jsonify({'success': True, 'data': {'teacherEmail': teacher_email, 'teacherName': teacher_name, 'inboxUrl': inbox_url, 'invites': out}})
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] Inbox error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/reference/invite/<token>/submit-by-id', methods=['POST'])
+def submit_reference_invite_by_id(token):
+    """External teacher submits contribution for a specific inviteId, authorized by any valid invite token."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not token:
+            return jsonify({'success': False, 'error': 'token required'}), 400
+
+        # Validate token -> teacher identity
+        token_hash = _sha256_hex(token)
+        inv = supabase_client.table('reference_invites').select('*').eq('token_hash', token_hash).limit(1).execute()
+        if not inv or not inv.data:
+            return jsonify({'success': False, 'error': 'Invite not found'}), 404
+        row = inv.data[0]
+        if row.get('revoked_at'):
+            return jsonify({'success': False, 'error': 'Invite revoked'}), 410
+        exp = row.get('expires_at')
+        if exp:
+            try:
+                if datetime.fromisoformat(exp.replace('Z', '+00:00')) < datetime.utcnow().replace(tzinfo=None):
+                    return jsonify({'success': False, 'error': 'Invite expired'}), 410
+            except Exception:
+                pass
+
+        teacher_email = (row.get('teacher_email') or '').strip().lower()
+        if not teacher_email:
+            return jsonify({'success': False, 'error': 'Invite missing teacher email'}), 500
+
+        payload = request.get_json() or {}
+        invite_id = (payload.get('inviteId') or payload.get('id') or '').strip()
+        if not invite_id:
+            return jsonify({'success': False, 'error': 'inviteId is required'}), 400
+
+        # Load the target invite and ensure it belongs to this teacher
+        tgt = supabase_client.table('reference_invites').select('*').eq('id', invite_id).limit(1).execute()
+        if not tgt or not tgt.data:
+            return jsonify({'success': False, 'error': 'Invite not found'}), 404
+        target = tgt.data[0]
+        if (target.get('teacher_email') or '').strip().lower() != teacher_email:
+            return jsonify({'success': False, 'error': 'Not authorized for this invite'}), 403
+        if target.get('revoked_at'):
+            return jsonify({'success': False, 'error': 'Invite revoked'}), 410
+        exp2 = target.get('expires_at')
+        if exp2:
+            try:
+                if datetime.fromisoformat(exp2.replace('Z', '+00:00')) < datetime.utcnow().replace(tzinfo=None):
+                    return jsonify({'success': False, 'error': 'Invite expired'}), 410
+            except Exception:
+                pass
+
+        section = payload.get('section')
+        try:
+            section = int(section)
+        except Exception:
+            section = None
+        if section not in (2, 3):
+            return jsonify({'success': False, 'error': 'section must be 2 or 3'}), 400
+
+        allowed = target.get('allowed_sections') or [3]
+        if isinstance(allowed, list) and section not in [int(x) for x in allowed if str(x).isdigit()]:
+            return jsonify({'success': False, 'error': 'section not allowed for this invite'}), 403
+
+        text = (payload.get('text') or payload.get('comment') or '').strip()
+        if not text:
+            return jsonify({'success': False, 'error': 'text is required'}), 400
+        if len(text) > 4000:
+            return jsonify({'success': False, 'error': 'text is too long (max 4000 chars)'}), 400
+
+        teacher_name = (payload.get('authorName') or payload.get('teacherName') or target.get('teacher_name') or '').strip() or None
+        subject_key = target.get('subject_key')
+        ref_id = target.get('reference_id')
+
+        # Reuse the same upsert logic as token submit
+        q = supabase_client.table('reference_contributions')\
+            .select('id')\
+            .eq('reference_id', ref_id)\
+            .eq('section', section)\
+            .eq('author_email', teacher_email)\
+            .eq('author_type', 'invited_teacher')
+        if subject_key:
+            q = q.eq('subject_key', subject_key)
+        existing = q.execute()
+        if existing and existing.data:
+            cid = existing.data[0]['id']
+            supabase_client.table('reference_contributions').update({
+                'text': text,
+                'author_name': teacher_name,
+                'subject_key': subject_key,
+                'updated_at': _now_iso()
+            }).eq('id', cid).execute()
+        else:
+            supabase_client.table('reference_contributions').insert({
+                'reference_id': ref_id,
+                'section': section,
+                'subject_key': subject_key,
+                'author_email': teacher_email,
+                'author_name': teacher_name,
+                'author_type': 'invited_teacher',
+                'text': text,
+                'updated_at': _now_iso()
+            }).execute()
+
+        # Mark invite used
+        try:
+            supabase_client.table('reference_invites').update({'used_at': _now_iso()}).eq('id', invite_id).execute()
+        except Exception:
+            pass
+
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] submit-by-id error: {e}")
         app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
