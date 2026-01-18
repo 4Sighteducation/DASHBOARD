@@ -12836,6 +12836,211 @@ def get_reference_status(email):
         app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+# ==========================
+# UCAS Management: Bulk status job (for large cohorts)
+# ==========================
+def _ucas_reference_status_from_rows(ref_row, invite_rows):
+    """Mirror get_reference_status() logic but from pre-fetched rows."""
+    if not ref_row:
+        return None
+
+    out_invites = []
+    for inv in (invite_rows or []):
+        out_invites.append({
+            'id': inv.get('id'),
+            'teacherEmail': inv.get('teacher_email'),
+            'teacherName': inv.get('teacher_name'),
+            'subjectKey': inv.get('subject_key'),
+            'allowedSections': inv.get('allowed_sections') or [3],
+            'expiresAt': inv.get('expires_at'),
+            'usedAt': inv.get('used_at'),
+            'revokedAt': inv.get('revoked_at'),
+            'status': 'submitted' if inv.get('used_at') else ('revoked' if inv.get('revoked_at') else 'pending')
+        })
+
+    status = ref_row.get('status') or 'not_started'
+    if status == 'not_started' and ((invite_rows or []) or (ref_row.get('student_marked_complete_at') is not None)):
+        status = 'in_progress'
+
+    return {
+        'referenceId': ref_row.get('id'),
+        'academicYear': ref_row.get('academic_year'),
+        'status': status,
+        'studentMarkedCompleteAt': ref_row.get('student_marked_complete_at'),
+        'finalisedAt': ref_row.get('finalised_at'),
+        'invites': out_invites,
+        'updatedAt': ref_row.get('updated_at')
+    }
+
+
+def _compute_ucas_management_statuses(emails, academic_year):
+    """
+    Compute UCAS application + reference status for a list of student emails.
+    Returns: { email -> { app: <ucas_app_row_or_null>, reference: <ref_status_or_null> } }
+    """
+    safe_emails = []
+    for e in (emails or []):
+        s = str(e or '').strip().lower()
+        if s:
+            safe_emails.append(s)
+    safe_emails = list(dict.fromkeys(safe_emails))  # dedupe preserving order
+    if not safe_emails:
+        return {}
+
+    # Fetch UCAS applications (batch)
+    app_by_email = {}
+    batch_size = 200
+    for i in range(0, len(safe_emails), batch_size):
+        batch = safe_emails[i:i + batch_size]
+        apps = supabase_client.table('ucas_applications')\
+            .select('student_email, academic_year, answers, requirements_by_course, selected_course_key, statement_completed_at, updated_at')\
+            .in_('student_email', batch)\
+            .eq('academic_year', academic_year)\
+            .execute()
+        for row in (apps.data if apps and apps.data else []):
+            try:
+                k = str(row.get('student_email') or '').strip().lower()
+                if k:
+                    app_by_email[k] = {
+                        # keep original keys the frontend already tolerates
+                        'studentEmail': row.get('student_email'),
+                        'academicYear': row.get('academic_year'),
+                        'answers': row.get('answers') or {},
+                        'requirements_by_course': row.get('requirements_by_course') or {},
+                        'selected_course_key': row.get('selected_course_key') or None,
+                        'statement_completed_at': row.get('statement_completed_at') or None,
+                        'updated_at': row.get('updated_at') or None
+                    }
+            except Exception:
+                continue
+
+    # Fetch references without creating missing rows (batch)
+    ref_by_email = {}
+    ref_ids = []
+    for i in range(0, len(safe_emails), batch_size):
+        batch = safe_emails[i:i + batch_size]
+        refs = supabase_client.table('student_references')\
+            .select('id, student_email, academic_year, status, student_marked_complete_at, finalised_at, updated_at')\
+            .in_('student_email', batch)\
+            .eq('academic_year', academic_year)\
+            .execute()
+        for r in (refs.data if refs and refs.data else []):
+            k = str(r.get('student_email') or '').strip().lower()
+            if not k:
+                continue
+            ref_by_email[k] = r
+            if r.get('id'):
+                ref_ids.append(r.get('id'))
+
+    # Fetch invites for all references (batch)
+    invites_by_ref = {}
+    if ref_ids:
+        for i in range(0, len(ref_ids), batch_size):
+            batch = ref_ids[i:i + batch_size]
+            invs = supabase_client.table('reference_invites')\
+                .select('id, reference_id, teacher_email, teacher_name, subject_key, allowed_sections, expires_at, used_at, revoked_at, created_at')\
+                .in_('reference_id', batch)\
+                .order('created_at', desc=True)\
+                .execute()
+            for inv in (invs.data if invs and invs.data else []):
+                rid = inv.get('reference_id')
+                if not rid:
+                    continue
+                invites_by_ref.setdefault(rid, []).append(inv)
+
+    # Combine
+    out = {}
+    for e in safe_emails:
+        ref_row = ref_by_email.get(e)
+        ref_status = None
+        if ref_row and ref_row.get('id'):
+            ref_status = _ucas_reference_status_from_rows(ref_row, invites_by_ref.get(ref_row.get('id'), []))
+        out[e] = {
+            'app': app_by_email.get(e),
+            'reference': ref_status
+        }
+    return out
+
+
+@app.route('/api/ucas-management/statuses/start', methods=['POST'])
+def ucas_management_statuses_start():
+    """
+    Start a background job to compute UCAS Management statuses for many students.
+    Body: { academicYear: "...", emails: ["a@..", ...] }
+    Returns: { success: true, jobId: "..." }
+    """
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or payload.get('academic_year') or 'current'
+        emails = payload.get('emails') or []
+
+        # If Redis cache isn't available, run synchronously (still avoids N network round-trips)
+        if not CACHE_ENABLED:
+            statuses = _compute_ucas_management_statuses(emails, academic_year)
+            return jsonify({'success': True, 'data': {'status': 'complete', 'progress': {'current': len(statuses), 'total': len(statuses)}, 'statuses': statuses}})
+
+        job_id = str(uuid.uuid4())
+        key = f'ucas_mgmt_status_job:{job_id}'
+        meta = {
+            'status': 'queued',
+            'progress': {'current': 0, 'total': len(emails or [])},
+            'academicYear': academic_year,
+            'error': None,
+            'statuses': None
+        }
+        redis_client.setex(key, 60 * 15, json.dumps(meta))  # 15 min TTL
+
+        def run_job():
+            try:
+                meta2 = meta.copy()
+                meta2['status'] = 'running'
+                redis_client.setex(key, 60 * 15, json.dumps(meta2))
+
+                statuses = _compute_ucas_management_statuses(emails, academic_year)
+                meta2['status'] = 'complete'
+                meta2['progress'] = {'current': len(statuses), 'total': len(emails or [])}
+                meta2['statuses'] = statuses
+                redis_client.setex(key, 60 * 15, json.dumps(meta2))
+            except Exception as e:
+                try:
+                    meta3 = meta.copy()
+                    meta3['status'] = 'error'
+                    meta3['error'] = str(e)
+                    redis_client.setex(key, 60 * 15, json.dumps(meta3))
+                except Exception:
+                    pass
+
+        Thread(target=run_job, daemon=True).start()
+        return jsonify({'success': True, 'data': {'jobId': job_id}})
+    except Exception as e:
+        app.logger.error(f"[UCAS Mgmt] statuses/start error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/ucas-management/statuses/<job_id>', methods=['GET'])
+def ucas_management_statuses_job(job_id):
+    """Poll a UCAS Management status job."""
+    try:
+        if not CACHE_ENABLED:
+            return jsonify({'success': False, 'error': 'Redis cache not enabled'}), 500
+        key = f'ucas_mgmt_status_job:{job_id}'
+        raw = redis_client.get(key)
+        if not raw:
+            return jsonify({'success': False, 'error': 'Job not found (expired?)'}), 404
+        if isinstance(raw, (bytes, bytearray)):
+            raw = raw.decode('utf-8', errors='ignore')
+        data = json.loads(raw) if raw else {}
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        app.logger.error(f"[UCAS Mgmt] statuses/job error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/academic-profile/<email>/reference/full', methods=['GET'])
 def get_reference_full(email):
     """Staff-only: fetch full teacher reference (including section text + contributions)."""
