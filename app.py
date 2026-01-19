@@ -12860,7 +12860,9 @@ def _ucas_reference_status_from_rows(ref_row, invite_rows):
         })
 
     status = ref_row.get('status') or 'not_started'
-    if status == 'not_started' and ((invite_rows or []) or (ref_row.get('student_marked_complete_at') is not None)):
+    tutor_text = (ref_row.get('tutor_compiled_section3') or '').strip()
+    tutor_completed_at = ref_row.get('tutor_compiled_completed_at')
+    if status == 'not_started' and ((invite_rows or []) or (ref_row.get('student_marked_complete_at') is not None) or tutor_text or tutor_completed_at):
         status = 'in_progress'
 
     return {
@@ -12869,6 +12871,11 @@ def _ucas_reference_status_from_rows(ref_row, invite_rows):
         'status': status,
         'studentMarkedCompleteAt': ref_row.get('student_marked_complete_at'),
         'finalisedAt': ref_row.get('finalised_at'),
+        'tutorCompiledSection3': ref_row.get('tutor_compiled_section3') or '',
+        'tutorCompiledUpdatedAt': ref_row.get('tutor_compiled_updated_at'),
+        'tutorCompiledBy': ref_row.get('tutor_compiled_by'),
+        'tutorCompiledCompletedAt': ref_row.get('tutor_compiled_completed_at'),
+        'tutorCompiledCompletedBy': ref_row.get('tutor_compiled_completed_by'),
         'invites': out_invites,
         'updatedAt': ref_row.get('updated_at')
     }
@@ -12921,7 +12928,7 @@ def _compute_ucas_management_statuses(emails, academic_year):
     for i in range(0, len(safe_emails), batch_size):
         batch = safe_emails[i:i + batch_size]
         refs = supabase_client.table('student_references')\
-            .select('id, student_email, academic_year, status, student_marked_complete_at, finalised_at, updated_at')\
+            .select('id, student_email, academic_year, status, student_marked_complete_at, finalised_at, updated_at, tutor_compiled_section3, tutor_compiled_updated_at, tutor_compiled_by, tutor_compiled_completed_at, tutor_compiled_completed_by')\
             .in_('student_email', batch)\
             .eq('academic_year', academic_year)\
             .execute()
@@ -13130,6 +13137,12 @@ def get_reference_full(email):
                 'status': status,
                 'studentMarkedCompleteAt': ref.get('student_marked_complete_at'),
                 'finalisedAt': ref.get('finalised_at'),
+                # Tutor compiled narrative (Section 3 collation)
+                'tutorCompiledSection3': ref.get('tutor_compiled_section3') or '',
+                'tutorCompiledUpdatedAt': ref.get('tutor_compiled_updated_at'),
+                'tutorCompiledBy': ref.get('tutor_compiled_by'),
+                'tutorCompiledCompletedAt': ref.get('tutor_compiled_completed_at'),
+                'tutorCompiledCompletedBy': ref.get('tutor_compiled_completed_by'),
                 'section1Text': section1_text,
                 'section2': sec2,
                 'section3': sec3,
@@ -13139,6 +13152,131 @@ def get_reference_full(email):
         })
     except Exception as e:
         app.logger.error(f"[UCAS Reference] Full fetch error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/academic-profile/<email>/reference/tutor-compiled', methods=['PUT'])
+def save_tutor_compiled_reference(email):
+    """Staff-only: save tutor compiled narrative for Section 3 (stored on student_references)."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not _is_staff_request():
+            return jsonify({'success': False, 'error': 'Only staff can save tutor compiled narrative'}), 403
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+
+        staff_email = (payload.get('staffEmail') or '').strip().lower()
+        if not staff_email or '@' not in staff_email:
+            return jsonify({'success': False, 'error': 'staffEmail required'}), 400
+
+        text = payload.get('text')
+        if text is None:
+            return jsonify({'success': False, 'error': 'text is required'}), 400
+        if not isinstance(text, str):
+            try:
+                text = str(text)
+            except Exception:
+                text = ''
+        # Keep generous limit; this is a draftable narrative.
+        if len(text) > 20000:
+            return jsonify({'success': False, 'error': 'text is too long (max 20000 chars)'}), 400
+
+        ref = _get_or_create_student_reference(email, academic_year)
+        if not ref:
+            return jsonify({'success': False, 'error': 'Could not create reference'}), 500
+
+        now_iso = _now_iso()
+        update_payload = {
+            'tutor_compiled_section3': text,
+            'tutor_compiled_updated_at': now_iso,
+            'tutor_compiled_by': staff_email,
+            'updated_at': now_iso
+        }
+        # If previously marked complete, editing implies it is no longer "ready" until re-completed.
+        if ref.get('tutor_compiled_completed_at') is not None:
+            update_payload['tutor_compiled_completed_at'] = None
+            update_payload['tutor_compiled_completed_by'] = None
+            update_payload['status'] = 'in_progress'
+
+        # Ensure reference status is at least in_progress once tutor compiles
+        if (ref.get('status') or 'not_started') == 'not_started':
+            update_payload['status'] = 'in_progress'
+
+        supabase_client.table('student_references').update(update_payload).eq('id', ref['id']).execute()
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] save tutor compiled error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/academic-profile/<email>/reference/tutor-compiled/mark-complete', methods=['POST'])
+def mark_tutor_compiled_complete(email):
+    """Staff-only: mark the tutor compiled narrative as complete/ready for UCAS."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not _is_staff_request():
+            return jsonify({'success': False, 'error': 'Only staff can mark tutor compiled narrative complete'}), 403
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+
+        staff_email = (payload.get('staffEmail') or '').strip().lower()
+        if not staff_email or '@' not in staff_email:
+            return jsonify({'success': False, 'error': 'staffEmail required'}), 400
+
+        ref = _get_or_create_student_reference(email, academic_year)
+        if not ref:
+            return jsonify({'success': False, 'error': 'Could not create reference'}), 500
+
+        now_iso = _now_iso()
+        text = (ref.get('tutor_compiled_section3') or '').strip()
+        if not text:
+            return jsonify({'success': False, 'error': 'Cannot mark complete: compiled narrative is empty'}), 400
+
+        supabase_client.table('student_references').update({
+            'tutor_compiled_completed_at': datetime.utcnow().isoformat(),
+            'tutor_compiled_completed_by': staff_email,
+            'status': 'completed',
+            'updated_at': now_iso
+        }).eq('id', ref['id']).execute()
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] mark tutor compiled complete error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/academic-profile/<email>/reference/tutor-compiled/unmark-complete', methods=['POST'])
+def unmark_tutor_compiled_complete(email):
+    """Staff-only: unmark tutor compiled narrative as complete (send back to tutor)."""
+    try:
+        if not SUPABASE_ENABLED:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not _is_staff_request():
+            return jsonify({'success': False, 'error': 'Only staff can unmark tutor compiled narrative complete'}), 403
+
+        payload = request.get_json() or {}
+        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+
+        ref = _get_or_create_student_reference(email, academic_year)
+        if not ref:
+            return jsonify({'success': False, 'error': 'Could not create reference'}), 500
+
+        now_iso = _now_iso()
+        supabase_client.table('student_references').update({
+            'tutor_compiled_completed_at': None,
+            'tutor_compiled_completed_by': None,
+            'status': 'in_progress',
+            'updated_at': now_iso
+        }).eq('id', ref['id']).execute()
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"[UCAS Reference] unmark tutor compiled complete error: {e}")
         app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
