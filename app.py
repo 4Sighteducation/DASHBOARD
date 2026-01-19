@@ -11626,7 +11626,22 @@ def get_ucas_application(email):
         if not SUPABASE_ENABLED:
             return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
 
-        academic_year = request.args.get('academic_year') or 'current'
+        def _normalize_ay(v):
+            s = str(v or '').strip()
+            if not s:
+                return 'current'
+            low = s.lower()
+            if low == 'current':
+                return 'current'
+            # Common variants: 2025/2026, 2025–2026, 2025—2026, 2025 - 2026
+            s = s.replace('\\', '/')
+            s = s.replace('–', '-').replace('—', '-').replace('−', '-')
+            s = s.replace(' / ', '/').replace(' - ', '-')
+            s = s.replace('/', '-')
+            s = s.replace(' ', '')
+            return s
+
+        academic_year = _normalize_ay(request.args.get('academic_year') or 'current')
         cache_key = f'ucas_application:{email}:{academic_year}'
 
         if CACHE_ENABLED:
@@ -11698,7 +11713,21 @@ def save_ucas_application(email):
             return jsonify({'success': False, 'error': 'Only students can edit the UCAS Application'}), 403
 
         payload = request.get_json() or {}
-        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+        def _normalize_ay(v):
+            s = str(v or '').strip()
+            if not s:
+                return 'current'
+            low = s.lower()
+            if low == 'current':
+                return 'current'
+            s = s.replace('\\', '/')
+            s = s.replace('–', '-').replace('—', '-').replace('−', '-')
+            s = s.replace(' / ', '/').replace(' - ', '-')
+            s = s.replace('/', '-')
+            s = s.replace(' ', '')
+            return s
+
+        academic_year = _normalize_ay(payload.get('academicYear') or request.args.get('academic_year') or 'current')
         selected_course_key = payload.get('selectedCourseKey')
         answers = payload.get('answers') or {}
         requirements = payload.get('requirementsByCourse') or payload.get('requirements_by_course') or {}
@@ -11773,8 +11802,22 @@ def mark_ucas_statement_complete(email):
         if not _is_student_request():
             return jsonify({'success': False, 'error': 'Only students can mark complete'}), 403
 
+        def _normalize_ay(v):
+            s = str(v or '').strip()
+            if not s:
+                return 'current'
+            low = s.lower()
+            if low == 'current':
+                return 'current'
+            s = s.replace('\\', '/')
+            s = s.replace('–', '-').replace('—', '-').replace('−', '-')
+            s = s.replace(' / ', '/').replace(' - ', '-')
+            s = s.replace('/', '-')
+            s = s.replace(' ', '')
+            return s
+
         payload = request.get_json() or {}
-        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+        academic_year = _normalize_ay(payload.get('academicYear') or request.args.get('academic_year') or 'current')
         now_iso = datetime.utcnow().isoformat()
 
         # Upsert UCAS application row (in case student marks complete before first save)
@@ -11863,8 +11906,22 @@ def request_ucas_statement_edits(email):
         if role_hint in ['student', 'pupil', 'learner']:
             return jsonify({'success': False, 'error': 'Only staff can request edits'}), 403
 
+        def _normalize_ay(v):
+            s = str(v or '').strip()
+            if not s:
+                return 'current'
+            low = s.lower()
+            if low == 'current':
+                return 'current'
+            s = s.replace('\\', '/')
+            s = s.replace('–', '-').replace('—', '-').replace('−', '-')
+            s = s.replace(' / ', '/').replace(' - ', '-')
+            s = s.replace('/', '-')
+            s = s.replace(' ', '')
+            return s
+
         payload = request.get_json() or {}
-        academic_year = payload.get('academicYear') or request.args.get('academic_year') or 'current'
+        academic_year = _normalize_ay(payload.get('academicYear') or request.args.get('academic_year') or 'current')
         now_iso = datetime.utcnow().isoformat()
 
         # Update latest row if present
