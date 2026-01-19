@@ -11626,23 +11626,28 @@ def get_ucas_application(email):
         if not SUPABASE_ENABLED:
             return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
 
-        def _normalize_ay(v):
-            s = str(v or '').strip()
-            if not s:
-                return 'current'
-            low = s.lower()
+        def _ay_candidates(v):
+            raw = str(v or '').strip()
+            if not raw:
+                return ['current']
+            low = raw.lower()
             if low == 'current':
-                return 'current'
-            # Common variants: 2025/2026, 2025–2026, 2025—2026, 2025 - 2026
-            s = s.replace('\\', '/')
+                return ['current']
+            s = raw.replace('\\', '/')
             s = s.replace('–', '-').replace('—', '-').replace('−', '-')
-            s = s.replace(' / ', '/').replace(' - ', '-')
-            s = s.replace('/', '-')
-            s = s.replace(' ', '')
-            return s
+            s = s.replace(' / ', '/').replace(' - ', '-').replace(' ', '')
+            v1 = s
+            v2 = s.replace('/', '-')  # 2025/2026 -> 2025-2026
+            v3 = s.replace('-', '/')  # 2025-2026 -> 2025/2026
+            out = []
+            for x in (v1, v2, v3):
+                x = str(x or '').strip()
+                if x and x not in out:
+                    out.append(x)
+            return out or ['current']
 
-        academic_year = _normalize_ay(request.args.get('academic_year') or 'current')
-        cache_key = f'ucas_application:{email}:{academic_year}'
+        year_candidates = _ay_candidates(request.args.get('academic_year') or 'current')
+        cache_key = f'ucas_application:{email}:{year_candidates[0]}'
 
         if CACHE_ENABLED:
             try:
@@ -11655,7 +11660,7 @@ def get_ucas_application(email):
         resp = supabase_client.table('ucas_applications')\
             .select('*')\
             .eq('student_email', email)\
-            .eq('academic_year', academic_year)\
+            .in_('academic_year', year_candidates)\
             .order('updated_at', desc=True)\
             .limit(1)\
             .execute()
@@ -11713,21 +11718,28 @@ def save_ucas_application(email):
             return jsonify({'success': False, 'error': 'Only students can edit the UCAS Application'}), 403
 
         payload = request.get_json() or {}
-        def _normalize_ay(v):
-            s = str(v or '').strip()
-            if not s:
-                return 'current'
-            low = s.lower()
+        def _ay_candidates(v):
+            raw = str(v or '').strip()
+            if not raw:
+                return ['current'], 'current'
+            low = raw.lower()
             if low == 'current':
-                return 'current'
-            s = s.replace('\\', '/')
+                return ['current'], 'current'
+            s = raw.replace('\\', '/')
             s = s.replace('–', '-').replace('—', '-').replace('−', '-')
-            s = s.replace(' / ', '/').replace(' - ', '-')
-            s = s.replace('/', '-')
-            s = s.replace(' ', '')
-            return s
+            s = s.replace(' / ', '/').replace(' - ', '-').replace(' ', '')
+            v1 = s
+            v2 = s.replace('/', '-')  # canonical
+            v3 = s.replace('-', '/')
+            out = []
+            for x in (v1, v2, v3):
+                x = str(x or '').strip()
+                if x and x not in out:
+                    out.append(x)
+            canonical = v2 if v2 else (out[0] if out else 'current')
+            return (out or ['current']), canonical
 
-        academic_year = _normalize_ay(payload.get('academicYear') or request.args.get('academic_year') or 'current')
+        year_candidates, academic_year = _ay_candidates(payload.get('academicYear') or request.args.get('academic_year') or 'current')
         selected_course_key = payload.get('selectedCourseKey')
         answers = payload.get('answers') or {}
         requirements = payload.get('requirementsByCourse') or payload.get('requirements_by_course') or {}
@@ -11760,7 +11772,7 @@ def save_ucas_application(email):
         existing = supabase_client.table('ucas_applications')\
             .select('id, staff_comments')\
             .eq('student_email', email)\
-            .eq('academic_year', academic_year)\
+            .in_('academic_year', year_candidates)\
             .order('updated_at', desc=True)\
             .limit(1)\
             .execute()
