@@ -9627,25 +9627,59 @@ def submit_questionnaire():
                     knack_score_data[field_id] = str(score_value)
                     app.logger.info(f"[Questionnaire Submit] {key}: {score_value} → {field_id}")
             
-            # Helper to extract connection ID from various formats
-            def extract_connection_id(connection_data):
-                """Helper to extract ID from connection field (handles different formats)"""
+            # Helpers to extract connection IDs from various formats
+            def extract_connection_ids(connection_data):
+                """
+                Extract one-or-many connected record IDs from a Knack connection field.
+                Handles:
+                - list of dicts (e.g. [{id, identifier, ...}, ...])
+                - list of strings (record IDs)
+                - single dict ({id, ...})
+                - single string (record ID)
+                Returns a de-duplicated list preserving original order.
+                """
                 if not connection_data:
-                    return None
-                if isinstance(connection_data, list) and len(connection_data) > 0:
-                    item = connection_data[0]
-                    if isinstance(item, dict):
-                        return item.get('id')
-                    return item
-                return None
+                    return []
+
+                ids = []
+
+                if isinstance(connection_data, list):
+                    for item in connection_data:
+                        if isinstance(item, dict):
+                            _id = item.get('id')
+                            if _id:
+                                ids.append(_id)
+                        elif isinstance(item, str) and item:
+                            ids.append(item)
+                elif isinstance(connection_data, dict):
+                    _id = connection_data.get('id')
+                    if _id:
+                        ids.append(_id)
+                elif isinstance(connection_data, str) and connection_data:
+                    ids.append(connection_data)
+
+                # De-dupe while preserving order
+                seen = set()
+                out = []
+                for _id in ids:
+                    if _id not in seen:
+                        out.append(_id)
+                        seen.add(_id)
+                return out
+
+            def extract_connection_id(connection_data):
+                """Extract a single connected record ID (first), or None."""
+                ids = extract_connection_ids(connection_data)
+                return ids[0] if ids else None
             
             # Only add staff connections if we have them (don't send empty values)
             connections_added = []
             
             if staff_connections['staff_admin']:
-                staff_admin_id = extract_connection_id(staff_connections['staff_admin'])
-                if staff_admin_id:
-                    knack_score_data['field_439'] = [staff_admin_id]
+                # Staff Admin can be multi-connected; preserve ALL assigned staff admins
+                staff_admin_ids = extract_connection_ids(staff_connections['staff_admin'])
+                if staff_admin_ids:
+                    knack_score_data['field_439'] = staff_admin_ids
                     connections_added.append('staff_admin')
             
             if staff_connections['tutor']:
@@ -9785,9 +9819,10 @@ def submit_questionnaire():
             obj29_connections_added = []
             
             if staff_connections['staff_admin']:
-                staff_admin_id = extract_connection_id(staff_connections['staff_admin'])
-                if staff_admin_id:
-                    knack_response_data['field_2069'] = [staff_admin_id]
+                # Staff Admin can be multi-connected; preserve ALL assigned staff admins
+                staff_admin_ids = extract_connection_ids(staff_connections['staff_admin'])
+                if staff_admin_ids:
+                    knack_response_data['field_2069'] = staff_admin_ids
                     obj29_connections_added.append('staff_admin')
             
             if staff_connections['tutor']:
