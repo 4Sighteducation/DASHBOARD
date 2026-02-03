@@ -264,21 +264,34 @@ def fetch_cycle_responses(
         
         questions = questions_result.data if questions_result.data else []
         
-        # Get students for this establishment
-        students_query = supabase_client.table('students')\
+        # Get students for this establishment (paginate: Supabase defaults to 1000 rows)
+        base_students_query = supabase_client.table('students')\
             .select('id')\
             .eq('establishment_id', establishment_id)
         
         if academic_year:
-            students_query = students_query.eq('academic_year', academic_year)
+            base_students_query = base_students_query.eq('academic_year', academic_year)
         if year_group:
-            students_query = students_query.eq('year_group', str(year_group))
+            base_students_query = base_students_query.eq('year_group', str(year_group))
         if gender:
             # Best-effort: some DBs do not have students.gender
-            students_query = students_query.eq('gender', str(gender))
+            base_students_query = base_students_query.eq('gender', str(gender))
+
+        def _fetch_all_student_ids(q):
+            all_rows = []
+            page_size = 1000
+            start = 0
+            while True:
+                res = q.range(start, start + page_size - 1).execute()
+                rows = res.data or []
+                all_rows.extend(rows)
+                if len(rows) < page_size:
+                    break
+                start += page_size
+            return [r['id'] for r in all_rows if r.get('id')]
 
         try:
-            students_result = students_query.execute()
+            student_ids = _fetch_all_student_ids(base_students_query)
         except Exception as e:
             # Retry without gender filter if column doesn't exist
             if gender and 'gender' in str(e).lower():
@@ -290,37 +303,42 @@ def fetch_cycle_responses(
                     students_query = students_query.eq('academic_year', academic_year)
                 if year_group:
                     students_query = students_query.eq('year_group', str(year_group))
-                students_result = students_query.execute()
+                student_ids = _fetch_all_student_ids(students_query)
             else:
                 raise
-        student_ids = [s['id'] for s in students_result.data] if students_result.data else []
         
         if not student_ids:
             return {}
         
-        # Get question responses for these students and cycle
-        responses_query = supabase_client.table('question_responses')\
-            .select('*')\
-            .in_('student_id', student_ids)\
-            .eq('cycle', cycle)\
-        
-        if academic_year:
-            responses_query = responses_query.eq('academic_year', academic_year)
-
-        responses_result = responses_query.execute()
-        
-        responses = responses_result.data if responses_result.data else []
+        # Get question responses for these students and cycle (batch student_ids to avoid URL limits)
+        responses = []
+        batch_size = 50
+        for i in range(0, len(student_ids), batch_size):
+            batch_ids = student_ids[i:i + batch_size]
+            q = supabase_client.table('question_responses')\
+                .select('*')\
+                .in_('student_id', batch_ids)\
+                .eq('cycle', cycle)
+            if academic_year:
+                q = q.eq('academic_year', academic_year)
+            res = q.execute()
+            if res.data:
+                responses.extend(res.data)
         
         # Organize responses by question
         question_data = {}
         for question in questions:
-            q_id = question['id']
-            q_responses = [r for r in responses if r.get('question_id') == q_id]
+            # IMPORTANT: question_responses.question_id is a string code (matches questions.question_id),
+            # not the UUID primary key questions.id.
+            q_code = question.get('question_id')
+            if not q_code:
+                continue
+            q_responses = [r for r in responses if r.get('question_id') == q_code]
             
             if q_responses:
                 response_values = [r['response_value'] for r in q_responses if r.get('response_value') is not None]
                 if response_values:
-                    question_data[q_id] = {
+                    question_data[q_code] = {
                         'text': question['question_text'],
                         'category': question['vespa_category'],
                         'responses': response_values,

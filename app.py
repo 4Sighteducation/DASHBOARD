@@ -7823,8 +7823,21 @@ def fetch_cycle_data(establishment_id, cycle, academic_year, year_group=None, ge
             # Best-effort: some DBs do not have students.gender
             students_query = students_query.eq('gender', str(gender))
 
+        def _fetch_all_student_ids(q):
+            all_rows = []
+            page_size = 1000
+            start = 0
+            while True:
+                res = q.range(start, start + page_size - 1).execute()
+                rows = res.data or []
+                all_rows.extend(rows)
+                if len(rows) < page_size:
+                    break
+                start += page_size
+            return [r['id'] for r in all_rows if r.get('id')]
+
         try:
-            students_result = students_query.execute()
+            student_ids = _fetch_all_student_ids(students_query)
         except Exception as e:
             if gender and 'gender' in str(e).lower():
                 app.logger.warning("students.gender not available; retrying without gender filter")
@@ -7835,16 +7848,15 @@ def fetch_cycle_data(establishment_id, cycle, academic_year, year_group=None, ge
                     students_query = students_query.eq('academic_year', academic_year)
                 if year_group:
                     students_query = students_query.eq('year_group', str(year_group))
-                students_result = students_query.execute()
+                student_ids = _fetch_all_student_ids(students_query)
             else:
                 raise
-        student_ids = [s['id'] for s in students_result.data] if students_result.data else []
         
         app.logger.info(f"Found {len(student_ids)} students for establishment {establishment_id}")
         
         if not student_ids:
             app.logger.warning(f"No students found for establishment {establishment_id}")
-            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}, 'academic_year': academic_year}
+            return {'mean': None, 'std': None, 'count': 0, 'vespa_breakdown': {}, 'academic_year': academic_year}
         
         # Get vespa scores for these students
         scores = []
@@ -7873,30 +7885,64 @@ def fetch_cycle_data(establishment_id, cycle, academic_year, year_group=None, ge
         
         if scores:
             # Calculate statistics
-            overall_scores = [s['overall'] for s in scores if s.get('overall') is not None]
-            vision_scores = [s['vision'] for s in scores if s.get('vision') is not None]
-            effort_scores = [s['effort'] for s in scores if s.get('effort') is not None]
-            systems_scores = [s['systems'] for s in scores if s.get('systems') is not None]
-            practice_scores = [s['practice'] for s in scores if s.get('practice') is not None]
-            attitude_scores = [s['attitude'] for s in scores if s.get('attitude') is not None]
+            #
+            # IMPORTANT: We intentionally exclude placeholder zeros / blanks.
+            # In some datasets, missing element scores are stored as 0.00 (not NULL),
+            # which would incorrectly drag the mean down if included.
+            def _clean_vespa_values(rows, key, min_val=0.001, max_val=10.0):
+                cleaned = []
+                zeros = 0
+                nulls = 0
+                out_of_range = 0
+                for r in (rows or []):
+                    v = r.get(key, None)
+                    if v is None or v == '':
+                        nulls += 1
+                        continue
+                    try:
+                        fv = float(v)
+                    except Exception:
+                        nulls += 1
+                        continue
+                    if np.isnan(fv):
+                        nulls += 1
+                        continue
+                    if fv == 0:
+                        zeros += 1
+                        continue
+                    if fv < min_val or fv > max_val:
+                        out_of_range += 1
+                        continue
+                    cleaned.append(fv)
+                return cleaned, {'zeros': zeros, 'nulls': nulls, 'out_of_range': out_of_range, 'kept': len(cleaned)}
+
+            overall_scores, overall_dbg = _clean_vespa_values(scores, 'overall')
+            vision_scores, vision_dbg = _clean_vespa_values(scores, 'vision')
+            effort_scores, effort_dbg = _clean_vespa_values(scores, 'effort')
+            systems_scores, systems_dbg = _clean_vespa_values(scores, 'systems')
+            practice_scores, practice_dbg = _clean_vespa_values(scores, 'practice')
+            attitude_scores, attitude_dbg = _clean_vespa_values(scores, 'attitude')
+
+            # Useful diagnostics when investigating suspicious means
+            app.logger.info(f"[VESPA clean] cycle={cycle} year={academic_year} overall={overall_dbg} vision={vision_dbg} effort={effort_dbg} systems={systems_dbg} practice={practice_dbg} attitude={attitude_dbg}")
             
             return {
-                'mean': float(np.mean(overall_scores)) if overall_scores else 0,
-                'std': float(np.std(overall_scores)) if overall_scores else 0,
+                'mean': float(np.mean(overall_scores)) if overall_scores else None,
+                'std': float(np.std(overall_scores)) if overall_scores else None,
                 'count': len(overall_scores),
                 'vespa_breakdown': {
-                    'vision': float(np.mean(vision_scores)) if vision_scores else 0,
-                    'effort': float(np.mean(effort_scores)) if effort_scores else 0,
-                    'systems': float(np.mean(systems_scores)) if systems_scores else 0,
-                    'practice': float(np.mean(practice_scores)) if practice_scores else 0,
-                    'attitude': float(np.mean(attitude_scores)) if attitude_scores else 0
+                    'vision': float(np.mean(vision_scores)) if vision_scores else None,
+                    'effort': float(np.mean(effort_scores)) if effort_scores else None,
+                    'systems': float(np.mean(systems_scores)) if systems_scores else None,
+                    'practice': float(np.mean(practice_scores)) if practice_scores else None,
+                    'attitude': float(np.mean(attitude_scores)) if attitude_scores else None
                 },
                 'academic_year': academic_year
             }
         else:
             return {
-                'mean': 0,
-                'std': 0,
+                'mean': None,
+                'std': None,
                 'count': 0,
                 'vespa_breakdown': {},
                 'academic_year': academic_year
@@ -7935,7 +7981,7 @@ def fetch_faculty_data(establishment_id, faculty, cycle, academic_year):
         app.logger.info(f"Found {len(student_ids)} students in faculty {faculty}")
         
         if not student_ids:
-            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}, 'faculty': faculty}
+            return {'mean': None, 'std': None, 'count': 0, 'vespa_breakdown': {}, 'faculty': faculty}
         
         # Get vespa scores
         vespa_query = supabase_client.table('vespa_scores')\
@@ -7953,24 +7999,39 @@ def fetch_faculty_data(establishment_id, faculty, cycle, academic_year):
         
         if scores:
             # Calculate statistics
-            overall_scores = [s['overall'] for s in scores if s.get('overall') is not None]
+            def _clean(rows, key, min_val=0.001, max_val=10.0):
+                cleaned = []
+                for r in (rows or []):
+                    v = r.get(key, None)
+                    if v is None or v == '':
+                        continue
+                    try:
+                        fv = float(v)
+                    except Exception:
+                        continue
+                    if np.isnan(fv) or fv == 0 or fv < min_val or fv > max_val:
+                        continue
+                    cleaned.append(fv)
+                return cleaned
+
+            overall_scores = _clean(scores, 'overall')
             
             return {
-                'mean': float(np.mean(overall_scores)) if overall_scores else 0,
-                'std': float(np.std(overall_scores)) if overall_scores else 0,
+                'mean': float(np.mean(overall_scores)) if overall_scores else None,
+                'std': float(np.std(overall_scores)) if overall_scores else None,
                 'count': len(overall_scores),
                 'vespa_breakdown': {
-                    'vision': float(np.mean([s['vision'] for s in scores if s.get('vision') is not None])) if scores else 0,
-                    'effort': float(np.mean([s['effort'] for s in scores if s.get('effort') is not None])) if scores else 0,
-                    'systems': float(np.mean([s['systems'] for s in scores if s.get('systems') is not None])) if scores else 0,
-                    'practice': float(np.mean([s['practice'] for s in scores if s.get('practice') is not None])) if scores else 0,
-                    'attitude': float(np.mean([s['attitude'] for s in scores if s.get('attitude') is not None])) if scores else 0
+                    'vision': float(np.mean(_clean(scores, 'vision'))) if _clean(scores, 'vision') else None,
+                    'effort': float(np.mean(_clean(scores, 'effort'))) if _clean(scores, 'effort') else None,
+                    'systems': float(np.mean(_clean(scores, 'systems'))) if _clean(scores, 'systems') else None,
+                    'practice': float(np.mean(_clean(scores, 'practice'))) if _clean(scores, 'practice') else None,
+                    'attitude': float(np.mean(_clean(scores, 'attitude'))) if _clean(scores, 'attitude') else None
                 },
                 'faculty': faculty,
                 'academic_year': academic_year
             }
         else:
-            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}, 'faculty': faculty}
+            return {'mean': None, 'std': None, 'count': 0, 'vespa_breakdown': {}, 'faculty': faculty}
             
     except Exception as e:
         app.logger.error(f"Failed to fetch faculty data: {e}")
@@ -7993,7 +8054,7 @@ def fetch_year_group_data(establishment_id, year_group, cycle, academic_year):
         student_ids = [s['id'] for s in students_result.data] if students_result.data else []
         
         if not student_ids:
-            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}}
+            return {'mean': None, 'std': None, 'count': 0, 'vespa_breakdown': {}}
         
         # Get vespa scores
         vespa_query = supabase_client.table('vespa_scores')\
@@ -8009,24 +8070,39 @@ def fetch_year_group_data(establishment_id, year_group, cycle, academic_year):
         
         if scores:
             # Calculate statistics
-            overall_scores = [s['overall'] for s in scores if s.get('overall') is not None]
+            def _clean(rows, key, min_val=0.001, max_val=10.0):
+                cleaned = []
+                for r in (rows or []):
+                    v = r.get(key, None)
+                    if v is None or v == '':
+                        continue
+                    try:
+                        fv = float(v)
+                    except Exception:
+                        continue
+                    if np.isnan(fv) or fv == 0 or fv < min_val or fv > max_val:
+                        continue
+                    cleaned.append(fv)
+                return cleaned
+
+            overall_scores = _clean(scores, 'overall')
             
             return {
-                'mean': float(np.mean(overall_scores)) if overall_scores else 0,
-                'std': float(np.std(overall_scores)) if overall_scores else 0,
+                'mean': float(np.mean(overall_scores)) if overall_scores else None,
+                'std': float(np.std(overall_scores)) if overall_scores else None,
                 'count': len(overall_scores),
                 'vespa_breakdown': {
-                    'vision': float(np.mean([s['vision'] for s in scores if s.get('vision') is not None])) if scores else 0,
-                    'effort': float(np.mean([s['effort'] for s in scores if s.get('effort') is not None])) if scores else 0,
-                    'systems': float(np.mean([s['systems'] for s in scores if s.get('systems') is not None])) if scores else 0,
-                    'practice': float(np.mean([s['practice'] for s in scores if s.get('practice') is not None])) if scores else 0,
-                    'attitude': float(np.mean([s['attitude'] for s in scores if s.get('attitude') is not None])) if scores else 0
+                    'vision': float(np.mean(_clean(scores, 'vision'))) if _clean(scores, 'vision') else None,
+                    'effort': float(np.mean(_clean(scores, 'effort'))) if _clean(scores, 'effort') else None,
+                    'systems': float(np.mean(_clean(scores, 'systems'))) if _clean(scores, 'systems') else None,
+                    'practice': float(np.mean(_clean(scores, 'practice'))) if _clean(scores, 'practice') else None,
+                    'attitude': float(np.mean(_clean(scores, 'attitude'))) if _clean(scores, 'attitude') else None
                 },
                 'year_group': year_group,
                 'academic_year': academic_year
             }
         else:
-            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}, 'year_group': year_group}
+            return {'mean': None, 'std': None, 'count': 0, 'vespa_breakdown': {}, 'year_group': year_group}
             
     except Exception as e:
         app.logger.error(f"Failed to fetch year group data: {e}")
@@ -8048,7 +8124,7 @@ def fetch_academic_year_data(establishment_id, academic_year, year_group=None, c
         student_ids = [s['id'] for s in students_result.data] if students_result.data else []
         
         if not student_ids:
-            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}, 'academic_year': academic_year}
+            return {'mean': None, 'std': None, 'count': 0, 'vespa_breakdown': {}, 'academic_year': academic_year}
         
         # Get vespa scores for this academic year
         vespa_result = supabase_client.table('vespa_scores')\
@@ -8062,24 +8138,39 @@ def fetch_academic_year_data(establishment_id, academic_year, year_group=None, c
         
         if scores:
             # Calculate statistics
-            overall_scores = [s['overall'] for s in scores if s.get('overall') is not None]
+            def _clean(rows, key, min_val=0.001, max_val=10.0):
+                cleaned = []
+                for r in (rows or []):
+                    v = r.get(key, None)
+                    if v is None or v == '':
+                        continue
+                    try:
+                        fv = float(v)
+                    except Exception:
+                        continue
+                    if np.isnan(fv) or fv == 0 or fv < min_val or fv > max_val:
+                        continue
+                    cleaned.append(fv)
+                return cleaned
+
+            overall_scores = _clean(scores, 'overall')
             
             return {
-                'mean': float(np.mean(overall_scores)) if overall_scores else 0,
-                'std': float(np.std(overall_scores)) if overall_scores else 0,
+                'mean': float(np.mean(overall_scores)) if overall_scores else None,
+                'std': float(np.std(overall_scores)) if overall_scores else None,
                 'count': len(overall_scores),
                 'vespa_breakdown': {
-                    'vision': float(np.mean([s['vision'] for s in scores if s.get('vision') is not None])) if scores else 0,
-                    'effort': float(np.mean([s['effort'] for s in scores if s.get('effort') is not None])) if scores else 0,
-                    'systems': float(np.mean([s['systems'] for s in scores if s.get('systems') is not None])) if scores else 0,
-                    'practice': float(np.mean([s['practice'] for s in scores if s.get('practice') is not None])) if scores else 0,
-                    'attitude': float(np.mean([s['attitude'] for s in scores if s.get('attitude') is not None])) if scores else 0
+                    'vision': float(np.mean(_clean(scores, 'vision'))) if _clean(scores, 'vision') else None,
+                    'effort': float(np.mean(_clean(scores, 'effort'))) if _clean(scores, 'effort') else None,
+                    'systems': float(np.mean(_clean(scores, 'systems'))) if _clean(scores, 'systems') else None,
+                    'practice': float(np.mean(_clean(scores, 'practice'))) if _clean(scores, 'practice') else None,
+                    'attitude': float(np.mean(_clean(scores, 'attitude'))) if _clean(scores, 'attitude') else None
                 },
                 'academic_year': academic_year,
                 'year_group': year_group
             }
         else:
-            return {'mean': 0, 'std': 0, 'count': 0, 'vespa_breakdown': {}, 'academic_year': academic_year}
+            return {'mean': None, 'std': None, 'count': 0, 'vespa_breakdown': {}, 'academic_year': academic_year}
             
     except Exception as e:
         app.logger.error(f"Failed to fetch academic year data: {e}")
@@ -8176,12 +8267,25 @@ def summarize_comparison_data(data):
     
     for key, values in data.items():
         if isinstance(values, dict) and 'mean' in values:
-            summary.append(f"{key}: Mean={values['mean']:.2f}, StdDev={values['std']:.2f}, N={values['count']}")
+            mean_v = values.get('mean', None)
+            std_v = values.get('std', None)
+            mean_s = "NA" if mean_v is None else f"{float(mean_v):.2f}"
+            std_s = "NA" if std_v is None else f"{float(std_v):.2f}"
+            summary.append(f"{key}: Mean={mean_s}, StdDev={std_s}, N={values.get('count', 0)}")
             
             # Add VESPA breakdowns if available
             if 'vespa_breakdown' in values:
                 vespa = values['vespa_breakdown']
-                summary.append(f"  VESPA breakdown: Vision={vespa.get('vision', 0):.2f}, Effort={vespa.get('effort', 0):.2f}, Systems={vespa.get('systems', 0):.2f}, Practice={vespa.get('practice', 0):.2f}, Attitude={vespa.get('attitude', 0):.2f}")
+                def _fmt(v):
+                    return "NA" if v is None else f"{float(v):.2f}"
+                summary.append(
+                    "  VESPA breakdown: "
+                    f"Vision={_fmt(vespa.get('vision'))}, "
+                    f"Effort={_fmt(vespa.get('effort'))}, "
+                    f"Systems={_fmt(vespa.get('systems'))}, "
+                    f"Practice={_fmt(vespa.get('practice'))}, "
+                    f"Attitude={_fmt(vespa.get('attitude'))}"
+                )
     
     return '\n'.join(summary)
 
@@ -8264,13 +8368,22 @@ def create_interactive_html_report(school_name, logo_url, primary_color, data, i
         document.addEventListener('DOMContentLoaded', function() {{
             console.log('Real data loaded:', window.realReportData);
             console.log('Chart data:', window.chartData);
+
+            // Chart.js global polish (match demo look)
+            if (window.Chart && window.Chart.defaults) {{
+                Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                Chart.defaults.color = "#2c3e50";
+            }}
             
             // Initialize VESPA Radar Chart if data exists
             if (window.chartData && window.chartData.vespaRadar) {{
                 const radarCanvas = document.getElementById('vespaRadarChart');
                 if (!radarCanvas) {{
                     // Create canvas if it doesn't exist
-                    const chartSection = document.querySelector('.chart-section') || document.querySelector('.vespa-comparison-section');
+                    const chartSection =
+                        document.getElementById('chartsContainer') ||
+                        document.querySelector('.chart-section') ||
+                        document.querySelector('.vespa-comparison-section');
                     if (chartSection) {{
                         const canvas = document.createElement('canvas');
                         canvas.id = 'vespaRadarChart';
@@ -8294,8 +8407,82 @@ def create_interactive_html_report(school_name, logo_url, primary_color, data, i
                             scales: {{
                                 r: {{
                                     min: 0,
-                                    max: 100,
-                                    ticks: {{ stepSize: 20 }}
+                                    max: 10,
+                                    ticks: {{ stepSize: 2 }}
+                                }}
+                            }}
+                        }}
+                    }});
+                }}
+            }}
+
+            // Grouped bar: element means per cycle
+            if (window.chartData && window.chartData.vespaElementBar) {{
+                const el = document.getElementById('vespaElementBarChart');
+                if (el && el.getContext) {{
+                    new Chart(el.getContext('2d'), {{
+                        type: 'bar',
+                        data: window.chartData.vespaElementBar,
+                        options: {{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {{
+                                legend: {{ position: 'top' }},
+                                title: {{ display: false }}
+                            }},
+                            scales: {{
+                                y: {{
+                                    beginAtZero: true,
+                                    max: 10,
+                                    grid: {{ color: 'rgba(0,0,0,0.06)' }}
+                                }},
+                                x: {{
+                                    grid: {{ display: false }}
+                                }}
+                            }}
+                        }}
+                    }});
+                }}
+            }}
+
+            // Delta bar: Cycle 2 − Cycle 1
+            if (window.chartData && window.chartData.vespaDeltaBar) {{
+                const dl = document.getElementById('vespaDeltaBarChart');
+                if (dl && dl.getContext) {{
+                    const dataset = window.chartData.vespaDeltaBar.datasets?.[0];
+                    const values = (dataset?.data) || [];
+                    const bg = values.map(v => {{
+                        if (v === null || v === undefined) return 'rgba(108,117,125,0.22)';
+                        return v >= 0 ? 'rgba(40,167,69,0.35)' : 'rgba(220,53,69,0.35)';
+                    }});
+                    const br = values.map(v => {{
+                        if (v === null || v === undefined) return 'rgba(108,117,125,0.75)';
+                        return v >= 0 ? 'rgba(40,167,69,0.95)' : 'rgba(220,53,69,0.95)';
+                    }});
+                    const patched = JSON.parse(JSON.stringify(window.chartData.vespaDeltaBar));
+                    if (patched.datasets && patched.datasets[0]) {{
+                        patched.datasets[0].backgroundColor = bg;
+                        patched.datasets[0].borderColor = br;
+                        patched.datasets[0].borderWidth = 1;
+                    }}
+                    new Chart(dl.getContext('2d'), {{
+                        type: 'bar',
+                        data: patched,
+                        options: {{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {{
+                                legend: {{ display: false }},
+                                title: {{ display: false }}
+                            }},
+                            scales: {{
+                                y: {{
+                                    grid: {{ color: 'rgba(0,0,0,0.06)' }},
+                                    suggestedMin: -1.5,
+                                    suggestedMax: 1.5
+                                }},
+                                x: {{
+                                    grid: {{ display: false }}
                                 }}
                             }}
                         }}
@@ -8307,7 +8494,10 @@ def create_interactive_html_report(school_name, logo_url, primary_color, data, i
             if (window.chartData && window.chartData.trendLine) {{
                 const trendCanvas = document.getElementById('trendLineChart');
                 if (!trendCanvas) {{
-                    const chartSection = document.querySelector('.chart-section') || document.querySelector('.vespa-comparison-section');
+                    const chartSection =
+                        document.getElementById('chartsContainer') ||
+                        document.querySelector('.chart-section') ||
+                        document.querySelector('.vespa-comparison-section');
                     if (chartSection) {{
                         const canvas = document.createElement('canvas');
                         canvas.id = 'trendLineChart';
@@ -8334,7 +8524,7 @@ def create_interactive_html_report(school_name, logo_url, primary_color, data, i
                             scales: {{
                                 y: {{
                                     beginAtZero: true,
-                                    max: 100
+                                    max: 10
                                 }}
                             }}
                         }}
@@ -8372,6 +8562,7 @@ def create_html_from_template(school_name, logo_url, primary_color, data, insigh
         key_findings_html=generate_key_findings_html(insights.get('key_findings', [])),
         recommendations_html=generate_recommendations_html(insights.get('recommendations', [])),
         data_table_html=generate_data_table_html(data),
+        vespa_section_html=build_vespa_comparison_section(data, report_type),
         chart_data_json=json.dumps(chart_data),
         vespa_colors=json.dumps({
             'vision': '#e59437',
@@ -8398,33 +8589,386 @@ def create_html_template():
     <script src="https://cdn.jsdelivr.net/gh/timdream/wordcloud2.js@gh-pages/src/wordcloud2.js"></script>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }}
-        .report-container {{ max-width: 1200px; margin: 0 auto; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.1); }}
-        .control-panel {{ position: fixed; right: 20px; top: 20px; background: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; max-height: 80vh; overflow-y: auto; width: 280px; }}
-        .control-panel h3 {{ margin-bottom: 15px; color: {primary_color}; font-size: 18px; }}
-        .control-group {{ margin-bottom: 15px; }}
-        .control-group label {{ display: flex; align-items: center; margin-bottom: 8px; cursor: pointer; font-size: 14px; }}
+
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }}
+
+        .container {{
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+
+        .report-header {{
+            background: white;
+            border-radius: 15px;
+            padding: 36px 38px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+        }}
+
+        .header-title {{
+            flex: 1;
+            min-width: 0;
+        }}
+
+        .report-header h1 {{
+            color: #667eea;
+            font-size: 2.3em;
+            margin-bottom: 6px;
+            line-height: 1.15;
+        }}
+
+        .report-header .subtitle {{
+            color: #5b5b5b;
+            font-size: 1.1em;
+            margin-top: 6px;
+        }}
+
+        .report-date {{
+            color: #666;
+            font-size: 1.05em;
+            margin-top: 6px;
+        }}
+
+        .header-logo {{
+            width: 78px;
+            height: 78px;
+            border-radius: 12px;
+            background: white;
+            padding: 10px;
+            object-fit: contain;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+        }}
+
+        .section {{
+            background: white;
+            border-radius: 15px;
+            padding: 28px 30px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }}
+
+        .section-title {{
+            color: #667eea;
+            margin-bottom: 16px;
+            font-size: 1.8em;
+            font-weight: 700;
+        }}
+
+        .editable {{
+            border: 1px dashed transparent;
+            padding: 2px 4px;
+            border-radius: 6px;
+            transition: all 0.18s;
+        }}
+        .editable:hover {{
+            border-color: rgba(102, 126, 234, 0.6);
+            background: rgba(102, 126, 234, 0.06);
+            cursor: text;
+        }}
+        .editable:focus {{
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.9);
+            background: white;
+        }}
+
+        .key-finding {{
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+        }}
+
+        .recommendation {{
+            background: rgba(102, 126, 234, 0.08);
+            border-left: 4px solid #667eea;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+        }}
+
+        /* Tables */
+        table {{ width: 100%; border-collapse: collapse; margin: 18px 0; }}
+        th {{
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 700;
+        }}
+        td {{
+            padding: 12px;
+            border-bottom: 1px solid #e7e7e7;
+            vertical-align: top;
+        }}
+        tr:hover {{ background: #f8f9fa; }}
+
+        .data-table {{ width: 100%; border-collapse: collapse; }}
+
+        /* Charts */
+        .charts-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 18px;
+            margin-top: 16px;
+        }}
+        .chart-container {{
+            margin: 0;
+            padding: 18px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.06);
+        }}
+        .chart-title {{
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #3c3c3c;
+            margin-bottom: 10px;
+        }}
+        .chart-wrap {{
+            position: relative;
+            height: 360px;
+        }}
+        .chart-wrap.tall {{ height: 420px; }}
+        canvas {{ max-width: 100%; }}
+
+        /* Stat cards (demo style) */
+        .stats-grid {{
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 14px 0 10px 0;
+        }}
+        @media (max-width: 1200px) {{
+            .stats-grid {{ grid-template-columns: repeat(3, 1fr); }}
+        }}
+        @media (max-width: 768px) {{
+            .stats-grid {{ grid-template-columns: repeat(2, 1fr); }}
+            .report-header {{ flex-direction: column; align-items: flex-start; }}
+        }}
+
+        .stat-card {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 10px;
+            border-radius: 10px;
+            text-align: center;
+            overflow: hidden;
+        }}
+        .stat-card.good {{ background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }}
+        .stat-card.warn {{ background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); }}
+        .stat-card.bad {{ background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%); }}
+        .stat-card h4 {{
+            font-size: 0.78em;
+            opacity: 0.95;
+            margin-bottom: 4px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }}
+        .stat-card .value {{
+            font-size: 1.45em;
+            font-weight: 800;
+            margin: 4px 0;
+        }}
+        .stat-card .change {{
+            font-size: 0.72em;
+            margin-top: 2px;
+            opacity: 0.9;
+            line-height: 1.25;
+        }}
+        .stat-card small {{
+            font-size: 0.68em;
+            opacity: 0.85;
+            display: block;
+            margin-top: 6px;
+        }}
+
+        /* VESPA + QLA */
+        .vespa-comparison-section h3 {{
+            color: #667eea;
+            margin: 8px 0 10px 0;
+            font-size: 1.55em;
+        }}
+        .vespa-comparison-section h4 {{
+            color: #764ba2;
+            margin: 18px 0 10px 0;
+            font-size: 1.15em;
+        }}
+
+        .vespa-table .element-name {{ font-weight: 700; }}
+        .vespa-table .score {{ font-weight: 700; }}
+        .vespa-table .difference {{ font-weight: 800; }}
+        .vespa-table .overall-row td {{ background: rgba(102, 126, 234, 0.07); }}
+
+        .positive {{ color: #28a745; }}
+        .negative {{ color: #dc3545; }}
+        .neutral {{ color: #6c757d; }}
+
+        .category-badge {{
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.75em;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            background: rgba(102, 126, 234, 0.12);
+            color: #4b5bd6;
+            margin-top: 10px;
+        }}
+
+        .qla-section h4 {{
+            color: #764ba2;
+            margin: 18px 0 10px 0;
+            font-size: 1.15em;
+        }}
+        .qla-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }}
+        .question-diff-card {{
+            background: white;
+            border-radius: 12px;
+            padding: 14px 14px;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+            display: grid;
+            grid-template-columns: 34px 1fr;
+            gap: 10px;
+        }}
+        .question-diff-card.high-diff {{ border-left: 5px solid #dc3545; }}
+        .question-diff-card.medium-diff {{ border-left: 5px solid #ff9800; }}
+        .question-diff-card.low-diff {{ border-left: 5px solid #28a745; }}
+        .diff-rank {{
+            width: 34px; height: 34px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }}
+        .question-text {{
+            font-weight: 700;
+            color: #2d2d2d;
+            margin-bottom: 8px;
+        }}
+        .diff-scores {{
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 10px;
+            align-items: center;
+            margin-top: 8px;
+        }}
+        .score-group {{
+            background: rgba(0,0,0,0.03);
+            border-radius: 10px;
+            padding: 8px 10px;
+        }}
+        .score-label {{
+            display: block;
+            font-size: 0.78em;
+            color: #6b6b6b;
+            font-weight: 700;
+        }}
+        .score-value {{
+            display: block;
+            font-size: 1.1em;
+            font-weight: 900;
+            color: #2c3e50;
+        }}
+        .diff-arrow {{
+            font-weight: 900;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(0,0,0,0.05);
+            font-size: 0.9em;
+            white-space: nowrap;
+        }}
+        .diff-arrow.up {{ color: #28a745; background: rgba(40, 167, 69, 0.12); }}
+        .diff-arrow.down {{ color: #dc3545; background: rgba(220, 53, 69, 0.12); }}
+
+        .stats-summary {{
+            margin-top: 14px;
+            background: rgba(102, 126, 234, 0.06);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }}
+        .stat-item .stat-label {{ color: #5b5b5b; font-weight: 700; margin-right: 6px; }}
+        .stat-item .stat-value {{ font-weight: 900; color: #2c3e50; }}
+
+        /* Control panel (restyled) */
+        .control-panel {{
+            position: fixed;
+            right: 18px;
+            top: 18px;
+            background: rgba(255,255,255,0.92);
+            border-radius: 14px;
+            padding: 16px 16px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+            z-index: 1000;
+            max-height: 82vh;
+            overflow-y: auto;
+            width: 280px;
+            border: 1px solid rgba(255,255,255,0.45);
+            backdrop-filter: blur(10px);
+        }}
+        .control-panel h3 {{
+            margin-bottom: 12px;
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 900;
+        }}
+        .control-group {{ margin-bottom: 12px; }}
+        .control-group label {{ display: flex; align-items: center; margin-bottom: 8px; cursor: pointer; font-size: 13.5px; color: #333; }}
         .control-group input[type="checkbox"] {{ margin-right: 8px; }}
-        .report-header {{ background: linear-gradient(135deg, {primary_color}, {primary_color}dd); color: white; padding: 40px; display: flex; align-items: center; justify-content: space-between; }}
-        .header-title h1 {{ font-size: 28px; margin-bottom: 10px; }}
-        .header-logo {{ width: 80px; height: 80px; border-radius: 8px; background: white; padding: 10px; }}
-        .report-section {{ padding: 30px 40px; border-bottom: 1px solid #eee; }}
-        .section-title {{ color: {primary_color}; font-size: 24px; margin-bottom: 20px; font-weight: 600; }}
-        .editable {{ border: 1px dashed transparent; padding: 2px 4px; border-radius: 4px; transition: all 0.2s; }}
-        .editable:hover {{ border-color: {primary_color}; background: #f0f0f0; cursor: text; }}
-        .editable:focus {{ outline: none; border-color: {primary_color}; background: white; }}
-        .key-finding {{ background: #f8f9fa; padding: 15px; margin-bottom: 10px; border-left: 4px solid {primary_color}; border-radius: 4px; }}
-        .recommendation {{ background: #e6f7ff; padding: 15px; margin-bottom: 10px; border-left: 4px solid #1890ff; border-radius: 4px; }}
-        .data-table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-        .data-table th {{ background: {primary_color}; color: white; padding: 12px; text-align: left; }}
-        .data-table td {{ padding: 12px; border-bottom: 1px solid #eee; }}
-        .data-table tr:hover {{ background: #f5f5f5; }}
-        .charts-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; margin-top: 20px; }}
-        .chart-container {{ background: #f8f9fa; padding: 20px; border-radius: 8px; }}
-        .btn {{ padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s; }}
-        .btn-primary {{ background: {primary_color}; color: white; }}
-        .btn-primary:hover {{ background: {primary_color}dd; }}
-        @media print {{ .control-panel {{ display: none; }} }}
+
+        .btn {{
+            padding: 10px 14px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 800;
+            transition: all 0.2s;
+            width: 100%;
+            margin-bottom: 8px;
+        }}
+        .btn-primary {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }}
+        .btn-primary:hover {{
+            filter: brightness(1.03);
+            transform: translateY(-1px);
+        }}
+
+        @media print {{
+            @page {{ size: A4; margin: 15mm 10mm; }}
+            body {{ background: white; }}
+            .control-panel {{ display: none !important; }}
+            .container {{ max-width: 100%; padding: 0; }}
+            .section, .report-header {{ box-shadow: none; margin-bottom: 10px; padding: 10px; }}
+            .chart-wrap {{ height: 260px; }}
+        }}
     </style>
 </head>
 <body>
@@ -8445,26 +8989,26 @@ def create_html_template():
     </div>
     
     <!-- Report Content -->
-    <div class="report-container">
+    <div class="container">
         <!-- Header -->
         <div class="report-header">
             <img src="{logo_url}" alt="School Logo" class="header-logo" onerror="this.style.display=\'none\'" />
             <div class="header-title">
                 <h1 class="editable" contenteditable="true">{school_name}</h1>
-                <p class="editable" contenteditable="true">{comparison_title}</p>
-                <p>Generated: {report_date}</p>
+                <div class="subtitle editable" contenteditable="true">{comparison_title}</div>
+                <div class="report-date">Generated: {report_date}</div>
             </div>
-            <img src="https://vespa.academy/_astro/vespalogo.BGrK1ARl.png" alt="VESPA Logo" class="header-logo" />
+            <img src="https://vespa.academy/_astro/vespalogo.BGrK1ARl.png" alt="VESPA Logo" class="header-logo" onerror="this.style.display=\'none\'" />
         </div>
         
         <!-- Organizational Context -->
-        <div class="report-section" id="context">
+        <div class="section" id="context">
             <h2 class="section-title">Organizational Context</h2>
             <p class="editable" contenteditable="true">{organizational_context}</p>
         </div>
         
         <!-- Executive Summary -->
-        <div class="report-section" id="executive-summary">
+        <div class="section" id="executive-summary">
             <h2 class="section-title">Executive Summary</h2>
             <div class="editable" contenteditable="true">
                 {executive_summary}
@@ -8472,20 +9016,35 @@ def create_html_template():
         </div>
         
         <!-- Key Findings -->
-        <div class="report-section" id="key-findings">
+        <div class="section" id="key-findings">
             <h2 class="section-title">Key Findings</h2>
             {key_findings_html}
         </div>
         
         <!-- Data Analysis -->
-        <div class="report-section" id="data-analysis">
+        <div class="section" id="data-analysis">
             <h2 class="section-title">Data Analysis</h2>
             {data_table_html}
-            <div class="charts-grid" id="chartsContainer"></div>
+            {vespa_section_html}
+            {qla_insights_html}
+            <div class="charts-grid" id="chartsContainer">
+                <div class="chart-container">
+                    <div class="chart-title">VESPA Profile Comparison</div>
+                    <div class="chart-wrap"><canvas id="vespaRadarChart"></canvas></div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">VESPA Element Means (Cycle comparison)</div>
+                    <div class="chart-wrap"><canvas id="vespaElementBarChart"></canvas></div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">VESPA Element Change (Cycle 2 − Cycle 1)</div>
+                    <div class="chart-wrap"><canvas id="vespaDeltaBarChart"></canvas></div>
+                </div>
+            </div>
         </div>
         
         <!-- Recommendations -->
-        <div class="report-section" id="recommendations">
+        <div class="section" id="recommendations">
             <h2 class="section-title">Recommendations</h2>
             {recommendations_html}
         </div>
@@ -8565,13 +9124,15 @@ def generate_data_table_html(data):
             std_val = values.get('std', 0) 
             count_val = values.get('count', 0)
             
-            # Convert to percentage if needed (VESPA scores are 1-10)
-            if 0 <= mean_val <= 10:
-                mean_display = f'{mean_val * 10:.1f}%'
-                std_display = f'{std_val * 10:.1f}'
+            # VESPA scores are typically 1-10; display on 0-10 scale for readability
+            if mean_val is None:
+                mean_display = '—'
             else:
-                mean_display = f'{mean_val:.2f}'
-                std_display = f'{std_val:.2f}'
+                mean_display = f'{float(mean_val):.2f}'
+            if std_val is None:
+                std_display = '—'
+            else:
+                std_display = f'{float(std_val):.2f}'
             
             html += f'<tr>'
             html += f'<td>{group_name}</td>'
@@ -8596,7 +9157,9 @@ def prepare_chart_data(data, report_type):
         'comparisonBar': None,
         'trendLine': None,
         'distribution': None,
-        'heatmap': None
+        'heatmap': None,
+        'vespaElementBar': None,
+        'vespaDeltaBar': None,
     }
     
     # Extract VESPA scores for radar chart
@@ -8611,11 +9174,11 @@ def prepare_chart_data(data, report_type):
                 datasets.append({
                     'label': key.replace('_', ' ').title(),
                     'data': [
-                        vespa.get('vision', 0) * 10,  # Convert to 0-100 scale
-                        vespa.get('effort', 0) * 10,
-                        vespa.get('systems', 0) * 10,
-                        vespa.get('practice', 0) * 10,
-                        vespa.get('attitude', 0) * 10
+                        vespa.get('vision', None),
+                        vespa.get('effort', None),
+                        vespa.get('systems', None),
+                        vespa.get('practice', None),
+                        vespa.get('attitude', None)
                     ],
                     'backgroundColor': f'rgba(102, 126, 234, {0.2 if len(datasets) == 0 else 0.1})',
                     'borderColor': '#667eea' if len(datasets) == 0 else '#764ba2',
@@ -8627,10 +9190,81 @@ def prepare_chart_data(data, report_type):
         
         if datasets:
             chart_data['vespaRadar'] = {
-                'type': 'radar',
                 'labels': ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude'],
                 'datasets': datasets
             }
+
+        # If this is a 2-cycle comparison, also produce high-impact bar charts
+        if report_type == 'cycle_vs_cycle':
+            cycle_keys = [k for k in data.keys() if isinstance(k, str) and k.startswith('cycle_')]
+            cycle_keys_sorted = sorted(cycle_keys, key=lambda x: int(x.split('_')[1]) if x.split('_')[1].isdigit() else 999)
+            if len(cycle_keys_sorted) >= 2:
+                k1, k2 = cycle_keys_sorted[0], cycle_keys_sorted[1]
+                d1 = data.get(k1) or {}
+                d2 = data.get(k2) or {}
+                v1 = (d1.get('vespa_breakdown') or {}) if isinstance(d1, dict) else {}
+                v2 = (d2.get('vespa_breakdown') or {}) if isinstance(d2, dict) else {}
+
+                labels = ['Vision', 'Effort', 'Systems', 'Practice', 'Attitude', 'Overall']
+                def _get_or_none(v, key):
+                    x = v.get(key, None)
+                    return x if x is not None else None
+
+                means1 = [
+                    _get_or_none(v1, 'vision'),
+                    _get_or_none(v1, 'effort'),
+                    _get_or_none(v1, 'systems'),
+                    _get_or_none(v1, 'practice'),
+                    _get_or_none(v1, 'attitude'),
+                    d1.get('mean', None),
+                ]
+                means2 = [
+                    _get_or_none(v2, 'vision'),
+                    _get_or_none(v2, 'effort'),
+                    _get_or_none(v2, 'systems'),
+                    _get_or_none(v2, 'practice'),
+                    _get_or_none(v2, 'attitude'),
+                    d2.get('mean', None),
+                ]
+                deltas = []
+                for a, b in zip(means1, means2):
+                    if a is None or b is None:
+                        deltas.append(None)
+                    else:
+                        deltas.append(float(b) - float(a))
+
+                chart_data['vespaElementBar'] = {
+                    'labels': labels,
+                    'datasets': [
+                        {
+                            'label': k1.replace('_', ' ').title(),
+                            'data': means1,
+                            'backgroundColor': 'rgba(102, 126, 234, 0.35)',
+                            'borderColor': 'rgba(102, 126, 234, 0.95)',
+                            'borderWidth': 1,
+                        },
+                        {
+                            'label': k2.replace('_', ' ').title(),
+                            'data': means2,
+                            'backgroundColor': 'rgba(118, 75, 162, 0.35)',
+                            'borderColor': 'rgba(118, 75, 162, 0.95)',
+                            'borderWidth': 1,
+                        },
+                    ],
+                }
+
+                chart_data['vespaDeltaBar'] = {
+                    'labels': labels,
+                    'datasets': [
+                        {
+                            'label': f'{k2.replace("_", " ").title()} − {k1.replace("_", " ").title()}',
+                            'data': deltas,
+                            'backgroundColor': 'rgba(102, 126, 234, 0.35)',
+                            'borderColor': 'rgba(102, 126, 234, 0.95)',
+                            'borderWidth': 1,
+                        }
+                    ],
+                }
     
     # Prepare comparison bar chart
     if report_type in ['year_group_vs_year_group', 'group_vs_group']:
@@ -8640,7 +9274,7 @@ def prepare_chart_data(data, report_type):
         for key, values in data.items():
             if isinstance(values, dict) and 'mean' in values:
                 labels.append(key.replace('_', ' ').title())
-                overall_scores.append(values['mean'] * 10)  # Convert to 0-100 scale
+                overall_scores.append(values['mean'])
         
         if labels:
             chart_data['comparisonBar'] = {
@@ -8667,8 +9301,8 @@ def prepare_chart_data(data, report_type):
                 if cycle in data and 'vespa_breakdown' in data[cycle]:
                     vespa = data[cycle]['vespa_breakdown']
                     for cat in vespa_categories:
-                        vespa_trends[cat].append(vespa.get(cat, 0) * 10)
-                    overall_trend.append(data[cycle].get('mean', 0) * 10)
+                        vespa_trends[cat].append(vespa.get(cat, None))
+                    overall_trend.append(data[cycle].get('mean', None))
             
             datasets = []
             colors = {
@@ -8737,6 +9371,28 @@ def build_vespa_comparison_section(data, report_type):
     html = '<div class="vespa-comparison-section">'
     html += '<h3 class="section-title">VESPA Score Comparison</h3>'
 
+    def _fmt_score(x):
+        return '—' if x is None else f'{float(x):.2f}'
+
+    def _diff_class(diff):
+        if diff is None:
+            return 'neutral'
+        if diff > 0:
+            return 'positive'
+        if diff < 0:
+            return 'negative'
+        return 'neutral'
+
+    def _stat_card_class(diff):
+        if diff is None:
+            return 'warn'
+        # Use gentle thresholds on 0-10 scale
+        if diff >= 0.15:
+            return 'good'
+        if diff <= -0.15:
+            return 'bad'
+        return 'warn'
+
     def _render_two_group_table(label, g1_key, g1, g2_key, g2):
         nonlocal html
         if not (isinstance(g1, dict) and isinstance(g2, dict)):
@@ -8755,25 +9411,26 @@ def build_vespa_comparison_section(data, report_type):
         vespa_elements = ['vision', 'effort', 'systems', 'practice', 'attitude']
         for element in vespa_elements:
             html += f'<tr><td class="element-name">{element.capitalize()}</td>'
-            s1 = (g1['vespa_breakdown'].get(element, 0) or 0) * 10
-            s2 = (g2['vespa_breakdown'].get(element, 0) or 0) * 10
-            color_class = f'vespa-{element}'
-            html += f'<td class="score {color_class}">{s1:.1f}%</td>'
-            html += f'<td class="score {color_class}">{s2:.1f}%</td>'
-            diff = s2 - s1
-            diff_class = 'positive' if diff > 0 else 'negative' if diff < 0 else 'neutral'
-            html += f'<td class="difference {diff_class}">{diff:+.1f}%</td>'
+            s1_raw = g1['vespa_breakdown'].get(element, None)
+            s2_raw = g2['vespa_breakdown'].get(element, None)
+            s1 = float(s1_raw) if s1_raw is not None else None
+            s2 = float(s2_raw) if s2_raw is not None else None
+            html += f'<td class="score">{_fmt_score(s1)}</td>'
+            html += f'<td class="score">{_fmt_score(s2)}</td>'
+            diff = None if (s1 is None or s2 is None) else (s2 - s1)
+            html += f'<td class="difference {_diff_class(diff)}">{("—" if diff is None else f"{diff:+.2f}")}</td>'
             html += '</tr>'
 
         # Overall row uses mean
-        overall1 = (g1.get('mean', 0) or 0) * 10
-        overall2 = (g2.get('mean', 0) or 0) * 10
-        diff = overall2 - overall1
-        diff_class = 'positive' if diff > 0 else 'negative' if diff < 0 else 'neutral'
+        overall1 = g1.get('mean', None)
+        overall2 = g2.get('mean', None)
+        overall1 = float(overall1) if overall1 is not None else None
+        overall2 = float(overall2) if overall2 is not None else None
+        diff = None if (overall1 is None or overall2 is None) else (overall2 - overall1)
         html += '<tr class="overall-row"><td class="element-name"><strong>Overall</strong></td>'
-        html += f'<td class="score overall"><strong>{overall1:.1f}%</strong></td>'
-        html += f'<td class="score overall"><strong>{overall2:.1f}%</strong></td>'
-        html += f'<td class="difference {diff_class}"><strong>{diff:+.1f}%</strong></td>'
+        html += f'<td class="score overall"><strong>{_fmt_score(overall1)}</strong></td>'
+        html += f'<td class="score overall"><strong>{_fmt_score(overall2)}</strong></td>'
+        html += f'<td class="difference {_diff_class(diff)}"><strong>{("—" if diff is None else f"{diff:+.2f}")}</strong></td>'
         html += '</tr>'
 
         html += '</tbody></table>'
@@ -8783,6 +9440,50 @@ def build_vespa_comparison_section(data, report_type):
     cycle_keys_sorted = sorted(cycle_keys, key=lambda x: int(x.split('_')[1]) if x.split('_')[1].isdigit() else 999)
     if len(cycle_keys_sorted) >= 2:
         k1, k2 = cycle_keys_sorted[0], cycle_keys_sorted[1]
+
+        # High impact summary cards (Cycle 1 → Cycle 2)
+        g1 = data.get(k1) or {}
+        g2 = data.get(k2) or {}
+        v1 = (g1.get('vespa_breakdown') or {}) if isinstance(g1, dict) else {}
+        v2 = (g2.get('vespa_breakdown') or {}) if isinstance(g2, dict) else {}
+        html += '<h4>Cycle 1 → Cycle 2 changes</h4>'
+        html += '<div class="stats-grid">'
+        for element, title in [
+            ('vision', 'Vision'),
+            ('effort', 'Effort'),
+            ('systems', 'Systems'),
+            ('practice', 'Practice'),
+            ('attitude', 'Attitude'),
+        ]:
+            a = v1.get(element, None)
+            b = v2.get(element, None)
+            a = float(a) if a is not None else None
+            b = float(b) if b is not None else None
+            diff = None if (a is None or b is None) else (b - a)
+            cls = _stat_card_class(diff)
+            html += f'''
+                <div class="stat-card {cls}">
+                    <h4>{title}</h4>
+                    <div class="value">{("—" if diff is None else f"{diff:+.2f}")}</div>
+                    <div class="change">C1: {_fmt_score(a)} → C2: {_fmt_score(b)}</div>
+                    <small>n(C1)={g1.get("count", 0)} · n(C2)={g2.get("count", 0)}</small>
+                </div>
+            '''
+        # Overall
+        o1 = float(g1.get('mean')) if g1.get('mean') is not None else None
+        o2 = float(g2.get('mean')) if g2.get('mean') is not None else None
+        od = None if (o1 is None or o2 is None) else (o2 - o1)
+        ocls = _stat_card_class(od)
+        html += f'''
+            <div class="stat-card {ocls}">
+                <h4>Overall</h4>
+                <div class="value">{("—" if od is None else f"{od:+.2f}")}</div>
+                <div class="change">C1: {_fmt_score(o1)} → C2: {_fmt_score(o2)}</div>
+                <small>n(C1)={g1.get("count", 0)} · n(C2)={g2.get("count", 0)}</small>
+            </div>
+        '''
+        html += '</div>'
+
         _render_two_group_table('Overall (all students)', k1, data.get(k1), k2, data.get(k2))
     else:
         html += '<p>No VESPA data available for comparison.</p>'
@@ -8828,7 +9529,8 @@ def generate_qla_insights_html(data, report_type):
         if not comparison or 'questions' not in comparison:
             continue
 
-        questions = (comparison.get('questions') or [])[:10]  # Top 10 differences
+        all_questions = (comparison.get('questions') or [])
+        questions = all_questions[:10]  # Top 10 differences
         group1_label = comparison.get('group1Label', 'Group 1')
         group2_label = comparison.get('group2Label', 'Group 2')
 
@@ -8842,12 +9544,26 @@ def generate_qla_insights_html(data, report_type):
         for idx, q in enumerate(questions):
             diff = q.get('difference', 0)
             diff_class = 'high-diff' if abs(diff) > 1.5 else 'medium-diff' if abs(diff) > 0.8 else 'low-diff'
+            p_val = q.get('pValue', None)
+            try:
+                p_float = float(p_val) if p_val is not None else None
+            except Exception:
+                p_float = None
+            if p_float is None:
+                p_display = 'p=NA'
+            elif p_float < 0.001:
+                p_display = 'p<0.001'
+            else:
+                p_display = f"p={p_float:.3f}"
+            sig_badge = ''
+            if p_float is not None and p_float < 0.05:
+                sig_badge = f' <span class="category-badge" style="background: rgba(40,167,69,0.14); color: #1f7a33;">Significant ({p_display})</span>'
 
             html += f'''
             <div class="question-diff-card {diff_class}">
                 <div class="diff-rank">{idx + 1}</div>
                 <div class="question-content">
-                    <p class="question-text editable" contenteditable="true">{q.get('text', 'Question text')}</p>
+                    <p class="question-text editable" contenteditable="true">{q.get('text', 'Question text')}{sig_badge}</p>
                     <div class="diff-scores">
                         <div class="score-group">
                             <span class="score-label">{group1_label}</span>
@@ -8862,11 +9578,55 @@ def generate_qla_insights_html(data, report_type):
                         </div>
                     </div>
                     <span class="category-badge {q.get('category', 'overall').lower()}">{q.get('category', 'OVERALL')}</span>
+                    <span class="category-badge" style="background: rgba(0,0,0,0.06); color: #3b3b3b; margin-left: 6px;">{p_display}</span>
                 </div>
             </div>
             '''
 
         html += '</div>'
+
+        # Statistically significant questions list (p < 0.05)
+        sig_questions = []
+        for q in (all_questions or []):
+            p = q.get('pValue', None)
+            try:
+                pf = float(p) if p is not None else None
+            except Exception:
+                pf = None
+            if pf is not None and pf < 0.05:
+                sig_questions.append((pf, q))
+        sig_questions.sort(key=lambda t: (t[0], -abs(float(t[1].get('difference', 0) or 0))))
+
+        if sig_questions:
+            sig_title = 'Statistically significant questions (p < 0.05)'
+            if comparison_label:
+                sig_title = f'{sig_title} ({comparison_label})'
+            html += f'<h4>{sig_title}</h4>'
+            html += '<table class="data-table">'
+            html += '<thead><tr>'
+            html += '<th>Question</th><th>Category</th>'
+            html += f'<th>{group1_label}</th><th>{group2_label}</th><th>Diff</th><th>p</th>'
+            html += '</tr></thead><tbody>'
+
+            # Show up to 15, but include count for transparency
+            max_rows = 15
+            for pf, q in sig_questions[:max_rows]:
+                diff = float(q.get('difference', 0) or 0)
+                diff_class = 'positive' if diff > 0 else 'negative' if diff < 0 else 'neutral'
+                p_disp = 'p<0.001' if pf < 0.001 else f'{pf:.3f}'
+                html += '<tr>'
+                html += f'<td class="editable" contenteditable="true">{q.get("text","")}</td>'
+                html += f'<td><span class="category-badge">{str(q.get("category","")).upper()}</span></td>'
+                html += f'<td>{float(q.get("group1Score",0) or 0):.2f}</td>'
+                html += f'<td>{float(q.get("group2Score",0) or 0):.2f}</td>'
+                html += f'<td class="{diff_class}"><strong>{diff:+.2f}</strong></td>'
+                html += f'<td><strong>{p_disp}</strong></td>'
+                html += '</tr>'
+
+            remaining = len(sig_questions) - max_rows
+            if remaining > 0:
+                html += f'<tr><td colspan="6" style="color:#666;">… and {remaining} more significant questions (not shown)</td></tr>'
+            html += '</tbody></table>'
 
         # Add statistical summary
         html += f'''
@@ -8886,6 +9646,9 @@ def generate_qla_insights_html(data, report_type):
         if comparison.get('insights'):
             html += '<div class="qla-insights">'
             for insight in comparison['insights']:
+                # Remove unhelpful significance-only insight (we show the actual questions now)
+                if 'statistically significant' in str(insight).lower() and '(p < 0.05)' in str(insight).lower():
+                    continue
                 html += f'<p class="insight-item editable" contenteditable="true">• {insight}</p>'
             html += '</div>'
     
@@ -14729,4 +15492,10 @@ except Exception as e:
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=os.getenv('PORT', 5001)) # Use port 5001 for local dev if 5000 is common 
+    # Local dev: keep debugger, but avoid auto-reloader (it can restart mid-request).
+    debug = os.getenv('FLASK_DEBUG', '1').lower() in ('1', 'true', 'yes')
+    app.run(
+        debug=debug,
+        use_reloader=False,
+        port=int(os.getenv('PORT', 5001))
+    ) # Use port 5001 for local dev if 5000 is common
