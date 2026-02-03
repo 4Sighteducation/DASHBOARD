@@ -32,176 +32,228 @@ def fetch_question_level_data(supabase_client, establishment_id: str, report_typ
     """
     try:
         if report_type == 'cycle_vs_cycle':
-            cycle1 = config.get('cycle1', 1)
-            cycle2 = config.get('cycle2', 2)
+            cycle1 = int(config.get('cycle1', 1))
+            cycle2 = int(config.get('cycle2', 2))
             academic_year = config.get('academicYear')
-            
-            # Fetch responses for both cycles
-            data1 = fetch_cycle_responses(supabase_client, establishment_id, cycle1, academic_year)
-            data2 = fetch_cycle_responses(supabase_client, establishment_id, cycle2, academic_year)
-            
-            # Analyze differences
-            return analyze_question_differences({
-                f'cycle_{cycle1}': data1,
-                f'cycle_{cycle2}': data2
-            }, f'Cycle {cycle1}', f'Cycle {cycle2}')
-            
-    elif report_type == 'faculty_vs_faculty':
-        faculty1 = config.get('faculty1')
-        faculty2 = config.get('faculty2')
-        cycle = config.get('cycle', 1)
-        academic_year = config.get('academicYear')
-        
-        # Get students for each faculty
-        faculty1_students = supabase_client.table('students')\
-            .select('id')\
-            .eq('establishment_id', establishment_id)\
-            .eq('faculty', faculty1)
-        if academic_year:
-            faculty1_students = faculty1_students.eq('academic_year', academic_year)
-        faculty1_result = faculty1_students.execute()
-        faculty1_ids = [s['id'] for s in faculty1_result.data] if faculty1_result.data else []
-        
-        faculty2_students = supabase_client.table('students')\
-            .select('id')\
-            .eq('establishment_id', establishment_id)\
-            .eq('faculty', faculty2)
-        if academic_year:
-            faculty2_students = faculty2_students.eq('academic_year', academic_year)
-        faculty2_result = faculty2_students.execute()
-        faculty2_ids = [s['id'] for s in faculty2_result.data] if faculty2_result.data else []
-        
-        if not faculty1_ids or not faculty2_ids:
-            return {}
-        
-        # Get responses for each faculty
-        faculty1_responses = supabase_client.table('question_responses')\
-            .select('*')\
-            .in_('student_id', faculty1_ids)\
-            .eq('cycle', cycle)
-        if academic_year:
-            faculty1_responses = faculty1_responses.eq('academic_year', academic_year)
-        faculty1_data = faculty1_responses.execute()
-        
-        faculty2_responses = supabase_client.table('question_responses')\
-            .select('*')\
-            .in_('student_id', faculty2_ids)\
-            .eq('cycle', cycle)
-        if academic_year:
-            faculty2_responses = faculty2_responses.eq('academic_year', academic_year)
-        faculty2_data = faculty2_responses.execute()
-        
-        # Structure the data
-        question_data = {}
-        for resp in (faculty1_data.data or []):
-            q_id = resp['question_id']
-            if q_id not in question_data:
-                question_data[q_id] = {f'faculty_{faculty1}': [], f'faculty_{faculty2}': []}
-            question_data[q_id][f'faculty_{faculty1}'].append(resp['response_value'])
-        
-        for resp in (faculty2_data.data or []):
-            q_id = resp['question_id']
-            if q_id not in question_data:
-                question_data[q_id] = {f'faculty_{faculty1}': [], f'faculty_{faculty2}': []}
-            question_data[q_id][f'faculty_{faculty2}'].append(resp['response_value'])
-        
-        return question_data
-        
-    elif report_type == 'faculty_progression':
-        faculty = config.get('faculty')
-        academic_years = config.get('academicYears', [])
-        cycles = config.get('cycles', [1, 2])
-        
-        question_data = {}
-        
-        for year in academic_years:
-            for cycle in cycles:
-                # Get students for faculty in this year
-                students_query = supabase_client.table('students')\
-                    .select('id')\
-                    .eq('establishment_id', establishment_id)\
-                    .eq('faculty', faculty)\
-                    .eq('academic_year', year)
-                students_result = students_query.execute()
-                student_ids = [s['id'] for s in students_result.data] if students_result.data else []
-                
-                if student_ids:
-                    # Get responses
-                    responses = supabase_client.table('question_responses')\
-                        .select('*')\
-                        .in_('student_id', student_ids)\
-                        .eq('cycle', cycle)\
-                        .eq('academic_year', year)\
-                        .execute()
-                    
-                    # Store in question_data
-                    key = f"faculty_{faculty}_year_{year.replace('/', '_')}_cycle_{cycle}"
-                    for resp in (responses.data or []):
-                        q_id = resp['question_id']
-                        if q_id not in question_data:
-                            question_data[q_id] = {}
-                        if key not in question_data[q_id]:
-                            question_data[q_id][key] = []
-                        question_data[q_id][key].append(resp['response_value'])
-        
-        return question_data
-        
-    elif report_type == 'year_group_vs_year_group':
-        year_group1 = config.get('yearGroup1')
-        year_group2 = config.get('yearGroup2')
-        cycle = config.get('cycle', 1)
-        academic_year = config.get('academicYear')
-        
-        # Fetch responses for both year groups
-        data1 = fetch_year_group_responses(supabase_client, establishment_id, year_group1, cycle, academic_year)
-        data2 = fetch_year_group_responses(supabase_client, establishment_id, year_group2, cycle, academic_year)
-        
-        return analyze_question_differences({
-            f'year_{year_group1}': data1,
-            f'year_{year_group2}': data2
-        }, f'Year {year_group1}', f'Year {year_group2}')
-        
-    elif report_type == 'academic_year_vs_academic_year':
+            year_group = config.get('yearGroup') or config.get('year_group')
+
+            # Optional gender comparisons (requested for Rochdale: Cycle 1 vs Cycle 2 by gender)
+            include_gender = bool(config.get('includeGenderComparisons', True))
+            genders = config.get('genders') or ['Female', 'Male']
+
+            overall1 = fetch_cycle_responses(
+                supabase_client,
+                establishment_id,
+                cycle1,
+                academic_year=academic_year,
+                year_group=year_group,
+                gender=None,
+            )
+            overall2 = fetch_cycle_responses(
+                supabase_client,
+                establishment_id,
+                cycle2,
+                academic_year=academic_year,
+                year_group=year_group,
+                gender=None,
+            )
+
+            result: Dict[str, Any] = {
+                'overall': analyze_question_differences(
+                    {f'cycle_{cycle1}': overall1, f'cycle_{cycle2}': overall2},
+                    f'Cycle {cycle1}',
+                    f'Cycle {cycle2}',
+                )
+            }
+
+            if include_gender:
+                by_gender: Dict[str, Any] = {}
+                for g in genders:
+                    g1 = fetch_cycle_responses(
+                        supabase_client,
+                        establishment_id,
+                        cycle1,
+                        academic_year=academic_year,
+                        year_group=year_group,
+                        gender=g,
+                    )
+                    g2 = fetch_cycle_responses(
+                        supabase_client,
+                        establishment_id,
+                        cycle2,
+                        academic_year=academic_year,
+                        year_group=year_group,
+                        gender=g,
+                    )
+
+                    # Only include if we have data for both cycles
+                    if g1 and g2:
+                        by_gender[g] = analyze_question_differences(
+                            {f'cycle_{cycle1}': g1, f'cycle_{cycle2}': g2},
+                            f'Cycle {cycle1} ({g})',
+                            f'Cycle {cycle2} ({g})',
+                        )
+
+                if by_gender:
+                    result['by_gender'] = by_gender
+
+            return result
+
+        if report_type == 'year_group_vs_year_group':
+            year_group1 = config.get('yearGroup1')
+            year_group2 = config.get('yearGroup2')
+            cycle = int(config.get('cycle', 1))
+            academic_year = config.get('academicYear')
+
+            data1 = fetch_year_group_responses(supabase_client, establishment_id, year_group1, cycle, academic_year)
+            data2 = fetch_year_group_responses(supabase_client, establishment_id, year_group2, cycle, academic_year)
+
+            return analyze_question_differences(
+                {f'year_{year_group1}': data1, f'year_{year_group2}': data2},
+                f'Year {year_group1}',
+                f'Year {year_group2}',
+            )
+
+        if report_type == 'academic_year_vs_academic_year':
             year1 = config.get('academicYear1')
             year2 = config.get('academicYear2')
-            year_group = config.get('yearGroup')  # Optional: specific year group
-            cycle = config.get('cycle', 1)
-            
-            # Fetch responses for both academic years
+            year_group = config.get('yearGroup')
+            cycle = int(config.get('cycle', 1))
+
             data1 = fetch_academic_year_responses(supabase_client, establishment_id, year1, year_group, cycle)
             data2 = fetch_academic_year_responses(supabase_client, establishment_id, year2, year_group, cycle)
-            
-            return analyze_question_differences({
-                f'year_{year1}': data1,
-                f'year_{year2}': data2
-            }, year1, year2)
-            
-        elif report_type == 'cohort_progression':
+
+            return analyze_question_differences(
+                {f'year_{year1}': data1, f'year_{year2}': data2},
+                str(year1),
+                str(year2),
+            )
+
+        if report_type == 'faculty_vs_faculty':
+            faculty1 = config.get('faculty1')
+            faculty2 = config.get('faculty2')
+            cycle = int(config.get('cycle', 1))
+            academic_year = config.get('academicYear')
+
+            faculty1_students = supabase_client.table('students')\
+                .select('id')\
+                .eq('establishment_id', establishment_id)\
+                .eq('faculty', faculty1)
+            if academic_year:
+                faculty1_students = faculty1_students.eq('academic_year', academic_year)
+            faculty1_result = faculty1_students.execute()
+            faculty1_ids = [s['id'] for s in faculty1_result.data] if faculty1_result.data else []
+
+            faculty2_students = supabase_client.table('students')\
+                .select('id')\
+                .eq('establishment_id', establishment_id)\
+                .eq('faculty', faculty2)
+            if academic_year:
+                faculty2_students = faculty2_students.eq('academic_year', academic_year)
+            faculty2_result = faculty2_students.execute()
+            faculty2_ids = [s['id'] for s in faculty2_result.data] if faculty2_result.data else []
+
+            if not faculty1_ids or not faculty2_ids:
+                return {}
+
+            faculty1_responses = supabase_client.table('question_responses')\
+                .select('*')\
+                .in_('student_id', faculty1_ids)\
+                .eq('cycle', cycle)
+            if academic_year:
+                faculty1_responses = faculty1_responses.eq('academic_year', academic_year)
+            faculty1_data = faculty1_responses.execute()
+
+            faculty2_responses = supabase_client.table('question_responses')\
+                .select('*')\
+                .in_('student_id', faculty2_ids)\
+                .eq('cycle', cycle)
+            if academic_year:
+                faculty2_responses = faculty2_responses.eq('academic_year', academic_year)
+            faculty2_data = faculty2_responses.execute()
+
+            question_data: Dict[str, Any] = {}
+            for resp in (faculty1_data.data or []):
+                q_id = resp['question_id']
+                if q_id not in question_data:
+                    question_data[q_id] = {f'faculty_{faculty1}': [], f'faculty_{faculty2}': []}
+                question_data[q_id][f'faculty_{faculty1}'].append(resp['response_value'])
+
+            for resp in (faculty2_data.data or []):
+                q_id = resp['question_id']
+                if q_id not in question_data:
+                    question_data[q_id] = {f'faculty_{faculty1}': [], f'faculty_{faculty2}': []}
+                question_data[q_id][f'faculty_{faculty2}'].append(resp['response_value'])
+
+            return question_data
+
+        if report_type == 'faculty_progression':
+            faculty = config.get('faculty')
+            academic_years = config.get('academicYears', [])
+            cycles = config.get('cycles', [1, 2])
+
+            question_data: Dict[str, Any] = {}
+
+            for year in academic_years:
+                for cycle in cycles:
+                    students_query = supabase_client.table('students')\
+                        .select('id')\
+                        .eq('establishment_id', establishment_id)\
+                        .eq('faculty', faculty)\
+                        .eq('academic_year', year)
+                    students_result = students_query.execute()
+                    student_ids = [s['id'] for s in students_result.data] if students_result.data else []
+
+                    if student_ids:
+                        responses = supabase_client.table('question_responses')\
+                            .select('*')\
+                            .in_('student_id', student_ids)\
+                            .eq('cycle', cycle)\
+                            .eq('academic_year', year)\
+                            .execute()
+
+                        key = f"faculty_{faculty}_year_{year.replace('/', '_')}_cycle_{cycle}"
+                        for resp in (responses.data or []):
+                            q_id = resp['question_id']
+                            if q_id not in question_data:
+                                question_data[q_id] = {}
+                            if key not in question_data[q_id]:
+                                question_data[q_id][key] = []
+                            question_data[q_id][key].append(resp['response_value'])
+
+            return question_data
+
+        if report_type == 'cohort_progression':
             starting_year_group = config.get('startingYearGroup')
             starting_academic_year = config.get('startingAcademicYear')
-            years_to_track = config.get('yearsToTrack', 2)
-            
-            # Track cohort across years
+            years_to_track = int(config.get('yearsToTrack', 2))
+
             cohort_data = track_cohort_responses(
-                supabase_client, 
+                supabase_client,
                 establishment_id,
                 starting_year_group,
                 starting_academic_year,
-                years_to_track
+                years_to_track,
             )
-            
+
             return analyze_cohort_progression(cohort_data)
-            
-        else:
-            logger.warning(f"Unsupported report type for QLA: {report_type}")
-            return {}
-            
+
+        logger.warning(f"Unsupported report type for QLA: {report_type}")
+        return {}
+
     except Exception as e:
         logger.error(f"Failed to fetch question level data: {e}")
         return {}
 
 
-def fetch_cycle_responses(supabase_client, establishment_id: str, cycle: int, academic_year: Optional[str] = None) -> Dict:
+def fetch_cycle_responses(
+    supabase_client,
+    establishment_id: str,
+    cycle: int,
+    academic_year: Optional[str] = None,
+    year_group: Optional[str] = None,
+    gender: Optional[str] = None,
+) -> Dict:
     """Fetch question responses for a specific cycle"""
     try:
         # Get all questions
@@ -219,19 +271,43 @@ def fetch_cycle_responses(supabase_client, establishment_id: str, cycle: int, ac
         
         if academic_year:
             students_query = students_query.eq('academic_year', academic_year)
-            
-        students_result = students_query.execute()
+        if year_group:
+            students_query = students_query.eq('year_group', str(year_group))
+        if gender:
+            # Best-effort: some DBs do not have students.gender
+            students_query = students_query.eq('gender', str(gender))
+
+        try:
+            students_result = students_query.execute()
+        except Exception as e:
+            # Retry without gender filter if column doesn't exist
+            if gender and 'gender' in str(e).lower():
+                logger.warning("students.gender not available; retrying without gender filter")
+                students_query = supabase_client.table('students')\
+                    .select('id')\
+                    .eq('establishment_id', establishment_id)
+                if academic_year:
+                    students_query = students_query.eq('academic_year', academic_year)
+                if year_group:
+                    students_query = students_query.eq('year_group', str(year_group))
+                students_result = students_query.execute()
+            else:
+                raise
         student_ids = [s['id'] for s in students_result.data] if students_result.data else []
         
         if not student_ids:
             return {}
         
         # Get question responses for these students and cycle
-        responses_result = supabase_client.table('question_responses')\
+        responses_query = supabase_client.table('question_responses')\
             .select('*')\
             .in_('student_id', student_ids)\
             .eq('cycle', cycle)\
-            .execute()
+        
+        if academic_year:
+            responses_query = responses_query.eq('academic_year', academic_year)
+
+        responses_result = responses_query.execute()
         
         responses = responses_result.data if responses_result.data else []
         

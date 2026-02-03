@@ -7517,23 +7517,44 @@ def fetch_comparison_data(establishment_id, report_type, config, filters):
             cycle2 = int(config.get('cycle2', 2))
             academic_year1 = config.get('academicYear1', current_academic_year)
             academic_year2 = config.get('academicYear2', current_academic_year)
+            year_group = config.get('yearGroup') or config.get('year_group')
+            include_gender = bool(config.get('includeGenderComparisons', True))
+            genders = config.get('genders') or ['Female', 'Male']
             
             data = {}
             
             # Fetch data for cycle 1
             data[f'cycle_{cycle1}'] = fetch_cycle_data(
-                establishment_id, cycle1, academic_year1
+                establishment_id, cycle1, academic_year1, year_group=year_group
             )
             
             # Fetch data for cycle 2
             data[f'cycle_{cycle2}'] = fetch_cycle_data(
-                establishment_id, cycle2, academic_year2
+                establishment_id, cycle2, academic_year2, year_group=year_group
             )
+
+            # Optional VESPA gender breakdown (Cycle 1 vs Cycle 2 per gender)
+            if include_gender:
+                vespa_by_gender = {}
+                for g in genders:
+                    g_cycle1 = fetch_cycle_data(establishment_id, cycle1, academic_year1, year_group=year_group, gender=g)
+                    g_cycle2 = fetch_cycle_data(establishment_id, cycle2, academic_year2, year_group=year_group, gender=g)
+                    if (g_cycle1.get('count', 0) or 0) > 0 or (g_cycle2.get('count', 0) or 0) > 0:
+                        vespa_by_gender[str(g)] = {f'cycle_{cycle1}': g_cycle1, f'cycle_{cycle2}': g_cycle2}
+                if vespa_by_gender:
+                    data['vespa_by_gender'] = vespa_by_gender
             
             # Add QLA data
             data['qla_data'] = fetch_question_level_data(
                 supabase_client, establishment_id, 'cycle_vs_cycle', 
-                {'cycle1': cycle1, 'cycle2': cycle2, 'academicYear': current_academic_year}
+                {
+                    'cycle1': cycle1,
+                    'cycle2': cycle2,
+                    'academicYear': current_academic_year,
+                    'yearGroup': year_group,
+                    'includeGenderComparisons': include_gender,
+                    'genders': genders
+                }
             )
             
             return data
@@ -7780,10 +7801,13 @@ def fetch_comparison_data(establishment_id, report_type, config, filters):
         traceback.print_exc()
         return {}
 
-def fetch_cycle_data(establishment_id, cycle, academic_year):
+def fetch_cycle_data(establishment_id, cycle, academic_year, year_group=None, gender=None):
     """Fetch VESPA data for a specific cycle and academic year"""
     try:
-        app.logger.info(f"fetch_cycle_data called: establishment={establishment_id}, cycle={cycle}, year={academic_year}")
+        app.logger.info(
+            f"fetch_cycle_data called: establishment={establishment_id}, cycle={cycle}, year={academic_year}, "
+            f"year_group={year_group}, gender={gender}"
+        )
         
         # Get students for this establishment
         students_query = supabase_client.table('students')\
@@ -7793,8 +7817,27 @@ def fetch_cycle_data(establishment_id, cycle, academic_year):
         # Also filter students by academic year if provided
         if academic_year:
             students_query = students_query.eq('academic_year', academic_year)
-        
-        students_result = students_query.execute()
+        if year_group:
+            students_query = students_query.eq('year_group', str(year_group))
+        if gender:
+            # Best-effort: some DBs do not have students.gender
+            students_query = students_query.eq('gender', str(gender))
+
+        try:
+            students_result = students_query.execute()
+        except Exception as e:
+            if gender and 'gender' in str(e).lower():
+                app.logger.warning("students.gender not available; retrying without gender filter")
+                students_query = supabase_client.table('students')\
+                    .select('id')\
+                    .eq('establishment_id', establishment_id)
+                if academic_year:
+                    students_query = students_query.eq('academic_year', academic_year)
+                if year_group:
+                    students_query = students_query.eq('year_group', str(year_group))
+                students_result = students_query.execute()
+            else:
+                raise
         student_ids = [s['id'] for s in students_result.data] if students_result.data else []
         
         app.logger.info(f"Found {len(student_ids)} students for establishment {establishment_id}")
@@ -8693,66 +8736,65 @@ def build_vespa_comparison_section(data, report_type):
     """Build VESPA comparison section with real data"""
     html = '<div class="vespa-comparison-section">'
     html += '<h3 class="section-title">VESPA Score Comparison</h3>'
-    
-    # Extract VESPA data from comparison data
-    vespa_data = {}
-    for key, values in data.items():
-        if isinstance(values, dict) and 'vespa_breakdown' in values:
-            vespa_data[key] = values['vespa_breakdown']
-    
-    if vespa_data:
-        # Create comparison table
+
+    def _render_two_group_table(label, g1_key, g1, g2_key, g2):
+        nonlocal html
+        if not (isinstance(g1, dict) and isinstance(g2, dict)):
+            return
+        if 'vespa_breakdown' not in g1 or 'vespa_breakdown' not in g2:
+            return
+
+        html += f'<h4>{label}</h4>'
         html += '<table class="vespa-table">'
         html += '<thead><tr><th>Element</th>'
-        
-        # Add column headers for each comparison group
-        for key in vespa_data.keys():
-            label = key.replace('_', ' ').title()
-            html += f'<th>{label}</th>'
+        html += f'<th>{g1_key.replace("_", " ").title()}</th>'
+        html += f'<th>{g2_key.replace("_", " ").title()}</th>'
         html += '<th>Difference</th></tr></thead>'
-        
         html += '<tbody>'
+
         vespa_elements = ['vision', 'effort', 'systems', 'practice', 'attitude']
-        
         for element in vespa_elements:
             html += f'<tr><td class="element-name">{element.capitalize()}</td>'
-            
-            scores = []
-            for key, breakdown in vespa_data.items():
-                score = breakdown.get(element, 0) * 10  # Convert to percentage
-                scores.append(score)
-                color_class = f'vespa-{element}'
-                html += f'<td class="score {color_class}">{score:.1f}%</td>'
-            
-            # Calculate difference
-            if len(scores) >= 2:
-                diff = scores[1] - scores[0]
-                diff_class = 'positive' if diff > 0 else 'negative' if diff < 0 else 'neutral'
-                html += f'<td class="difference {diff_class}">{diff:+.1f}%</td>'
-            else:
-                html += '<td class="difference">-</td>'
-            
-            html += '</tr>'
-        
-        # Add overall row
-        html += '<tr class="overall-row"><td class="element-name"><strong>Overall</strong></td>'
-        overall_scores = []
-        for key, values in data.items():
-            if isinstance(values, dict) and 'mean' in values:
-                score = values['mean'] * 10
-                overall_scores.append(score)
-                html += f'<td class="score overall"><strong>{score:.1f}%</strong></td>'
-        
-        if len(overall_scores) >= 2:
-            diff = overall_scores[1] - overall_scores[0]
+            s1 = (g1['vespa_breakdown'].get(element, 0) or 0) * 10
+            s2 = (g2['vespa_breakdown'].get(element, 0) or 0) * 10
+            color_class = f'vespa-{element}'
+            html += f'<td class="score {color_class}">{s1:.1f}%</td>'
+            html += f'<td class="score {color_class}">{s2:.1f}%</td>'
+            diff = s2 - s1
             diff_class = 'positive' if diff > 0 else 'negative' if diff < 0 else 'neutral'
-            html += f'<td class="difference {diff_class}"><strong>{diff:+.1f}%</strong></td>'
-        else:
-            html += '<td class="difference">-</td>'
-        
-        html += '</tr></tbody></table>'
+            html += f'<td class="difference {diff_class}">{diff:+.1f}%</td>'
+            html += '</tr>'
+
+        # Overall row uses mean
+        overall1 = (g1.get('mean', 0) or 0) * 10
+        overall2 = (g2.get('mean', 0) or 0) * 10
+        diff = overall2 - overall1
+        diff_class = 'positive' if diff > 0 else 'negative' if diff < 0 else 'neutral'
+        html += '<tr class="overall-row"><td class="element-name"><strong>Overall</strong></td>'
+        html += f'<td class="score overall"><strong>{overall1:.1f}%</strong></td>'
+        html += f'<td class="score overall"><strong>{overall2:.1f}%</strong></td>'
+        html += f'<td class="difference {diff_class}"><strong>{diff:+.1f}%</strong></td>'
+        html += '</tr>'
+
+        html += '</tbody></table>'
+
+    # Base (overall) cycle comparison
+    cycle_keys = [k for k in data.keys() if isinstance(k, str) and k.startswith('cycle_')]
+    cycle_keys_sorted = sorted(cycle_keys, key=lambda x: int(x.split('_')[1]) if x.split('_')[1].isdigit() else 999)
+    if len(cycle_keys_sorted) >= 2:
+        k1, k2 = cycle_keys_sorted[0], cycle_keys_sorted[1]
+        _render_two_group_table('Overall (all students)', k1, data.get(k1), k2, data.get(k2))
     else:
         html += '<p>No VESPA data available for comparison.</p>'
+
+    # Optional gender breakdown (if present)
+    vespa_by_gender = data.get('vespa_by_gender') or {}
+    if isinstance(vespa_by_gender, dict) and len(cycle_keys_sorted) >= 2:
+        k1, k2 = cycle_keys_sorted[0], cycle_keys_sorted[1]
+        for gender_label, gender_cycles in vespa_by_gender.items():
+            if not isinstance(gender_cycles, dict):
+                continue
+            _render_two_group_table(f'By gender: {gender_label}', k1, gender_cycles.get(k1), k2, gender_cycles.get(k2))
     
     html += '</div>'
     return html
@@ -8769,18 +8811,38 @@ def generate_qla_insights_html(data, report_type):
     <div class="qla-section">
         <h3 class="section-title">Question Level Analysis</h3>
     '''
-    
-    # Add top differences if available
-    if 'questions' in qla_data:
-        questions = qla_data['questions'][:10]  # Top 10 differences
-        
-        html += '<h4>Questions with Largest Differences</h4>'
+
+    # Support both legacy format (qla_data has 'questions') and new format:
+    # { overall: {...}, by_gender: { 'Female': {...}, 'Male': {...} } }
+    comparisons = []
+    if isinstance(qla_data, dict) and 'overall' in qla_data:
+        comparisons.append(('All students', qla_data.get('overall') or {}))
+        by_gender = qla_data.get('by_gender') or {}
+        if isinstance(by_gender, dict):
+            for gender_label, gender_result in by_gender.items():
+                comparisons.append((str(gender_label), gender_result or {}))
+    elif isinstance(qla_data, dict) and 'questions' in qla_data:
+        comparisons.append((None, qla_data))
+
+    for comparison_label, comparison in comparisons:
+        if not comparison or 'questions' not in comparison:
+            continue
+
+        questions = (comparison.get('questions') or [])[:10]  # Top 10 differences
+        group1_label = comparison.get('group1Label', 'Group 1')
+        group2_label = comparison.get('group2Label', 'Group 2')
+
+        section_title = 'Questions with Largest Differences'
+        if comparison_label:
+            section_title = f'{section_title} ({comparison_label})'
+
+        html += f'<h4>{section_title}</h4>'
         html += '<div class="qla-grid">'
-        
+
         for idx, q in enumerate(questions):
             diff = q.get('difference', 0)
             diff_class = 'high-diff' if abs(diff) > 1.5 else 'medium-diff' if abs(diff) > 0.8 else 'low-diff'
-            
+
             html += f'''
             <div class="question-diff-card {diff_class}">
                 <div class="diff-rank">{idx + 1}</div>
@@ -8788,14 +8850,14 @@ def generate_qla_insights_html(data, report_type):
                     <p class="question-text editable" contenteditable="true">{q.get('text', 'Question text')}</p>
                     <div class="diff-scores">
                         <div class="score-group">
-                            <span class="score-label">Group 1</span>
+                            <span class="score-label">{group1_label}</span>
                             <span class="score-value">{q.get('group1Score', 0):.2f}</span>
                         </div>
                         <div class="diff-arrow {"up" if diff > 0 else "down"}">
                             {"↑" if diff > 0 else "↓"} {abs(diff):.2f}
                         </div>
                         <div class="score-group">
-                            <span class="score-label">Group 2</span>
+                            <span class="score-label">{group2_label}</span>
                             <span class="score-value">{q.get('group2Score', 0):.2f}</span>
                         </div>
                     </div>
@@ -8803,31 +8865,29 @@ def generate_qla_insights_html(data, report_type):
                 </div>
             </div>
             '''
-        
+
         html += '</div>'
-        
+
         # Add statistical summary
-        if 'totalQuestions' in qla_data:
-            html += f'''
-            <div class="stats-summary">
-                <div class="stat-item">
-                    <span class="stat-label">Total Questions Analyzed:</span>
-                    <span class="stat-value">{qla_data.get('totalQuestions', 0)}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Significant Differences (p < 0.05):</span>
-                    <span class="stat-value">{qla_data.get('significantDifferences', 0)}</span>
-                </div>
+        html += f'''
+        <div class="stats-summary">
+            <div class="stat-item">
+                <span class="stat-label">Total Questions Analyzed:</span>
+                <span class="stat-value">{comparison.get('totalQuestions', 0)}</span>
             </div>
-            '''
-    
-    # Add QLA insights if available
-    if 'insights' in qla_data and qla_data['insights']:
-        html += '<h4>Question-Level Insights</h4>'
-        html += '<div class="qla-insights">'
-        for insight in qla_data['insights']:
-            html += f'<p class="insight-item editable" contenteditable="true">• {insight}</p>'
-        html += '</div>'
+            <div class="stat-item">
+                <span class="stat-label">Significant Differences (p &lt; 0.05):</span>
+                <span class="stat-value">{comparison.get('significantDifferences', 0)}</span>
+            </div>
+        </div>
+        '''
+
+        # Add insights if available
+        if comparison.get('insights'):
+            html += '<div class="qla-insights">'
+            for insight in comparison['insights']:
+                html += f'<p class="insight-item editable" contenteditable="true">• {insight}</p>'
+            html += '</div>'
     
     html += '</div>'
     

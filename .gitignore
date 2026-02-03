@@ -55,6 +55,10 @@ temp_*
 venv/
 heroku_backend/venv/
 
+# Python bytecode
+__pycache__/
+*.pyc
+
 # Optional - keep credentials safe
 *credentials*
 *secret*
