@@ -233,18 +233,13 @@ def register_activities_routes(app, supabase: Client):
                 return jsonify({"error": "email parameter required"}), 400
             
             # Fetch student's activities from activity_responses (source of truth!)
-            # Prefer student_id for faster lookups if available.
-            student_id = get_latest_student_id(supabase, student_email)
+            # Table uses student_email (no student_id column).
             responses_query = supabase.table('activity_responses').select('*')\
+                .eq('student_email', student_email)\
                 .eq('cycle_number', cycle)\
                 .neq('status', 'removed')\
                 .order('started_at', desc=True)\
                 .limit(200)
-
-            if student_id:
-                responses_query = responses_query.eq('student_id', student_id)
-            else:
-                responses_query = responses_query.eq('student_email', student_email)
 
             responses_result = responses_query.execute()
             
@@ -1414,17 +1409,12 @@ def register_activities_routes(app, supabase: Client):
             
             # Calculate actual streak from completed responses
             # Limit to recent completions to keep the query fast.
-            student_id = get_latest_student_id(supabase, student_email)
             responses_query = supabase.table('activity_responses').select('completed_at')\
+                .eq('student_email', student_email)\
                 .eq('status', 'completed')\
                 .not_.is_('completed_at', 'null')\
                 .order('completed_at', desc=True)\
                 .limit(365)
-
-            if student_id:
-                responses_query = responses_query.eq('student_id', student_id)
-            else:
-                responses_query = responses_query.eq('student_email', student_email)
 
             responses_result = responses_query.execute()
             
