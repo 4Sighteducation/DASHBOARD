@@ -15,6 +15,25 @@ import os
 
 logger = logging.getLogger(__name__)
 
+def _activity_ids_with_active_questions(supabase: Client, activity_ids: list[str]) -> set[str]:
+    """
+    Return the subset of activity_ids that have >= 1 active question.
+    """
+    if not activity_ids:
+        return set()
+    try:
+        # Supabase can return duplicates; we only care about presence.
+        q = supabase.table('activity_questions').select('activity_id')\
+            .in_('activity_id', activity_ids)\
+            .eq('is_active', True)\
+            .limit(10000)\
+            .execute()
+        return {row.get('activity_id') for row in (q.data or []) if row.get('activity_id')}
+    except Exception as e:
+        logger.error(f"[Activities API] Failed to check active questions: {e}", exc_info=True)
+        # Fail open would reintroduce broken activities; fail closed is safer.
+        return set()
+
 
 def register_activities_routes(app, supabase: Client):
     """
@@ -156,14 +175,23 @@ def register_activities_routes(app, supabase: Client):
                 # Apply threshold filters
                 # Show if: (score_threshold_min IS NULL OR score_threshold_min <= score)
                 # AND (score_threshold_max IS NULL OR score_threshold_max >= score)
+                # IMPORTANT: fetch more than we need, then filter in Python.
+                # This ensures we can drop items with 0 questions and still return up to 3.
                 activities_result = activities_query\
                     .order('display_order')\
-                    .limit(3)\
+                    .limit(100)\
                     .execute()
+
+                candidate_activities = activities_result.data or []
+                candidate_ids = [a.get('id') for a in candidate_activities if a.get('id')]
+                ids_with_questions = _activity_ids_with_active_questions(supabase, candidate_ids)
                 
                 # Filter by thresholds in Python (Supabase doesn't support complex OR with NULL easily)
                 filtered_activities = []
-                for activity in activities_result.data:
+                for activity in candidate_activities:
+                    # Student app rule: must have >=1 active question
+                    if activity.get('id') not in ids_with_questions:
+                        continue
                     threshold_min = activity.get('score_threshold_min')
                     threshold_max = activity.get('score_threshold_max')
                     
@@ -177,7 +205,7 @@ def register_activities_routes(app, supabase: Client):
                     if show_activity:
                         filtered_activities.append(activity)
                 
-                recommended.extend(filtered_activities[:3])  # Top 3 per category
+                recommended.extend(filtered_activities[:3])  # Top 3 per category (after filtering)
             
             return jsonify({
                 "recommended": recommended,
@@ -211,8 +239,13 @@ def register_activities_routes(app, supabase: Client):
                 .eq('is_active', True)\
                 .order('display_order')\
                 .execute()
-            
-            return jsonify({"activities": activities_result.data})
+
+            activities = activities_result.data or []
+            ids = [a.get('id') for a in activities if a.get('id')]
+            ids_with_questions = _activity_ids_with_active_questions(supabase, ids)
+            activities = [a for a in activities if a.get('id') in ids_with_questions]
+
+            return jsonify({"activities": activities})
             
         except Exception as e:
             logger.error(f"Error in get_activities_by_problem: {str(e)}", exc_info=True)
@@ -251,10 +284,13 @@ def register_activities_routes(app, supabase: Client):
             
             activities_map = {}
             if activity_ids:
+                ids_with_questions = _activity_ids_with_active_questions(supabase, activity_ids)
+                valid_activity_ids = [aid for aid in activity_ids if aid in ids_with_questions]
+
                 activities_result = supabase.table('activities').select(
                     'id, name, vespa_category, level, time_minutes, color, difficulty, ' +
                     'do_section_html, think_section_html, learn_section_html, reflect_section_html'
-                ).in_('id', activity_ids).execute()
+                ).in_('id', valid_activity_ids).execute()
                 
                 # Create map of activity_id -> activity data
                 activities_map = {a['id']: a for a in activities_result.data}
@@ -264,6 +300,10 @@ def register_activities_routes(app, supabase: Client):
             for resp in assigned_result.data:
                 activity_id = resp['activity_id']
                 activity_details = activities_map.get(activity_id)
+
+                # Skip any assigned items that are not valid student activities (0 active questions)
+                if not activity_details:
+                    continue
                 
                 assignments.append({
                     'activity_id': activity_id,
@@ -337,6 +377,15 @@ def register_activities_routes(app, supabase: Client):
             if not student_email or not activity_id:
                 logger.error(f"[Start Activity] ❌ Missing required fields")
                 return jsonify({"error": "studentEmail and activityId required", "success": False}), 400
+
+            # Student app rule: cannot start activities with 0 active questions
+            if activity_id not in _activity_ids_with_active_questions(supabase, [activity_id]):
+                logger.warning(f"[Start Activity] Blocked start: activity has 0 active questions: {activity_id}")
+                return jsonify({
+                    "success": False,
+                    "error": "This resource cannot be started as a student activity (no questions).",
+                    "activityId": activity_id
+                }), 400
             
             # Ensure student exists
             ensure_vespa_student_exists(supabase, student_email)
