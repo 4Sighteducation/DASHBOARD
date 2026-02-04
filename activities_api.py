@@ -7,6 +7,7 @@ This module should be imported into app.py and register_routes(app, supabase_cli
 """
 
 from flask import request, jsonify
+from typing import Optional
 from datetime import datetime
 from supabase import Client
 import logging
@@ -232,13 +233,20 @@ def register_activities_routes(app, supabase: Client):
                 return jsonify({"error": "email parameter required"}), 400
             
             # Fetch student's activities from activity_responses (source of truth!)
-            # student_activities table can be out of sync - activity_responses is authoritative
-            responses_result = supabase.table('activity_responses').select('*')\
-                .eq('student_email', student_email)\
+            # Prefer student_id for faster lookups if available.
+            student_id = get_latest_student_id(supabase, student_email)
+            responses_query = supabase.table('activity_responses').select('*')\
                 .eq('cycle_number', cycle)\
                 .neq('status', 'removed')\
                 .order('started_at', desc=True)\
-                .execute()
+                .limit(200)
+
+            if student_id:
+                responses_query = responses_query.eq('student_id', student_id)
+            else:
+                responses_query = responses_query.eq('student_email', student_email)
+
+            responses_result = responses_query.execute()
             
             # Use responses as assignments
             assigned_result = responses_result
@@ -1405,11 +1413,20 @@ def register_activities_routes(app, supabase: Client):
             }
             
             # Calculate actual streak from completed responses
-            responses_result = supabase.table('activity_responses').select('completed_at')\
-                .eq('student_email', student_email)\
+            # Limit to recent completions to keep the query fast.
+            student_id = get_latest_student_id(supabase, student_email)
+            responses_query = supabase.table('activity_responses').select('completed_at')\
                 .eq('status', 'completed')\
                 .not_.is_('completed_at', 'null')\
-                .execute()
+                .order('completed_at', desc=True)\
+                .limit(365)
+
+            if student_id:
+                responses_query = responses_query.eq('student_id', student_id)
+            else:
+                responses_query = responses_query.eq('student_email', student_email)
+
+            responses_result = responses_query.execute()
             
             current_streak = _calculate_streak(responses_result.data) if responses_result.data else 0
             
@@ -1419,10 +1436,11 @@ def register_activities_routes(app, supabase: Client):
                     'current_streak_days': current_streak
                 }).eq('email', student_email).execute()
             
-            # Fetch all achievements
+            # Fetch achievements (recent first)
             achievements_result = supabase.table('student_achievements').select('*')\
                 .eq('student_email', student_email)\
                 .order('date_earned', desc=True)\
+                .limit(200)\
                 .execute()
             
             return jsonify({
@@ -1484,6 +1502,27 @@ def ensure_vespa_student_exists(supabase: Client, student_email: str, knack_attr
     except Exception as e:
         logger.warning(f"Error ensuring vespa_student exists: {str(e)}")
         # Don't fail the request if this fails - student might still work
+
+
+def get_latest_student_id(supabase: Client, student_email: str) -> Optional[str]:
+    """
+    Fetch the most recent student_id for an email.
+    Use this to avoid slow email-based filters on large tables.
+    """
+    try:
+        result = supabase.table('students')\
+            .select('id, created_at')\
+            .eq('email', student_email)\
+            .order('created_at', desc=True)\
+            .limit(1)\
+            .execute()
+
+        if result.data:
+            return result.data[0].get('id')
+    except Exception as e:
+        logger.warning(f"Error fetching latest student_id for {student_email}: {str(e)}")
+
+    return None
 
 
 def create_notification(supabase: Client, recipient_email: str, notification_type: str, 

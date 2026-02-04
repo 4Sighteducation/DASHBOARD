@@ -7937,6 +7937,15 @@ def fetch_cycle_data(establishment_id, cycle, academic_year, year_group=None, ge
                     'practice': float(np.mean(practice_scores)) if practice_scores else None,
                     'attitude': float(np.mean(attitude_scores)) if attitude_scores else None
                 },
+                # Data quality metadata so the report can explain blanks
+                'vespa_quality': {
+                    'overall': overall_dbg,
+                    'vision': vision_dbg,
+                    'effort': effort_dbg,
+                    'systems': systems_dbg,
+                    'practice': practice_dbg,
+                    'attitude': attitude_dbg,
+                },
                 'academic_year': academic_year
             }
         else:
@@ -9446,6 +9455,23 @@ def build_vespa_comparison_section(data, report_type):
         g2 = data.get(k2) or {}
         v1 = (g1.get('vespa_breakdown') or {}) if isinstance(g1, dict) else {}
         v2 = (g2.get('vespa_breakdown') or {}) if isinstance(g2, dict) else {}
+
+        # Data quality callout: explain blanks when an element is all zeros/missing in a cycle
+        q2 = (g2.get('vespa_quality') or {}) if isinstance(g2, dict) else {}
+        missing_notes = []
+        for element in ['effort', 'systems', 'vision', 'practice', 'attitude', 'overall']:
+            dbg = q2.get(element)
+            if isinstance(dbg, dict) and dbg.get('kept', 0) == 0 and (dbg.get('zeros', 0) or 0) > 0:
+                missing_notes.append(f"{element.capitalize()} (all {dbg.get('zeros')} values are 0.00)")
+        if missing_notes:
+            html += (
+                '<div class="key-finding" style="margin-top: 10px;">'
+                '<strong>Data quality note:</strong> Some Cycle 2 element scores are missing in the source data and stored as 0.00. '
+                'These are treated as missing (not averaged) and displayed as <strong>—</strong>. '
+                f"<div style=\"margin-top:6px;color:#555;\">Cycle 2 affected: {', '.join(missing_notes)}</div>"
+                '</div>'
+            )
+
         html += '<h4>Cycle 1 → Cycle 2 changes</h4>'
         html += '<div class="stats-grid">'
         for element, title in [
@@ -10777,6 +10803,11 @@ def get_report_data():
     Returns student info, scores, and question responses
     """
     try:
+        t_start = time.perf_counter()
+        def log_step(label, t0):
+            elapsed_ms = (time.perf_counter() - t0) * 1000
+            app.logger.info(f"[Report Data] {label} took {elapsed_ms:.0f}ms")
+            return time.perf_counter()
         email = request.args.get('email')
         
         if not email:
@@ -10789,11 +10820,14 @@ def get_report_data():
         
         # Get student record
         # Handle duplicates by finding the MOST RECENT student_id with scores
+        t_step = time.perf_counter()
         student_records = supabase_client.table('students')\
             .select('id, name, email, establishment_id, year_group, group, course, faculty, academic_year, created_at')\
             .eq('email', email)\
             .order('created_at', desc=True)\
+            .limit(5)\
             .execute()
+        t_step = log_step("students query", t_step)
         
         if not student_records.data:
             return jsonify({'error': 'Student not found'}), 404
@@ -10805,6 +10839,7 @@ def get_report_data():
         if len(student_records.data) > 1:
             app.logger.warning(f"[Report Data] Found {len(student_records.data)} student records for {email}")
             # Check from most recent to oldest
+            t_scan = time.perf_counter()
             for record in student_records.data:
                 score_check = supabase_client.table('vespa_scores')\
                     .select('id')\
@@ -10816,6 +10851,7 @@ def get_report_data():
                     student_id = record['id']
                     app.logger.info(f"[Report Data] Using student_id {student_id} (academic_year: {record.get('academic_year')})")
                     break
+            log_step("vespa_scores scan for student_id", t_scan)
         
         # If no duplicate or no scores found, use first (most recent) record
         if not student_data:
@@ -10838,12 +10874,14 @@ def get_report_data():
                 }
                 
                 # Search Object_10 by email to get Level AND record ID
+                t_knack = time.perf_counter()
                 obj10_response = requests.get(
                     "https://api.knack.com/v1/objects/object_10/records",
                     headers=headers,
                     params={'filters': json.dumps({'match': 'and', 'rules': [{'field': 'field_197', 'operator': 'is', 'value': email}]})},
                     timeout=5
                 )
+                log_step("Knack Object_10 lookup", t_knack)
                 
                 if obj10_response.ok:
                     obj10_records = obj10_response.json().get('records', [])
@@ -10862,10 +10900,12 @@ def get_report_data():
         # Get establishment info (including logo)
         establishment_info = None
         if student_data.get('establishment_id'):
+            t_est = time.perf_counter()
             est_result = supabase_client.table('establishments')\
                 .select('name, knack_id')\
                 .eq('id', student_data['establishment_id'])\
                 .execute()
+            t_est = log_step("establishments query", t_est)
             
             if est_result.data:
                 establishment_info = est_result.data[0]
@@ -10877,11 +10917,13 @@ def get_report_data():
                             'X-Knack-Application-Id': os.getenv('KNACK_APP_ID'),
                             'X-Knack-REST-API-Key': os.getenv('KNACK_API_KEY')
                         }
+                        t_knack_logo = time.perf_counter()
                         knack_response = requests.get(
                             f"https://api.knack.com/v1/objects/object_2/records/{establishment_info['knack_id']}",
                             headers=headers,
                             timeout=5
                         )
+                        log_step("Knack establishment logo fetch", t_knack_logo)
                         if knack_response.ok:
                             knack_record = knack_response.json()
                             logo_url = knack_record.get('field_3206_raw') or knack_record.get('field_3206', '')
@@ -10891,11 +10933,14 @@ def get_report_data():
         
         # Get VESPA scores for all cycles (most recent per cycle if duplicates exist)
         # Use student_email to get scores across all student_id records (handles multi-year students)
+        t_scores = time.perf_counter()
         all_scores_raw = supabase_client.table('vespa_scores')\
             .select('cycle, vision, effort, systems, practice, attitude, overall, completion_date')\
             .eq('student_email', email)\
             .order('completion_date', desc=True)\
+            .limit(50)\
             .execute()
+        t_scores = log_step("vespa_scores by email", t_scores)
         
         # Deduplicate - keep only most recent score per cycle
         scores_by_cycle = {}
@@ -10908,12 +10953,32 @@ def get_report_data():
         scores_result_data = sorted(scores_by_cycle.values(), key=lambda x: x['cycle'])
         
         # Get question responses for all cycles
-        # Note: question_responses still uses student_id, so we need to get ALL student_ids for this email
-        all_student_ids = [record['id'] for record in student_records.data]
-        responses_result = supabase_client.table('question_responses')\
-            .select('cycle, question_id, response_value')\
-            .in_('student_id', all_student_ids)\
-            .execute()
+        # Note: question_responses still uses student_id, so keep the query tight.
+        candidate_student_ids = []
+        if student_id:
+            candidate_student_ids.append(student_id)
+        for record in student_records.data:
+            record_id = record.get('id')
+            if record_id and record_id not in candidate_student_ids:
+                candidate_student_ids.append(record_id)
+            if len(candidate_student_ids) >= 3:
+                break
+
+        if not candidate_student_ids:
+            candidate_student_ids = [record['id'] for record in student_records.data if record.get('id')][:3]
+
+        try:
+            t_responses = time.perf_counter()
+            responses_result = supabase_client.table('question_responses')\
+                .select('cycle, question_id, response_value')\
+                .in_('student_id', candidate_student_ids)\
+                .in_('cycle', [1, 2, 3])\
+                .limit(1200)\
+                .execute()
+            log_step("question_responses query", t_responses)
+        except Exception as e:
+            app.logger.warning(f"[Report Data] Question responses query failed: {e}")
+            responses_result = SimpleNamespace(data=[])
         
         # Organize responses by cycle
         responses_by_cycle = {1: {}, 2: {}, 3: {}}
@@ -10931,6 +10996,7 @@ def get_report_data():
         if knack_obj10_id:
             # Fetch the full Object_10 record from Knack to get all text fields
             try:
+                t_knack_record = time.perf_counter()
                 headers = {
                     'X-Knack-Application-Id': os.getenv('KNACK_APP_ID'),
                     'X-Knack-REST-API-Key': os.getenv('KNACK_API_KEY')
@@ -10941,6 +11007,7 @@ def get_report_data():
                     headers=headers,
                     timeout=10
                 )
+                log_step("Knack Object_10 record fetch", t_knack_record)
                 
                 if knack_record_response.ok:
                     record = knack_record_response.json()
@@ -11001,6 +11068,7 @@ def get_report_data():
                 student_profile[cycle] = {'response': None, 'goals': None, 'coaching': None}
         
         # Get coaching content for each score
+        t_coaching = time.perf_counter()
         coaching_content_map = {}
         
         for score_record in scores_result_data:
@@ -11024,7 +11092,9 @@ def get_report_data():
                             coaching_content_map[cycle][category] = content_result.data[0]
                     except Exception as e:
                         app.logger.warning(f"Could not fetch coaching content for {category}: {e}")
+        log_step("coaching content map build", t_coaching)
         
+        log_step("total get_report_data", t_start)
         # Build response
         return jsonify({
             'success': True,
