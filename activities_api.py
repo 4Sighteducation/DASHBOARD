@@ -15,6 +15,22 @@ import os
 
 logger = logging.getLogger(__name__)
 
+def _is_welsh_activity(activity: dict) -> bool:
+    """
+    Detect Welsh variants stored in activities.content JSON.
+    We treat any truthy `content.is_welsh` as Welsh.
+    """
+    try:
+        content = activity.get('content') or {}
+        val = content.get('is_welsh')
+        if val is True:
+            return True
+        if isinstance(val, str) and val.strip().lower() in ('true', '1', 'yes', 'y'):
+            return True
+        return False
+    except Exception:
+        return False
+
 def _activity_ids_with_active_questions(supabase: Client, activity_ids: list[str]) -> set[str]:
     """
     Return the subset of activity_ids that have >= 1 active question.
@@ -182,7 +198,8 @@ def register_activities_routes(app, supabase: Client):
                     .limit(100)\
                     .execute()
 
-                candidate_activities = activities_result.data or []
+                # Student app: always return English variants; Weglot handles UI translation.
+                candidate_activities = [a for a in (activities_result.data or []) if not _is_welsh_activity(a)]
                 candidate_ids = [a.get('id') for a in candidate_activities if a.get('id')]
                 ids_with_questions = _activity_ids_with_active_questions(supabase, candidate_ids)
                 
@@ -240,7 +257,8 @@ def register_activities_routes(app, supabase: Client):
                 .order('display_order')\
                 .execute()
 
-            activities = activities_result.data or []
+            # Student app: always return English variants; Weglot handles UI translation.
+            activities = [a for a in (activities_result.data or []) if not _is_welsh_activity(a)]
             ids = [a.get('id') for a in activities if a.get('id')]
             ids_with_questions = _activity_ids_with_active_questions(supabase, ids)
             activities = [a for a in activities if a.get('id') in ids_with_questions]
@@ -293,7 +311,7 @@ def register_activities_routes(app, supabase: Client):
                 ).in_('id', valid_activity_ids).execute()
                 
                 # Create map of activity_id -> activity data
-                activities_map = {a['id']: a for a in activities_result.data}
+                activities_map = {a['id']: a for a in (activities_result.data or []) if not _is_welsh_activity(a)}
             
             # Build clean response (avoid circular references!)
             assignments = []
@@ -377,6 +395,19 @@ def register_activities_routes(app, supabase: Client):
             if not student_email or not activity_id:
                 logger.error(f"[Start Activity] ❌ Missing required fields")
                 return jsonify({"error": "studentEmail and activityId required", "success": False}), 400
+
+            # Student app: block starting Welsh variants (UI translation only).
+            try:
+                activity_meta = supabase.table('activities').select('id,content').eq('id', activity_id).single().execute()
+                if activity_meta.data and _is_welsh_activity(activity_meta.data):
+                    logger.warning(f"[Start Activity] Blocked start: Welsh variant not allowed in student app: {activity_id}")
+                    return jsonify({
+                        "success": False,
+                        "error": "Welsh activity variants are not enabled in the student app yet.",
+                        "activityId": activity_id
+                    }), 400
+            except Exception as e:
+                logger.warning(f"[Start Activity] Welsh check failed (continuing): {e}")
 
             # Student app rule: cannot start activities with 0 active questions
             if activity_id not in _activity_ids_with_active_questions(supabase, [activity_id]):
