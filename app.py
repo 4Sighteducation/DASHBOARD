@@ -11142,9 +11142,21 @@ def get_staff_overview():
     try:
         staff_email = request.args.get('email')
         cycle_filter = request.args.get('cycle')  # Optional cycle filter (1, 2, 3, or None for all)
+        connection_role = request.args.get('connection_role')  # Optional: restrict to ONE staff connection role
         
         if not staff_email:
             return jsonify({'error': 'Email is required'}), 400
+
+        # Validate requested connection role (when present)
+        allowed_connection_roles = ['tutor', 'head_of_year', 'subject_teacher', 'staff_admin']
+        requested_role = None
+        if connection_role:
+            requested_role = str(connection_role).strip().lower()
+            if requested_role not in allowed_connection_roles:
+                return jsonify({
+                    'error': 'Invalid connection_role',
+                    'allowed': allowed_connection_roles
+                }), 400
         
         # Parse cycle filter if provided
         selected_cycle = None
@@ -11153,10 +11165,29 @@ def get_staff_overview():
             if selected_cycle not in [1, 2, 3]:
                 selected_cycle = None
         
-        app.logger.info(f"[Staff Overview] Fetching data for {staff_email}, cycle filter: {selected_cycle}")
+        app.logger.info(f"[Staff Overview] Fetching data for {staff_email}, cycle filter: {selected_cycle}, connection_role: {requested_role}")
         
         if not supabase_client:
             return jsonify({'error': 'Database not available'}), 500
+
+        def _norm_role(v):
+            # Normalize role labels across sources (Supabase / Knack / frontend query params)
+            # Examples: "Subject Teacher" -> "subject_teacher", "head-of-year" -> "head_of_year"
+            s = str(v or '').strip().lower()
+            s = s.replace(' ', '_').replace('-', '_')
+            return s
+
+        # Supabase-first connections (authoritative staff↔student links when present)
+        supabase_connections = []
+        try:
+            conn_result = supabase_client.table('staff_student_connections')\
+                .select('student_email,staff_role')\
+                .eq('staff_email', (staff_email or '').strip().lower())\
+                .execute()
+            if conn_result and getattr(conn_result, 'data', None):
+                supabase_connections = conn_result.data
+        except Exception as e:
+            app.logger.warning(f"[Staff Overview] Supabase connections lookup failed (will fallback to Knack): {e}")
         
         # Headers for Knack API
         headers = {
@@ -11247,68 +11278,144 @@ def get_staff_overview():
                     app.logger.info(f"[Staff Overview] Detected Subject Teacher role")
         except Exception as e:
             app.logger.warning(f"Could not check Subject Teacher role: {e}")
-        
+
+        # Merge roles from Supabase connection table (enables Supabase-native role visibility)
+        # staff_student_connections.staff_role is authoritative when present.
+        try:
+            supabase_roles = set()
+            for row in (supabase_connections or []):
+                r = _norm_role(row.get('staff_role'))
+                if r:
+                    supabase_roles.add(r)
+            for r in sorted(list(supabase_roles)):
+                if r not in staff_info['roles']:
+                    staff_info['roles'].append(r)
+        except Exception:
+            pass
+
         if not staff_info['roles']:
             return jsonify({'error': 'No staff role found for this email'}), 404
+
+        # If caller requested a specific connection role, ensure the staff member has it.
+        if requested_role and requested_role not in staff_info['roles']:
+            return jsonify({
+                'error': f"Staff member does not have requested role: {requested_role}",
+                'roles': staff_info['roles']
+            }), 403
+
+        # Surface active role (helps frontends display / debug)
+        if requested_role:
+            staff_info['activeRole'] = requested_role
         
-        # Step 2: Get all Object_10 (VESPA Results) records connected to this staff member
-        # Build filter rules based on detected roles
-        filter_rules = []
-        
-        if 'staff_admin' in staff_info['roles']:
-            filter_rules.append({'field': 'field_439', 'operator': 'contains', 'value': staff_id_mappings['staff_admin']})
-        
-        if 'tutor' in staff_info['roles']:
-            filter_rules.append({'field': 'field_145', 'operator': 'contains', 'value': staff_id_mappings['tutor']})
-        
-        if 'head_of_year' in staff_info['roles']:
-            filter_rules.append({'field': 'field_429', 'operator': 'contains', 'value': staff_id_mappings['head_of_year']})
-        
-        if 'subject_teacher' in staff_info['roles']:
-            filter_rules.append({'field': 'field_2191', 'operator': 'contains', 'value': staff_id_mappings['subject_teacher']})
-        
-        # Build query with OR logic (any matching connection)
-        filters = {'match': 'or', 'rules': filter_rules}
-        
-        app.logger.info(f"[Staff Overview] Fetching students with filters: {json.dumps(filters)}")
-        
-        # Fetch connected student records from Object_10 with pagination
+        # Step 2: Get all Object_10 (VESPA Results) records connected to this staff member.
+        #
+        # Supabase-first:
+        # - If staff_student_connections has rows, use it as the authoritative connection list.
+        # - Otherwise fall back to Knack connection fields on Object_10.
+        obj10_records = []
         try:
-            obj10_records = []
-            page = 1
-            total_pages = 1
-            
-            # Loop through all pages to get ALL students
-            while page <= total_pages:
-                app.logger.info(f"[Staff Overview] Fetching page {page}/{total_pages}")
-                
-                obj10_response = requests.get(
-                    "https://api.knack.com/v1/objects/object_10/records",
-                    headers=headers,
-                    params={
-                        'filters': json.dumps(filters),
-                        'rows_per_page': 1000,  # Max per page
-                        'page': page
-                    },
-                    timeout=30
-                )
-                
-                if not obj10_response.ok:
-                    app.logger.error(f"[Staff Overview] Knack API error on page {page}: {obj10_response.status_code} - {obj10_response.text}")
-                    return jsonify({'error': 'Failed to fetch student data from Knack'}), 500
-                
-                response_data = obj10_response.json()
-                page_records = response_data.get('records', [])
-                obj10_records.extend(page_records)
-                
-                # Update total pages from response
-                total_pages = response_data.get('total_pages', 1)
-                page += 1
-                
-                app.logger.info(f"[Staff Overview] Page {page-1}: Got {len(page_records)} students, Total so far: {len(obj10_records)}")
-            
-            app.logger.info(f"[Staff Overview] ✅ Found {len(obj10_records)} total connected students across {total_pages} pages")
-            
+            supabase_student_emails = []
+            if supabase_connections:
+                for row in supabase_connections:
+                    role = _norm_role(row.get('staff_role'))
+                    if requested_role and role != _norm_role(requested_role):
+                        continue
+                    email = str(row.get('student_email') or '').strip().lower()
+                    if email:
+                        supabase_student_emails.append(email)
+                # de-dupe while preserving order
+                supabase_student_emails = list(dict.fromkeys(supabase_student_emails))
+
+            if supabase_student_emails:
+                app.logger.info(f"[Staff Overview] Using Supabase connections: {len(supabase_student_emails)} students (role={requested_role or 'any'})")
+
+                # Fetch Object_10 records by student email in chunks to keep filter payloads small.
+                def _chunks(lst, size=25):
+                    for i in range(0, len(lst), size):
+                        yield lst[i:i + size]
+
+                for chunk in _chunks(supabase_student_emails, 25):
+                    email_filters = {'match': 'or', 'rules': [
+                        {'field': 'field_197', 'operator': 'is', 'value': e} for e in chunk
+                    ]}
+
+                    page = 1
+                    total_pages = 1
+                    while page <= total_pages:
+                        obj10_response = requests.get(
+                            "https://api.knack.com/v1/objects/object_10/records",
+                            headers=headers,
+                            params={
+                                'filters': json.dumps(email_filters),
+                                'rows_per_page': 1000,
+                                'page': page
+                            },
+                            timeout=30
+                        )
+                        if not obj10_response.ok:
+                            app.logger.error(f"[Staff Overview] Knack API error (email chunk) page {page}: {obj10_response.status_code} - {obj10_response.text}")
+                            return jsonify({'error': 'Failed to fetch student data from Knack'}), 500
+                        response_data = obj10_response.json()
+                        page_records = response_data.get('records', [])
+                        obj10_records.extend(page_records)
+                        total_pages = response_data.get('total_pages', 1)
+                        page += 1
+
+                app.logger.info(f"[Staff Overview] ✅ Found {len(obj10_records)} students via Supabase connections")
+
+            else:
+                # Fallback: Knack connection fields on Object_10 (legacy)
+                filter_rules = []
+                role_to_filter = requested_role  # when present, ONLY build rules for this role
+
+                if (not role_to_filter or role_to_filter == 'staff_admin') and 'staff_admin' in staff_info['roles'] and staff_id_mappings.get('staff_admin'):
+                    filter_rules.append({'field': 'field_439', 'operator': 'contains', 'value': staff_id_mappings['staff_admin']})
+
+                if (not role_to_filter or role_to_filter == 'tutor') and 'tutor' in staff_info['roles'] and staff_id_mappings.get('tutor'):
+                    filter_rules.append({'field': 'field_145', 'operator': 'contains', 'value': staff_id_mappings['tutor']})
+
+                if (not role_to_filter or role_to_filter == 'head_of_year') and 'head_of_year' in staff_info['roles'] and staff_id_mappings.get('head_of_year'):
+                    filter_rules.append({'field': 'field_429', 'operator': 'contains', 'value': staff_id_mappings['head_of_year']})
+
+                if (not role_to_filter or role_to_filter == 'subject_teacher') and 'subject_teacher' in staff_info['roles'] and staff_id_mappings.get('subject_teacher'):
+                    filter_rules.append({'field': 'field_2191', 'operator': 'contains', 'value': staff_id_mappings['subject_teacher']})
+
+                if not filter_rules:
+                    return jsonify({
+                        'error': 'No valid connection filters could be built for this request',
+                        'roles': staff_info['roles'],
+                        'requested_role': requested_role
+                    }), 400
+
+                filters = {'match': 'or', 'rules': filter_rules}
+                app.logger.info(f"[Staff Overview] Using Knack fallback filters: {json.dumps(filters)}")
+
+                page = 1
+                total_pages = 1
+                while page <= total_pages:
+                    app.logger.info(f"[Staff Overview] Fetching page {page}/{total_pages}")
+                    obj10_response = requests.get(
+                        "https://api.knack.com/v1/objects/object_10/records",
+                        headers=headers,
+                        params={
+                            'filters': json.dumps(filters),
+                            'rows_per_page': 1000,
+                            'page': page
+                        },
+                        timeout=30
+                    )
+                    if not obj10_response.ok:
+                        app.logger.error(f"[Staff Overview] Knack API error on page {page}: {obj10_response.status_code} - {obj10_response.text}")
+                        return jsonify({'error': 'Failed to fetch student data from Knack'}), 500
+                    response_data = obj10_response.json()
+                    page_records = response_data.get('records', [])
+                    obj10_records.extend(page_records)
+                    total_pages = response_data.get('total_pages', 1)
+                    page += 1
+                    app.logger.info(f"[Staff Overview] Page {page-1}: Got {len(page_records)} students, Total so far: {len(obj10_records)}")
+
+                app.logger.info(f"[Staff Overview] ✅ Found {len(obj10_records)} total connected students across {total_pages} pages (Knack fallback)")
+
         except Exception as e:
             app.logger.error(f"[Staff Overview] Error fetching Object_10: {e}")
             return jsonify({'error': f'Failed to query student records: {str(e)}'}), 500
