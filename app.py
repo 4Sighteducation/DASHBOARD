@@ -13889,7 +13889,13 @@ def ucas_management_report_csv():
 
 @app.route('/api/academic-profile/<email>/reference/status', methods=['GET'])
 def get_reference_status(email):
-    """Student-safe status endpoint (no reference text)."""
+    """Student status endpoint.
+
+    Note: This endpoint returns invite status for the UCAS reference flow.
+    For student requests (X-User-Role: student), we also include the submitted
+    invited-teacher contribution text for each submitted invite so students can
+    view what was submitted (read-only).
+    """
     try:
         if not SUPABASE_ENABLED:
             return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
@@ -13899,6 +13905,8 @@ def get_reference_status(email):
         if not ref:
             return jsonify({'success': False, 'error': 'Could not create reference'}), 500
 
+        is_student = _is_student_request()
+
         invites = supabase_client.table('reference_invites')\
             .select('id, teacher_email, teacher_name, subject_key, allowed_sections, expires_at, used_at, revoked_at, created_at')\
             .eq('reference_id', ref['id'])\
@@ -13906,19 +13914,63 @@ def get_reference_status(email):
             .execute()
 
         invite_rows = invites.data if invites and invites.data else []
+
+        contrib_by_key = {}
+        if is_student:
+            try:
+                contribs = supabase_client.table('reference_contributions')\
+                    .select('author_email, subject_key, text, created_at, updated_at')\
+                    .eq('reference_id', ref['id'])\
+                    .eq('section', 3)\
+                    .eq('author_type', 'invited_teacher')\
+                    .order('updated_at', desc=True)\
+                    .execute()
+                for c in (contribs.data if contribs and contribs.data else []):
+                    a = str(c.get('author_email') or '').strip().lower()
+                    s = str(c.get('subject_key') or '').strip().lower()
+                    if not a:
+                        continue
+                    key = f"{a}__{s}"
+                    if key not in contrib_by_key:
+                        contrib_by_key[key] = c
+            except Exception:
+                contrib_by_key = {}
+
         out_invites = []
         for inv in invite_rows:
-            out_invites.append({
+            teacher_email = inv.get('teacher_email')
+            subject_key = inv.get('subject_key')
+            used_at = inv.get('used_at')
+            created_at = inv.get('created_at')
+
+            out = {
                 'id': inv.get('id'),
-                'teacherEmail': inv.get('teacher_email'),
+                'teacherEmail': teacher_email,
                 'teacherName': inv.get('teacher_name'),
-                'subjectKey': inv.get('subject_key'),
+                'subjectKey': subject_key,
                 'allowedSections': inv.get('allowed_sections') or [3],
                 'expiresAt': inv.get('expires_at'),
-                'usedAt': inv.get('used_at'),
+                'createdAt': created_at,
+                'sentAt': created_at,
+                'usedAt': used_at,
+                'submittedAt': used_at,
                 'revokedAt': inv.get('revoked_at'),
-                'status': 'submitted' if inv.get('used_at') else ('revoked' if inv.get('revoked_at') else 'pending')
-            })
+                'status': 'submitted' if used_at else ('revoked' if inv.get('revoked_at') else 'pending')
+            }
+
+            if is_student and used_at:
+                try:
+                    a = str(teacher_email or '').strip().lower()
+                    s = str(subject_key or '').strip().lower()
+                    key = f"{a}__{s}"
+                    c = contrib_by_key.get(key)
+                    if c:
+                        out['referenceText'] = c.get('text') or ''
+                        out['submittedAt'] = c.get('updated_at') or c.get('created_at') or used_at
+                except Exception:
+                    pass
+
+            out_invites.append(out)
 
         # Derive progress: not_started -> in_progress when any contribution exists or any invite exists
         status = ref.get('status') or 'not_started'
