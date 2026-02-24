@@ -13525,7 +13525,9 @@ def reference_inbox_page():
     The JS/CSS assets are still loaded from JSDelivr.
     """
     try:
-        asset_base = "https://cdn.jsdelivr.net/gh/4Sighteducation/VESPA-report-v2@main/reference-inbox/dist"
+        # Pin JSDelivr to a specific VESPA-report-v2 commit for deterministic updates.
+        # Updated alongside staff-overview loader pins.
+        asset_base = "https://cdn.jsdelivr.net/gh/4Sighteducation/VESPA-report-v2@75b12433dc063ffcc237bdd298aed3b908646de7/reference-inbox/dist"
         html = f"""<!doctype html>
 <html lang="en">
   <head>
