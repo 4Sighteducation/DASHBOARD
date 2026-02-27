@@ -12571,13 +12571,24 @@ def uniguide_get_profile_api():
             return jsonify({'success': False, 'error': 'student_email is required'}), 400
 
         def profiles_tbl(c):
+            schema_err = None
+            dot_err = None
             try:
                 return c.schema('uniguide_app').table('student_profiles')
             except Exception as ex:
-                raise RuntimeError(
-                    "Supabase schema 'uniguide_app' is not available via the API. "
-                    "Apply UniGuide migrations and add 'uniguide_app' (and 'uniguide') to Supabase API → Exposed schemas."
-                ) from ex
+                schema_err = ex
+            try:
+                # Fallback for clients/environments where schema() is not available.
+                return c.table('uniguide_app.student_profiles')
+            except Exception as ex:
+                dot_err = ex
+
+            raise RuntimeError(
+                "Could not access 'uniguide_app.student_profiles' via Supabase. "
+                "Check: (1) migrations applied, (2) Supabase Settings → API → Exposed schemas includes 'uniguide_app' + 'uniguide', "
+                "(3) backend is using the correct Supabase URL, (4) backend has service_role key. "
+                f"schema() error: {schema_err}; dot-table error: {dot_err}"
+            )
 
         tbl = profiles_tbl(client)
 
@@ -12634,13 +12645,52 @@ def uniguide_save_profile_api():
             return jsonify({'success': False, 'error': 'intake must be an object'}), 400
 
         def profiles_tbl(c):
+            schema_err = None
+            dot_err = None
             try:
                 return c.schema('uniguide_app').table('student_profiles')
             except Exception as ex:
-                raise RuntimeError(
-                    "Supabase schema 'uniguide_app' is not available via the API. "
-                    "Apply UniGuide migrations and add 'uniguide_app' (and 'uniguide') to Supabase API → Exposed schemas."
-                ) from ex
+                schema_err = ex
+            try:
+                return c.table('uniguide_app.student_profiles')
+            except Exception as ex:
+                dot_err = ex
+
+            raise RuntimeError(
+                "Could not access 'uniguide_app.student_profiles' via Supabase. "
+                "Check: (1) migrations applied, (2) Supabase Settings → API → Exposed schemas includes 'uniguide_app' + 'uniguide', "
+                "(3) backend is using the correct Supabase URL, (4) backend has service_role key. "
+                f"schema() error: {schema_err}; dot-table error: {dot_err}"
+            )
+
+
+@app.route('/api/uniguide/health', methods=['GET'])
+def uniguide_health_api():
+    """UniGuide: lightweight config sanity check (does not reveal secrets)."""
+    try:
+        using_uniguide = bool(uniguide_client)
+        using_main = bool(supabase_client)
+        url = (UNIGUIDE_SUPABASE_URL or SUPABASE_URL or '').strip()
+        url_hint = ''
+        if url:
+            try:
+                # keep it readable but not overly detailed
+                url_hint = url.replace('https://', '').split('/')[0]
+            except Exception:
+                url_hint = 'set'
+
+        return jsonify({
+            'success': True,
+            'uniguide_enabled': bool(uniguide_client or supabase_client),
+            'using_uniguide_project': using_uniguide,
+            'using_main_supabase_fallback': (not using_uniguide) and using_main,
+            'supabase_url_host': url_hint,
+            'has_uniguide_service_key': bool(UNIGUIDE_SUPABASE_SERVICE_KEY),
+            'has_main_service_key': bool(SUPABASE_SERVICE_KEY),
+            'note': "If 'using_main_supabase_fallback' is true, your UNIGUIDE_SUPABASE_URL/KEY may not be set or the dyno hasn't restarted."
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
         tbl = profiles_tbl(client)
 
