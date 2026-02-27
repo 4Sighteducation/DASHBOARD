@@ -48,6 +48,16 @@ OPENING MESSAGE SHAPE
 Start warmly, personal, and human. Something like:
 “Hey {{student.firstName}} — I’m Alex. I’m here to help you figure out the university side of things, and I promise this won’t feel like filling in another form.”
 Then ask one good, human question about what they’re most uncertain about right now.
+
+ABSOLUTE BANNED PHRASES — never use these under any circumstances:
+"Got it!", "Great!", "Absolutely!", "Of course!", "Certainly!", "Sure thing!",
+"That makes total sense!", "Great question!", "Spot on!", "Exactly!", "Perfect!",
+"That's a great point", "I totally understand", "Amazing", "Fantastic",
+"Happy to help!", "I'd be happy to", "Let's dive in", "Let's explore",
+"Sounds like a plan", "Moving forward", "At the end of the day".
+
+These phrases make you sound like a customer service bot. You are not a customer service bot.
+If you find yourself about to write any of these, stop and rewrite the sentence without them.
 """
 
 
@@ -273,6 +283,43 @@ def _alex_opening_message(prompt_ctx: dict):
     )
 
 
+def _looks_like_yes(text: str):
+    s = (text or "").strip().lower()
+    if not s:
+        return False
+    # Keep it strict: only treat short, affirmative confirmations as "yes".
+    return s in {
+        "yes",
+        "y",
+        "yep",
+        "yeah",
+        "yup",
+        "correct",
+        "exactly",
+        "that's right",
+        "thats right",
+        "right",
+        "sounds right",
+        "spot on",
+        "that’s right",
+    }
+
+
+def _looks_like_no(text: str):
+    s = (text or "").strip().lower()
+    if not s:
+        return False
+    return s in {
+        "no",
+        "n",
+        "nope",
+        "nah",
+        "not quite",
+        "not really",
+        "wrong",
+    }
+
+
 def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_client, OPENAI_API_KEY, get_profile_from_supabase):
     data = request.get_json() or {}
     student_email = (data.get("student_email") or data.get("studentEmail") or "").strip().lower()
@@ -422,6 +469,66 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
     prompt_ctx = _summarize_profile_for_prompt(student_ctx, intake)
     alex_system = _alex_system_prompt_from_ctx(prompt_ctx)
 
+    # --- Conversation gating + confirmation checkpoint ---
+    MIN_USER_TURNS = 4
+    MIN_TOTAL_TURNS = 8
+
+    user_turns = 0
+    assistant_turns = 0
+    for m in history:
+        try:
+            if m.get("role") == "user":
+                user_turns += 1
+            elif m.get("role") == "assistant":
+                assistant_turns += 1
+        except Exception:
+            pass
+    total_turns = user_turns + assistant_turns
+
+    ug_confirm_pending = bool((intake or {}).get("ug_confirm_pending"))
+    ug_confirmed = bool((intake or {}).get("ug_confirmed"))
+    gate_met = (user_turns >= MIN_USER_TURNS) and (total_turns >= MIN_TOTAL_TURNS)
+
+    intake_patch_app = {}
+    if ug_confirm_pending and not ug_confirmed:
+        if _looks_like_yes(message):
+            intake_patch_app = {"ug_confirm_pending": False, "ug_confirmed": True}
+            ug_confirm_pending = False
+            ug_confirmed = True
+        elif _looks_like_no(message):
+            # Reset; Alex should correct the summary and re-confirm.
+            intake_patch_app = {"ug_confirm_pending": False, "ug_confirmed": False}
+            ug_confirm_pending = False
+            ug_confirmed = False
+
+    # When we reach the minimum exchange threshold, force a short paraphrase + confirm step.
+    if gate_met and (not ug_confirmed) and (not ug_confirm_pending):
+        intake_patch_app = {**intake_patch_app, "ug_confirm_pending": True, "ug_confirmed": False}
+        ug_confirm_pending = True
+
+    if intake_patch_app:
+        try:
+            merged = {**(intake or {}), **intake_patch_app}
+            profiles_tbl.update({"intake": merged, "updated_at": _now_iso()}).eq("student_email", student_email).eq(
+                "academic_year", academic_year
+            ).execute()
+            intake = merged
+        except Exception as e:
+            app.logger.warning(f"[UniGuide] intake app patch write failed: {e}")
+
+    allow_recommendations = gate_met and ug_confirmed
+    app_state = {
+        "user_turns": user_turns,
+        "assistant_turns": assistant_turns,
+        "total_turns": total_turns,
+        "min_user_turns": MIN_USER_TURNS,
+        "min_total_turns": MIN_TOTAL_TURNS,
+        "gate_met": gate_met,
+        "confirm_pending": ug_confirm_pending,
+        "confirmed": ug_confirmed,
+        "allow_recommendations": allow_recommendations,
+    }
+
     # Start-chat mode: return a personalised opening immediately (no RAG, no OpenAI).
     if message == "__UNIGUIDE_START__":
         opening = _alex_opening_message(prompt_ctx)
@@ -474,6 +581,8 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
 
         # Special "start" mode: no student message beyond "start".
         planner_user = (
+            "APP STATE (read-only):\n"
+            f"{json.dumps(app_state, ensure_ascii=False)}\n\n"
             "CONTEXT (read-only):\n"
             f"{json.dumps(prompt_ctx, ensure_ascii=False)}\n\n"
             "STUDENT MESSAGE:\n"
@@ -535,6 +644,13 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
 
     # Retrieve courses (RAG retrieval). Skip in start mode.
     retrieved = []
+    if (not allow_recommendations) and q:
+        # Hard gate: do not retrieve courses until we've had enough conversation AND the student confirms the summary.
+        q = None
+        subject_code = None
+        min_tariff = None
+        max_tariff = None
+
     if q and message != "__UNIGUIDE_START__":
         try:
             params = {
@@ -577,19 +693,25 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
             alex_system
             + "\n\n"
             + "You are UniGuide, an expert UK university/course advisor.\n"
-            "Use the retrieved course cards to make suggestions.\n"
             "Return STRICT JSON ONLY with keys:\n"
-            "  assistant_message: string (helpful answer + any question)\n"
-            "  suggestions: array of up to 6 items:\n"
+            "  assistant_message: string (helpful answer + 1 targeted question)\n"
+            "  suggestions: array of up to 6 items (only when APP_STATE.allow_recommendations is true):\n"
             "    { course_key: string, band: 'aspirational'|'solid'|'safer'|'other', reason_short: string }\n"
+            "  ready_to_recommend: boolean (true only when you are genuinely ready to surface course suggestions)\n"
+            "  extracted_profile: object|null (only when ready_to_recommend is true)\n"
             "Rules:\n"
+            "- NEVER include URLs/links inside assistant_message. If suggesting courses, use suggestions[] only.\n"
             "- Do NOT invent course_keys; only use those provided.\n"
             "- Keep reasons short (<=140 chars).\n"
             "- If RETRIEVED COURSES is empty, do NOT claim that no courses exist. Ask for a clearer subject keyword and suggest using Search Courses.\n"
-            "- If this is the first message (no conversation yet), start with a warm Alex-style opening that references the student’s name and preferences naturally.\n"
+            "- If APP_STATE.confirm_pending is true: paraphrase what the student has said so far (2–4 bullets), then ask them to confirm (yes/no). Do not suggest courses.\n"
+            "- If APP_STATE.allow_recommendations is false: do not suggest courses. Ask 1 targeted follow-up question based on what's missing.\n"
+            "- You must avoid the banned filler phrases from your persona prompt.\n"
         )
 
         responder_user = (
+            "APP STATE (read-only):\n"
+            f"{json.dumps(app_state, ensure_ascii=False)}\n\n"
             "CONTEXT (read-only):\n"
             f"{json.dumps(_summarize_profile_for_prompt(student_ctx, intake), ensure_ascii=False)}\n\n"
             "RETRIEVED COURSES (read-only):\n"
@@ -605,7 +727,7 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
                 {"role": "system", "content": responder_system},
                 {"role": "user", "content": responder_user},
             ],
-            temperature=0.6,
+            temperature=0.5,
             max_tokens=900,
         )
 
@@ -617,6 +739,14 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
 
     final_message = (out.get("assistant_message") or assistant_message or "").strip()
     suggestions = out.get("suggestions") if isinstance(out.get("suggestions"), list) else []
+    ready_to_recommend = bool(out.get("ready_to_recommend"))
+    extracted_profile = out.get("extracted_profile") if isinstance(out.get("extracted_profile"), dict) else None
+
+    # Hard safety: if the app gate is not open, drop any suggestions the model tried to return.
+    if not allow_recommendations:
+        suggestions = []
+        ready_to_recommend = False
+        extracted_profile = None
 
     # Guardrail: don't let the model conclude "no courses exist" when retrieval is empty.
     if (not retrieved) and q:
@@ -663,6 +793,34 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
             # Likely duplicate active suggestion; ignore for now.
             pass
 
+    # Enrich suggestions with course card details for the frontend buttons/links.
+    retrieved_by_key = {}
+    for c in (retrieved or [])[:50]:
+        try:
+            k = (c or {}).get("course_key")
+            if k:
+                retrieved_by_key[str(k)] = c
+        except Exception:
+            pass
+
+    suggestions_ui = []
+    for s in saved_suggestions:
+        try:
+            k = str(s.get("course_key") or "").strip()
+            card = retrieved_by_key.get(k) or {}
+            suggestions_ui.append(
+                {
+                    **s,
+                    "title": card.get("title") or card.get("course_title") or card.get("course_name"),
+                    "institution_name": card.get("institution_name") or card.get("provider_name") or card.get("university_name"),
+                    "course_url": card.get("course_url") or card.get("url") or card.get("course_link"),
+                    "tariff_typical": card.get("tariff_typical") or card.get("tariff"),
+                    "tef_overall_rating": card.get("tef_overall_rating") or card.get("tef"),
+                }
+            )
+        except Exception:
+            suggestions_ui.append(s)
+
     return (
         jsonify(
             {
@@ -672,7 +830,10 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
                 "search_used": {"q": q, "subject_code": subject_code, "min_tariff": min_tariff, "max_tariff": max_tariff},
                 "retrieved_count": len(retrieved),
                 "suggestions_saved": len(saved_suggestions),
-                "suggestions": saved_suggestions,
+                "suggestions": suggestions_ui,
+                "ready_to_recommend": ready_to_recommend,
+                "extracted_profile": extracted_profile,
+                "app_state": app_state,
             }
         ),
         200,
