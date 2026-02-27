@@ -8,6 +8,7 @@ from flask import Flask, request, jsonify, send_file, current_app, Response
 from dotenv import load_dotenv
 from flask_cors import CORS # Import CORS
 import logging # Import Python's standard logging
+from werkzeug.exceptions import HTTPException
 from functools import wraps
 import hashlib
 import secrets
@@ -313,8 +314,13 @@ def handle_api_error(error):
 @app.errorhandler(Exception)
 def handle_generic_error(error):
     app.logger.error(f"An unexpected error occurred: {error}")
-    response = jsonify({'message': "An internal server error occurred."})
-    response.status_code = 500
+    # Preserve HTTP error status codes (e.g. 404) rather than converting them into 500s.
+    if isinstance(error, HTTPException):
+        response = jsonify({'message': str(error)})
+        response.status_code = error.code or 500
+    else:
+        response = jsonify({'message': "An internal server error occurred."})
+        response.status_code = 500
     # Ensure CORS headers are added to error responses
     origin = request.headers.get('Origin')
     if origin in ["https://vespaacademy.knack.com", "http://localhost:8000", "http://127.0.0.1:8000", "null"]:
@@ -3348,6 +3354,22 @@ def test_endpoint():
         'cors_configured': True,
         'knack_configured': bool(KNACK_APP_ID and KNACK_API_KEY),
         'timestamp': str(datetime.now())
+    })
+
+# --- API Health Check (used by frontend loaders) ---
+@app.route('/api/health', methods=['GET', 'OPTIONS'])
+def api_health_check():
+    """Lightweight API health check (never raises)."""
+    return jsonify({
+        'status': 'ok',
+        'timestamp': str(datetime.now()),
+        'services': {
+            'knack_api': bool(KNACK_APP_ID and KNACK_API_KEY),
+            'openai_api': bool(OPENAI_API_KEY),
+            'redis_cache': CACHE_ENABLED,
+            'supabase': SUPABASE_ENABLED,
+            'uniguide_supabase': bool(uniguide_client)
+        }
     })
 
 # --- Health Check Endpoint ---
