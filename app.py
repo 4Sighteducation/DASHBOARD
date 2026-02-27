@@ -12551,6 +12551,35 @@ def uniguide_search_courses_api():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/uniguide/health', methods=['GET'])
+def uniguide_health_api():
+    """UniGuide: lightweight config sanity check (does not reveal secrets)."""
+    try:
+        using_uniguide = bool(uniguide_client)
+        using_main = bool(supabase_client)
+        url = (UNIGUIDE_SUPABASE_URL or SUPABASE_URL or '').strip()
+        url_hint = ''
+        if url:
+            try:
+                # keep it readable but not overly detailed
+                url_hint = url.replace('https://', '').split('/')[0]
+            except Exception:
+                url_hint = 'set'
+
+        return jsonify({
+            'success': True,
+            'uniguide_enabled': bool(uniguide_client or supabase_client),
+            'using_uniguide_project': using_uniguide,
+            'using_main_supabase_fallback': (not using_uniguide) and using_main,
+            'supabase_url_host': url_hint,
+            'has_uniguide_service_key': bool(UNIGUIDE_SUPABASE_SERVICE_KEY),
+            'has_main_service_key': bool(SUPABASE_SERVICE_KEY),
+            'note': "If 'using_main_supabase_fallback' is true, your UNIGUIDE_SUPABASE_URL/KEY may not be set or the dyno hasn't restarted."
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/uniguide/profile', methods=['GET'])
 def uniguide_get_profile_api():
     """UniGuide: get student intake profile (stored in `uniguide_app.student_profiles`)."""
@@ -12662,35 +12691,6 @@ def uniguide_save_profile_api():
                 "(3) backend is using the correct Supabase URL, (4) backend has service_role key. "
                 f"schema() error: {schema_err}; dot-table error: {dot_err}"
             )
-
-
-@app.route('/api/uniguide/health', methods=['GET'])
-def uniguide_health_api():
-    """UniGuide: lightweight config sanity check (does not reveal secrets)."""
-    try:
-        using_uniguide = bool(uniguide_client)
-        using_main = bool(supabase_client)
-        url = (UNIGUIDE_SUPABASE_URL or SUPABASE_URL or '').strip()
-        url_hint = ''
-        if url:
-            try:
-                # keep it readable but not overly detailed
-                url_hint = url.replace('https://', '').split('/')[0]
-            except Exception:
-                url_hint = 'set'
-
-        return jsonify({
-            'success': True,
-            'uniguide_enabled': bool(uniguide_client or supabase_client),
-            'using_uniguide_project': using_uniguide,
-            'using_main_supabase_fallback': (not using_uniguide) and using_main,
-            'supabase_url_host': url_hint,
-            'has_uniguide_service_key': bool(UNIGUIDE_SUPABASE_SERVICE_KEY),
-            'has_main_service_key': bool(SUPABASE_SERVICE_KEY),
-            'note': "If 'using_main_supabase_fallback' is true, your UNIGUIDE_SUPABASE_URL/KEY may not be set or the dyno hasn't restarted."
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
 
         tbl = profiles_tbl(client)
 
