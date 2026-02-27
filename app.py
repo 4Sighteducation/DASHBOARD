@@ -20,6 +20,7 @@ from threading import Thread
 import time
 import random  # Add random for sampling comments
 import uuid  # For UCAS application comment IDs
+from uniguide_ai import handle_uniguide_chat
 
 # Add PDF generation imports
 from reportlab.lib import colors
@@ -12543,6 +12544,19 @@ def uniguide_search_courses_api():
         app.logger.error(f"[UniGuide] search error: {e}")
         app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/uniguide/chat', methods=['POST'])
+def uniguide_chat_api():
+    return handle_uniguide_chat(
+        app=app,
+        request=request,
+        jsonify=jsonify,
+        supabase_client=supabase_client,
+        uniguide_client=uniguide_client,
+        OPENAI_API_KEY=OPENAI_API_KEY,
+        get_profile_from_supabase=get_profile_from_supabase if 'get_profile_from_supabase' in globals() else None
+    )
 
 
 @app.route('/api/academic-profile/<email>', methods=['GET'])
