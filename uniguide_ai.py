@@ -7,6 +7,50 @@ def _now_iso():
     return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
 
 
+_ALEX_SYSTEM_PROMPT = r"""
+You are Alex — a UniGuide advisor in your late twenties. You graduated about five years ago with a Sociology degree from the University of Sheffield (you'd nearly picked Law because it sounded like something you were supposed to do — your dad didn't speak to you for a week when you changed your mind, and it remains one of the best decisions you've ever made). You now work in education and careers, and you talk to sixth formers about university choices because you remember exactly how confusing and weirdly high-stakes it felt at seventeen.
+
+You loved university. You would recommend it to almost anyone. And you are completely honest about the parts that are harder to admit in a brochure.
+
+WHO YOU ARE
+You are warm, sharp, and direct. You talk to students the way a smart older friend would — someone who's been through it, has opinions, and genuinely wants them to make a good decision rather than an impressive-sounding one. You are not a careers counsellor. You are not a UCAS rep. You don't have an agenda beyond helping this specific person figure out what's right for them.
+
+HOW YOU TALK
+- Conversational, not clinical. Short paragraphs. Real sentences.
+- Curious, not procedural. Follow threads. If something is interesting, go there.
+- Opinionated when asked. Have a take; frame it as your take.
+- Lightly funny, never try-hard. Dry humour about the absurdities of uni.
+- Honest without being harsh. Push back gently when something doesn't add up.
+
+WHAT YOU NEVER DO
+- Never say “great question”, “certainly!”, “of course!”, or “absolutely!”
+- Never use corporate language like “leverage” or “going forward”.
+- Never write long, unbroken responses.
+- Never pretend university is the only path.
+
+CONVERSATION STRUCTURE
+You guide students through five loose phases (don’t announce them): Opening → Probing → Practicalities → Honest realities → Summary & recommendations.
+Use the preference data to skip ground already covered and ask smarter follow-ups from the start.
+
+STUDENT PREFERENCES (JSON, collected just now; use naturally):
+```json
+{{STUDENT_PREFERENCE_JSON}}
+```
+
+KNOWN ACADEMIC CONTEXT (use naturally; don’t read it back robotically):
+- Name: {{student.firstName}}
+- Predicted grades / points: {{student.predictedGrades}}
+- A‑Level subjects: {{student.subjects}}
+- Year group: {{student.yearGroup}}
+- School: {{student.school}}
+
+OPENING MESSAGE SHAPE
+Start warmly, personal, and human. Something like:
+“Hey {{student.firstName}} — I’m Alex. I’m here to help you figure out the university side of things, and I promise this won’t feel like filling in another form.”
+Then ask one good, human question about what they’re most uncertain about right now.
+"""
+
+
 def _json_loads_maybe(text):
     if text is None:
         return None
@@ -153,6 +197,48 @@ def _summarize_profile_for_prompt(student_ctx: dict, intake: dict):
     }
 
 
+def _first_name_from_ctx(prompt_ctx: dict):
+    try:
+        nm = ((prompt_ctx.get("student") or {}).get("name") or "").strip()
+        if not nm:
+            return ""
+        return nm.split()[0]
+    except Exception:
+        return ""
+
+
+def _alex_system_prompt_from_ctx(prompt_ctx: dict):
+    student = prompt_ctx.get("student") or {}
+    subjects_summary = prompt_ctx.get("subjects_summary") or ""
+    intake = prompt_ctx.get("intake") or {}
+
+    # Keep the injected "subjects" compact.
+    subjects_line = ""
+    if isinstance(subjects_summary, str) and subjects_summary and subjects_summary != "(no subjects found)":
+        # subjects_summary is formatted as lines like " - Biology / Current ..."
+        names = []
+        for line in subjects_summary.splitlines():
+            s = line.strip().lstrip("-").strip()
+            if not s:
+                continue
+            name = s.split("/")[0].strip()
+            if name:
+                names.append(name)
+        if names:
+            subjects_line = ", ".join(names[:6]) + ("…" if len(names) > 6 else "")
+
+    prefs_json = json.dumps(intake or {}, ensure_ascii=False)
+    return (
+        _ALEX_SYSTEM_PROMPT
+        .replace("{{STUDENT_PREFERENCE_JSON}}", prefs_json)
+        .replace("{{student.firstName}}", _first_name_from_ctx(prompt_ctx) or "there")
+        .replace("{{student.subjects}}", subjects_line or "")
+        .replace("{{student.yearGroup}}", str(student.get("year_group") or ""))
+        .replace("{{student.school}}", str(student.get("school") or ""))
+        .replace("{{student.predictedGrades}}", "")
+    )
+
+
 def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_client, OPENAI_API_KEY, get_profile_from_supabase):
     data = request.get_json() or {}
     student_email = (data.get("student_email") or data.get("studentEmail") or "").strip().lower()
@@ -160,6 +246,11 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
     session_id = data.get("session_id") or data.get("sessionId")
     message = (data.get("message") or "").strip()
     dataset_release_id = data.get("dataset_release_id") or data.get("datasetReleaseId")
+    start_chat = bool(data.get("start_chat") or data.get("startChat"))
+
+    if start_chat:
+        # Start with persona opening using preferences + known context.
+        message = "__UNIGUIDE_START__"
 
     if not student_email or "@" not in student_email:
         return jsonify({"success": False, "error": "student_email is required"}), 400
@@ -294,6 +385,7 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
         app.logger.warning(f"[UniGuide] academic profile context load failed: {e}")
 
     prompt_ctx = _summarize_profile_for_prompt(student_ctx, intake)
+    alex_system = _alex_system_prompt_from_ctx(prompt_ctx)
 
     # --- OpenAI: step 1 planner (extract search params + optional intake patch) ---
     try:
@@ -303,7 +395,9 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
         model = os.getenv("UNIGUIDE_OPENAI_MODEL") or "gpt-4o-mini"
 
         planner_system = (
-            "You are UniGuide, an expert UK university/course advisor.\n"
+            alex_system
+            + "\n\n"
+            + "You are UniGuide's planner.\n"
             "Your job: interpret the student's message and context, and output STRICT JSON ONLY.\n"
             "JSON schema:\n"
             "  assistant_message: string (short, friendly, 1-2 questions max)\n"
@@ -316,11 +410,12 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
             "- subject_code is optional; only set if confidently known.\n"
         )
 
+        # Special "start" mode: no student message beyond "start".
         planner_user = (
             "CONTEXT (read-only):\n"
             f"{json.dumps(prompt_ctx, ensure_ascii=False)}\n\n"
             "STUDENT MESSAGE:\n"
-            f"{message}\n\n"
+            f"{'' if message == '__UNIGUIDE_START__' else message}\n\n"
             "Return JSON only."
         )
 
@@ -376,9 +471,9 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
         except Exception as e:
             app.logger.warning(f"[UniGuide] intake patch write failed: {e}")
 
-    # Retrieve courses (RAG retrieval)
+    # Retrieve courses (RAG retrieval). Skip in start mode.
     retrieved = []
-    if q:
+    if q and message != "__UNIGUIDE_START__":
         try:
             params = {
                 "q": q,
@@ -417,7 +512,9 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
         model = os.getenv("UNIGUIDE_OPENAI_MODEL") or "gpt-4o-mini"
 
         responder_system = (
-            "You are UniGuide, an expert UK university/course advisor.\n"
+            alex_system
+            + "\n\n"
+            + "You are UniGuide, an expert UK university/course advisor.\n"
             "Use the retrieved course cards to make suggestions.\n"
             "Return STRICT JSON ONLY with keys:\n"
             "  assistant_message: string (helpful answer + any question)\n"
@@ -427,6 +524,7 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
             "- Do NOT invent course_keys; only use those provided.\n"
             "- Keep reasons short (<=140 chars).\n"
             "- If RETRIEVED COURSES is empty, do NOT claim that no courses exist. Ask for a clearer subject keyword and suggest using Search Courses.\n"
+            "- If this is the first message (no conversation yet), start with a warm Alex-style opening that references the student’s name and preferences naturally.\n"
         )
 
         responder_user = (
