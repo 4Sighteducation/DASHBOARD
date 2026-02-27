@@ -344,14 +344,26 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
     intake_patch = plan.get("intake_patch") if isinstance(plan.get("intake_patch"), dict) else {}
     sp = plan.get("search_params") if isinstance(plan.get("search_params"), dict) else {}
 
-    q = (sp.get("q") or "").strip() or None
+    q_plan = (sp.get("q") or "").strip() or None
     subject_code = (sp.get("subject_code") or "").strip() or None
     min_tariff = _to_int(sp.get("min_tariff"))
     max_tariff = _to_int(sp.get("max_tariff"))
 
     # Fallback: ensure we have a usable query for retrieval when possible.
+    q_fallback = None
+    q = q_plan
     if not q:
-        q = _derive_q_from_message(message)
+        q_fallback = _derive_q_from_message(message)
+        q = q_fallback
+
+    # Last resort: use a short slice of the message (better than nothing).
+    if not q and message:
+        q = " ".join(str(message).strip().split()[:4]).strip() or None
+
+    try:
+        app.logger.info(f"[UniGuide] planner q={q_plan!r} fallback={q_fallback!r} final_q={q!r} subject_code={subject_code!r}")
+    except Exception:
+        pass
 
     # Merge intake patch into profile (best-effort)
     if intake_patch:
@@ -391,6 +403,11 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
         except Exception as e:
             app.logger.warning(f"[UniGuide] retrieval RPC failed: {e}")
             retrieved = []
+
+    try:
+        app.logger.info(f"[UniGuide] retrieved_count={len(retrieved)} q_used={q!r}")
+    except Exception:
+        pass
 
     # --- OpenAI: step 2 response + suggestions ---
     try:
@@ -440,6 +457,15 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
 
     final_message = (out.get("assistant_message") or assistant_message or "").strip()
     suggestions = out.get("suggestions") if isinstance(out.get("suggestions"), list) else []
+
+    # Guardrail: don't let the model conclude "no courses exist" when retrieval is empty.
+    if (not retrieved) and q:
+        if not final_message or ("no specific course" in final_message.lower()) or ("no courses" in final_message.lower()):
+            final_message = (
+                f"I couldn’t match many course titles for “{q}” yet. "
+                "Can you tell me the subject area you want to explore (1–2 keywords), and any must-haves like location or tariff range? "
+                "You can also try the Search Courses tab for a quick list."
+            )
 
     # Persist assistant message
     if final_message:
