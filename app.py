@@ -12546,6 +12546,118 @@ def uniguide_search_courses_api():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/uniguide/profile', methods=['GET'])
+def uniguide_get_profile_api():
+    """UniGuide: get student intake profile (stored in `uniguide_app.student_profiles`)."""
+    try:
+        client = uniguide_client or supabase_client
+        if not client:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        student_email = (request.args.get('student_email') or '').strip().lower()
+        academic_year = (request.args.get('academic_year') or 'current').strip() or 'current'
+
+        if not student_email or '@' not in student_email:
+            return jsonify({'success': False, 'error': 'student_email is required'}), 400
+
+        def profiles_tbl(c):
+            try:
+                return c.schema('uniguide_app').table('student_profiles')
+            except Exception:
+                return c.table('uniguide_app.student_profiles')
+
+        tbl = profiles_tbl(client)
+
+        res = (
+            tbl.select('*')
+            .eq('student_email', student_email)
+            .eq('academic_year', academic_year)
+            .limit(1)
+            .execute()
+        )
+        row = (res.data or [None])[0]
+
+        if not row:
+            ins = (
+                tbl.insert({
+                    'student_email': student_email,
+                    'academic_year': academic_year,
+                    'intake': {},
+                    'intake_version': 1
+                }).execute()
+            )
+            row = (ins.data or [None])[0] or {'student_email': student_email, 'academic_year': academic_year, 'intake': {}, 'intake_version': 1}
+
+        return jsonify({'success': True, 'data': row})
+    except Exception as e:
+        app.logger.error(f"[UniGuide] get profile error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/uniguide/profile', methods=['PUT'])
+def uniguide_save_profile_api():
+    """UniGuide: save student intake profile (stored in `uniguide_app.student_profiles`)."""
+    try:
+        client = uniguide_client or supabase_client
+        if not client:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        payload = request.get_json() or {}
+        student_email = (payload.get('student_email') or '').strip().lower()
+        academic_year = (payload.get('academic_year') or 'current').strip() or 'current'
+        intake = payload.get('intake') or {}
+
+        if not student_email or '@' not in student_email:
+            return jsonify({'success': False, 'error': 'student_email is required'}), 400
+        if intake is None:
+            intake = {}
+        if not isinstance(intake, dict):
+            return jsonify({'success': False, 'error': 'intake must be an object'}), 400
+
+        def profiles_tbl(c):
+            try:
+                return c.schema('uniguide_app').table('student_profiles')
+            except Exception:
+                return c.table('uniguide_app.student_profiles')
+
+        tbl = profiles_tbl(client)
+
+        existing = (
+            tbl.select('id,intake_version')
+            .eq('student_email', student_email)
+            .eq('academic_year', academic_year)
+            .limit(1)
+            .execute()
+        )
+        row = (existing.data or [None])[0]
+
+        if row and isinstance(row, dict) and row.get('id'):
+            next_version = (row.get('intake_version') or 1) + 1
+            upd = (
+                tbl.update({'intake': intake, 'intake_version': next_version})
+                .eq('id', row['id'])
+                .execute()
+            )
+            saved = (upd.data or [None])[0] or {}
+            return jsonify({'success': True, 'data': saved})
+
+        ins = (
+            tbl.insert({
+                'student_email': student_email,
+                'academic_year': academic_year,
+                'intake': intake,
+                'intake_version': 1
+            }).execute()
+        )
+        saved = (ins.data or [None])[0] or {'student_email': student_email, 'academic_year': academic_year, 'intake': intake, 'intake_version': 1}
+        return jsonify({'success': True, 'data': saved})
+    except Exception as e:
+        app.logger.error(f"[UniGuide] save profile error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/uniguide/chat', methods=['POST'])
 def uniguide_chat_api():
     return handle_uniguide_chat(
