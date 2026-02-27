@@ -239,6 +239,40 @@ def _alex_system_prompt_from_ctx(prompt_ctx: dict):
     )
 
 
+def _pretty_pref(v):
+    s = str(v or "").strip()
+    if not s:
+        return ""
+    s = s.replace("_", " ").replace("-", " ").strip()
+    return " ".join([w[:1].upper() + w[1:] if w else "" for w in s.split()])
+
+
+def _alex_opening_message(prompt_ctx: dict):
+    first = _first_name_from_ctx(prompt_ctx) or "there"
+    intake = prompt_ctx.get("intake") or {}
+    interests = intake.get("interests") if isinstance(intake.get("interests"), list) else []
+    interests = [_pretty_pref(x) for x in interests if str(x).strip()]
+    distance = _pretty_pref(intake.get("distance"))
+    campus = _pretty_pref(intake.get("campus_type"))
+
+    bits = []
+    if interests:
+        bits.append(f"you’re into {', '.join(interests[:3])}")
+    if distance and distance.lower() != "no preference":
+        bits.append(f"you’re thinking about staying {distance.lower()}")
+    if campus and campus.lower() != "no preference":
+        bits.append(f"you prefer a {campus.lower()} vibe")
+
+    prefs_line = ""
+    if bits:
+        prefs_line = " I’ve seen your preferences — " + ", ".join(bits) + "."
+
+    return (
+        f"Hey {first} — I’m Alex.{prefs_line} "
+        "Before we get into courses and league tables and all that: what’s the thing you’re actually most uncertain about right now?"
+    )
+
+
 def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_client, OPENAI_API_KEY, get_profile_from_supabase):
     data = request.get_json() or {}
     student_email = (data.get("student_email") or data.get("studentEmail") or "").strip().lower()
@@ -331,17 +365,18 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
         return jsonify({"success": False, "error": "Failed to create session"}), 500
 
     # Persist user message
-    try:
-        messages_tbl.insert(
-            {
-                "session_id": session_id,
-                "role": "user",
-                "content": message,
-                "meta": {"ts": _now_iso()},
-            }
-        ).execute()
-    except Exception as e:
-        app.logger.warning(f"[UniGuide] message write failed: {e}")
+    if message != "__UNIGUIDE_START__":
+        try:
+            messages_tbl.insert(
+                {
+                    "session_id": session_id,
+                    "role": "user",
+                    "content": message,
+                    "meta": {"ts": _now_iso()},
+                }
+            ).execute()
+        except Exception as e:
+            app.logger.warning(f"[UniGuide] message write failed: {e}")
 
     # Fetch last N messages for context
     history = []
@@ -386,6 +421,33 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
 
     prompt_ctx = _summarize_profile_for_prompt(student_ctx, intake)
     alex_system = _alex_system_prompt_from_ctx(prompt_ctx)
+
+    # Start-chat mode: return a personalised opening immediately (no RAG, no OpenAI).
+    if message == "__UNIGUIDE_START__":
+        opening = _alex_opening_message(prompt_ctx)
+        if opening:
+            try:
+                messages_tbl.insert(
+                    {
+                        "session_id": session_id,
+                        "role": "assistant",
+                        "content": opening,
+                        "meta": {"ts": _now_iso(), "mode": "opening"},
+                    }
+                ).execute()
+            except Exception as e:
+                app.logger.warning(f"[UniGuide] assistant opening write failed: {e}")
+
+        return jsonify(
+            {
+                "success": True,
+                "session_id": session_id,
+                "assistant_message": opening,
+                "suggestions": [],
+                "retrieved_count": 0,
+                "search_used": {"q": None, "subject_code": None, "min_tariff": None, "max_tariff": None},
+            }
+        )
 
     # --- OpenAI: step 1 planner (extract search params + optional intake patch) ---
     try:
