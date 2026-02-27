@@ -122,16 +122,16 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
     if not client:
         return jsonify({"success": False, "error": "Supabase is not enabled"}), 500
 
-    # Tables (via public views to avoid schema-selection issues)
+    # Tables (via public views to avoid schema-selection issues and naming conflicts)
     # Supabase SQL must define:
-    # - public.uniguide_sessions → uniguide_app.sessions
-    # - public.uniguide_messages → uniguide_app.messages
-    # - public.uniguide_student_profiles → uniguide_app.student_profiles
-    # - public.uniguide_suggestions → uniguide_app.suggestions
-    sessions_tbl = client.table("uniguide_sessions")
-    messages_tbl = client.table("uniguide_messages")
-    profiles_tbl = client.table("uniguide_student_profiles")
-    suggestions_tbl = client.table("uniguide_suggestions")
+    # - public.uniguide_app_sessions → uniguide_app.sessions
+    # - public.uniguide_app_messages → uniguide_app.messages
+    # - public.uniguide_app_student_profiles → uniguide_app.student_profiles
+    # - public.uniguide_app_suggestions → uniguide_app.suggestions
+    sessions_tbl = client.table("uniguide_app_sessions")
+    messages_tbl = client.table("uniguide_app_messages")
+    profiles_tbl = client.table("uniguide_app_student_profiles")
+    suggestions_tbl = client.table("uniguide_app_suggestions")
 
     # Ensure profile exists
     try:

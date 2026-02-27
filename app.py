@@ -12593,8 +12593,8 @@ def uniguide_get_profile_api():
             return jsonify({'success': False, 'error': 'student_email is required'}), 400
 
         # Use public views to avoid schema-selection issues in PostgREST clients.
-        # Supabase SQL must define: public.uniguide_student_profiles → uniguide_app.student_profiles
-        tbl = client.table('uniguide_student_profiles')
+        # Supabase SQL must define: public.uniguide_app_student_profiles → uniguide_app.student_profiles
+        tbl = client.table('uniguide_app_student_profiles')
 
         res = (
             tbl.select('*')
@@ -12649,7 +12649,7 @@ def uniguide_save_profile_api():
             return jsonify({'success': False, 'error': 'intake must be an object'}), 400
 
         # Use public views to avoid schema-selection issues in PostgREST clients.
-        tbl = client.table('uniguide_student_profiles')
+        tbl = client.table('uniguide_app_student_profiles')
 
         existing = (
             tbl.select('intake_version')
