@@ -24,6 +24,56 @@ def _json_loads_maybe(text):
         return None
 
 
+def _derive_q_from_message(message: str):
+    """
+    Heuristic fallback if the planner doesn't return a query.
+    Prefer a small keyword query over the full free-text message.
+    """
+    raw = (message or "").strip().lower()
+    if not raw:
+        return None
+
+    # Common subjects / keywords (keeps the query "searchable")
+    known = [
+        "psychology", "sociology", "criminology", "computer science", "engineering",
+        "medicine", "law", "business", "economics", "history", "geography", "biology",
+        "chemistry", "physics", "mathematics", "maths", "english", "politics",
+    ]
+    hits = []
+    for k in known:
+        if k in raw:
+            hits.append(k)
+    if hits:
+        # keep it short; the RPC searches course titles
+        return " ".join(hits[:3])
+
+    # Token-based fallback
+    stop = {
+        "i", "im", "i'm", "me", "my", "we", "our", "us", "you", "your",
+        "a", "an", "the", "and", "or", "but", "so", "because",
+        "want", "like", "love", "enjoy", "prefer", "please", "help",
+        "course", "courses", "uni", "university", "universities",
+        "what", "which", "where", "how", "can", "could", "should", "would",
+        "fit", "best", "good",
+    }
+    # keep letters/numbers/spaces only
+    cleaned = "".join(ch if (ch.isalnum() or ch.isspace()) else " " for ch in raw)
+    toks = [t for t in cleaned.split() if len(t) >= 4 and t not in stop]
+    if not toks:
+        return None
+    # up to 3 unique tokens, preserve order
+    out = []
+    seen = set()
+    for t in toks:
+        if t in seen:
+            continue
+        out.append(t)
+        seen.add(t)
+        if len(out) >= 3:
+            break
+    return " ".join(out) if out else None
+
+
 def _schema(client, schema_name: str):
     if not hasattr(client, "schema"):
         raise RuntimeError(
@@ -261,7 +311,8 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
             "  search_params: { q: string|null, subject_code: string|null, min_tariff: int|null, max_tariff: int|null }\n"
             "Rules:\n"
             "- Use provided subjects/grades if relevant. Don't re-ask obvious things.\n"
-            "- If unclear what to search, ask a clarifying question and set q=null.\n"
+            "- Prefer setting q to 1-3 concise keywords that match course titles (e.g. 'Psychology', 'Computer Science').\n"
+            "- Only set q=null if the student message is completely unrelated to course search.\n"
             "- subject_code is optional; only set if confidently known.\n"
         )
 
@@ -298,6 +349,10 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
     min_tariff = _to_int(sp.get("min_tariff"))
     max_tariff = _to_int(sp.get("max_tariff"))
 
+    # Fallback: ensure we have a usable query for retrieval when possible.
+    if not q:
+        q = _derive_q_from_message(message)
+
     # Merge intake patch into profile (best-effort)
     if intake_patch:
         try:
@@ -324,6 +379,15 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
             }
             rr = client.rpc("uniguide_search_courses", params).execute()
             retrieved = rr.data or []
+
+            # If nothing came back, try a simplified query once (common with long free-text).
+            if not retrieved and isinstance(q, str) and len(q) > 24:
+                q2 = q.split(",")[0].strip()
+                q2 = " ".join(q2.split()[:3]).strip()
+                if q2 and q2 != q:
+                    params["q"] = q2
+                    rr2 = client.rpc("uniguide_search_courses", params).execute()
+                    retrieved = rr2.data or []
         except Exception as e:
             app.logger.warning(f"[UniGuide] retrieval RPC failed: {e}")
             retrieved = []
@@ -345,6 +409,7 @@ def handle_uniguide_chat(*, app, request, jsonify, supabase_client, uniguide_cli
             "Rules:\n"
             "- Do NOT invent course_keys; only use those provided.\n"
             "- Keep reasons short (<=140 chars).\n"
+            "- If RETRIEVED COURSES is empty, do NOT claim that no courses exist. Ask for a clearer subject keyword and suggest using Search Courses.\n"
         )
 
         responder_user = (
