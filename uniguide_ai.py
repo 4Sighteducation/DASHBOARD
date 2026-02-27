@@ -25,21 +25,24 @@ def _json_loads_maybe(text):
 
 
 def _schema(client, schema_name: str):
-    try:
-        if hasattr(client, "schema"):
-            return client.schema(schema_name)
-    except Exception:
-        pass
-    return client
+    if not hasattr(client, "schema"):
+        raise RuntimeError(
+            "Supabase client does not support schema() selection. "
+            "UniGuide requires access to the 'uniguide_app' schema via PostgREST."
+        )
+    return client.schema(schema_name)
 
 
 def _table(client, schema_name: str, table_name: str):
     sc = _schema(client, schema_name)
     try:
         return sc.table(table_name)
-    except Exception:
-        # fallback (if schema() not supported)
-        return client.table(f"{schema_name}.{table_name}")
+    except Exception as ex:
+        raise RuntimeError(
+            f"Could not access table {schema_name}.{table_name} via Supabase. "
+            "Check Supabase Settings → Data API → Exposed schemas includes 'uniguide_app' (and 'uniguide'), "
+            "and the backend is using a service_role key."
+        ) from ex
 
 
 def _to_int(v):
