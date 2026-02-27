@@ -12592,27 +12592,9 @@ def uniguide_get_profile_api():
         if not student_email or '@' not in student_email:
             return jsonify({'success': False, 'error': 'student_email is required'}), 400
 
-        def profiles_tbl(c):
-            schema_err = None
-            dot_err = None
-            try:
-                return c.schema('uniguide_app').table('student_profiles')
-            except Exception as ex:
-                schema_err = ex
-            try:
-                # Fallback for clients/environments where schema() is not available.
-                return c.table('uniguide_app.student_profiles')
-            except Exception as ex:
-                dot_err = ex
-
-            raise RuntimeError(
-                "Could not access 'uniguide_app.student_profiles' via Supabase. "
-                "Check: (1) migrations applied, (2) Supabase Settings → API → Exposed schemas includes 'uniguide_app' + 'uniguide', "
-                "(3) backend is using the correct Supabase URL, (4) backend has service_role key. "
-                f"schema() error: {schema_err}; dot-table error: {dot_err}"
-            )
-
-        tbl = profiles_tbl(client)
+        # Use public views to avoid schema-selection issues in PostgREST clients.
+        # Supabase SQL must define: public.uniguide_student_profiles → uniguide_app.student_profiles
+        tbl = client.table('uniguide_student_profiles')
 
         res = (
             tbl.select('*')
@@ -12666,26 +12648,8 @@ def uniguide_save_profile_api():
         if not isinstance(intake, dict):
             return jsonify({'success': False, 'error': 'intake must be an object'}), 400
 
-        def profiles_tbl(c):
-            schema_err = None
-            dot_err = None
-            try:
-                return c.schema('uniguide_app').table('student_profiles')
-            except Exception as ex:
-                schema_err = ex
-            try:
-                return c.table('uniguide_app.student_profiles')
-            except Exception as ex:
-                dot_err = ex
-
-            raise RuntimeError(
-                "Could not access 'uniguide_app.student_profiles' via Supabase. "
-                "Check: (1) migrations applied, (2) Supabase Settings → API → Exposed schemas includes 'uniguide_app' + 'uniguide', "
-                "(3) backend is using the correct Supabase URL, (4) backend has service_role key. "
-                f"schema() error: {schema_err}; dot-table error: {dot_err}"
-            )
-
-        tbl = profiles_tbl(client)
+        # Use public views to avoid schema-selection issues in PostgREST clients.
+        tbl = client.table('uniguide_student_profiles')
 
         existing = (
             tbl.select('intake_version')
