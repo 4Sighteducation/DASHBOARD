@@ -12502,6 +12502,11 @@ def uniguide_search_courses_api():
         client = uniguide_client or supabase_client
         if not client:
             return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not (UNIGUIDE_SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_KEY):
+            return jsonify({
+                'success': False,
+                'error': 'UniGuide requires a Supabase service-role key on the backend (set UNIGUIDE_SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_KEY).'
+            }), 500
 
         payload = request.get_json() or {}
 
@@ -12553,6 +12558,11 @@ def uniguide_get_profile_api():
         client = uniguide_client or supabase_client
         if not client:
             return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not (UNIGUIDE_SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_KEY):
+            return jsonify({
+                'success': False,
+                'error': 'UniGuide requires a Supabase service-role key on the backend (set UNIGUIDE_SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_KEY).'
+            }), 500
 
         student_email = (request.args.get('student_email') or '').strip().lower()
         academic_year = (request.args.get('academic_year') or 'current').strip() or 'current'
@@ -12563,8 +12573,11 @@ def uniguide_get_profile_api():
         def profiles_tbl(c):
             try:
                 return c.schema('uniguide_app').table('student_profiles')
-            except Exception:
-                return c.table('uniguide_app.student_profiles')
+            except Exception as ex:
+                raise RuntimeError(
+                    "Supabase schema 'uniguide_app' is not available via the API. "
+                    "Apply UniGuide migrations and add 'uniguide_app' (and 'uniguide') to Supabase API → Exposed schemas."
+                ) from ex
 
         tbl = profiles_tbl(client)
 
@@ -12602,6 +12615,11 @@ def uniguide_save_profile_api():
         client = uniguide_client or supabase_client
         if not client:
             return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+        if not (UNIGUIDE_SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_KEY):
+            return jsonify({
+                'success': False,
+                'error': 'UniGuide requires a Supabase service-role key on the backend (set UNIGUIDE_SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_KEY).'
+            }), 500
 
         payload = request.get_json() or {}
         student_email = (payload.get('student_email') or '').strip().lower()
@@ -12618,13 +12636,16 @@ def uniguide_save_profile_api():
         def profiles_tbl(c):
             try:
                 return c.schema('uniguide_app').table('student_profiles')
-            except Exception:
-                return c.table('uniguide_app.student_profiles')
+            except Exception as ex:
+                raise RuntimeError(
+                    "Supabase schema 'uniguide_app' is not available via the API. "
+                    "Apply UniGuide migrations and add 'uniguide_app' (and 'uniguide') to Supabase API → Exposed schemas."
+                ) from ex
 
         tbl = profiles_tbl(client)
 
         existing = (
-            tbl.select('id,intake_version')
+            tbl.select('intake_version')
             .eq('student_email', student_email)
             .eq('academic_year', academic_year)
             .limit(1)
@@ -12632,11 +12653,12 @@ def uniguide_save_profile_api():
         )
         row = (existing.data or [None])[0]
 
-        if row and isinstance(row, dict) and row.get('id'):
-            next_version = (row.get('intake_version') or 1) + 1
+        if row and isinstance(row, dict):
+            # Let DB triggers handle intake_version + updated_at where configured.
             upd = (
-                tbl.update({'intake': intake, 'intake_version': next_version})
-                .eq('id', row['id'])
+                tbl.update({'intake': intake})
+                .eq('student_email', student_email)
+                .eq('academic_year', academic_year)
                 .execute()
             )
             saved = (upd.data or [None])[0] or {}
