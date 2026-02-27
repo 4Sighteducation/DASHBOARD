@@ -176,6 +176,14 @@ SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 supabase_client = None
 SUPABASE_ENABLED = False
 
+# Optional separate Supabase project for UniGuide (can fall back to main Supabase).
+UNIGUIDE_SUPABASE_URL = os.getenv('UNIGUIDE_SUPABASE_URL')
+UNIGUIDE_SUPABASE_SERVICE_KEY = os.getenv('UNIGUIDE_SUPABASE_SERVICE_KEY') or os.getenv('UNIGUIDE_SUPABASE_SERVICE_ROLE_KEY')
+UNIGUIDE_SUPABASE_KEY = os.getenv('UNIGUIDE_SUPABASE_KEY')
+
+uniguide_client = None
+UNIGUIDE_ENABLED = False
+
 if SUPABASE_URL and (SUPABASE_SERVICE_KEY or SUPABASE_KEY):
     try:
         # Create client with basic options only - avoid proxy issues on Heroku
@@ -195,6 +203,19 @@ if SUPABASE_URL and (SUPABASE_SERVICE_KEY or SUPABASE_KEY):
         app.logger.warning(f"Supabase client initialization failed: {str(e)}")
 else:
     app.logger.warning("Supabase credentials not found in environment variables")
+
+if UNIGUIDE_SUPABASE_URL and (UNIGUIDE_SUPABASE_SERVICE_KEY or UNIGUIDE_SUPABASE_KEY):
+    try:
+        uniguide_client: Client = create_client(UNIGUIDE_SUPABASE_URL, UNIGUIDE_SUPABASE_SERVICE_KEY or UNIGUIDE_SUPABASE_KEY)
+        UNIGUIDE_ENABLED = True
+        app.logger.info(f"UniGuide Supabase client initialized for {UNIGUIDE_SUPABASE_URL} (service_key={'yes' if UNIGUIDE_SUPABASE_SERVICE_KEY else 'no'})")
+    except Exception as e:
+        uniguide_client = None
+        UNIGUIDE_ENABLED = False
+        app.logger.warning(f"UniGuide Supabase client initialization failed: {str(e)}")
+else:
+    # Not configured; API can still fall back to main SUPABASE if UniGuide lives there.
+    pass
 
 # --- Explicit CORS Configuration ---
 # Allow requests from Knack + local dev + teacher inbox custom domain
@@ -12459,6 +12480,69 @@ def sync_subject_to_knack(subject_data, object_112_record_id, position):
     except Exception as e:
         app.logger.error(f"[Academic Profile] Error syncing subject to Knack: {e}")
         return False
+
+
+@app.route('/api/uniguide/search', methods=['POST'])
+def uniguide_search_courses_api():
+    """UniGuide: course search proxy to Supabase RPC `public.uniguide_search_courses`.
+
+    Body (JSON):
+      {
+        "q": "psychology",
+        "subject_code": "C8" (optional),
+        "min_tariff": 96 (optional),
+        "max_tariff": 144 (optional),
+        "lim": 20,
+        "off": 0,
+        "dataset_release_id": "uuid" (optional)
+      }
+    """
+    try:
+        client = uniguide_client or supabase_client
+        if not client:
+            return jsonify({'success': False, 'error': 'Supabase is not enabled'}), 500
+
+        payload = request.get_json() or {}
+
+        q = payload.get('q')
+        subject_code = payload.get('subject_code')
+        min_tariff = payload.get('min_tariff')
+        max_tariff = payload.get('max_tariff')
+        lim = payload.get('lim', 20)
+        off = payload.get('off', 0)
+        dataset_release_id = payload.get('dataset_release_id')
+
+        def to_int(v):
+            if v is None or v == '':
+                return None
+            try:
+                return int(v)
+            except Exception:
+                return None
+
+        lim_i = to_int(lim) or 20
+        lim_i = max(1, min(lim_i, 50))
+        off_i = to_int(off) or 0
+        off_i = max(0, off_i)
+
+        params = {
+            'q': q,
+            'subject_code': subject_code,
+            'min_tariff': to_int(min_tariff),
+            'max_tariff': to_int(max_tariff),
+            'lim': lim_i,
+            'off': off_i,
+            'dataset_release_id': dataset_release_id
+        }
+
+        res = client.rpc('uniguide_search_courses', params).execute()
+        rows = res.data or []
+
+        return jsonify({'success': True, 'data': rows})
+    except Exception as e:
+        app.logger.error(f"[UniGuide] search error: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/academic-profile/<email>', methods=['GET'])
