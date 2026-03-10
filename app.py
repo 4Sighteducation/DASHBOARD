@@ -10170,10 +10170,48 @@ def validate_questionnaire_access():
             vision_value = obj10_record.get(f'{vision_field}_raw') if vision_field else None
             
             current_cycle_field = obj10_record.get('field_146_raw')
+            cycle_override_raw = obj10_record.get('field_3850_raw')
+            cycle_override_display = obj10_record.get('field_3850')
+            cycle_override = cycle_override_raw is True or cycle_override_raw == True or cycle_override_display == 'Yes'
             
             app.logger.info(f"[Questionnaire Validate] Checking if Cycle {active_cycle} is complete...")
             app.logger.info(f"[Questionnaire Validate] Historical Vision field ({vision_field}): {vision_value}")
             app.logger.info(f"[Questionnaire Validate] Current cycle field (146): {current_cycle_field}")
+            app.logger.info(f"[Questionnaire Validate] Cycle Override field_3850_raw: {cycle_override_raw} (type: {type(cycle_override_raw).__name__})")
+            app.logger.info(f"[Questionnaire Validate] Cycle Override field_3850 display: {cycle_override_display}")
+            app.logger.info(f"[Questionnaire Validate] Cycle Override result: {cycle_override}")
+            
+            if cycle_override:
+                app.logger.info(f"[Questionnaire Validate] Cycle Override active - allowing Cycle {active_cycle} retake")
+                is_australian = False
+                use_standard_year = None
+
+                est_field = obj10_record.get('field_133_raw', [])
+                if est_field and isinstance(est_field, list) and len(est_field) > 0:
+                    est_knack_id = est_field[0].get('id') if isinstance(est_field[0], dict) else est_field[0]
+                    if supabase_client:
+                        try:
+                            est_result = supabase_client.table('establishments').select('is_australian', 'use_standard_year').eq('knack_id', est_knack_id).execute()
+                            if est_result.data:
+                                is_australian = est_result.data[0].get('is_australian', False)
+                                use_standard_year = est_result.data[0].get('use_standard_year')
+                        except Exception as e:
+                            app.logger.warning(f"Could not fetch establishment for cycle override: {e}")
+
+                academic_year = calculate_academic_year_for_student(
+                    is_australian=is_australian,
+                    use_standard_year=use_standard_year
+                )
+                
+                return jsonify({
+                    'allowed': True,
+                    'cycle': active_cycle,
+                    'reason': 'cycle_override_active_cycle',
+                    'message': f'Special access granted - Please complete your Cycle {active_cycle} questionnaire',
+                    'academicYear': academic_year,
+                    'userRecord': obj10_record,
+                    'isOverride': True
+                })
             
             # Check if this specific cycle has been completed
             # A cycle is complete if its historical Vision field has a value (not null, not empty, not 0)
@@ -10499,7 +10537,8 @@ def submit_questionnaire():
             knack_score_data = {
                 'field_146': str(cycle),  # Cycle field
                 'field_855': completion_date_knack,  # Completion date
-                'field_1679': 'No'  # Reset Cycle Unlocked to No after successful completion
+                'field_1679': 'No',  # Reset Cycle Unlocked to No after successful completion
+                'field_3850': 'No'   # Reset Cycle Override to No after successful completion
             }
             
             # CRITICAL: Write to CURRENT fields (147-152), not historical cycle fields
